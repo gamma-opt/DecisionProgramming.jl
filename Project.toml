@@ -1,4 +1,4 @@
 name = "DecisionProgramming"
 uuid = "0e836bf4-a496-11ea-2c13-edcbe498ce6b"
-authors = ["Jaan Tollander de Balsch"]
+authors = ["Jaan Tollander de Balsch <dev@jaantollander.com>"]
 version = "0.1.0"
