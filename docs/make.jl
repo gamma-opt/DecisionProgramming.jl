@@ -4,7 +4,12 @@ using DecisionProgramming
 makedocs(
     sitename = "DecisionProgramming",
     format = Documenter.HTML(),
-    modules = [DecisionProgramming]
+    modules = [DecisionProgramming],
+    authors = "Jaan Tollander de Balsch",
+    pages = [
+        "Home" => "index.md",
+        "API" => "api.md"
+    ]
 )
 
 # Documenter can also automatically deploy documentation to gh-pages.
