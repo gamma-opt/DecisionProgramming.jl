@@ -1,5 +1,10 @@
 module DecisionProgramming
 
-greet() = print("Hello World!")
+include("model.jl")
+export DecisionModel,
+    Specs,
+    DecisionGraph,
+    Probabilities,
+    Utilities
 
 end # module
