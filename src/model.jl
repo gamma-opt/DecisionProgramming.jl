@@ -115,12 +115,18 @@ function DecisionModel(specs::Specs, graph::DecisionGraph, probabilities::Probab
     model = DecisionModel()
 
     # Variables
-    π = fill(@variable(model), S_j...)
+    π = fill(VariableRef(model), S_j...)
+    for s in CartesianIndices(π)
+        π[s] = @variable(model, base_name="s[$(Tuple(s))]")
+    end
     z = Dict{Int, Array{VariableRef}}()
     for j in D
         S_I = [S_j[i] for i in I_j[j]]
         S_I_j = [S_I; S_j[j]]
-        z[j] = fill(@variable(model, binary=true), S_I_j...)
+        z[j] = fill(VariableRef(model), S_I_j...)
+        for s in CartesianIndices(z[j])
+            z[j][s] = @variable(model, binary=true, base_name="z[$j,$(Tuple(s))]")
+        end
     end
 
     # Objectives
