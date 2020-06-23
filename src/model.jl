@@ -29,6 +29,7 @@ function DecisionGraph(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vector
     C = sort(unique(C))
     D = sort(unique(D))
     V = sort(unique(V))
+    A = sort(unique(A))
 
     # Sizes
     n = length(C) + length(D)
@@ -55,9 +56,8 @@ function DecisionGraph(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vector
     for (i, j) in A
         push!(I_j[j], i)
     end
-    I_j = sort.(I_j)
 
-    DecisionGraph(collect(C), collect(D), collect(V), A, S_j, I_j)
+    DecisionGraph(C, D, V, A, S_j, I_j)
 end
 
 """Probabilities: X[j][s_I(j);s_j], ∀j∈C"""
