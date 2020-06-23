@@ -21,7 +21,7 @@ struct DecisionGraph
     V::Vector{Int} # Value nodes
     A::Vector{Pair{Int, Int}} # Arcs
     S_j::Vector{Int} # Number of states per node j∈C∪D
-    I_j::Vector{SortedSet{Int}} # Information set
+    I_j::Vector{Vector{Int}} # Information set
 end
 
 """Validate decision graph."""
@@ -47,15 +47,16 @@ function DecisionGraph(C::SortedSet{Int}, D::SortedSet{Int}, V::SortedSet{Int}, 
     all(S_j[j] ≥ 1 for j in 1:n) || error("")
 
     # Construction the information set
-    # I_j = Dict(j=>SortedSet{Int}() for (i, j) in A)
-    I_j = [SortedSet{Int}() for i in 1:(n+n_V)]
+    I_j = [Vector{Int}() for i in 1:(n+n_V)]
     for (i, j) in A
         push!(I_j[j], i)
     end
+    I_j = sort.(I_j)
 
     DecisionGraph(collect(C), collect(D), collect(V), A, S_j, I_j)
 end
 
+"""Sorted sets enforce unique and sorted indices."""
 function DecisionGraph(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vector{Pair{Int, Int}}, S_j::Vector{Int})
     DecisionGraph(SortedSet(C), SortedSet(D), SortedSet(V), A, S_j)
 end
