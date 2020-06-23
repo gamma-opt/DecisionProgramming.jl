@@ -1,8 +1,10 @@
-using Test
+using Test, Random
 using Base.Iterators: product
 
 include(joinpath(dirname(@__DIR__), "src", "model.jl"))
 
+
+Random.seed!(111)
 
 """Generate random probabilities"""
 function random_probabilites(states::AbstractArray, state::Int)
@@ -27,12 +29,12 @@ C = [2, 4]
 D = [1, 3]
 V = [5]
 A = [
-    Pair(1, 3),
-    Pair(1, 4),
-    Pair(2, 3),
-    Pair(2, 4),
-    Pair(3, 5),
-    Pair(4, 5)
+    1 => 3,
+    1 => 4,
+    2 => 3,
+    2 => 4,
+    3 => 5,
+    4 => 5
 ]
 S_j = [2, 2, 3, 3]
 

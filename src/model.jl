@@ -1,5 +1,4 @@
 using Parameters, JuMP
-using DataStructures: SortedSet
 using Base.Iterators: product
 
 
@@ -25,26 +24,31 @@ struct DecisionGraph
 end
 
 """Validate decision graph."""
-function DecisionGraph(C::SortedSet{Int}, D::SortedSet{Int}, V::SortedSet{Int}, A::Vector{Pair{Int, Int}}, S_j::Vector{Int})
+function DecisionGraph(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vector{Pair{Int, Int}}, S_j::Vector{Int})
+    # Enforce sorted and unique elements.
+    C = sort(unique(C))
+    D = sort(unique(D))
+    V = sort(unique(V))
+
     # Sizes
     n = length(C) + length(D)
     n_V = length(V)
 
     ## Validate nodes
-    isempty(C ∩ D) || error("Change and decision nodes are not disjoint.")
-    C ∪ D == SortedSet(1:n) || error("Union of change and decision nodes should be 1:n.")
-    V == SortedSet((n+1):(n+n_V)) || error("Values nodes should be (n+1):(n+n_V).")
+    isempty(C ∩ D) || error("The sets of change and decision nodes should be disjoint.")
+    Set(C ∪ D) == Set(1:n) || error("Union of change and decision nodes should be {1,...,n}.")
+    Set(V) == Set((n+1):(n+n_V)) || error("Values nodes should be {n+1,...,n+n_V}.")
 
     ## Validate arcs
     # 1) Inclusion A ⊆ N×N.
     # 2) Graph is acyclic.
     # 3) There are no arcs from chance or decision nodes to value nodes.
-    all(1 ≤ i < j ≤ (n+n_V) for (i, j) in A) || error("")
+    all(1 ≤ i < j ≤ (n+n_V) for (i, j) in A) || error("Forall (i,j)∈A we should have 1≤i<j≤n+n_V.")
 
     ## Validate states
     # Each chance and decision node has a finite number of states
-    length(S_j) == n || error("")
-    all(S_j[j] ≥ 1 for j in 1:n) || error("")
+    length(S_j) == n || error("Each change and decision node should have states.")
+    all(S_j[j] ≥ 1 for j in 1:n) || error("Each change and decision node should have finite number of states.")
 
     # Construction the information set
     I_j = [Vector{Int}() for i in 1:(n+n_V)]
@@ -56,21 +60,12 @@ function DecisionGraph(C::SortedSet{Int}, D::SortedSet{Int}, V::SortedSet{Int}, 
     DecisionGraph(collect(C), collect(D), collect(V), A, S_j, I_j)
 end
 
-"""Sorted sets enforce unique and sorted indices."""
-function DecisionGraph(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vector{Pair{Int, Int}}, S_j::Vector{Int})
-    DecisionGraph(SortedSet(C), SortedSet(D), SortedSet(V), A, S_j)
-end
-
-# j => X[s_I(j);s_j], ∀j∈C
-# each array is dimension S_I(j)×S_j
-"""Probabilities"""
+"""Probabilities: X[j][s_I(j);s_j], ∀j∈C"""
 struct Probabilities
     X::Dict{Int, Array{Float64}}
 end
 
-# j => Y[s_I(j)], ∀j∈V
-# each array is dimension S_I(j)
-"""Utilities"""
+"""Utilities: Y[j][s_I(j)], ∀j∈V"""
 struct Utilities
     Y::Dict{Int, Array{Float64}}
 end
@@ -78,14 +73,11 @@ end
 """Validate probabilities"""
 function Probabilities(graph::DecisionGraph, X::Dict{Int, Array{Float64}})
     @unpack C, S_j, I_j = graph
-    # All nodes j∈C are assigned a probability based on its information set
     for j in C
-        # Test dimensions
         S_I = [S_j[i] for i in I_j[j]]
         S_I_j = [S_I; S_j[j]]
-        size(X[j]) == Tuple(S_I_j) || error("")
-        # # All probabilities are positive
-        all(x ≥ 0 for x in X[j]) || error("")
+        size(X[j]) == Tuple(S_I_j) || error("Array should be dimension |S_I(j)|*|S_j|.")
+        all(x ≥ 0 for x in X[j]) || error("Probabilities should be positive.")
         # Probabilities sum to one
         for s_I in product(UnitRange.(1, S_I)...)
             sum(X[j][[s_I...; s]...] for s in 1:S_j[j]) ≈ 1 || error("")
@@ -97,10 +89,9 @@ end
 """Validate utilities"""
 function Utilities(graph::DecisionGraph, Y::Dict{Int, Array{Float64}})
     @unpack V, S_j, I_j = graph
-    # All nodes v∈V are assigned a utility based on its information set
     for j in V
         S_I = [S_j[i] for i in I_j[j]]
-        size(Y[j]) == Tuple(S_I) || error("")
+        size(Y[j]) == Tuple(S_I) || error("Array should be dimension |S_I(j)|.")
     end
     Utilities(Y)
 end
