@@ -5,8 +5,6 @@ using Base.Iterators: product
 
 # --- Model ---
 
-# TODO: handle I(j) = ∅
-
 """Defines the DecisionModel type."""
 const DecisionModel = Model
 
@@ -23,7 +21,7 @@ struct DecisionGraph
     V::Vector{Int} # Value nodes
     A::Vector{Pair{Int, Int}} # Arcs
     S_j::Vector{Int} # Number of states per node j∈C∪D
-    I_j::Dict{Int, Vector{Int}} # Information set
+    I_j::Vector{SortedSet{Int}} # Information set
 end
 
 """Validate decision graph."""
@@ -49,12 +47,13 @@ function DecisionGraph(C::SortedSet{Int}, D::SortedSet{Int}, V::SortedSet{Int}, 
     all(S_j[j] ≥ 1 for j in 1:n) || error("")
 
     # Construction the information set
-    I_j = Dict(j=>SortedSet{Int}() for (i, j) in A)
+    # I_j = Dict(j=>SortedSet{Int}() for (i, j) in A)
+    I_j = [SortedSet{Int}() for i in 1:(n+n_V)]
     for (i, j) in A
         push!(I_j[j], i)
     end
 
-    DecisionGraph(collect(C), collect(D), collect(V), A, S_j, I)
+    DecisionGraph(collect(C), collect(D), collect(V), A, S_j, I_j)
 end
 
 function DecisionGraph(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vector{Pair{Int, Int}}, S_j::Vector{Int})
@@ -88,7 +87,7 @@ function Probabilities(graph::DecisionGraph, X::Dict{Int, Array{Float64}})
         all(x ≥ 0 for x in X[j]) || error("")
         # Probabilities sum to one
         for s_I in product(UnitRange.(1, S_I)...)
-            sum(X[j][[s_I; s]...] for s in 1:S_j[j]) ≈ 1 || error("")
+            sum(X[j][[s_I...; s]...] for s in 1:S_j[j]) ≈ 1 || error("")
         end
     end
     Probabilities(X)
@@ -107,7 +106,7 @@ end
 
 """Initializes the DecisionModel."""
 function DecisionModel(specs::Specs, graph::DecisionGraph, probabilities::Probabilities, utilities::Utilities)
-    @unpack C, D, V, A, S_j, I_j, n_S, n_X, n_Z, n_U = graph
+    @unpack C, D, V, A, S_j, I_j = graph
     @unpack X = probabilities
     @unpack Y = utilities
 
@@ -118,16 +117,16 @@ function DecisionModel(specs::Specs, graph::DecisionGraph, probabilities::Probab
     π = fill(@variable(model), S_j...)
     z = Dict{Int, Array{VariableRef}}()
     for j in D
-        S_I = [S_j[i] for i in I_j(j)]
+        S_I = [S_j[i] for i in I_j[j]]
         S_I_j = [S_I; S_j[j]]
         z[j] = fill(@variable(model, binary=true), S_I_j...)
     end
 
     # Objectives
-    @expression(model, expected_utility)
+    expected_utility = AffExpr(0)
     for s in CartesianIndices(π)
         for v in V
-            s_I = s[I_j(v)...]
+            s_I = [s[i] for i in I_j[v]]
             U_s = Y[v][s_I...]
             add_to_expression!(expected_utility, π[s] * U_s)
         end
@@ -138,14 +137,14 @@ function DecisionModel(specs::Specs, graph::DecisionGraph, probabilities::Probab
     for j in D
         S_I = [S_j[i] for i in I_j[j]]
         for s_I in product(UnitRange.(1, S_I)...)
-            @constraint(model, sum(z[j][[s_I; s]...] for s in 1:S_j[j]) == 1)
+            @constraint(model, sum(z[j][[s_I...; s]...] for s in 1:S_j[j]) == 1)
         end
     end
 
     for s in CartesianIndices(π)
         p_s = 1
         for j in C
-            S_I_j = s[[I_j[j]; j]...]
+            S_I_j = [s[i] for i in [I_j[j]...; j]]
             p_s *= X[j][S_I_j...]
         end
         @constraint(model, 0≤π[s]≤p_s)
@@ -153,9 +152,13 @@ function DecisionModel(specs::Specs, graph::DecisionGraph, probabilities::Probab
 
     for s in CartesianIndices(π)
         for j in D
-            S_I_j = s[[I_j[j]; j]...]
-            @constraint(model, π≤z[j][S_I_j...])
+            S_I_j = [s[i] for i in [I_j[j]...; j]]
+            @constraint(model, π[s]≤z[j][S_I_j...])
         end
+    end
+
+    if specs.lazy_constraints
+        # TODO:
     end
 
     return model
