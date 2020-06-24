@@ -2,6 +2,12 @@ using Parameters, JuMP
 using Base.Iterators: product
 
 
+# --- Functions ---
+function paths(lengths)
+    product(UnitRange.(1, lengths)...)
+end
+
+
 # --- Model ---
 
 """Defines the DecisionModel type."""
@@ -51,7 +57,7 @@ function DecisionGraph(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vector
     length(S_j) == n || error("Each change and decision node should have states.")
     all(S_j[j] ≥ 1 for j in 1:n) || error("Each change and decision node should have finite number of states.")
 
-    # Construction the information set
+    # Construct the information set
     I_j = [Vector{Int}() for i in 1:(n+n_V)]
     for (i, j) in A
         push!(I_j[j], i)
@@ -65,9 +71,14 @@ struct Probabilities
     X::Dict{Int, Array{Float64}}
 end
 
-"""Utilities: Y[j][s_I(j)], ∀j∈V"""
+"""Consequences: Y[j][s_I(j)], ∀j∈V"""
+struct Consequences
+    Y::Dict{Int, Array{Int}}
+end
+
+"""Utilities. Map each consequence to a utility."""
 struct Utilities
-    Y::Dict{Int, Array{Float64}}
+    U::Vector{Float64}
 end
 
 """Validate probabilities"""
@@ -78,29 +89,42 @@ function Probabilities(graph::DecisionGraph, X::Dict{Int, Array{Float64}})
         S_I_j = [S_I; S_j[j]]
         size(X[j]) == Tuple(S_I_j) || error("Array should be dimension |S_I(j)|*|S_j|.")
         all(x ≥ 0 for x in X[j]) || error("Probabilities should be positive.")
-        # Probabilities sum to one
-        for s_I in product(UnitRange.(1, S_I)...)
-            sum(X[j][[s_I...; s]...] for s in 1:S_j[j]) ≈ 1 || error("")
+        for s_I in paths(S_I)
+            sum(X[j][[s_I...; s]...] for s in 1:S_j[j]) ≈ 1 || error("probabilities shoud sum to one.")
         end
     end
     Probabilities(X)
 end
 
-"""Validate utilities"""
-function Utilities(graph::DecisionGraph, Y::Dict{Int, Array{Float64}})
+"""Validate consequences"""
+function Consequences(graph::DecisionGraph, Y::Dict{Int, Array{Int}})
     @unpack V, S_j, I_j = graph
     for j in V
         S_I = [S_j[i] for i in I_j[j]]
         size(Y[j]) == Tuple(S_I) || error("Array should be dimension |S_I(j)|.")
     end
-    Utilities(Y)
+    Consequences(Y)
+end
+
+"""Validate utilities."""
+function Utilities(graph::DecisionGraph, U::Vector{Float64})
+    # Each consequence should be mapped to a utility.
+    @unpack S_j, I_j, V = graph
+    length(U) == sum(prod(S_j[j] for j in I_j[i]) for i in V) || error("")
+    return Utilities(U)
 end
 
 """Initializes the DecisionModel."""
-function DecisionModel(specs::Specs, graph::DecisionGraph, probabilities::Probabilities, utilities::Utilities)
+function DecisionModel(specs::Specs, graph::DecisionGraph, probabilities::Probabilities, consequences::Consequences, utilities::Utilities)
     @unpack C, D, V, A, S_j, I_j = graph
     @unpack X = probabilities
-    @unpack Y = utilities
+    @unpack Y = consequences
+    @unpack U = utilities
+
+    # Affine transformion of utilities to non-negative.
+    if minimum(U) < 0
+        U += abs(minimum(U))
+    end
 
     # Initialize the model
     model = DecisionModel()
@@ -113,8 +137,7 @@ function DecisionModel(specs::Specs, graph::DecisionGraph, probabilities::Probab
 
     z = Dict{Int, Array{VariableRef}}()
     for j in D
-        S_I = [S_j[i] for i in I_j[j]]
-        S_I_j = [S_I; S_j[j]]
+        S_I_j = (S_j[i] for i in [I_j[j]; j])
         z[j] = fill(VariableRef(model), S_I_j...)
         for s in CartesianIndices(z[j])
             z[j][s] = @variable(model, binary=true, base_name="z[$j,$(Tuple(s))]")
@@ -125,8 +148,8 @@ function DecisionModel(specs::Specs, graph::DecisionGraph, probabilities::Probab
     expected_utility = AffExpr(0)
     for s in CartesianIndices(π)
         for v in V
-            s_I = [s[i] for i in I_j[v]]
-            U_s = Y[v][s_I...]
+            s_I = (s[i] for i in I_j[v])
+            U_s = U[Y[v][s_I...]]
             add_to_expression!(expected_utility, π[s] * U_s)
         end
     end
@@ -134,8 +157,8 @@ function DecisionModel(specs::Specs, graph::DecisionGraph, probabilities::Probab
 
     # Constraints
     for j in D
-        S_I = [S_j[i] for i in I_j[j]]
-        for s_I in product(UnitRange.(1, S_I)...)
+        S_I = (S_j[i] for i in I_j[j])
+        for s_I in paths(S_I)
             @constraint(model, sum(z[j][[s_I...; s]...] for s in 1:S_j[j]) == 1)
         end
     end
@@ -143,16 +166,14 @@ function DecisionModel(specs::Specs, graph::DecisionGraph, probabilities::Probab
     for s in CartesianIndices(π)
         p_s = 1
         for j in C
-            S_I_j = [s[i] for i in [I_j[j]...; j]]
+            S_I_j = (s[i] for i in [I_j[j]; j])
             p_s *= X[j][S_I_j...]
         end
-        @constraint(model, 0≤π[s]≤p_s)
-    end
+        @constraint(model, 0 ≤ π[s] ≤ p_s)
 
-    for s in CartesianIndices(π)
         for j in D
-            S_I_j = [s[i] for i in [I_j[j]...; j]]
-            @constraint(model, π[s]≤z[j][S_I_j...])
+            S_I_j = (s[i] for i in [I_j[j]; j])
+            @constraint(model, π[s] ≤ z[j][S_I_j...])
         end
     end
 

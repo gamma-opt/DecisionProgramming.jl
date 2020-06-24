@@ -5,6 +5,7 @@ export DecisionModel,
     Specs,
     DecisionGraph,
     Probabilities,
+    Consequences,
     Utilities
 
 end # module
