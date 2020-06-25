@@ -16,7 +16,8 @@ const DecisionModel = Model
 """Specification for different model scenarios. For example, we can specify toggling on and off certain constraints and objectives.
 """
 @with_kw struct Specs
-    lazy_constraints::Bool
+    probability_sum_cut::Bool = false
+    num_paths::Int = 0
 end
 
 """Directed, acyclic graph."""
@@ -114,6 +115,26 @@ function Utilities(graph::DecisionGraph, U::Vector{Float64})
     return Utilities(U)
 end
 
+"""Probability sum lazy cut."""
+function probability_sum_cut(cb_data, model, π, ϵ)
+    # TODO: add only once
+    πsum = sum(callback_value(cb_data, π[s]) for s in eachindex(π))
+    if !isapprox(πsum, 1.0, atol=ϵ)
+        con = @build_constraint(sum(π) == 1.0)
+        MOI.submit(model, MOI.LazyConstraint(cb_data), con)
+    end
+end
+
+"""Number of paths lazy cut."""
+function number_of_paths_cut(cb_data, model, π, ϵ, p, num_paths, S_j)
+    # TODO: add only once
+    πnum = sum(callback_value(cb_data, π[s]) >= ϵ for s in eachindex(π))
+    if !isapprox(πnum, num_paths, atol = 0.9)
+        con = @build_constraint(sum(π[s] / p(s) for s in paths(S_j)) == num_paths)
+        MOI.submit(model, MOI.LazyConstraint(cb_data), con)
+    end
+end
+
 """Initializes the DecisionModel."""
 function DecisionModel(specs::Specs, graph::DecisionGraph, probabilities::Probabilities, consequences::Consequences, utilities::Utilities)
     @unpack C, D, V, A, S_j, I_j = graph
@@ -126,59 +147,62 @@ function DecisionModel(specs::Specs, graph::DecisionGraph, probabilities::Probab
         U += abs(minimum(U))
     end
 
+    """Upper bound of probability of a path."""
+    probability(s) = prod(X[j][s[[I_j[j]; j]]...] for j in C)
+
+    # Minimum path probability
+    ϵ = minimum(probability(s) for s in paths(S_j))
+
+    """Total utility of a path"""
+    utility(s) = sum(U[Y[v][s[I_j[v]]...]] for v in V)
+
     # Initialize the model
     model = DecisionModel()
 
-    # Variables
+    # --- Variables ---
     π = fill(VariableRef(model), S_j...)
-    for s in CartesianIndices(π)
-        π[s] = @variable(model, base_name="π[$(Tuple(s))]")
+    for s in paths(S_j)
+        π[s...] = @variable(model, base_name="π[$(s)]")
     end
 
     z = Dict{Int, Array{VariableRef}}()
     for j in D
-        S_I_j = (S_j[i] for i in [I_j[j]; j])
+        S_I_j = S_j[[I_j[j]; j]]
         z[j] = fill(VariableRef(model), S_I_j...)
-        for s in CartesianIndices(z[j])
-            z[j][s] = @variable(model, binary=true, base_name="z[$j,$(Tuple(s))]")
+        for s in paths(S_I_j)
+            z[j][s...] = @variable(model, binary=true, base_name="z[$j,$(s)]")
         end
     end
 
-    # Objectives
-    expected_utility = AffExpr(0)
-    for s in CartesianIndices(π)
-        for v in V
-            s_I = (s[i] for i in I_j[v])
-            U_s = U[Y[v][s_I...]]
-            add_to_expression!(expected_utility, π[s] * U_s)
-        end
-    end
+    # --- Objectives ---
+    @expression(model, expected_utility,
+        sum(π[s...] * utility(s) for s in paths(S_j)))
     @objective(model, Max, expected_utility)
 
-    # Constraints
+    # --- Constraints ---
     for j in D
-        S_I = (S_j[i] for i in I_j[j])
-        for s_I in paths(S_I)
+        for s_I in paths(S_j[I_j[j]])
             @constraint(model, sum(z[j][[s_I...; s]...] for s in 1:S_j[j]) == 1)
         end
     end
 
-    for s in CartesianIndices(π)
-        p_s = 1
-        for j in C
-            S_I_j = (s[i] for i in [I_j[j]; j])
-            p_s *= X[j][S_I_j...]
-        end
-        @constraint(model, 0 ≤ π[s] ≤ p_s)
-
+    for s in paths(S_j)
+        @constraint(model, 0 ≤ π[s...] ≤ probability(s))
         for j in D
-            S_I_j = (s[i] for i in [I_j[j]; j])
-            @constraint(model, π[s] ≤ z[j][S_I_j...])
+            @constraint(model, π[s...] ≤ z[j][s[[I_j[j]; j]]...])
         end
     end
 
-    if specs.lazy_constraints
-        # TODO:
+    if specs.probability_sum_cut
+        MOI.set(
+            model, MOI.LazyConstraintCallback(),
+            cb_data -> probability_sum_cut(cb_data, model, π, ϵ))
+    end
+
+    if specs.num_paths > 0
+        MOI.set(
+            model, MOI.LazyConstraintCallback(),
+            cb_data -> number_of_paths_cut(cb_data, model, π, ϵ, probability, specs.num_paths, S_j))
     end
 
     return model

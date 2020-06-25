@@ -32,7 +32,7 @@ V = [5]
 A = [1 => 3, 1 => 4, 2 => 3, 2 => 4, 3 => 5, 4 => 5]
 S_j = [2, 2, 3, 3]
 
-specs = Specs(lazy_constraints=false)
+specs = Specs()
 graph = DecisionGraph(C, D, V, A, S_j)
 I_j = graph.I_j
 
