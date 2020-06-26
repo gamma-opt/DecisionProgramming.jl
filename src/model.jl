@@ -176,6 +176,10 @@ function DecisionModel(specs::Specs, graph::DecisionGraph, params::Params)
         end
     end
 
+    # Add variable to the model.obj_dict.
+    model[:π] = π
+    model[:z] = z
+
     # --- Objectives ---
     @objective(model, Max, sum(π[s...] * utility(s) for s in paths(S_j)))
 
