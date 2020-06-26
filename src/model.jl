@@ -3,8 +3,10 @@ using Base.Iterators: product
 
 
 # --- Functions ---
-function paths(lengths)
-    product(UnitRange.(1, lengths)...)
+
+"""Generate all paths."""
+function paths(lengths::Vector{T}) where T <: Integer
+    product(UnitRange{T}.(1, lengths)...)
 end
 
 
@@ -13,24 +15,37 @@ end
 """Defines the DecisionModel type."""
 const DecisionModel = Model
 
-"""Specification for different model scenarios. For example, we can specify toggling on and off certain constraints and objectives.
+"""Specification for different model scenarios. For example, we can specify toggling on and off constraints and objectives.
+
+# Arguments
+- `probability_sum_cut::Bool`: Toggle probability sum cuts on and off.
+- `num_paths::Int`: If larger than zero, enables the number of paths cuts using the supplied value.
 """
 @with_kw struct Specs
     probability_sum_cut::Bool = false
     num_paths::Int = 0
 end
 
-"""Directed, acyclic graph."""
+"""Decision graph is a directed, acyclic graph.
+
+# Arguments
+- `C::Vector{Int}`: Change nodes.
+- `D::Vector{Int}`: Decision nodes.
+- `V::Vector{Int}`: Value nodes.
+- `A::Vector{Pair{Int, Int}}`: Arcs between nodes.
+- `S_j::Vector{Int}`: Number of states.
+- `I_j::Vector{Vector{Int}}`: Information set.
+"""
 struct DecisionGraph
-    C::Vector{Int} # Change nodes
-    D::Vector{Int} # Decision nodes
-    V::Vector{Int} # Value nodes
-    A::Vector{Pair{Int, Int}} # Arcs
-    S_j::Vector{Int} # Number of states per node j∈C∪D
-    I_j::Vector{Vector{Int}} # Information set
+    C::Vector{Int}
+    D::Vector{Int}
+    V::Vector{Int}
+    A::Vector{Pair{Int, Int}}
+    S_j::Vector{Int}
+    I_j::Vector{Vector{Int}}
 end
 
-"""Validate decision graph."""
+"""Construct and validate a decision graph."""
 function DecisionGraph(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vector{Pair{Int, Int}}, S_j::Vector{Int})
     # Enforce sorted and unique elements.
     C = sort(unique(C))
@@ -67,26 +82,26 @@ function DecisionGraph(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vector
     DecisionGraph(C, D, V, A, S_j, I_j)
 end
 
-"""Probabilities: X[j][s_I(j);s_j], ∀j∈C"""
-struct Probabilities
+"""Model parameters.
+
+# Arguments
+- `X`: Probabilities, X[j][s_I(j);s_j], ∀j∈C
+- `Y`: Consequences, Y[j][s_I(j)], ∀j∈V
+- `U`: Utilities map consequences to real valued outcomes.
+"""
+struct Params
     X::Dict{Int, Array{Float64}}
-end
-
-"""Consequences: Y[j][s_I(j)], ∀j∈V"""
-struct Consequences
     Y::Dict{Int, Array{Int}}
-end
-
-"""Utilities. Map each consequence to a utility."""
-struct Utilities
     U::Vector{Float64}
 end
 
-"""Validate probabilities"""
-function Probabilities(graph::DecisionGraph, X::Dict{Int, Array{Float64}})
-    @unpack C, S_j, I_j = graph
+"""Construct and validate model parameters."""
+function Params(graph::DecisionGraph, X::Dict{Int, Array{Float64}}, Y::Dict{Int, Array{Int}}, U::Vector{Float64})
+    @unpack C, V, S_j, I_j = graph
+
+    # Validate Probabilities
     for j in C
-        S_I = [S_j[i] for i in I_j[j]]
+        S_I = S_j[I_j[j]]
         S_I_j = [S_I; S_j[j]]
         size(X[j]) == Tuple(S_I_j) || error("Array should be dimension |S_I(j)|*|S_j|.")
         all(x ≥ 0 for x in X[j]) || error("Probabilities should be positive.")
@@ -94,25 +109,16 @@ function Probabilities(graph::DecisionGraph, X::Dict{Int, Array{Float64}})
             sum(X[j][[s_I...; s]...] for s in 1:S_j[j]) ≈ 1 || error("probabilities shoud sum to one.")
         end
     end
-    Probabilities(X)
-end
 
-"""Validate consequences"""
-function Consequences(graph::DecisionGraph, Y::Dict{Int, Array{Int}})
-    @unpack V, S_j, I_j = graph
+    # Validate consequences
     for j in V
-        S_I = [S_j[i] for i in I_j[j]]
-        size(Y[j]) == Tuple(S_I) || error("Array should be dimension |S_I(j)|.")
+        size(Y[j]) == Tuple(S_j[I_j[j]]) || error("Array should be dimension |S_I(j)|.")
     end
-    Consequences(Y)
-end
 
-"""Validate utilities."""
-function Utilities(graph::DecisionGraph, U::Vector{Float64})
-    # Each consequence should be mapped to a utility.
-    @unpack S_j, I_j, V = graph
+    # Validate utilities
     length(U) == sum(prod(S_j[j] for j in I_j[i]) for i in V) || error("")
-    return Utilities(U)
+
+    Params(X, Y, U)
 end
 
 """Probability sum lazy cut."""
@@ -136,16 +142,9 @@ function number_of_paths_cut(cb_data, model, π, ϵ, p, num_paths, S_j)
 end
 
 """Initializes the DecisionModel."""
-function DecisionModel(specs::Specs, graph::DecisionGraph, probabilities::Probabilities, consequences::Consequences, utilities::Utilities)
+function DecisionModel(specs::Specs, graph::DecisionGraph, params::Params)
     @unpack C, D, V, A, S_j, I_j = graph
-    @unpack X = probabilities
-    @unpack Y = consequences
-    @unpack U = utilities
-
-    # Affine transformion of utilities to non-negative.
-    if minimum(U) < 0
-        U += abs(minimum(U))
-    end
+    @unpack X, Y, U = params
 
     """Upper bound of probability of a path."""
     probability(s) = prod(X[j][s[[I_j[j]; j]]...] for j in C)
@@ -153,8 +152,11 @@ function DecisionModel(specs::Specs, graph::DecisionGraph, probabilities::Probab
     # Minimum path probability
     ϵ = minimum(probability(s) for s in paths(S_j))
 
-    """Total utility of a path"""
-    utility(s) = sum(U[Y[v][s[I_j[v]]...]] for v in V)
+    # Affine transformion to non-negative utility function.
+    U′ = U .- minimum(U)
+
+    """Total utility of a path."""
+    utility(s) = sum(U′[Y[v][s[I_j[v]]...]] for v in V)
 
     # Initialize the model
     model = DecisionModel()

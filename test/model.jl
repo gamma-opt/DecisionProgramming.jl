@@ -39,16 +39,15 @@ I_j = graph.I_j
 X = Dict{Int, Array{Float64}}(
     i => random_probabilites([S_j[j] for j in I_j[i]], S_j[i])
     for i in C)
-probabilities = Probabilities(graph, X)
 
 num_utilities = sum(prod(S_j[j] for j in I_j[i]) for i in V)
 
 Y = Dict{Int, Array{Int}}(
     i => random_consequences([S_j[j] for j in I_j[i]], 1:num_utilities)
     for i in V)
-consequences = Consequences(graph, Y)
 
 U = rand(num_utilities)
-utilities = Utilities(graph, U)
 
-model = DecisionModel(specs, graph, probabilities, consequences, utilities)
+params = Params(graph, X, Y, U)
+
+model = DecisionModel(specs, graph, params)
