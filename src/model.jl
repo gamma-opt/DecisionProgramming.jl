@@ -162,7 +162,7 @@ function DecisionModel(specs::Specs, graph::DecisionGraph, params::Params)
     model = DecisionModel()
 
     # --- Variables ---
-    π = fill(VariableRef(model), S_j...)
+    π = Array{VariableRef}(undef, S_j...)
     for s in paths(S_j)
         π[s...] = @variable(model, base_name="π[$(s)]")
     end
@@ -170,16 +170,14 @@ function DecisionModel(specs::Specs, graph::DecisionGraph, params::Params)
     z = Dict{Int, Array{VariableRef}}()
     for j in D
         S_I_j = S_j[[I_j[j]; j]]
-        z[j] = fill(VariableRef(model), S_I_j...)
+        z[j] = Array{VariableRef}(undef, S_I_j...)
         for s in paths(S_I_j)
             z[j][s...] = @variable(model, binary=true, base_name="z[$j,$(s)]")
         end
     end
 
     # --- Objectives ---
-    @expression(model, expected_utility,
-        sum(π[s...] * utility(s) for s in paths(S_j)))
-    @objective(model, Max, expected_utility)
+    @objective(model, Max, sum(π[s...] * utility(s) for s in paths(S_j)))
 
     # --- Constraints ---
     for j in D
@@ -195,6 +193,7 @@ function DecisionModel(specs::Specs, graph::DecisionGraph, params::Params)
         end
     end
 
+    # --- Lazy Constraints ---
     if specs.probability_sum_cut
         MOI.set(
             model, MOI.LazyConstraintCallback(),
