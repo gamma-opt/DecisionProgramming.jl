@@ -4,9 +4,9 @@ using Base.Iterators: product
 
 # --- Functions ---
 
-"""Generate all paths."""
-function paths(lengths::Vector{T}) where T <: Integer
-    product(UnitRange{T}.(1, lengths)...)
+"""Iterate over paths."""
+function paths(num_states::Vector{T}) where T <: Integer
+    product(UnitRange{T}.(1, num_states)...)
 end
 
 
@@ -146,7 +146,7 @@ function DecisionModel(specs::Specs, graph::DecisionGraph, params::Params)
     @unpack C, D, V, A, S_j, I_j = graph
     @unpack X, Y, U = params
 
-    """Upper bound of probability of a path."""
+    # Upper bound of probability of a path.
     probability(s) = prod(X[j][s[[I_j[j]; j]]...] for j in C)
 
     # Minimum path probability
@@ -155,7 +155,7 @@ function DecisionModel(specs::Specs, graph::DecisionGraph, params::Params)
     # Affine transformion to non-negative utility function.
     U′ = U .- minimum(U)
 
-    """Total utility of a path."""
+    # Total, non-negative utility of a path.
     utility(s) = sum(U′[Y[v][s[I_j[v]]...]] for v in V)
 
     # Initialize the model
@@ -164,7 +164,7 @@ function DecisionModel(specs::Specs, graph::DecisionGraph, params::Params)
     # --- Variables ---
     π = Array{VariableRef}(undef, S_j...)
     for s in paths(S_j)
-        π[s...] = @variable(model, base_name="π[$(s)]")
+        π[s...] = @variable(model)
     end
 
     z = Dict{Int, Array{VariableRef}}()
@@ -172,7 +172,7 @@ function DecisionModel(specs::Specs, graph::DecisionGraph, params::Params)
         S_I_j = S_j[[I_j[j]; j]]
         z[j] = Array{VariableRef}(undef, S_I_j...)
         for s in paths(S_I_j)
-            z[j][s...] = @variable(model, binary=true, base_name="z[$j,$(s)]")
+            z[j][s...] = @variable(model, binary=true)
         end
     end
 

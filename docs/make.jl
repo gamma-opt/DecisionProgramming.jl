@@ -2,7 +2,7 @@ using Documenter
 using DecisionProgramming
 
 makedocs(
-    sitename = "DecisionProgramming",
+    sitename = "DecisionProgramming.jl",
     format = Documenter.HTML(),
     modules = [DecisionProgramming],
     authors = "Jaan Tollander de Balsch",
