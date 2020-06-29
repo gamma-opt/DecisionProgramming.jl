@@ -8,7 +8,8 @@ makedocs(
     authors = "Jaan Tollander de Balsch",
     pages = [
         "Home" => "index.md",
-        "API" => "api.md"
+        "model.md",
+        "api.md"
     ]
 )
 
