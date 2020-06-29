@@ -1,5 +1,6 @@
 # API
 ```@docs
+paths
 Specs
 DecisionGraph
 DecisionGraph(::Vector{Int}, ::Vector{Int}, ::Vector{Int}, ::Vector{Pair{Int, Int}}, ::Vector{Int})

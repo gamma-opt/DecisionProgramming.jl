@@ -4,6 +4,7 @@ include("model.jl")
 export DecisionModel,
     Specs,
     DecisionGraph,
-    Params
+    Params,
+    paths
 
 end # module
