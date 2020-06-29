@@ -1,8 +1,6 @@
 using Test, Random
 using Base.Iterators: product
-
-include(joinpath(dirname(@__DIR__), "src", "model.jl"))
-
+using DecisionProgramming
 
 Random.seed!(111)
 
@@ -51,3 +49,5 @@ U = rand(num_utilities)
 params = Params(graph, X, Y, U)
 
 model = DecisionModel(specs, graph, params)
+
+@test true

@@ -1,3 +1,5 @@
 using Test
 
-include("model.jl")
+@testset "model.jl" begin
+    include("model.jl")
+end
