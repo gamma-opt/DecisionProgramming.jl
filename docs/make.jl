@@ -9,6 +9,9 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "model.md",
+        "Examples" => Any[
+            "examples/pig-breeding.md"
+        ],
         "api.md"
     ]
 )
