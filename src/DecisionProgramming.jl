@@ -3,7 +3,7 @@ module DecisionProgramming
 include("model.jl")
 export DecisionModel,
     Specs,
-    DecisionGraph,
+    InfluenceDiagram,
     Params,
     paths
 

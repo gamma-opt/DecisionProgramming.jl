@@ -26,7 +26,7 @@ const DecisionModel = Model
     num_paths::Int = 0
 end
 
-"""Decision graph is a directed, acyclic graph.
+"""Influence diagram is a directed, acyclic graph.
 
 # Arguments
 - `C::Vector{Int}`: Change nodes.
@@ -36,7 +36,7 @@ end
 - `S_j::Vector{Int}`: Number of states.
 - `I_j::Vector{Vector{Int}}`: Information set.
 """
-struct DecisionGraph
+struct InfluenceDiagram
     C::Vector{Int}
     D::Vector{Int}
     V::Vector{Int}
@@ -45,8 +45,8 @@ struct DecisionGraph
     I_j::Vector{Vector{Int}}
 end
 
-"""Construct and validate a decision graph."""
-function DecisionGraph(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vector{Pair{Int, Int}}, S_j::Vector{Int})
+"""Construct and validate an influence diagram."""
+function InfluenceDiagram(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vector{Pair{Int, Int}}, S_j::Vector{Int})
     # Enforce sorted and unique elements.
     C = sort(unique(C))
     D = sort(unique(D))
@@ -55,18 +55,17 @@ function DecisionGraph(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vector
 
     # Sizes
     n = length(C) + length(D)
-    n_V = length(V)
+    N = n + length(V)
 
     ## Validate nodes
-    isempty(C ∩ D) || error("The sets of change and decision nodes should be disjoint.")
     Set(C ∪ D) == Set(1:n) || error("Union of change and decision nodes should be {1,...,n}.")
-    Set(V) == Set((n+1):(n+n_V)) || error("Values nodes should be {n+1,...,n+n_V}.")
+    Set(V) == Set((n+1):N) || error("Values nodes should be {n+1,...,n+|V|}.")
 
     ## Validate arcs
     # 1) Inclusion A ⊆ N×N.
     # 2) Graph is acyclic.
     # 3) There are no arcs from chance or decision nodes to value nodes.
-    all(1 ≤ i < j ≤ (n+n_V) for (i, j) in A) || error("Forall (i,j)∈A we should have 1≤i<j≤n+n_V.")
+    all(1 ≤ i < j ≤ N for (i, j) in A) || error("Forall (i,j)∈A we should have 1≤i<j≤N.")
 
     ## Validate states
     # Each chance and decision node has a finite number of states
@@ -74,12 +73,12 @@ function DecisionGraph(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vector
     all(S_j[j] ≥ 1 for j in 1:n) || error("Each change and decision node should have finite number of states.")
 
     # Construct the information set
-    I_j = [Vector{Int}() for i in 1:(n+n_V)]
+    I_j = [Vector{Int}() for i in 1:N]
     for (i, j) in A
         push!(I_j[j], i)
     end
 
-    DecisionGraph(C, D, V, A, S_j, I_j)
+    InfluenceDiagram(C, D, V, A, S_j, I_j)
 end
 
 """Model parameters.
@@ -96,8 +95,8 @@ struct Params
 end
 
 """Construct and validate model parameters."""
-function Params(graph::DecisionGraph, X::Dict{Int, Array{Float64}}, Y::Dict{Int, Array{Int}}, U::Vector{Float64})
-    @unpack C, V, S_j, I_j = graph
+function Params(diagram::InfluenceDiagram, X::Dict{Int, Array{Float64}}, Y::Dict{Int, Array{Int}}, U::Vector{Float64})
+    @unpack C, V, S_j, I_j = diagram
 
     # Validate Probabilities
     for j in C
@@ -142,8 +141,8 @@ function number_of_paths_cut(cb_data, model, π, ϵ, p, num_paths, S_j)
 end
 
 """Initializes the DecisionModel."""
-function DecisionModel(specs::Specs, graph::DecisionGraph, params::Params)
-    @unpack C, D, V, A, S_j, I_j = graph
+function DecisionModel(specs::Specs, diagram::InfluenceDiagram, params::Params)
+    @unpack C, D, V, A, S_j, I_j = diagram
     @unpack X, Y, U = params
 
     # Upper bound of probability of a path.
