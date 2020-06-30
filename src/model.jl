@@ -115,7 +115,8 @@ function Params(diagram::InfluenceDiagram, X::Dict{Int, Array{Float64}}, Y::Dict
     end
 
     # Validate utilities
-    length(U) == sum(prod(S_j[j] for j in I_j[i]) for i in V) || error("")
+    # TODO: num unique consequences
+    length(U) ≤ sum(prod(S_j[j] for j in I_j[i]) for i in V) || error("")
 
     Params(X, Y, U)
 end

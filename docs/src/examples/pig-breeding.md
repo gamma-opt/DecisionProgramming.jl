@@ -38,13 +38,13 @@ $$ℙ(t_i = negative ∣ h_i = healthy) = 0.9$$
 
 $$ℙ(h_1 = ill)=0.1$$
 
-$$ℙ(h_i = ill ∣ h_i = healthy, d_i = pass)=0.2, i≥2$$
+$$ℙ(h_i = ill ∣ d_{i-1} = pass, h_{i-1} = healthy)=0.2,\quad i≥2$$
 
-$$ℙ(h_i = ill ∣ h_i = healthy, d_i = treat)=0.1, i≥2$$
+$$ℙ(h_i = ill ∣ d_{i-1} = treat, h_{i-1} = healthy)=0.1,\quad i≥2$$
 
-$$ℙ(h_i = ill ∣ h_i = ill, d_i = pass)=0.9, i≥2$$
+$$ℙ(h_i = ill ∣ d_{i-1} = pass, h_{i-1} = ill)=0.9,\quad i≥2$$
 
-$$ℙ(h_i = ill ∣ h_i = ill, d_i = treat)=0.5, i≥2$$
+$$ℙ(h_i = ill ∣ d_{i-1} = treat, h_{i-1} = ill)=0.5,\quad i≥2$$
 
 Utilities
 
