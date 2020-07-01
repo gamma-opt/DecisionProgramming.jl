@@ -3,10 +3,10 @@ using JuMP, Gurobi
 using DecisionProgramming
 
 N = 4 # Number of months
-health = [3*i - 2 for i in 1:N] # health of the pig
-test = [3*i - 1 for i in 1:(N-1)] # whether to test the pig
-treat = [3*i for i in 1:(N-1)] # whether to treat the pig
-cost = [(3*N - 2) + i for i in 1:(N-1)] # treatment cost
+health = [3*k - 2 for k in 1:N] # health of the pig
+test = [3*k - 1 for k in 1:(N-1)] # whether to test the pig
+treat = [3*k for k in 1:(N-1)] # whether to treat the pig
+cost = [(3*N - 2) + k for k in 1:(N-1)] # treatment cost
 price = [(3*N - 2) + N] # sell price
 
 C = health ∪ test
@@ -22,8 +22,8 @@ add_arcs(health[1:end-1], test)
 add_arcs(treat, health[2:end])
 add_arcs(treat, cost)
 add_arcs(health[end], price)
-append!(A, (test[i] => treat[j] for i in 1:(N-1) for j in i:(N-1)))
-append!(A, (treat[i] => treat[j] for i in 1:((N-1)-1) for j in (i+1):(N-1)))
+append!(A, (test[k] => treat[k2] for k in 1:(N-1) for k2 in k:(N-1)))
+append!(A, (treat[k] => treat[k2] for k in 1:((N-1)-1) for k2 in (k+1):(N-1)))
 
 # Construct states
 S_j = zeros(Int, length(C)+length(D))
@@ -68,6 +68,10 @@ for (i, j) in zip(health, test)
 end
 
 # Consequences
+# 1 => treatment consequence
+# 2 => no-treament consequence
+# 3 => ill at N-month consequence
+# 4 => healthy at N-month consequence
 Y = Dict{Int, Array{Int}}()
 for i in cost
     Y[i] = [1, 2]
@@ -104,7 +108,7 @@ optimize!(model)
 # -- Results ---
 I_j = diagram.I_j
 S_j = diagram.S_j
-π = model[:π]
+πsol = model[:π]
 z = model[:z]
 
 utility(s) = sum(U[Y[v][s[I_j[v]]...]] for v in V)
@@ -113,12 +117,18 @@ println()
 println("--- Active Paths ---")
 println("path | probability | utility | expected utility")
 for s in paths(S_j)
-    πval = value(π[s...])
+    πval = value(πsol[s...])
     isapprox(πval, 0, atol=1e-3) && continue
     u = utility(s)
     eu = πval * u
     @printf("%s | %0.3f | %0.3f | %0.3f \n", s, πval, u, eu)
 end
 
-expected_utility = sum(value(π[s...]) * utility(s) for s in paths(S_j))
+expected_utility = sum(value(πsol[s...]) * utility(s) for s in paths(S_j))
 println("Expected utility: ", expected_utility)
+
+# for i in D
+#     println("Decisions at node $i.")
+#     # TODO: which subpaths are equal to 1
+#     zval = value.(z[i])
+# end

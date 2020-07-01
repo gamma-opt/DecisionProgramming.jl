@@ -22,40 +22,40 @@ The diagram has the following states
 
 Change nodes and states
 
-* State $h_i$ represents the health of the pig at month $i=1,...,N$. Two possible states, *ill* and *healthy*.
-* State $t_i$ represents the result from testing the pig at month $i=1,...,N-1$. Two possible states, *positive*, and *negative*.
+* State $h_k$ represents the health of the pig at month $k=1,...,N$. Two possible states, *ill* and *healthy*.
+* State $t_k$ represents the result from testing the pig at month $k=1,...,N-1$. Two possible states, *positive*, and *negative*.
 
 Decision nodes and states
 
-* State $d_i$ represents the decision to treat the pig with injection at month $i=1,...,N-1$. Two possible states, *treat* and *pass*.
+* State $d_k$ represents the decision to treat the pig with injection at month $k=1,...,N-1$. Two possible states, *treat* and *pass*.
 
 Value nodes and states
 
-* Consequences $u_i$ represents the consequences from treating or not treating the pig at month $i=1,...,N-1$.
+* Consequences $u_k$ represents the consequences from treating or not treating the pig at month $k=1,...,N-1$.
 * Consequence $u_N$ represents the consequence from health of the pig at month $N$.
 
 Influence is represented by the arcs. Dashed arcs represent *no forgetting* principle.
 
 Probabilities
 
-$$ℙ(t_i = positive ∣ h_i = ill) = 0.8,\quad i=1,...,N-1$$
+$$ℙ(t_k = positive ∣ h_k = ill) = 0.8,\quad k=1,...,N-1$$
 
-$$ℙ(t_i = negative ∣ h_i = healthy) = 0.9,\quad i=1,...,N-1$$
+$$ℙ(t_k = negative ∣ h_k = healthy) = 0.9,\quad k=1,...,N-1$$
 
 $$ℙ(h_1 = ill)=0.1$$
 
-$$ℙ(h_i = ill ∣ d_{i-1} = pass, h_{i-1} = healthy)=0.2,\quad i=2,...,N$$
+$$ℙ(h_k = ill ∣ d_{k-1} = pass, h_{k-1} = healthy)=0.2,\quad k=2,...,N$$
 
-$$ℙ(h_i = ill ∣ d_{i-1} = treat, h_{i-1} = healthy)=0.1,\quad i=2,...,N$$
+$$ℙ(h_k = ill ∣ d_{k-1} = treat, h_{k-1} = healthy)=0.1,\quad k=2,...,N$$
 
-$$ℙ(h_i = ill ∣ d_{i-1} = pass, h_{i-1} = ill)=0.9,\quad i=2,...,N$$
+$$ℙ(h_k = ill ∣ d_{k-1} = pass, h_{k-1} = ill)=0.9,\quad k=2,...,N$$
 
-$$ℙ(h_i = ill ∣ d_{i-1} = treat, h_{i-1} = ill)=0.5,\quad i=2,...,N$$
+$$ℙ(h_k = ill ∣ d_{k-1} = treat, h_{k-1} = ill)=0.5,\quad k=2,...,N$$
 
 Utilities
 
-- Cost of treating the pig $U(Y(d_i=treat))=-100$ at month $i=1,...,N-1$
-- Cost of not treating the pig $U(Y(d_i=pass))=0$ at month $i=1,...,N-1$
+- Cost of treating the pig $U(Y(d_k=treat))=-100$ at month $k=1,...,N-1$
+- Cost of not treating the pig $U(Y(d_k=pass))=0$ at month $k=1,...,N-1$
 - Price of unhealthy pig $U(Y(h_N=ill))=300$
 - Price of healthy pig $U(Y(h_N=healthy))=1000$
 
