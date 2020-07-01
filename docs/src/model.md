@@ -1,8 +1,8 @@
 # Decision Model
-The model is based on [^1]
+The model is based on [^1], sections 3 and 5
 
-## Decision Graph
-**Decision graph** is defined as a directed, acyclic graph
+## Influence Diagram
+**Influence diagram** is defined as a directed, acyclic graph
 
 $$G=(N,A).$$
 
@@ -10,7 +10,7 @@ The set of nodes $N=C∪D∪V$ consists of **changes nodes** $C,$ **decision nod
 
 We index the nodes such that $C∪D=\{1,...,n\}$ and $V=\{n+1,...,n+|V|\}$ where $n=|C|+|D|.$
 
-The set of **edges** consists of pairs such that
+The set of **arcs** consists of pairs such that
 
 $$A⊆\{(i,j)∣1≤i<j≤|N|\}.$$
 
@@ -51,11 +51,11 @@ The set of **information paths** of node $j∈N$ is the product set of the state
 $$S_{I(j)}=∏_{i∈I(j)} S_i.$$
 
 ## Probabilities
-For chance node $j∈C$, the probability of state $s_j$ given information state $s_{I(j)}$ is denoted
+For each chance node $j∈C$, the **probability** of state $s_j$ given information state $s_{I(j)}$ is defined as
 
 $$ℙ(X_j=s_j∣X_{I(j)}=s_{I(j)})∈[0, 1].$$
 
-The upper bound of the probability of a path $s$ is defined as
+The **upper bound of the probability of a path** $s$ is defined as
 
 $$p(s) = ∏_{j∈C} ℙ(X_j=s_j∣X_{I(j)}=s_{I(j)}).$$
 
@@ -64,15 +64,15 @@ For each decision node $j∈D,$ a **local decision strategy** maps information p
 
 $$Z_j:S_{I(j)}↦S_j$$
 
-**Decision strategy** $Z$ contains one local decision strategy for each decision node. Set of all decision strategies is denoted $ℤ$
+**Decision strategy** $Z$ contains one local decision strategy for each decision node. Set of **all decision strategies** is denoted $ℤ.$
 
 ## Consequences
-For value node $j∈V$, the consequence given information state $S_{I(j)}$
+For each value node $j∈V$, the **consequence** given information state $S_{I(j)}$ is defined as
 
 $$Y_v:S_{I(j)}↦ℂ$$
 
 ## Utilities
-Utility function maps consequence to real-valued utilities
+The **utility function** maps consequence to real-valued utilities
 
 $$U:ℂ↦ℝ$$
 
@@ -80,11 +80,16 @@ Affine transformation to positive utilities
 
 $$U^′(c) = U(c) - \min_{c∈ℂ}U(c)$$
 
-The utility of a path
+The **utility of a path**
 
 $$\mathcal{U}(s) = ∑_{j∈V} U^′(Y_j(s_{I(j)}))$$
 
 ## Formulation
+Probability of path $π(s)$
+
+Decision strategy $Z_j(s_I(j))=s_j$ is equivalent with $z(s_j∣s_{I(j)})=1$
+
+Mixed-integer linear program
 
 $$\begin{aligned}
 \underset{Z∈ℤ}{\text{maximize}}\quad
@@ -96,13 +101,17 @@ $$\begin{aligned}
 & z(s_j∣s_{I(j)}) ∈ \{0,1\},\quad ∀j∈D, s_j∈S_j, s_{I(j)}∈S_{I(j)}
 \end{aligned}$$
 
-Probability of path $π(s)$
 
-Decision strategy $z(s_j∣s_{I(j)})$, equivalence
+## Results
+Active paths $s$ where $π(s)>0$
 
-Active path $s$ where $π(s)>0$
+Active states for each node $i∈C∪D$, robust recommendation
 
-## Indexing Paths
+
+## Lazy Cuts
+
+
+## Sizes
 States and paths
 
 *  $⋃_{i∈C} (S_{I(i)}×S_i)$ probability stages
@@ -116,8 +125,6 @@ Sizes
 *  $∑_{i∈D}|S_{I(i)}| |S_i|$ Number of decision stages
 *  $∑_{v∈V}|S_{I(v)}|$ Number of utility stages
 
-## Lazy Cuts
 
-
-# References
+## References
 [^1]: Salo, A., Andelmin, J., & Oliveira, F. (2019). Decision Programming for Multi-Stage Optimization under Uncertainty, 1–35. Retrieved from [http://arxiv.org/abs/1910.09196](http://arxiv.org/abs/1910.09196)
