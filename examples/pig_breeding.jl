@@ -2,11 +2,12 @@ using Printf
 using JuMP, Gurobi
 using DecisionProgramming
 
-health = [1, 4, 7, 10] # health of the pig
-test = [2, 5, 8] # whether to test the pig
-treat = [3, 6, 9] # whether to treat the pig
-cost = [11, 12, 13] # treatment cost
-price = [14] # sell price
+N = 4 # Number of months
+health = [3*i - 2 for i in 1:N] # health of the pig
+test = [3*i - 1 for i in 1:(N-1)] # whether to test the pig
+treat = [3*i for i in 1:(N-1)] # whether to treat the pig
+cost = [(3*N - 2) + i for i in 1:(N-1)] # treatment cost
+price = [(3*N - 2) + N] # sell price
 
 C = health ∪ test
 D = treat
@@ -21,9 +22,8 @@ add_arcs(health[1:end-1], test)
 add_arcs(treat, health[2:end])
 add_arcs(treat, cost)
 add_arcs(health[end], price)
-n = length(test)
-append!(A, (test[i] => treat[j] for i in 1:n for j in i:n))
-append!(A, (treat[i] => treat[j] for i in 1:(n-1) for j in (i+1):n))
+append!(A, (test[i] => treat[j] for i in 1:(N-1) for j in i:(N-1)))
+append!(A, (treat[i] => treat[j] for i in 1:((N-1)-1) for j in (i+1):(N-1)))
 
 # Construct states
 S_j = zeros(Int, length(C)+length(D))
@@ -101,16 +101,17 @@ optimizer = optimizer_with_attributes(
 set_optimizer(model, optimizer)
 optimize!(model)
 
+# -- Results ---
+I_j = diagram.I_j
+S_j = diagram.S_j
+π = model[:π]
+z = model[:z]
+
+utility(s) = sum(U[Y[v][s[I_j[v]]...]] for v in V)
+
 println()
 println("--- Active Paths ---")
 println("path | probability | utility | expected utility")
-
-I_j = diagram.I_j
-S_j = diagram.S_j
-
-utility(s) = sum(U[Y[v][s[I_j[v]]...]] for v in V)
-π = model[:π]
-
 for s in paths(S_j)
     πval = value(π[s...])
     isapprox(πval, 0, atol=1e-3) && continue
