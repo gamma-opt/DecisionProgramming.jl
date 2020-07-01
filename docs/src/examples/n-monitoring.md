@@ -16,16 +16,17 @@ Diagram $N≥1$ $k=1,...,N$
 
 States
 
-- Load $L$, {low, high}
-- Actions $A_k$
-- Risk of failure $F$, {failure, success}
-- Reports of load $R_k$, {low, high}
+- Load states $L$ are *low* and *high*
+- Action states $A_k$ are the decisions to fortificate, *no* and *yes*
+- Failure states $F$ are *failure* and *success*
+- Report state $R_k$ reports the load state, *low* and *high*
 - Target $T$
 
 Utility
 
 - Failure $0$
 - Success $100$
+- Fortification costs
 
 Probabilities
 
@@ -35,15 +36,25 @@ $$ℙ(L=high)=x$$
 
 $$y∼U(0,1)$$
 
-$$ℙ(R_k=high∣L=high)+ℙ(R_k=low∣L=low)=\max\{y,y-1\}$$
+$$ℙ(R_k=high∣L=high)=\max\{y,y-1\}$$
+
+$$ℙ(R_k=low∣L=low)=\max\{y,y-1\}$$
 
 $$z,w∼U(0,1)$$
 
 $$c_k∼U(0,1)$$
 
-$$ℙ(F=failure∣L=high, A_1,...,A_N)=\frac{z}{\exp(∑_{k∈A} c_k)}$$
+$$
+f(A_k) =
+\begin{cases}
+0, & A_k=no \\
+c_k, & A_k=yes
+\end{cases}
+$$
 
-$$ℙ(F=failure∣L=low, A_1,...,A_N)=\frac{w}{\exp(∑_{k∈A} c_k)}$$
+$$ℙ(F=failure∣L=high, A_1,...,A_N)=\frac{z}{\exp(∑_{k=1,...,N} f(A_k))}$$
+
+$$ℙ(F=failure∣L=low, A_1,...,A_N)=\frac{w}{\exp(∑_{k=1,...,N} f(A_k))}$$
 
 
 ## References
