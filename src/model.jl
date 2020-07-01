@@ -122,22 +122,32 @@ function Params(diagram::InfluenceDiagram, X::Dict{Int, Array{Float64}}, Y::Dict
 end
 
 """Probability sum lazy cut."""
-function probability_sum_cut(cb_data, model, π, ϵ)
-    # TODO: add only once
-    πsum = sum(callback_value(cb_data, π[s]) for s in eachindex(π))
-    if !isapprox(πsum, 1.0, atol=ϵ)
-        con = @build_constraint(sum(π) == 1.0)
-        MOI.submit(model, MOI.LazyConstraint(cb_data), con)
+function probability_sum_cut()
+    # Add the constraints only once
+    flag = false
+    function probability_sum_cut(cb_data, model, π, ϵ)
+        flag && return
+        πsum = sum(callback_value(cb_data, π[s]) for s in eachindex(π))
+        if !isapprox(πsum, 1.0, atol=ϵ)
+            con = @build_constraint(sum(π) == 1.0)
+            MOI.submit(model, MOI.LazyConstraint(cb_data), con)
+            flag = true
+        end
     end
 end
 
 """Number of paths lazy cut."""
-function number_of_paths_cut(cb_data, model, π, ϵ, p, num_paths, S_j)
-    # TODO: add only once
-    πnum = sum(callback_value(cb_data, π[s]) >= ϵ for s in eachindex(π))
-    if !isapprox(πnum, num_paths, atol = 0.9)
-        con = @build_constraint(sum(π[s] / p(s) for s in paths(S_j)) == num_paths)
-        MOI.submit(model, MOI.LazyConstraint(cb_data), con)
+function number_of_paths_cut()
+    # Add the constraints only once
+    flag = false
+    function number_of_paths_cut(cb_data, model, π, ϵ, p, num_paths, S_j)
+        flag && return
+        πnum = sum(callback_value(cb_data, π[s]) >= ϵ for s in eachindex(π))
+        if !isapprox(πnum, num_paths, atol = 0.9)
+            con = @build_constraint(sum(π[s] / p(s) for s in paths(S_j)) == num_paths)
+            MOI.submit(model, MOI.LazyConstraint(cb_data), con)
+            flag = true
+        end
     end
 end
 
@@ -201,13 +211,13 @@ function DecisionModel(specs::Specs, diagram::InfluenceDiagram, params::Params)
     if specs.probability_sum_cut
         MOI.set(
             model, MOI.LazyConstraintCallback(),
-            cb_data -> probability_sum_cut(cb_data, model, π, ϵ))
+            cb_data -> probability_sum_cut()(cb_data, model, π, ϵ))
     end
 
     if specs.num_paths > 0
         MOI.set(
             model, MOI.LazyConstraintCallback(),
-            cb_data -> number_of_paths_cut(cb_data, model, π, ϵ, probability, specs.num_paths, S_j))
+            cb_data -> number_of_paths_cut()(cb_data, model, π, ϵ, probability, specs.num_paths, S_j))
     end
 
     return model
