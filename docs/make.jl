@@ -11,6 +11,7 @@ makedocs(
         "model.md",
         "Examples" => Any[
             "examples/pig-breeding.md"
+            "examples/n-monitoring.md"
         ],
         "api.md"
     ]
