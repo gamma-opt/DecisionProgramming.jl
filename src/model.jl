@@ -84,18 +84,16 @@ end
 """Model parameters.
 
 # Arguments
-- `X`: Probabilities, X[j][s_I(j);s_j], ∀j∈C
-- `Y`: Consequences, Y[j][s_I(j)], ∀j∈V
-- `U`: Utilities map consequences to real valued outcomes.
+- `X`: Probabilities
+- `Y`: Consequences
 """
 struct Params
     X::Dict{Int, Array{Float64}}
-    Y::Dict{Int, Array{Int}}
-    U::Vector{Float64}
+    Y::Dict{Int, Array{Float64}}
 end
 
 """Construct and validate model parameters."""
-function Params(diagram::InfluenceDiagram, X::Dict{Int, Array{Float64}}, Y::Dict{Int, Array{Int}}, U::Vector{Float64})
+function Params(diagram::InfluenceDiagram, X::Dict{Int, Array{Float64}}, Y::Dict{Int, Array{Float64}})
     @unpack C, V, S_j, I_j = diagram
 
     # Validate Probabilities
@@ -114,11 +112,7 @@ function Params(diagram::InfluenceDiagram, X::Dict{Int, Array{Float64}}, Y::Dict
         size(Y[j]) == Tuple(S_j[I_j[j]]) || error("Array should be dimension |S_I(j)|.")
     end
 
-    # Validate utilities
-    # TODO: num unique consequences
-    length(U) ≤ sum(prod(S_j[j] for j in I_j[i]) for i in V) || error("")
-
-    Params(X, Y, U)
+    Params(X, Y)
 end
 
 """Probability sum lazy cut."""
@@ -154,7 +148,7 @@ end
 """Initializes the DecisionModel."""
 function DecisionModel(specs::Specs, diagram::InfluenceDiagram, params::Params)
     @unpack C, D, V, A, S_j, I_j = diagram
-    @unpack X, Y, U = params
+    @unpack X, Y = params
 
     # Upper bound of probability of a path.
     probability(s) = prod(X[j][s[[I_j[j]; j]]...] for j in C)
@@ -163,10 +157,11 @@ function DecisionModel(specs::Specs, diagram::InfluenceDiagram, params::Params)
     ϵ = minimum(probability(s) for s in paths(S_j))
 
     # Affine transformion to non-negative utility function.
-    U′ = U .- minimum(U)
+    v_min = minimum(minimum(v) for (k, v) in Y)
+    Y′ = Dict(k => v .- v_min for (k, v) in Y)
 
     # Total, non-negative utility of a path.
-    utility(s) = sum(U′[Y[v][s[I_j[v]]...]] for v in V)
+    utility(s) = sum(Y′[v][s[I_j[v]]...] for v in V)
 
     # Initialize the model
     model = DecisionModel()

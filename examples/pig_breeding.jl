@@ -2,6 +2,7 @@ using Printf
 using JuMP, Gurobi
 using DecisionProgramming
 
+# Parameters
 N = 4 # Number of months
 health = [3*k - 2 for k in 1:N] # health of the pig
 test = [3*k - 1 for k in 1:(N-1)] # whether to test the pig
@@ -9,6 +10,7 @@ treat = [3*k for k in 1:(N-1)] # whether to treat the pig
 cost = [(3*N - 2) + k for k in 1:(N-1)] # treatment cost
 price = [(3*N - 2) + N] # sell price
 
+# Influence diagram parameters
 C = health ∪ test
 D = treat
 V = cost ∪ price
@@ -72,21 +74,18 @@ end
 # 2 => no-treament consequence
 # 3 => ill at N-month consequence
 # 4 => healthy at N-month consequence
-Y = Dict{Int, Array{Int}}()
+Y = Dict{Int, Array{Float64}}()
 for i in cost
-    Y[i] = [1, 2]
+    Y[i] = [-100, 0]
 end
 for i in price
-    Y[i] = [3, 4]
+    Y[i] = [300, 1000]
 end
-
-# Utilities
-U = [-100, 0, 300, 1000]
 
 # Model
 diagram = InfluenceDiagram(C, D, V, A, S_j)
 specs = Specs()
-params = Params(X, Y, U)
+params = Params(diagram, X, Y)
 model = DecisionModel(specs, diagram, params)
 
 
@@ -111,7 +110,7 @@ S_j = diagram.S_j
 πsol = model[:π]
 z = model[:z]
 
-utility(s) = sum(U[Y[v][s[I_j[v]]...]] for v in V)
+utility(s) = sum(Y[v][s[I_j[v]]...] for v in V)
 
 println()
 println("--- Active Paths ---")

@@ -40,8 +40,8 @@ Utility from consequences at target $T$ from failure state $F$
 
 $$U(Y(F)) =
 \begin{cases}
-100, & F = success \\
-0, & F = failure
+0, & F = failure \\
+100, & F = success
 \end{cases}$$
 
 Utility from consequences at target $T$ from action states $A_k$
