@@ -3,6 +3,7 @@ using JuMP, Gurobi
 using DecisionProgramming
 
 # Parameters
+no_forgetting = false
 N = 4 # Number of months
 health = [3*k - 2 for k in 1:N] # health of the pig
 test = [3*k - 1 for k in 1:(N-1)] # whether to test the pig
@@ -24,8 +25,12 @@ add_arcs(health[1:end-1], test)
 add_arcs(treat, health[2:end])
 add_arcs(treat, cost)
 add_arcs(health[end], price)
-append!(A, (test[k] => treat[k2] for k in 1:(N-1) for k2 in k:(N-1)))
-append!(A, (treat[k] => treat[k2] for k in 1:((N-1)-1) for k2 in (k+1):(N-1)))
+if no_forgetting
+    append!(A, (test[k] => treat[k2] for k in 1:(N-1) for k2 in k:(N-1)))
+    append!(A, (treat[k] => treat[k2] for k in 1:((N-1)-1) for k2 in (k+1):(N-1)))
+else
+    add_arcs(test, treat)
+end
 
 # Construct states
 S_j = zeros(Int, length(C)+length(D))

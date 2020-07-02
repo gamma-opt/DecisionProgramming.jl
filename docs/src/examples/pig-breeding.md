@@ -16,7 +16,7 @@ The original $4$-month formulation.
 
 ![](figures/n-month-pig-breeding.svg)
 
-The influence diagram for the the generalized $N$-month pig breeding. The nodes are associated with the following states. **Health states** $h_k=\{ill,healthy\}$ represents the health of the pig at month $k=1,...,N$. **Test states** $t_k=\{positive,negative\}$ represents the result from testing the pig at month $k=1,...,N-1$. **Treat state** $d_k=\{treat, pass\}$ represents the decision to treat the pig with an injection at month $k=1,...,N-1$.
+The influence diagram for the the generalized $N$-month pig breeding. The nodes are associated with the following states. **Health states** $h_k=\{ill,healthy\}$ represents the health of the pig at month $k=1,...,N$. **Test states** $t_k=\{positive,negative\}$ represents the result from testing the pig at month $k=1,...,N-1$. **Treat state** $d_k=\{treat, pass\}$ represents the decision to treat the pig with an injection at month $k=1,...,N-1$. The dashed arcs represent the no-forgetting principle and we can toggle them on and off in the formulation.
 
 The probabilities that test indicates pig's health correctly at month $k=1,...,N-1$.
 
