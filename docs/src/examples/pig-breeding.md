@@ -16,50 +16,45 @@ The original $4$-month formulation.
 
 ![](figures/n-month-pig-breeding.svg)
 
-Generalized $N$-month formulation.
+The influence diagram for the the generalized $N$-month pig breeding. The nodes are associated with the following states. **Health states** $h_k=\{ill,healthy\}$ represents the health of the pig at month $k=1,...,N$. **Test states** $t_k=\{positive,negative\}$ represents the result from testing the pig at month $k=1,...,N-1$. **Treat state** $d_k=\{treat, pass\}$ represents the decision to treat the pig with an injection at month $k=1,...,N-1$.
 
-The diagram has the following states
+The probabilities that test indicates pig's health correctly at month $k=1,...,N-1$.
 
-Change nodes and states
+$$ℙ(t_k = positive ∣ h_k = ill) = 0.8$$
 
-* State $h_k$ represents the health of the pig at month $k=1,...,N$. Two possible states, *ill* and *healthy*.
-* State $t_k$ represents the result from testing the pig at month $k=1,...,N-1$. Two possible states, *positive*, and *negative*.
+$$ℙ(t_k = negative ∣ h_k = healthy) = 0.9$$
 
-Decision nodes and states
-
-* State $d_k$ represents the decision to treat the pig with injection at month $k=1,...,N-1$. Two possible states, *treat* and *pass*.
-
-Value nodes and states
-
-* Consequences $u_k$ represents the consequences from treating or not treating the pig at month $k=1,...,N-1$.
-* Consequence $u_N$ represents the consequence from health of the pig at month $N$.
-
-Influence is represented by the arcs. Dashed arcs represent *no forgetting* principle.
-
-Probabilities
-
-$$ℙ(t_k = positive ∣ h_k = ill) = 0.8,\quad k=1,...,N-1$$
-
-$$ℙ(t_k = negative ∣ h_k = healthy) = 0.9,\quad k=1,...,N-1$$
+The probability that pig is ill in the first month.
 
 $$ℙ(h_1 = ill)=0.1$$
 
-$$ℙ(h_k = ill ∣ d_{k-1} = pass, h_{k-1} = healthy)=0.2,\quad k=2,...,N$$
+The probability that the pig is ill in the subsequent months $k=2,...,N$ given the treatment decision in and state of health in the previous month.
 
-$$ℙ(h_k = ill ∣ d_{k-1} = treat, h_{k-1} = healthy)=0.1,\quad k=2,...,N$$
+$$ℙ(h_k = ill ∣ d_{k-1} = pass, h_{k-1} = healthy)=0.2$$
 
-$$ℙ(h_k = ill ∣ d_{k-1} = pass, h_{k-1} = ill)=0.9,\quad k=2,...,N$$
+$$ℙ(h_k = ill ∣ d_{k-1} = treat, h_{k-1} = healthy)=0.1$$
 
-$$ℙ(h_k = ill ∣ d_{k-1} = treat, h_{k-1} = ill)=0.5,\quad k=2,...,N$$
+$$ℙ(h_k = ill ∣ d_{k-1} = pass, h_{k-1} = ill)=0.9$$
 
-Utilities
+$$ℙ(h_k = ill ∣ d_{k-1} = treat, h_{k-1} = ill)=0.5$$
 
-- Cost of treating the pig $U(Y(d_k=treat))=-100$ at month $k=1,...,N-1$
-- Cost of not treating the pig $U(Y(d_k=pass))=0$ at month $k=1,...,N-1$
-- Price of unhealthy pig $U(Y(h_N=ill))=300$
-- Price of healthy pig $U(Y(h_N=healthy))=1000$
+The cost of treatment decision for the pig at month $k=1,...,N-1$
 
-## Results
+$$U(Y(d_k))=\begin{cases}
+-100, & d_k = treat \\
+0, & d_k = pass
+\end{cases}$$
+
+The price of given the pig health at month $N$
+
+$$U(Y(h_N))=\begin{cases}
+300, & h_N = ill \\
+1000, & h_N = healthy
+\end{cases}$$
+
+Total utility
+
+$$U(Y(h_N,d_{N-1},...,d_1))=U(Y(h_n))+∑_{k=1,...,N} U(Y(d_k)).$$
 
 
 ## References
