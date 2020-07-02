@@ -7,20 +7,19 @@ Random.seed!(111)
 """Generate random probabilities"""
 function random_probabilites(states, state)
     X = zeros([states; state]...)
-    for p in product(UnitRange.(1, states)...)
+    for s in paths(states)
         x = rand(state)
         x = x / sum(x)
-        for s in 1:state
-            X[[[p...]; s]...] = x[s]
+        for s_j in 1:state
+            X[[[s...]; s_j]...] = x[s_j]
         end
     end
     return X
 end
 
 """Generate random utilities"""
-function random_consequences(states, consequences_set)
-    U = rand(consequences_set, prod(states))
-    return reshape(U, states...)
+function random_consequences(states)
+    return reshape(rand(prod(states)), states...)
 end
 
 
@@ -35,18 +34,14 @@ diagram = InfluenceDiagram(C, D, V, A, S_j)
 I_j = diagram.I_j
 
 X = Dict{Int, Array{Float64}}(
-    i => random_probabilites([S_j[j] for j in I_j[i]], S_j[i])
+    i => random_probabilites(S_j[I_j[i]], S_j[i])
     for i in C)
 
-num_utilities = sum(prod(S_j[j] for j in I_j[i]) for i in V)
-
-Y = Dict{Int, Array{Int}}(
-    i => random_consequences([S_j[j] for j in I_j[i]], 1:num_utilities)
+Y = Dict{Int, Array{Float64}}(
+    i => random_consequences(S_j[I_j[i]])
     for i in V)
 
-U = rand(num_utilities)
-
-params = Params(diagram, X, Y, U)
+params = Params(diagram, X, Y)
 
 model = DecisionModel(specs, diagram, params)
 
