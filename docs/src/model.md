@@ -100,7 +100,7 @@ $$\begin{aligned}
 \text{subject to}\quad
 & ∑_{s_j∈S_j} z(s_j∣s_{I(j)})=1,\quad ∀j∈D, s_{I(j)}∈S_{I(j)} \\
 & 0≤π(s)≤p(s),\quad ∀s∈S \\
-& π(s) ≤ z(s_j∣s_{I(j)}),\quad ∀s∈S \\
+& π(s) ≤ z(s_j∣s_{I(j)}),\quad ∀j∈D, s∈S \\
 & z(s_j∣s_{I(j)}) ∈ \{0,1\},\quad ∀j∈D, s_j∈S_j, s_{I(j)}∈S_{I(j)}
 \end{aligned}$$
 

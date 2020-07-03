@@ -33,7 +33,7 @@ end
 - `D::Vector{Int}`: Decision nodes.
 - `V::Vector{Int}`: Value nodes.
 - `A::Vector{Pair{Int, Int}}`: Arcs between nodes.
-- `S_j::Vector{<:Integer}`: Number of states.
+- `S_j::Vector{Int}`: Number of states.
 - `I_j::Vector{Vector{Int}}`: Information set.
 """
 struct InfluenceDiagram
@@ -41,12 +41,12 @@ struct InfluenceDiagram
     D::Vector{Int}
     V::Vector{Int}
     A::Vector{Pair{Int, Int}}
-    S_j::Vector{<:Integer}
+    S_j::Vector{Int}
     I_j::Vector{Vector{Int}}
 end
 
 """Construct and validate an influence diagram."""
-function InfluenceDiagram(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vector{Pair{Int, Int}}, S_j::Vector{<:Integer})
+function InfluenceDiagram(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vector{Pair{Int, Int}}, S_j::Vector{Int})
     # Enforce sorted and unique elements.
     C = sort(unique(C))
     D = sort(unique(D))
@@ -145,6 +145,15 @@ function number_of_paths_cut()
     end
 end
 
+"""Create multidimensional array of variables."""
+function variables(model::Model, dims::Vector{Int}; binary::Bool=false)
+    v = Array{VariableRef}(undef, dims...)
+    for i in eachindex(v)
+        v[i] = @variable(model, binary=binary)
+    end
+    return v
+end
+
 """Initializes the DecisionModel."""
 function DecisionModel(specs::Specs, diagram::InfluenceDiagram, params::Params)
     @unpack C, D, V, A, S_j, I_j = diagram
@@ -167,19 +176,8 @@ function DecisionModel(specs::Specs, diagram::InfluenceDiagram, params::Params)
     model = DecisionModel()
 
     # --- Variables ---
-    π = Array{VariableRef}(undef, S_j...)
-    for s in paths(S_j)
-        π[s...] = @variable(model)
-    end
-
-    z = Dict{Int, Array{VariableRef}}()
-    for j in D
-        S_I_j = S_j[[I_j[j]; j]]
-        z[j] = Array{VariableRef}(undef, S_I_j...)
-        for s in paths(S_I_j)
-            z[j][s...] = @variable(model, binary=true)
-        end
-    end
+    π = variables(model, S_j)
+    z = Dict(j => variables(model, S_j[[I_j[j]; j]]; binary=true) for j in D)
 
     # Add variable to the model.obj_dict.
     model[:π] = π
@@ -189,17 +187,16 @@ function DecisionModel(specs::Specs, diagram::InfluenceDiagram, params::Params)
     @objective(model, Max, sum(π[s...] * utility(s) for s in paths(S_j)))
 
     # --- Constraints ---
-    for j in D
-        for s_I in paths(S_j[I_j[j]])
-            @constraint(model, sum(z[j][[s_I...; s_j]...] for s_j in 1:S_j[j]) == 1)
-        end
+    for j in D, s_I in paths(S_j[I_j[j]])
+        @constraint(model, sum(z[j][[s_I...; s_j]...] for s_j in 1:S_j[j]) == 1)
     end
 
     for s in paths(S_j)
         @constraint(model, 0 ≤ π[s...] ≤ probability(s))
-        for j in D
-            @constraint(model, π[s...] ≤ z[j][s[[I_j[j]; j]]...])
-        end
+    end
+
+    for s in paths(S_j), j in D
+        @constraint(model, π[s...] ≤ z[j][s[[I_j[j]; j]]...])
     end
 
     # --- Lazy Constraints ---

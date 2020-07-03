@@ -1,5 +1,4 @@
 using Test, Random
-using Base.Iterators: product
 using DecisionProgramming
 
 Random.seed!(111)
