@@ -6,7 +6,7 @@ using Base.Iterators: product
 
 """Iterate over paths."""
 function paths(num_states::Vector{T}) where T <: Integer
-    product(UnitRange{T}.(1, num_states)...)
+    product(UnitRange.(one(T), num_states)...)
 end
 
 
@@ -33,7 +33,7 @@ end
 - `D::Vector{Int}`: Decision nodes.
 - `V::Vector{Int}`: Value nodes.
 - `A::Vector{Pair{Int, Int}}`: Arcs between nodes.
-- `S_j::Vector{Int}`: Number of states.
+- `S_j::Vector{<:Integer}`: Number of states.
 - `I_j::Vector{Vector{Int}}`: Information set.
 """
 struct InfluenceDiagram
@@ -41,12 +41,12 @@ struct InfluenceDiagram
     D::Vector{Int}
     V::Vector{Int}
     A::Vector{Pair{Int, Int}}
-    S_j::Vector{Int}
+    S_j::Vector{<:Integer}
     I_j::Vector{Vector{Int}}
 end
 
 """Construct and validate an influence diagram."""
-function InfluenceDiagram(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vector{Pair{Int, Int}}, S_j::Vector{Int})
+function InfluenceDiagram(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vector{Pair{Int, Int}}, S_j::Vector{<:Integer})
     # Enforce sorted and unique elements.
     C = sort(unique(C))
     D = sort(unique(D))
@@ -103,7 +103,7 @@ function Params(diagram::InfluenceDiagram, X::Dict{Int, Array{Float64}}, Y::Dict
         size(X[j]) == Tuple(S_I_j) || error("Array should be dimension |S_I(j)|*|S_j|.")
         all(x ≥ 0 for x in X[j]) || error("Probabilities should be positive.")
         for s_I in paths(S_I)
-            sum(X[j][[s_I...; s]...] for s in 1:S_j[j]) ≈ 1 || error("probabilities shoud sum to one.")
+            sum(X[j][[s_I...; s_j]...] for s_j in 1:S_j[j]) ≈ 1 || error("probabilities shoud sum to one.")
         end
     end
 
@@ -158,7 +158,7 @@ function DecisionModel(specs::Specs, diagram::InfluenceDiagram, params::Params)
 
     # Affine transformion to non-negative utility function.
     v_min = minimum(minimum(v) for (k, v) in Y)
-    Y′ = Dict(k => v .- v_min for (k, v) in Y)
+    Y′ = Dict(k => (v .- v_min) for (k, v) in Y)
 
     # Total, non-negative utility of a path.
     utility(s) = sum(Y′[v][s[I_j[v]]...] for v in V)
@@ -191,7 +191,7 @@ function DecisionModel(specs::Specs, diagram::InfluenceDiagram, params::Params)
     # --- Constraints ---
     for j in D
         for s_I in paths(S_j[I_j[j]])
-            @constraint(model, sum(z[j][[s_I...; s]...] for s in 1:S_j[j]) == 1)
+            @constraint(model, sum(z[j][[s_I...; s_j]...] for s_j in 1:S_j[j]) == 1)
         end
     end
 
