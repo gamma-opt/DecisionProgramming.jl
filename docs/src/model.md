@@ -2,6 +2,7 @@
 ## Introduction
 The model is based on [^1], sections 3 and 5. We highly recommend to read them for motivation, details, and proofs of the formulation explained here. We explain how we have implemented the model in the source code.
 
+
 ## Influence Diagram
 ![](figures/influence-diagram.svg)
 
@@ -25,6 +26,7 @@ $$I(j)=\{i∣(i,j)∈A\}.$$
 
 Practically, the information set is an edge list to reverse direction in the graph.
 
+
 ## Paths
 Paths in influence diagrams represent realizations of states for multiple nodes. Formally, a **path** is a sequence of states
 
@@ -44,6 +46,7 @@ $$s_{I(j)}=(s_i ∣ i∈I(j)).$$
 
 **Concatenation of two paths** $s$ and $s^′$ is denoted $s;s^′.$
 
+
 ## Sets
 The set of **all paths** is the product set of all states
 
@@ -53,6 +56,7 @@ The set of **information paths** of node $j∈N$ is the product set of the state
 
 $$S_{I(j)}=∏_{i∈I(j)} S_i.$$
 
+
 ## Probabilities
 For each chance node $j∈C$, the **probability** of state $s_j$ given information state $s_{I(j)}$ is denoted as
 
@@ -61,6 +65,7 @@ $$ℙ(X_j=s_j∣X_{I(j)}=s_{I(j)})∈[0, 1].$$
 The **upper bound of the probability of a path** $s$ is defined as
 
 $$p(s) = ∏_{j∈C} ℙ(X_j=s_j∣X_{I(j)}=s_{I(j)}).$$
+
 
 ## Decisions
 For each decision node $j∈D,$ a **local decision strategy** maps an information path to a state
@@ -74,6 +79,7 @@ For each value node $j∈V$, the **consequence** given information state $S_{I(j
 
 $$Y_v:S_{I(j)}↦ℂ$$
 
+
 ## Utilities
 The **utility function** maps consequence to real-valued utilities
 
@@ -86,6 +92,7 @@ $$U^′(c) = U(c) - \min_{c∈ℂ}U(c)$$
 The **utility of a path**
 
 $$\mathcal{U}(s) = ∑_{j∈V} U^′(Y_j(s_{I(j)}))$$
+
 
 ## Model Formulation
 The probability distribution of paths depends on the decision strategy. We model this distribution as the variable $π$ and denote the **probability of path** $s$ as $π(s).$
@@ -106,6 +113,7 @@ $$\begin{aligned}
 
 We discuss an extension to the model on the Extension page.
 
+
 ## Lazy Cuts
 Probability sum cut
 
@@ -115,12 +123,40 @@ Number of pats cut
 
 $$∑_{s∈S}π(s)/p(s)=n_{s}$$
 
-## Results
-**Active paths** $\{s∣π(s)>0\}$
 
-**Active states** $\{s_i∣π(s)>0\}$ for each node $i∈C∪D$, robust recommendations?
+## Analyzing Results
+### Active Paths
+An **active path** is path $s∈S$ with positive path probability $π(s)>0.$ Then, we have the set of all active paths $S^+=\{s∈S∣π(s)>0\}.$ We denote the number of active paths as $|S^+|.$
 
-## Sizes
+### State Probabilities
+We denote **paths with fixed states** where $ϵ$ denotes an empty state using a recursive definition.
+
+$$\begin{aligned}
+S_{ϵ} &= S \\
+S_{ϵ,s_i^′} &= \{s∈S_{ϵ} ∣ s_i=s_i^′\} \\
+S_{ϵ,s_i^′,s_j^′} &= \{s∈S_{ϵ,s_i^′} ∣ s_j=s_j^′\},\quad j≠i
+\end{aligned}$$
+
+The probability of all paths sums to one.
+
+$$ℙ(ϵ) = \sum_{s∈S_ϵ} π(s) = 1.$$
+
+**State probabilities** for each node $i∈C∪D$ and state $s_i∈S_i$ denote how likely the state occurs given all path probabilities
+
+$$ℙ(s_i∣ϵ) = \sum_{s∈S_{ϵ,s_i}} π(s) / ℙ(ϵ) = \sum_{s∈S_{ϵ,s_i}} π(s)$$
+
+An **active state** is a state with positive state probability $ℙ(s_i∣...)>0.$
+
+We can **generalize the state probabilities** as conditional probabilities using a recursive definition. Generalized state probabilities allow us to explore how fixing active states affect the probabilities of other states. First, we choose an active state $s_i$ and fix its value. Fixing an inactive state would make all state probabilities zero. Then, we can compute the conditional state probabilities as follows.
+
+$$ℙ(s_j∣ϵ,s_i) = \sum_{s∈S_{ϵ,s_i,s_j}} π(s) / ℙ(s_i∣ϵ)$$
+
+We can then repeat this process by choosing an active state from the new conditional state probabilities $s_k$ that is different from previously chosen states $k≠j.$
+
+A **robust recommendation** is a set of conditions such that a decision state $s_i$ where $i∈D$ has a state probability of one $ℙ(s_i∣...)=1.$
+
+
+## Complexity
 States and paths
 
 *  $⋃_{i∈C} (S_{I(i)}×S_i)$ probability stages
