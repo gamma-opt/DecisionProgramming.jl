@@ -9,6 +9,15 @@ function paths(num_states::Vector{T}) where T <: Integer
     product(UnitRange.(one(T), num_states)...)
 end
 
+"""Iterate over paths with fixed states."""
+function paths(num_states::Vector{T}, fixed::Dict{Int, T}) where T <: Integer
+    iters = collect(UnitRange.(one(T), num_states))
+    for (i, v) in fixed
+        iters[i] = UnitRange(v, v)
+    end
+    product(iters...)
+end
+
 
 # --- Model ---
 
@@ -26,16 +35,7 @@ const DecisionModel = Model
     num_paths::Int = 0
 end
 
-"""Influence diagram is a directed, acyclic graph.
-
-# Arguments
-- `C::Vector{Int}`: Change nodes.
-- `D::Vector{Int}`: Decision nodes.
-- `V::Vector{Int}`: Value nodes.
-- `A::Vector{Pair{Int, Int}}`: Arcs between nodes.
-- `S_j::Vector{Int}`: Number of states.
-- `I_j::Vector{Vector{Int}}`: Information set.
-"""
+"""Influence diagram."""
 struct InfluenceDiagram
     C::Vector{Int}
     D::Vector{Int}
@@ -45,7 +45,15 @@ struct InfluenceDiagram
     I_j::Vector{Vector{Int}}
 end
 
-"""Construct and validate an influence diagram."""
+"""Construct and validate an influence diagram.
+
+# Arguments
+- `C::Vector{Int}`: Change nodes.
+- `D::Vector{Int}`: Decision nodes.
+- `V::Vector{Int}`: Value nodes.
+- `A::Vector{Pair{Int, Int}}`: Arcs between nodes.
+- `S_j::Vector{Int}`: Number of states.
+"""
 function InfluenceDiagram(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vector{Pair{Int, Int}}, S_j::Vector{Int})
     # Enforce sorted and unique elements.
     C = sort(unique(C))
@@ -64,8 +72,9 @@ function InfluenceDiagram(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vec
     ## Validate arcs
     # 1) Inclusion A ⊆ N×N.
     # 2) Graph is acyclic.
-    # 3) There are no arcs from chance or decision nodes to value nodes.
+    # 3) There are no arcs from value nodes to other nodes.
     all(1 ≤ i < j ≤ N for (i, j) in A) || error("Forall (i,j)∈A we should have 1≤i<j≤N.")
+    all(i∉V for (i, j) in A) || error("There should be no nodes from value nodes to other nodes.")
 
     ## Validate states
     # Each chance and decision node has a finite number of states
@@ -81,18 +90,19 @@ function InfluenceDiagram(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vec
     InfluenceDiagram(C, D, V, A, S_j, I_j)
 end
 
-"""Model parameters.
-
-# Arguments
-- `X`: Probabilities
-- `Y`: Consequences
-"""
+"""Decision model parameters."""
 struct Params
     X::Dict{Int, Array{Float64}}
     Y::Dict{Int, Array{Float64}}
 end
 
-"""Construct and validate model parameters."""
+"""Construct and validate decision model parameters.
+
+# Arguments
+- `diagram::InfluenceDiagram`: The influence diagram associated with the probabilities and consequences.
+- `X::Dict{Int, Array{Float64}}`: Probabilities
+- `Y::Dict{Int, Array{Float64}}`: Consequences
+"""
 function Params(diagram::InfluenceDiagram, X::Dict{Int, Array{Float64}}, Y::Dict{Int, Array{Float64}})
     @unpack C, V, S_j, I_j = diagram
 
@@ -154,7 +164,13 @@ function variables(model::Model, dims::Vector{Int}; binary::Bool=false)
     return v
 end
 
-"""Initializes the DecisionModel."""
+"""Construct a DecisionModel from specification, influence diagram and parameters.
+
+# Arguments
+- `specs::Specs`
+- `diagram::InfluenceDiagram`
+- `params::Params`
+"""
 function DecisionModel(specs::Specs, diagram::InfluenceDiagram, params::Params)
     @unpack C, D, V, A, S_j, I_j = diagram
     @unpack X, Y = params
@@ -165,9 +181,12 @@ function DecisionModel(specs::Specs, diagram::InfluenceDiagram, params::Params)
     # Minimum path probability
     ϵ = minimum(probability(s) for s in paths(S_j))
 
-    # Affine transformion to non-negative utility function.
+    # Affine transformation to positive utility function: Normalize plus one.
+    # NOTE: Plus one is for making all utilities positive so that total path
+    # probabilities will equal one in the solution.
     v_min = minimum(minimum(v) for (k, v) in Y)
-    Y′ = Dict(k => (v .- v_min) for (k, v) in Y)
+    v_max = maximum(maximum(v) for (k, v) in Y)
+    Y′ = Dict(k => (@. (v - v_min)/(v_max - v_min) + 1) for (k, v) in Y)
 
     # Total, non-negative utility of a path.
     utility(s) = sum(Y′[v][s[I_j[v]]...] for v in V)

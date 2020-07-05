@@ -5,6 +5,8 @@ export DecisionModel,
     Specs,
     InfluenceDiagram,
     Params,
-    paths
+    paths,
+    probability_sum_cut,
+    number_of_paths_cut
 
 end # module

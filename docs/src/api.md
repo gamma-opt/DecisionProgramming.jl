@@ -8,4 +8,6 @@ Params
 Params(::InfluenceDiagram, ::Dict{Int, Array{Float64}}, ::Dict{Int, Array{Float64}})
 DecisionModel
 DecisionModel(::Specs, ::InfluenceDiagram, ::Params)
+probability_sum_cut
+number_of_paths_cut
 ```

@@ -1,4 +1,4 @@
-using Printf
+using Printf, Parameters
 using JuMP, Gurobi
 using DecisionProgramming
 
@@ -102,36 +102,30 @@ println("--- Optimization ---")
 optimizer = optimizer_with_attributes(
     Gurobi.Optimizer,
     "IntFeasTol"      => 1e-9,
-    "LazyConstraints" =>    1,
-    # "TimeLimit"       => 2*60,
-    "Heuristics"      =>  .00,  # 0% time spend on heuristics (lazy cuts need to be re-added if heuristic is used in root node)
-    "BranchDir"       =>    1,  # -1 ... 1: 1 = branch up
-    "VarBranch"       =>    0,  # -1 ... 3: 0 = pseudo costs, 3 = Strong branching
-    "Cuts"            =>    0,  # -1 ... 3: 0 = all cuts off (use lazy cuts instead that exploit problem structure)
-    "DisplayInterval"   => 5
+    # "LazyConstraints" =>    1,
 )
 set_optimizer(model, optimizer)
 optimize!(model)
 
+include("analysis.jl")
+
+πval = value.(model[:π])
+print_results(πval, diagram, params; πtol=0.1)
+
+println("State probabilities:")
+probs = state_probabilities(πval, diagram)
+print_state_probabilities(probs, health, ["ill", "healthy"])
+print_state_probabilities(probs, test, ["positive", "negative"])
+print_state_probabilities(probs, treat, ["treat", "pass"])
 println()
-println("--- Results ---")
-I_j = diagram.I_j
-S_j = diagram.S_j
-πsol = model[:π]
-z = model[:z]
 
-utility(s) = sum(Y[v][s[I_j[v]]...] for v in V)
-
-println("Active Paths")
-println("path | probability | utility | expected utility")
-for s in paths(S_j)
-    πval = value(πsol[s...])
-    u = utility(s)
-    eu = πval * u
-    if πval > 1e-3 || eu > 1.0
-        @printf("%s | %0.3f | %0.3f | %0.3f \n", s, πval, u, eu)
-    end
-end
-
-expected_utility = sum(value(πsol[s...]) * utility(s) for s in paths(S_j))
-println("Expected utility: ", expected_utility)
+println("Conditional state probabilities")
+node = 1
+state = 1
+fixed = Dict(node => state)
+prior = probs[node][state]
+probs2 = state_probabilities(πval, diagram, prior, fixed)
+print_state_probabilities(probs2, health, ["ill", "healthy"], fixed)
+print_state_probabilities(probs2, test, ["positive", "negative"], fixed)
+print_state_probabilities(probs2, treat, ["treat", "pass"], fixed)
+println()
