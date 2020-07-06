@@ -6,19 +6,19 @@ The model is based on [^1], sections 3 and 5. We highly recommend to read them f
 ## Influence Diagram
 ![](figures/influence-diagram.svg)
 
-**Influence diagram** is defined as a directed, acyclic graph such that some of its nodes have a finite number of states associated with them
+We define the **influence diagram** as a directed, acyclic graph such that part of its nodes have a finite number of states associated with them
 
 $$G=(N,A,S_j).$$
 
-The set of nodes $N=C∪D∪V$ consists of **chance nodes** $C,$ **decision nodes** $D,$ and **value nodes** $V$. We index the nodes such that $C∪D=\{1,...,n\}$ and $V=\{n+1,...,n+|V|\}$ where $n=|C|+|D|.$ As a consequence, the value nodes are never the children of chance or decision nodes.
-
-The set of **arcs** consists of pairs of nodes such that
+The set of nodes $N=C∪D∪V$ consists of **chance nodes** $C,$ **decision nodes** $D,$ and **value nodes** $V$. We index the nodes such that $C∪D=\{1,...,n\}$ and $V=\{n+1,...,n+|V|\}$ where $n=|C|+|D|.$ The set of **arcs** consists of pairs of nodes such that
 
 $$A⊆\{(i,j)∣1≤i<j≤|N|,i∉V\}.$$
 
-The condition enforces that the graph is directed and acyclic.
+The condition enforces that the graph is directed and acyclic, and there are no arcs from value nodes to other nodes.
 
-Each chance and decision node $j∈C∪D$ is associates with a finite number of **states** $S_j=\{1,...,|S_j|\}.$ We use integers from one to the size of the set of states to represent states. Hence, we use the sizes of the sets of states $|S_j|$ to represent them.
+Each chance and decision node $j∈C∪D$ is associates with a finite number of **states** $S_j.$ We use integers from one to number of states $|S_j|$ to encode individual states
+
+$$S_j=\{1,...,|S_j|\}.$$
 
 We define the **information set** of node $j∈N$ to be its predecessor nodes
 
@@ -28,13 +28,13 @@ Practically, the information set is an edge list to reverse direction in the gra
 
 
 ## Paths
-Paths in influence diagrams represent realizations of states for multiple nodes. Formally, a **path** is a sequence of states
+Paths in influence diagrams represent realizations of states for chance and decision nodes. Formally, a **path** is a sequence of states
 
 $$s=(s_1, s_2, ...,s_n),$$
 
 where each state $s_i∈S_i$ for all chance and decision nodes $i∈C∪D.$
 
-A **subpath** of $s$ is a subsequence
+We define a **subpath** of $s$ is a subsequence
 
 $$(s_{i_1}, s_{i_2}, ..., s_{i_{k}}),$$
 
@@ -48,7 +48,7 @@ $$s_{I(j)}=(s_i ∣ i∈I(j)).$$
 
 
 ## Sets
-The set of **all paths** is the product set of all states
+We define the set of **all paths** as a product set of all states
 
 $$S=∏_{j∈C∪D} S_j.$$
 
@@ -56,49 +56,47 @@ The set of **information paths** of node $j∈N$ is the product set of the state
 
 $$S_{I(j)}=∏_{i∈I(j)} S_i.$$
 
+We denote elements of the sets using notation $s_j∈S_j$, $s∈S$, and $s_{I(j)}∈S_{I(j)}.$
+
 
 ## Probabilities
-For each chance node $j∈C$, the **probability** of state $s_j$ given information state $s_{I(j)}$ is denoted as
+For each chance node $j∈C$, we denote the **probability** of state $s_j$ given information path $s_{I(j)}$ as
 
 $$ℙ(X_j=s_j∣X_{I(j)}=s_{I(j)})∈[0, 1].$$
 
-The **upper bound of the probability of a path** $s$ is defined as
+We define the **upper bound of the probability of a path** $s$ as
 
 $$p(s) = ∏_{j∈C} ℙ(X_j=s_j∣X_{I(j)}=s_{I(j)}).$$
 
+We use it as a constraint in the model formulation.
+
 
 ## Decisions
-For each decision node $j∈D,$ a **local decision strategy** maps an information path to a state
+For each decision node $j∈D,$ a **local decision strategy** maps an information path $s_{I(j)}$ to a state $s_j$
 
-$$Z_j:S_{I(j)}↦S_j$$
+$$Z_j:S_{I(j)}↦S_j.$$
 
 **Decision strategy** $Z$ contains one local decision strategy for each decision node. Set of **all decision strategies** is denoted $ℤ.$
 
+
 ## Consequences
-For each value node $j∈V$, the **consequence** given information state $S_{I(j)}$ is defined as
+For each value node $j∈V$, we define the **consequence** given information path $s_{I(j)}$ as
 
-$$Y_v:S_{I(j)}↦ℂ$$
+$$Y_j:S_{I(j)}↦ℂ,$$
 
+where $ℂ$ is the set of consequences. In the code, the consequences are implicit, and we map information paths directly to the utility values.
 
 ## Utilities
-The **utility function** maps consequence to real-valued utilities
+The **utility function** maps consequences to real-valued utilities
 
-$$U:ℂ↦ℝ$$
+$$U:ℂ↦ℝ.$$
 
-Affine transformation to positive utilities
+The **utility of a path** is defined as the sum of utilities for consequences of value nodes $j∈V$ with information paths $I(j)$
 
-$$U^′(c) = \frac{U(c) - \min_{c∈ℂ}U(c)}{\max_{c∈ℂ}U(c) - \min_{c∈ℂ}U(c)} + 1$$
-
-The **utility of a path**
-
-$$\mathcal{U}(s) = ∑_{j∈V} U^′(Y_j(s_{I(j)}))$$
+$$\mathcal{U}(s) = ∑_{j∈V} U(Y_j(s_{I(j)})).$$
 
 
 ## Model Formulation
-The probability distribution of paths depends on the decision strategy. We model this distribution as the variable $π$ and denote the **probability of path** $s$ as $π(s).$
-
-Decision strategy $Z_j(s_I(j))=s_j$ is equivalent to $z(s_j∣s_{I(j)})=1$ and $∑_{s_j∈S_j} z(s_j∣s_{I(j)})=1$ for all $j∈D, s_{I(j)}∈S_{I(j)}.$
-
 The mixed-integer linear program maximizes the expected utility over all decision strategies as follows.
 
 $$\begin{aligned}
@@ -110,6 +108,16 @@ $$\begin{aligned}
 & π(s) ≤ z(s_j∣s_{I(j)}),\quad ∀j∈D, s∈S \\
 & z(s_j∣s_{I(j)}) ∈ \{0,1\},\quad ∀j∈D, s_j∈S_j, s_{I(j)}∈S_{I(j)}
 \end{aligned}$$
+
+**Decision variables** $z(s_j∣s_{I(j)})$ are binary variables that model decision strategies with condition $∑_{s_j∈S_j} z(s_j∣s_{I(j)})=1$ which limits one decision per information path, such that $z(s_j∣s_{I(j)})=1$ is equivalent to decision strategy $Z_j(s_I(j))=s_j.$
+
+The probability distribution of paths $π$ depends on the decision strategy. The **probability of path** $π(s)$ is larger than zero and less than the upper bound of the probability of a path. Decision variables also constraints the probability of path.
+
+In the model, we use a utility function $U^+$ instead of $U$, which is affinely transformed to positive values to simplify the model formulation. As an example, normalizing and adding one gives us such a utility function
+
+$$U^+(c) = \frac{U(c) - \min_{c∈ℂ}U(c)}{\max_{c∈ℂ}U(c) - \min_{c∈ℂ}U(c)} + 1.$$
+
+Therefore, $U^+(c) > 0$ for all $c.$ Positive utility values enforce the optimizer to find solutions where path probabilities sum to one without need to supply it as a constraint explicitly.
 
 We discuss an extension to the model on the Extension page.
 
@@ -137,7 +145,7 @@ S_{ϵ,s_i^′} &= \{s∈S_{ϵ} ∣ s_i=s_i^′\} \\
 S_{ϵ,s_i^′,s_j^′} &= \{s∈S_{ϵ,s_i^′} ∣ s_j=s_j^′\},\quad j≠i
 \end{aligned}$$
 
-The probability of all paths sums to one.
+The probability of all paths sums to one
 
 $$ℙ(ϵ) = \sum_{s∈S_ϵ} π(s) = 1.$$
 
