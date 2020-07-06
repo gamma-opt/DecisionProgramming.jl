@@ -119,13 +119,17 @@ print_state_probabilities(probs, test, ["positive", "negative"])
 print_state_probabilities(probs, treat, ["treat", "pass"])
 println()
 
-println("Conditional state probabilities")
-node = 1
-state = 1
-fixed = Dict(node => state)
-prior = probs[node][state]
-probs2 = state_probabilities(πval, diagram, prior, fixed)
-print_state_probabilities(probs2, health, ["ill", "healthy"], fixed)
-print_state_probabilities(probs2, test, ["positive", "negative"], fixed)
-print_state_probabilities(probs2, treat, ["treat", "pass"], fixed)
-println()
+# Conditional state probabilities when pig is treat or not treated.
+for node in treat
+    for state in 1:2
+        println("Conditional state probabilities")
+        fixed = Dict(node => state)
+        prior = probs[node][state]
+        (isapprox(prior, 0, atol=1e-4) | isapprox(prior, 1, atol=1e-4)) && continue
+        probs2 = state_probabilities(πval, diagram, prior, fixed)
+        print_state_probabilities(probs2, health, ["ill", "healthy"], fixed)
+        print_state_probabilities(probs2, test, ["positive", "negative"], fixed)
+        print_state_probabilities(probs2, treat, ["treat", "pass"], fixed)
+        println()
+    end
+end
