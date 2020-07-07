@@ -125,6 +125,16 @@ $$U^+(c) = \frac{U(c) - \min_{c∈ℂ}U(c)}{\max_{c∈ℂ}U(c) - \min_{c∈ℂ}U
 There are also alternative objectives and ways to model risk. We discuss extensions to the model on the [Extensions](@ref) page.
 
 
+## Active Paths
+An **active path** is path $s∈S$ with positive path probability $π(s)>0.$ Then, we define the set of **all active paths** as
+
+$$S^+=\{s∈S∣π(s)>0\}.$$
+
+Since each decision node can choose only one state for every information path, the **number of active paths** is
+
+$$|S^+|=|S|/\prod_{i∈D}|S_i|=\prod_{i∈C}|S_i|.$$
+
+
 ## Lazy Cuts
 Probability sum cut
 
@@ -132,7 +142,7 @@ $$∑_{s∈S}π(s)=1$$
 
 Number of active paths cut
 
-$$∑_{s∈S}π(s)/p(s)=n_{s}$$
+$$∑_{s∈S}π(s)/p(s)=|S^+|$$
 
 
 ## Complexity

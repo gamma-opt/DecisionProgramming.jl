@@ -1,20 +1,4 @@
 # Analysis
-## Active Paths
-An **active path** is path $s∈S$ with positive path probability $π(s)>0.$ Then, we have the set of **all active paths**
-
-$$S^+=\{s∈S∣π(s)>0\}.$$
-
-We denote the **number of active paths** as $|S^+|.$
-
-TODO: upper and lower bound of number of active paths, only one decision per information path, assume $≥2$ state per decision (and chance) node,
-
-$$|S^+|≤|S|/\prod_{i∈D}|S_i|=\prod_{i∈C}|S_i|$$
-
-The ratio of active paths to all paths is
-
-$$r=|S^+|/|S|.$$
-
-
 ## State Probabilities
 We denote **paths with fixed states** where $ϵ$ denotes an empty state using a recursive definition.
 
