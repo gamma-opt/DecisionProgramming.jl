@@ -6,6 +6,9 @@ export DecisionModel,
     InfluenceDiagram,
     Params,
     paths,
+    path_probability,
+    minimum_path_probability,
+    path_utility,
     probability_sum_cut,
     number_of_paths_cut
 

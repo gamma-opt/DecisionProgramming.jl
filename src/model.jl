@@ -18,6 +18,21 @@ function paths(num_states::Vector{T}, fixed::Dict{Int, T}) where T <: Integer
     product(iters...)
 end
 
+"""Path probability (upper bound)."""
+function path_probability(s, C, I_j, X)
+    return prod(X[j][s[[I_j[j]; j]]...] for j in C)
+end
+
+"""Minimum path probability."""
+function minimum_path_probability(C, I_j, X, S_j)
+    return minimum(path_probability(s, C, I_j, X) for s in paths(S_j))
+end
+
+"""Total utility of a path."""
+function path_utility(s, Y, I_j, V)
+    sum(Y[v][s[I_j[v]]...] for v in V)
+end
+
 
 # --- Model ---
 
@@ -125,12 +140,22 @@ function Params(diagram::InfluenceDiagram, X::Dict{Int, Array{Float64}}, Y::Dict
     Params(X, Y)
 end
 
+"""Create multidimensional array of variables."""
+function variables(model::Model, dims::Vector{Int}; binary::Bool=false)
+    v = Array{VariableRef}(undef, dims...)
+    for i in eachindex(v)
+        v[i] = @variable(model, binary=binary)
+    end
+    return v
+end
+
 """Probability sum lazy cut."""
 function probability_sum_cut()
     # Add the constraints only once
     flag = false
-    function probability_sum_cut(cb_data, model, π, ϵ)
+    function probability_sum_cut(cb_data, model, ϵ)
         flag && return
+        π = model[:π]
         πsum = sum(callback_value(cb_data, π[s]) for s in eachindex(π))
         if !isapprox(πsum, 1.0, atol=ϵ)
             con = @build_constraint(sum(π) == 1.0)
@@ -144,24 +169,16 @@ end
 function number_of_paths_cut()
     # Add the constraints only once
     flag = false
-    function number_of_paths_cut(cb_data, model, π, ϵ, p, num_paths, S_j)
+    function number_of_paths_cut(cb_data, model, ϵ, num_paths, C, S_j, I_j, X)
         flag && return
+        π = model[:π]
         πnum = sum(callback_value(cb_data, π[s]) ≥ ϵ for s in eachindex(π))
         if !isapprox(πnum, num_paths, atol = 0.9)
-            con = @build_constraint(sum(π[s...] / p(s) for s in paths(S_j)) == num_paths)
+            con = @build_constraint(sum(π[s...] / path_probability(s, C, I_j, X) for s in paths(S_j)) == num_paths)
             MOI.submit(model, MOI.LazyConstraint(cb_data), con)
             flag = true
         end
     end
-end
-
-"""Create multidimensional array of variables."""
-function variables(model::Model, dims::Vector{Int}; binary::Bool=false)
-    v = Array{VariableRef}(undef, dims...)
-    for i in eachindex(v)
-        v[i] = @variable(model, binary=binary)
-    end
-    return v
 end
 
 """Construct a DecisionModel from specification, influence diagram and parameters.
@@ -175,21 +192,10 @@ function DecisionModel(specs::Specs, diagram::InfluenceDiagram, params::Params)
     @unpack C, D, V, A, S_j, I_j = diagram
     @unpack X, Y = params
 
-    # Upper bound of probability of a path.
-    probability(s) = prod(X[j][s[[I_j[j]; j]]...] for j in C)
-
-    # Minimum path probability
-    ϵ = minimum(probability(s) for s in paths(S_j))
-
     # Affine transformation to positive utility function: Normalize plus one.
-    # NOTE: Plus one is for making all utilities positive so that total path
-    # probabilities will equal one in the solution.
     v_min = minimum(minimum(v) for (k, v) in Y)
     v_max = maximum(maximum(v) for (k, v) in Y)
     Y′ = Dict(k => (@. (v - v_min)/(v_max - v_min) + 1) for (k, v) in Y)
-
-    # Total, non-negative utility of a path.
-    utility(s) = sum(Y′[v][s[I_j[v]]...] for v in V)
 
     # Initialize the model
     model = DecisionModel()
@@ -203,7 +209,7 @@ function DecisionModel(specs::Specs, diagram::InfluenceDiagram, params::Params)
     model[:z] = z
 
     # --- Objectives ---
-    @objective(model, Max, sum(π[s...] * utility(s) for s in paths(S_j)))
+    @objective(model, Max, sum(π[s...] * path_utility(s, Y′, I_j, V) for s in paths(S_j)))
 
     # --- Constraints ---
     for j in D, s_I in paths(S_j[I_j[j]])
@@ -211,7 +217,7 @@ function DecisionModel(specs::Specs, diagram::InfluenceDiagram, params::Params)
     end
 
     for s in paths(S_j)
-        @constraint(model, 0 ≤ π[s...] ≤ probability(s))
+        @constraint(model, 0 ≤ π[s...] ≤ path_probability(s, C, I_j, X))
     end
 
     for s in paths(S_j), j in D
@@ -219,16 +225,18 @@ function DecisionModel(specs::Specs, diagram::InfluenceDiagram, params::Params)
     end
 
     # --- Lazy Constraints ---
+    ϵ = minimum_path_probability(C, I_j, X, S_j)
+
     if specs.probability_sum_cut
         MOI.set(
             model, MOI.LazyConstraintCallback(),
-            cb_data -> probability_sum_cut()(cb_data, model, π, ϵ))
+            cb_data -> probability_sum_cut()(cb_data, model, ϵ))
     end
 
     if specs.num_paths > 0
         MOI.set(
             model, MOI.LazyConstraintCallback(),
-            cb_data -> number_of_paths_cut()(cb_data, model, π, ϵ, probability, specs.num_paths, S_j))
+            cb_data -> number_of_paths_cut()(cb_data, model, ϵ, specs.num_paths, C, S_j, I_j, X))
     end
 
     return model

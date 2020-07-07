@@ -19,10 +19,9 @@ end
 function cumulative_distribution(πval::Array{Float64}, diagram::InfluenceDiagram, params::Params)
     @unpack C, D, V, I_j, S_j = diagram
     @unpack Y = params
-    utility(s) = sum(Y[v][s[I_j[v]]...] for v in V)
     u = similar(πval)
     for s in paths(S_j)
-        u[s...] = utility(s)
+        u[s...] = path_utility(s, Y, I_j, V)
     end
     indices = sortperm(u[:])
     x = u[indices]
@@ -56,30 +55,21 @@ function print_results(πval::Array{Float64}, diagram::InfluenceDiagram, params:
     @unpack C, D, V, I_j, S_j = diagram
     @unpack X, Y = params
 
-    utility(s) = sum(Y[v][s[I_j[v]]...] for v in V)
-
-    # Upper bound of number of active paths
-    # num_active_upper = prod(S_j[j] for j in C)
-    num_active_upper = prod(S_j)
+    # Minimum path probability
+    ϵ = minimum_path_probability(C, I_j, X, S_j)
 
     # Number of active paths.
-        # Upper bound of probability of a path.
-    probability(s) = prod(X[j][s[[I_j[j]; j]]...] for j in C)
-
-    # Minimum path probability
-    ϵ = minimum(probability(s) for s in paths(S_j))
-
     num_active = sum(π ≥ ϵ for π in πval)
 
     # Total expected utility of the decision strategy.
-    expected_utility = sum(πval[s...] * utility(s) for s in paths(S_j))
+    expected_utility = sum(πval[s...] * path_utility(s, Y, I_j, V) for s in paths(S_j))
 
     # Average expected utility of active paths
     avg = expected_utility / num_active
 
     # Active paths
     println("Number of active paths versus all paths:")
-    @printf("%i / %i = %f \n", num_active, num_active_upper, num_active / num_active_upper)
+    @printf("%i | %i \n", num_active, prod(S_j))
     println("Expected expected utility:")
     println(expected_utility)
     println("Average expected utility of active paths:")
@@ -88,7 +78,7 @@ function print_results(πval::Array{Float64}, diagram::InfluenceDiagram, params:
 
     println("probability | utility | expected utility | path")
     for s in paths(S_j)
-        ut = utility(s)
+        ut = path_utility(s, Y, I_j, V)
         eu = πval[s...] * ut
         if (πval[s...] ≥ πtol) | (eu ≥ avg)
             @printf("%.3f | %10.3f | %10.3f | %s \n", πval[s...], ut, eu, s)
