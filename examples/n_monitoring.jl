@@ -96,7 +96,10 @@ Y = @time consequences(A_k, F, T, S_j)
 
 
 # Model
-specs = Specs(probability_sum_cut=true)
+specs = Specs(
+    probability_sum_cut=true,
+    num_paths=prod(S_j[j] for j in C)
+)
 diagram = @time InfluenceDiagram(C, D, V, A, S_j)
 params = @time Params(diagram, X, Y)
 model = @time DecisionModel(specs, diagram, params)
@@ -105,7 +108,7 @@ println("--- Optimization ---")
 optimizer = optimizer_with_attributes(
     Gurobi.Optimizer,
     "IntFeasTol"      => 1e-9,
-    "LazyConstraints" =>    1,
+    "LazyConstraints" => 1,
 )
 set_optimizer(model, optimizer)
 optimize!(model)

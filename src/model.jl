@@ -111,7 +111,7 @@ function Params(diagram::InfluenceDiagram, X::Dict{Int, Array{Float64}}, Y::Dict
         S_I = S_j[I_j[j]]
         S_I_j = [S_I; S_j[j]]
         size(X[j]) == Tuple(S_I_j) || error("Array should be dimension |S_I(j)|*|S_j|.")
-        all(x ≥ 0 for x in X[j]) || error("Probabilities should be positive.")
+        all(x > 0 for x in X[j]) || error("Probabilities should be positive.")
         for s_I in paths(S_I)
             sum(X[j][[s_I...; s_j]...] for s_j in 1:S_j[j]) ≈ 1 || error("probabilities shoud sum to one.")
         end
@@ -148,7 +148,7 @@ function number_of_paths_cut()
         flag && return
         πnum = sum(callback_value(cb_data, π[s]) ≥ ϵ for s in eachindex(π))
         if !isapprox(πnum, num_paths, atol = 0.9)
-            con = @build_constraint(sum(π[s] / p(s) for s in paths(S_j)) == num_paths)
+            con = @build_constraint(sum(π[s...] / p(s) for s in paths(S_j)) == num_paths)
             MOI.submit(model, MOI.LazyConstraint(cb_data), con)
             flag = true
         end
