@@ -107,8 +107,6 @@ optimizer = optimizer_with_attributes(
 set_optimizer(model, optimizer)
 optimize!(model)
 
-include("analysis.jl")
-
 πval = value.(model[:π])
 print_results(πval, diagram, params; πtol=0.1)
 
@@ -122,10 +120,10 @@ println()
 # Conditional state probabilities when pig is treat or not treated.
 for node in treat
     for state in 1:2
-        println("Conditional state probabilities")
         fixed = Dict(node => state)
         prior = probs[node][state]
         (isapprox(prior, 0, atol=1e-4) | isapprox(prior, 1, atol=1e-4)) && continue
+        println("Conditional state probabilities")
         probs2 = state_probabilities(πval, diagram, prior, fixed)
         print_state_probabilities(probs2, health, ["ill", "healthy"], fixed)
         print_state_probabilities(probs2, test, ["positive", "negative"], fixed)
@@ -133,3 +131,15 @@ for node in treat
         println()
     end
 end
+
+println("Decision strategy")
+z = model[:z]
+for i in D
+    z_i = value.(z[i])
+    println(z_i)
+end
+
+# using Plots
+# x, y = cumulative_distribution(πval, diagram, params)
+# p = plot(x, y, linestyle=:dash)
+# savefig(p, "pig-breeding.svg")

@@ -1,4 +1,4 @@
-using Printf, Random
+using Printf, Random, Parameters
 using JuMP, Gurobi
 using DecisionProgramming
 
@@ -109,8 +109,6 @@ optimizer = optimizer_with_attributes(
 )
 set_optimizer(model, optimizer)
 optimize!(model)
-
-include("analysis.jl")
 
 πval = value.(model[:π])
 print_results(πval, diagram, params; πtol=0.1)

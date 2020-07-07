@@ -1,4 +1,5 @@
 # API
+## Model
 ```@docs
 paths
 Specs
@@ -10,4 +11,9 @@ DecisionModel
 DecisionModel(::Specs, ::InfluenceDiagram, ::Params)
 probability_sum_cut
 number_of_paths_cut
+```
+
+## Analysis
+```@docs
+state_probabilities
 ```

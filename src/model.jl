@@ -79,7 +79,7 @@ function InfluenceDiagram(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vec
     ## Validate states
     # Each chance and decision node has a finite number of states
     length(S_j) == n || error("Each change and decision node should have states.")
-    all(S_j[j] ≥ 1 for j in 1:n) || error("Each change and decision node should have finite number of states.")
+    all(S_j[j] ≥ 1 for j in 1:n) || error("Each change and decision node should have ≥ 1 states.")
 
     # Construct the information set
     I_j = [Vector{Int}() for i in 1:N]
@@ -146,7 +146,7 @@ function number_of_paths_cut()
     flag = false
     function number_of_paths_cut(cb_data, model, π, ϵ, p, num_paths, S_j)
         flag && return
-        πnum = sum(callback_value(cb_data, π[s]) >= ϵ for s in eachindex(π))
+        πnum = sum(callback_value(cb_data, π[s]) ≥ ϵ for s in eachindex(π))
         if !isapprox(πnum, num_paths, atol = 0.9)
             con = @build_constraint(sum(π[s] / p(s) for s in paths(S_j)) == num_paths)
             MOI.submit(model, MOI.LazyConstraint(cb_data), con)

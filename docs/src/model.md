@@ -1,6 +1,6 @@
 # Decision Model
 ## Introduction
-The model is based on [^1], sections 3 and 5. We highly recommend to read them for motivation, details, and proofs of the formulation explained here. We explain how we have implemented the model in the source code.
+The model is based on [^1], sections 3 and 5. We highly recommend to read them for motivation, details, and proofs of the formulation explained here. The paper [^2] explains details about influence diagrams.
 
 
 ## Influence Diagram
@@ -64,7 +64,7 @@ For each chance node $j∈C$, we denote the **probability** of state $s_j$ given
 
 $$ℙ(X_j=s_j∣X_{I(j)}=s_{I(j)})∈[0, 1].$$
 
-We define the **upper bound of the probability of a path** $s$ as
+We define the **upper bound of the path probability** $s$ as
 
 $$p(s) = ∏_{j∈C} ℙ(X_j=s_j∣X_{I(j)}=s_{I(j)}).$$
 
@@ -97,29 +97,32 @@ $$\mathcal{U}(s) = ∑_{j∈V} U(Y_j(s_{I(j)})).$$
 
 
 ## Model Formulation
-The mixed-integer linear program maximizes the expected utility over all decision strategies as follows.
+The mixed-integer linear program maximizes the expected utility (1) over all decision strategies as follows.
 
-$$\begin{aligned}
-\underset{Z∈ℤ}{\text{maximize}}\quad
-& ∑_{s∈S} π(s) \mathcal{U}(s) \\
-\text{subject to}\quad
-& ∑_{s_j∈S_j} z(s_j∣s_{I(j)})=1,\quad ∀j∈D, s_{I(j)}∈S_{I(j)} \\
-& 0≤π(s)≤p(s),\quad ∀s∈S \\
-& π(s) ≤ z(s_j∣s_{I(j)}),\quad ∀j∈D, s∈S \\
-& z(s_j∣s_{I(j)}) ∈ \{0,1\},\quad ∀j∈D, s_j∈S_j, s_{I(j)}∈S_{I(j)}
-\end{aligned}$$
+$$\underset{Z∈ℤ}{\text{maximize}}\quad
+∑_{s∈S} π(s) \mathcal{U}(s) \tag{1}$$
 
-**Decision variables** $z(s_j∣s_{I(j)})$ are binary variables that model decision strategies with condition $∑_{s_j∈S_j} z(s_j∣s_{I(j)})=1$ which limits one decision per information path, such that $z(s_j∣s_{I(j)})=1$ is equivalent to decision strategy $Z_j(s_I(j))=s_j.$
+Subject to
 
-The probability distribution of paths $π$ depends on the decision strategy. The **probability of path** $π(s)$ is larger than zero and less than the upper bound of the probability of a path. Decision variables also constraints the probability of path.
+$$z(s_j∣s_{I(j)}) ∈ \{0,1\},\quad ∀j∈D, s_j∈S_j, s_{I(j)}∈S_{I(j)} \tag{2}$$
 
-In the model, we use a utility function $U^+$ instead of $U$, which is affinely transformed to positive values to simplify the model formulation. As an example, normalizing and adding one gives us such a utility function
+$$∑_{s_j∈S_j} z(s_j∣s_{I(j)})=1,\quad ∀j∈D, s_{I(j)}∈S_{I(j)} \tag{3}$$
+
+$$0≤π(s)≤p(s),\quad ∀s∈S \tag{4}$$
+
+$$π(s) ≤ z(s_j∣s_{I(j)}),\quad ∀j∈D, s∈S \tag{5}$$
+
+$$π(s) ≥ p(s) + ∑_{j∈D} z(s_j∣s_{I(j)}) - |D|,\quad ∀s∈S \tag{6}$$
+
+**Decision variables** $z$ are binary variables (2) that model different decision strategies. The condition (3) limits decisions $s_j$ to one per information path $s_{I(j)}.$ Decision strategy $Z_j(s_I(j))=s_j$ is equivalent to $z(s_j∣s_{I(j)})=1.$
+
+We denote the probability distribution of paths using $π.$ The **path probability** $π(s)$ is between zero and the upper bound of the path probability (4). The path probability is zero on paths where at least one decision variable is zero (5) and equal to the upper bound on paths if all decision variables on the path are one (6).
+
+We can omit the constraint (6) from the model if we use a positive utility function $U^+$ which is an affine transformation of utility function $U.$ As an example, we can normalize and add one to the original utility function.
 
 $$U^+(c) = \frac{U(c) - \min_{c∈ℂ}U(c)}{\max_{c∈ℂ}U(c) - \min_{c∈ℂ}U(c)} + 1.$$
 
-Therefore, $U^+(c) > 0$ for all $c.$ Positive utility values enforce the optimizer to find solutions where path probabilities sum to one without need to supply it as a constraint explicitly.
-
-We discuss an extension to the model on the Extension page.
+There are also alternative objectives and ways to model risk. We discuss extensions to the model on the [Extensions](@ref) page.
 
 
 ## Lazy Cuts
@@ -127,57 +130,42 @@ Probability sum cut
 
 $$∑_{s∈S}π(s)=1$$
 
-Number of pats cut
+Number of active paths cut
 
 $$∑_{s∈S}π(s)/p(s)=n_{s}$$
 
 
-## Analyzing Results
-### Active Paths
-An **active path** is path $s∈S$ with positive path probability $π(s)>0.$ Then, we have the set of **all active paths** $S^+=\{s∈S∣π(s)>0\}.$ We denote the **number of active paths** as $|S^+|.$ The ratio of active paths to all paths is $|S^+|/|S|.$
-
-### State Probabilities
-We denote **paths with fixed states** where $ϵ$ denotes an empty state using a recursive definition.
-
-$$\begin{aligned}
-S_{ϵ} &= S \\
-S_{ϵ,s_i^′} &= \{s∈S_{ϵ} ∣ s_i=s_i^′\} \\
-S_{ϵ,s_i^′,s_j^′} &= \{s∈S_{ϵ,s_i^′} ∣ s_j=s_j^′\},\quad j≠i
-\end{aligned}$$
-
-The probability of all paths sums to one
-
-$$ℙ(ϵ) = \sum_{s∈S_ϵ} π(s) = 1.$$
-
-**State probabilities** for each node $i∈C∪D$ and state $s_i∈S_i$ denote how likely the state occurs given all path probabilities
-
-$$ℙ(s_i∣ϵ) = \sum_{s∈S_{ϵ,s_i}} π(s) / ℙ(ϵ) = \sum_{s∈S_{ϵ,s_i}} π(s)$$
-
-An **active state** is a state with positive state probability $ℙ(s_i∣c)>0$ given conditions $c.$
-
-We can **generalize the state probabilities** as conditional probabilities using a recursive definition. Generalized state probabilities allow us to explore how fixing active states affect the probabilities of other states. First, we choose an active state $s_i$ and fix its value. Fixing an inactive state would make all state probabilities zero. Then, we can compute the conditional state probabilities as follows.
-
-$$ℙ(s_j∣ϵ,s_i) = \sum_{s∈S_{ϵ,s_i,s_j}} π(s) / ℙ(s_i∣ϵ)$$
-
-We can then repeat this process by choosing an active state from the new conditional state probabilities $s_k$ that is different from previously chosen states $k≠j.$
-
-A **robust recommendation** is a decision state $s_i$ where $i∈D$ and subpath $c$ such the state probability is one $ℙ(s_i∣c)=1.$
-
-
 ## Complexity
-States and paths
+Number of paths
 
-*  $⋃_{i∈C} (S_{I(i)}×S_i)$ probability stages
-*  $⋃_{i∈D} (S_{I(i)}×S_i)$ decision stages
-*  $⋃_{i∈V} S_{I(i)}$ utility stages
+$|S|=∏_{i∈C∪D} |S_i| = ∏_{i∈C} |S_i| ⋅ ∏_{i∈D} |S_i|$
 
-Sizes
+Probability stages
 
-*  $|S|=∏_{i∈C∪D} |S_i|$ Number of paths
-*  $∑_{i∈C}|S_{I(i)}| |S_i|$ Number of probability stages
-*  $∑_{i∈D}|S_{I(i)}| |S_i|$ Number of decision stages
-*  $∑_{v∈V}|S_{I(v)}|$ Number of utility stages
+$⋃_{i∈C} (S_{I(i)}×S_i)$
+
+Number of probability stages
+
+$∑_{i∈C}|S_{I(i)}| |S_i|$
+
+Decision stages
+
+$⋃_{i∈D} (S_{I(i)}×S_i)$
+
+Number of decision stages
+
+$∑_{i∈D}|S_{I(i)}| |S_i|$
+
+Utility stages
+
+$⋃_{i∈V} S_{I(i)}$
+
+Number of utility stages
+
+$∑_{v∈V}|S_{I(v)}|$
 
 
 ## References
 [^1]: Salo, A., Andelmin, J., & Oliveira, F. (2019). Decision Programming for Multi-Stage Optimization under Uncertainty, 1–35. Retrieved from [http://arxiv.org/abs/1910.09196](http://arxiv.org/abs/1910.09196)
+
+[^2]: Bielza, C., Gómez, M., & Shenoy, P. P. (2011). A review of representation issues and modeling challenges with influence diagrams. Omega, 39(3), 227–241. https://doi.org/10.1016/j.omega.2010.07.003
