@@ -1,37 +1,86 @@
 using Printf, Parameters
 
+"""Test is path is compatible with a decision strategy."""
+function is_compatible(s, z, D, I_j)
+    all(isone(z[j][s[[I_j[j]; j]]...]) for j in D)
+end
+
+"""Generate all active paths from a decision strategy."""
+function active_paths(z, diagram::InfluenceDiagram, fixed::Dict{Int, Int})
+    @unpack D, S_j, I_j = diagram
+    return (s for s in paths(S_j, fixed) if is_compatible(s, z, D, I_j))
+end
+
+function active_paths(z, diagram::InfluenceDiagram)
+    active_paths(z, diagram, Dict{Int, Int}())
+end
+
 """State probabilities."""
-function state_probabilities(πval::Array{Float64}, diagram::InfluenceDiagram, prior::Float64, fixed::Dict{Int, Int}):: Dict{Int, Vector{Float64}}
-    @unpack C, D, S_j = diagram
+function state_probabilities(z, diagram::InfluenceDiagram, params::Params, prior::Float64, fixed::Dict{Int, Int})::Dict{Int, Vector{Float64}}
+    @unpack C, D, S_j, I_j = diagram
+    @unpack X = params
     probs = Dict(i => zeros(S_j[i]) for i in (C ∪ D))
-    for s in paths(S_j, fixed), i in (C ∪ D)
-        probs[i][s[i]] += πval[s...] / prior
+    for s in active_paths(z, diagram, fixed), i in (C ∪ D)
+        probs[i][s[i]] += path_probability(s, C, I_j, X) / prior
     end
     return probs
 end
 
 """State probabilities."""
-function state_probabilities(πval::Array{Float64}, diagram::InfluenceDiagram)
-    return state_probabilities(πval, diagram, 1.0, Dict{Int, Int}())
+function state_probabilities(z, diagram::InfluenceDiagram, params::Params)
+    return state_probabilities(z, diagram, params, 1.0, Dict{Int, Int}())
 end
 
-"""Cumulative distribution."""
-function cumulative_distribution(πval::Array{Float64}, diagram::InfluenceDiagram, params::Params)
+"""Cumulative distribution.
+
+```julia
+using Plots
+x, y = cumulative_distribution(z, diagram, params)
+p = plot(x, y, linestyle=:dash)
+savefig(p, "cdf.svg")
+```
+"""
+function cumulative_distribution(z, diagram::InfluenceDiagram, params::Params)
     @unpack C, D, V, I_j, S_j = diagram
-    @unpack Y = params
-    u = similar(πval)
-    for s in paths(S_j)
-        u[s...] = path_utility(s, Y, I_j, V)
+    @unpack X, Y = params
+    utilities = Vector{Float64}()
+    probabilities = Vector{Float64}()
+    for s in active_paths(z, diagram)
+        push!(utilities, path_utility(s, Y, I_j, V))
+        push!(probabilities, path_probability(s, C, I_j, X))
     end
-    indices = sortperm(u[:])
-    x = u[indices]
-    y = cumsum(πval[indices])
+    i = sortperm(utilities[:])
+    x = utilities[i]
+    y = cumsum(probabilities[i])
     return x, y
 end
 
-function print_state_probabilities(probs, nodes, labels, fixed::Dict{Int, Int})
+function print_results(z, diagram, params)
+    @unpack C, D, V, I_j, S_j = diagram
+    @unpack X, Y = params
+    # Total expected utility of the decision strategy.
+    expected_utility = sum(
+        path_probability(s, C, I_j, X) * path_utility(s, Y, I_j, V)
+        for s in active_paths(z, diagram))
+    println("Number of paths: ", prod(S_j))
+    println("Number of active paths: ", prod(S_j[j] for j in C))
+    println("Expected utility: ", expected_utility)
+end
+
+function print_decision_strategy(z, diagram)
+    @unpack C, D, V, I_j, S_j = diagram
+    println("Z | s_I | s_j")
+    for j in D
+        for s_I in paths(S_j[I_j[j]])
+            _, s_j = findmax(z[j][s_I..., :])
+            @printf("%i | %s | %s \n", j, s_I, s_j)
+        end
+    end
+end
+
+function print_state_probabilities(probs, nodes, states, fixed::Dict{Int, Int})
     print("Node")
-    for label in labels
+    for label in states
         print(" | ", label)
     end
     println()
@@ -49,40 +98,4 @@ end
 
 function print_state_probabilities(probs, nodes, labels)
     return print_state_probabilities(probs, nodes, labels, Dict{Int, Int}())
-end
-
-function print_results(πval::Array{Float64}, diagram::InfluenceDiagram, params::Params; πtol::Float64=0.0)
-    @unpack C, D, V, I_j, S_j = diagram
-    @unpack X, Y = params
-
-    # Minimum path probability
-    ϵ = minimum_path_probability(C, I_j, X, S_j)
-
-    # Number of active paths.
-    num_active = sum(π ≥ ϵ for π in πval)
-
-    # Total expected utility of the decision strategy.
-    expected_utility = sum(πval[s...] * path_utility(s, Y, I_j, V) for s in paths(S_j))
-
-    # Average expected utility of active paths
-    avg = expected_utility / num_active
-
-    # Active paths
-    println("Number of active paths versus all paths:")
-    @printf("%i | %i \n", num_active, prod(S_j))
-    println("Expected expected utility:")
-    println(expected_utility)
-    println("Average expected utility of active paths:")
-    println(avg)
-    println()
-
-    println("probability | utility | expected utility | path")
-    for s in paths(S_j)
-        ut = path_utility(s, Y, I_j, V)
-        eu = πval[s...] * ut
-        if (πval[s...] ≥ πtol) | (eu ≥ avg)
-            @printf("%.3f | %10.3f | %10.3f | %s \n", πval[s...], ut, eu, s)
-        end
-    end
-    println()
 end

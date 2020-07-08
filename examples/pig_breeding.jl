@@ -2,23 +2,29 @@ using Printf, Parameters
 using JuMP, Gurobi
 using DecisionProgramming
 
-# Parameters
-no_forgetting = false
-const N = 4
+if isempty(ARGS)
+    const N = 4
+else
+    const N = parse(Int, ARGS[1])
+end
 const health = [3*k - 2 for k in 1:N]
 const test = [3*k - 1 for k in 1:(N-1)]
 const treat = [3*k for k in 1:(N-1)]
 const cost = [(3*N - 2) + k for k in 1:(N-1)]
 const price = [(3*N - 2) + N]
+const health_states = ["ill", "healthy"]
+const test_states = ["positive", "negative"]
+const treat_states = ["treat", "pass"]
+const no_forgetting = false
 
-# Influence diagram parameters
+@info("Defining influence diagram parameters.")
 C = health ∪ test
 D = treat
 V = cost ∪ price
 A = Vector{Pair{Int, Int}}()
 S_j = Vector{Int}(undef, length(C) + length(D))
 
-# Construct arcs
+@info("Defining arcs.")
 add_arcs(from, to) = append!(A, (i => j for (i, j) in zip(from, to)))
 add_arcs(health[1:end-1], health[2:end])
 add_arcs(health[1:end-1], test)
@@ -32,12 +38,11 @@ else
     add_arcs(test, treat)
 end
 
-# Construct states
-S_j[health] = fill(2, length(health))
-S_j[test] = fill(2, length(test))
-S_j[treat] = fill(2, length(treat))
+@info("Defining states.")
+S_j[health] = fill(length(health_states), length(health))
+S_j[test] = fill(length(test_states), length(test))
+S_j[treat] = fill(length(treat_states), length(treat))
 
-# Probabilities
 function probabilities(health, treat, test, S_j)
     X = Dict{Int, Array{Float64}}()
 
@@ -76,7 +81,6 @@ function probabilities(health, treat, test, S_j)
     return X
 end
 
-# Consequences
 function consequences(cost, price)
     Y = Dict{Int, Array{Float64}}()
     for i in cost
@@ -88,20 +92,28 @@ function consequences(cost, price)
     return Y
 end
 
-X = @time probabilities(health, treat, test, S_j)
-Y = @time consequences(cost, price)
+@info("Creating probabilities.")
+@time X = probabilities(health, treat, test, S_j)
 
+@info("Creating consequences.")
+@time Y = consequences(cost, price)
 
-# Model
+@info("Defining specs")
 specs = Specs(
     probability_sum_cut=false,
     num_paths=prod(S_j[j] for j in C)
 )
-diagram = @time InfluenceDiagram(C, D, V, A, S_j)
-params = @time Params(diagram, X, Y)
-model = @time DecisionModel(specs, diagram, params)
 
-println("--- Optimization ---")
+@info("Defining InfluenceDiagram")
+@time diagram = InfluenceDiagram(C, D, V, A, S_j)
+
+@info("Defining Params")
+@time params = Params(diagram, X, Y)
+
+@info("Defining DecisionModel")
+@time model = DecisionModel(specs, diagram, params)
+
+@info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
     Gurobi.Optimizer,
     "IntFeasTol"      => 1e-9,
@@ -110,39 +122,42 @@ optimizer = optimizer_with_attributes(
 set_optimizer(model, optimizer)
 optimize!(model)
 
-πval = value.(model[:π])
-print_results(πval, diagram, params; πtol=0.1)
+@info("Extracting results.")
+round_int(z) = Int(round(z))
+z = Dict(i => round_int.(value.(model[:z][i])) for i in D)
 
-println("State probabilities:")
-probs = state_probabilities(πval, diagram)
-print_state_probabilities(probs, health, ["ill", "healthy"])
-print_state_probabilities(probs, test, ["positive", "negative"])
-print_state_probabilities(probs, treat, ["treat", "pass"])
+@info("Printing results")
+print_results(z, diagram, params)
 println()
 
-# Conditional state probabilities when pig is treat or not treated.
-for node in treat
-    for state in 1:2
-        fixed = Dict(node => state)
-        prior = probs[node][state]
-        (isapprox(prior, 0, atol=1e-4) | isapprox(prior, 1, atol=1e-4)) && continue
-        println("Conditional state probabilities")
-        probs2 = state_probabilities(πval, diagram, prior, fixed)
-        print_state_probabilities(probs2, health, ["ill", "healthy"], fixed)
-        print_state_probabilities(probs2, test, ["positive", "negative"], fixed)
-        print_state_probabilities(probs2, treat, ["treat", "pass"], fixed)
-        println()
-    end
-end
+@info("Printing decision strategy:")
+print_decision_strategy(z, diagram)
+println()
 
-println("Decision strategy")
-z = model[:z]
-for i in D
-    z_i = value.(z[i])
-    println(z_i)
-end
+@info("State probabilities:")
+probs = state_probabilities(z, diagram, params)
+print_state_probabilities(probs, health, health_states)
+print_state_probabilities(probs, test, test_states)
+print_state_probabilities(probs, treat, treat_states)
+println()
 
+# # Conditional state probabilities when pig is treat or not treated.
+# for node in treat
+#     for state in 1:2
+#         fixed = Dict(node => state)
+#         prior = probs[node][state]
+#         (isapprox(prior, 0, atol=1e-4) | isapprox(prior, 1, atol=1e-4)) && continue
+#         @info("Conditional state probabilities")
+#         probs2 = state_probabilities(z, diagram, params, prior, fixed)
+#         print_state_probabilities(probs2, health, health_states, fixed)
+#         print_state_probabilities(probs2, test, test_states, fixed)
+#         print_state_probabilities(probs2, treat, treat_states, fixed)
+#         println()
+#     end
+# end
+
+# @info("Plot the cumulative distribution.")
 # using Plots
-# x, y = cumulative_distribution(πval, diagram, params)
+# @time x, y = cumulative_distribution(z, diagram, params)
 # p = plot(x, y, linestyle=:dash)
-# savefig(p, "pig-breeding.svg")
+# savefig(p, "cdf.svg")

@@ -13,9 +13,12 @@ export DecisionModel,
     number_of_paths_cut
 
 include("analysis.jl")
-export state_probabilities,
+export active_paths,
+    is_compatible,
+    state_probabilities,
     cumulative_distribution,
     print_results,
+    print_decision_strategy,
     print_state_probabilities
 
 end # module

@@ -1,28 +1,35 @@
-using Printf, Random, Parameters
+using Printf, Random, Parameters, Logging
 using JuMP, Gurobi
 using DecisionProgramming
 
 Random.seed!(11)
 
-# Parameters
-const N = 4
+if isempty(ARGS)
+    const N = 4
+else
+    const N = parse(Int, ARGS[1])
+end
 const L = [1]
 const R_k = [k + 1 for k in 1:N]
 const A_k = [(N + 1) + k for k in 1:N]
 const F = [2*N + 2]
 const T = [2*N + 3]
+const L_states = ["high", "low"]
+const R_k_states = ["high", "low"]
+const A_k_states = ["yes", "no"]
+const F_states = ["failure", "success"]
 const c_k = rand(N)
 fortification(k, a) = [c_k[k], 0][a]
 consequence(k, a) = [-c_k[k], 0][a]
 
-# Influence diagram parameters
+@info("Defining influence diagram parameters.")
 C = L ∪ R_k ∪ F
 D = A_k
 V = T
 A = Vector{Pair{Int, Int}}()
 S_j = Vector{Int}(undef, length(C)+length(D))
 
-# Arcs
+@info("Defining arcs.")
 add_arcs(from, to) = append!(A, (i => j for (i, j) in zip(from, to)))
 add_arcs(repeat(L, N), R_k)
 add_arcs(L, F)
@@ -31,13 +38,12 @@ add_arcs(A_k, repeat(F, N))
 add_arcs(F, T)
 add_arcs(A_k, repeat(T, N))
 
-# States
-S_j[L] = fill(2, length(L))
-S_j[R_k] = fill(2, length(R_k))
-S_j[A_k] = fill(2, length(A_k))
-S_j[F] = fill(2, length(F))
+@info("Defining states.")
+S_j[L] = fill(length(L_states), length(L))
+S_j[R_k] = fill(length(R_k_states), length(R_k))
+S_j[A_k] = fill(length(A_k_states), length(A_k))
+S_j[F] = fill(length(F_states), length(F))
 
-# Probabilities
 function probabilities(L, R_k, A_k, F, S_j)
     X = Dict{Int, Array{Float64}}()
 
@@ -76,7 +82,6 @@ function probabilities(L, R_k, A_k, F, S_j)
     return X
 end
 
-# Consequences
 function consequences(A_k, F, T, S_j)
     Y = Dict{Int, Array{Float64}}()
     for v in T
@@ -91,20 +96,28 @@ function consequences(A_k, F, T, S_j)
     return Y
 end
 
-X = @time probabilities(L, R_k, A_k, F, S_j)
-Y = @time consequences(A_k, F, T, S_j)
+@info("Creating probabilities.")
+@time X = probabilities(L, R_k, A_k, F, S_j)
 
+@info("Creating consequences.")
+@time Y = consequences(A_k, F, T, S_j)
 
-# Model
+@info("Defining specs")
 specs = Specs(
     probability_sum_cut=true,
     num_paths=prod(S_j[j] for j in C)
 )
-diagram = @time InfluenceDiagram(C, D, V, A, S_j)
-params = @time Params(diagram, X, Y)
-model = @time DecisionModel(specs, diagram, params)
 
-println("--- Optimization ---")
+@info("Defining InfluenceDiagram")
+@time diagram = InfluenceDiagram(C, D, V, A, S_j)
+
+@info("Defining Params")
+@time params = Params(diagram, X, Y)
+
+@info("Defining DecisionModel")
+@time model = DecisionModel(specs, diagram, params)
+
+@info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
     Gurobi.Optimizer,
     "IntFeasTol"      => 1e-9,
@@ -113,13 +126,21 @@ optimizer = optimizer_with_attributes(
 set_optimizer(model, optimizer)
 optimize!(model)
 
-πval = value.(model[:π])
-print_results(πval, diagram, params; πtol=0.1)
+@info("Extracting results.")
+round_int(z) = Int(round(z))
+z = Dict(i => round_int.(value.(model[:z][i])) for i in D)
 
-println("State probabilities:")
-probs = state_probabilities(πval, diagram)
-print_state_probabilities(probs, L, ["high", "low"])
-print_state_probabilities(probs, R_k, ["high", "low"])
-print_state_probabilities(probs, A_k, ["yes", "no"])
-print_state_probabilities(probs, F, ["failure", "success"])
+@info("Printing results")
+print_results(z, diagram, params)
+
+@info("Printing decision strategy:")
+print_decision_strategy(z, diagram)
+println()
+
+@info("Printing state probabilities:")
+probs = state_probabilities(z, diagram, params)
+print_state_probabilities(probs, L, L_states)
+print_state_probabilities(probs, R_k, R_k_states)
+print_state_probabilities(probs, A_k, A_k_states)
+print_state_probabilities(probs, F, F_states)
 println()
