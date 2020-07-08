@@ -64,11 +64,9 @@ For each chance node $j∈C$, we denote the **probability** of state $s_j$ given
 
 $$ℙ(X_j=s_j∣X_{I(j)}=s_{I(j)})∈[0, 1].$$
 
-We define the **upper bound of the path probability** $s$ as
+We define the **upper bound of path probability** $s$ as
 
 $$p(s) = ∏_{j∈C} ℙ(X_j=s_j∣X_{I(j)}=s_{I(j)}).$$
-
-We use it as a constraint in the model formulation.
 
 
 ## Decisions
@@ -77,6 +75,10 @@ For each decision node $j∈D,$ a **local decision strategy** maps an informatio
 $$Z_j:S_{I(j)}↦S_j.$$
 
 **Decision strategy** $Z$ contains one local decision strategy for each decision node. Set of **all decision strategies** is denoted $ℤ.$
+
+A decision stategy $Z∈ℤ$ is **compatible** with the path $s∈S$ if and only if $Z_j(s_{I(j)})=s_j$ forall $Z_j∈Z$ and $j∈D.$
+
+The probability of path $s$ that is compatible with decision strategy $Z$ is $ℙ(s∣Z)=p(s).$ Otherwise, the path cannot occur $ℙ(s∣Z)=0.$
 
 
 ## Consequences
@@ -126,13 +128,9 @@ There are also alternative objectives and ways to model risk. We discuss extensi
 
 
 ## Active Paths
-An **active path** is path $s∈S$ with positive path probability $π(s)>0.$ Then, we define the set of **all active paths** as
+An **active path** is path $s∈S$ that is compatible with decision strategy $Z.$ We denote the set of **all active paths** using $S^+.$ Since each decision strategy $Z_j$ chooses only one state out of all of its states, the **number of active paths** is
 
-$$S^+=\{s∈S∣π(s)>0\}.$$
-
-Since each decision node can choose only one state for every information path, the **number of active paths** is
-
-$$|S^+|=|S|/\prod_{i∈D}|S_i|=\prod_{i∈C}|S_i|.$$
+$$|S^+|=|S|/\prod_{j∈D}|S_j|=\prod_{j∈C}|S_j|.$$
 
 
 ## Lazy Cuts
