@@ -31,16 +31,26 @@ function state_probabilities(z, diagram::InfluenceDiagram, params::Params)
     return state_probabilities(z, diagram, params, 1.0, Dict{Int, Int}())
 end
 
-"""Cumulative distribution.
+"""The probability distribution of utilities.
 
 ```julia
 using Plots
-x, y = cumulative_distribution(z, diagram, params)
-p = plot(x, y, linestyle=:dash)
-savefig(p, "cdf.svg")
+x, y = distribution(z, diagram, params)
+y2 = cumsum(y)
+p = plot(x, y,
+    linestyle=:dash,
+    markershape=:circle,
+    ylims=(0, 1.1),
+    label="Distribution",
+    legend=:topleft)
+plot!(p, x, y2,
+    linestyle=:dash,
+    markershape=:circle,
+    label="Cumulative distribution")
+savefig(p, "distribution.svg")
 ```
 """
-function cumulative_distribution(z, diagram::InfluenceDiagram, params::Params)
+function utility_distribution(z, diagram::InfluenceDiagram, params::Params)
     @unpack C, D, V, I_j, S_j = diagram
     @unpack X, Y = params
     utilities = Vector{Float64}()
@@ -51,8 +61,23 @@ function cumulative_distribution(z, diagram::InfluenceDiagram, params::Params)
     end
     i = sortperm(utilities[:])
     x = utilities[i]
-    y = cumsum(probabilities[i])
-    return x, y
+    y = probabilities[i]
+
+    # Squash equal consecutive utilities into one, sum probabilities
+    j = 1
+    x2 = [x[1]]
+    y2 = [y[1]]
+    for k in 2:length(x)
+        if x[k] == x2[j]
+            y2[j] += y[k]
+        else
+            push!(x2, x[k])
+            push!(y2, y[k])
+            j += 1
+        end
+    end
+
+    return x2, y2
 end
 
 function print_results(z, diagram, params)

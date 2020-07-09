@@ -16,7 +16,7 @@ include("analysis.jl")
 export active_paths,
     is_compatible,
     state_probabilities,
-    cumulative_distribution,
+    utility_distribution,
     print_results,
     print_decision_strategy,
     print_state_probabilities

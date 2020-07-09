@@ -156,8 +156,19 @@ println()
 #     end
 # end
 
-# @info("Plot the cumulative distribution.")
-# using Plots
-# @time x, y = cumulative_distribution(z, diagram, params)
-# p = plot(x, y, linestyle=:dash)
-# savefig(p, "cdf.svg")
+@info("Plot the cumulative distribution.")
+using Plots
+@time x, y = utility_distribution(z, diagram, params)
+p = plot(x, y,
+    linestyle=:dash,
+    markershape=:circle,
+    ylims=(0, 1.1),
+    xticks=x,
+    label="Distribution",
+    legend=:topleft)
+plot!(p, x, cumsum(y),
+    linestyle=:dash,
+    markershape=:circle,
+    yticks=cumsum(y),
+    label="Cumulative distribution")
+savefig(p, "utility-distribution.svg")
