@@ -21,4 +21,8 @@ export active_paths,
     print_decision_strategy,
     print_state_probabilities
 
+include("random.jl")
+export random_influence_diagram,
+    random_params
+
 end # module
