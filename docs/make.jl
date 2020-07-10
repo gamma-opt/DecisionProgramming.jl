@@ -3,17 +3,23 @@ using DecisionProgramming
 
 makedocs(
     sitename = "DecisionProgramming.jl",
-    format = Documenter.HTML(),
+    format = Documenter.HTML(
+        # assets = ["assets/favicon.ico"]
+    ),
     modules = [DecisionProgramming],
     authors = "Jaan Tollander de Balsch",
     pages = [
         "Home" => "index.md",
-        "model.md",
+        "Decision Programming" => Any[
+            "decision-programming/influence-diagram.md",
+            "decision-programming/decision-model.md",
+            "decision-programming/complexity.md",
+        ],
         "analysis.md",
-        "extensions.md",
         "Examples" => Any[
-            "examples/pig-breeding.md"
-            "examples/n-monitoring.md"
+            "examples/pig-breeding.md",
+            "examples/n-monitoring.md",
+            "examples/contingent-portfolio-programming.md",
         ],
         "api.md"
     ]

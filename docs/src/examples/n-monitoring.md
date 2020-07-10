@@ -1,4 +1,4 @@
-# N-Monitoring Problem
+# N-Monitoring
 ## Description
 The $N$-monitoring problem is described in [^1], sections 4.1 and 6.1.
 

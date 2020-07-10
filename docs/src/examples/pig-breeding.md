@@ -1,4 +1,4 @@
-# Pig Breeding Problem
+# Pig Breeding
 ## Description
 The pig breeding problem as described in [^1].
 

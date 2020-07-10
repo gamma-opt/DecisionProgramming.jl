@@ -48,6 +48,7 @@ function random_consequences(states)
     return reshape(rand(prod(states)), states...)
 end
 
+"""Generate random params."""
 function random_params(diagram::InfluenceDiagram)
     @unpack C, V, S_j, I_j = diagram
     X = Dict{Int, Array{Float64}}(

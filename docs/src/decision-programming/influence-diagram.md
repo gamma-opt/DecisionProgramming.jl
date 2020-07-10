@@ -1,10 +1,10 @@
-# Decision Model
-## Introduction
-The model is based on [^1], sections 3 and 5. We highly recommend to read them for motivation, details, and proofs of the formulation explained here. The paper [^2] explains details about influence diagrams.
-
-
-## Influence Diagram
+# Influence Diagram
+## Definition
 ![](figures/influence-diagram.svg)
+
+Based on [^1], sections 3.
+
+The paper [^2] explains details about influence diagrams.
 
 We define the **influence diagram** as a directed, acyclic graph such that part of its nodes have a finite number of states associated with them
 
@@ -46,8 +46,6 @@ $$s_{I(j)}=(s_i ∣ i∈I(j)).$$
 
 **Concatenation of two paths** $s$ and $s^′$ is denoted $s;s^′.$
 
-
-## Sets
 We define the set of **all paths** as a product set of all states
 
 $$S=∏_{j∈C∪D} S_j.$$
@@ -81,12 +79,19 @@ A decision stategy $Z∈ℤ$ is **compatible** with the path $s∈S$ if and only
 The probability of path $s$ that is compatible with decision strategy $Z$ is $ℙ(s∣Z)=p(s).$ Otherwise, the path cannot occur $ℙ(s∣Z)=0.$
 
 
+## Active Paths
+An **active path** is path $s∈S$ that is compatible with decision strategy $Z.$ We denote the set of **all active paths** using $S^+.$ Since each decision strategy $Z_j$ chooses only one state out of all of its states, the **number of active paths** is
+
+$$|S^+|=|S|/\prod_{j∈D}|S_j|=\prod_{j∈C}|S_j|.$$
+
+
 ## Consequences
 For each value node $j∈V$, we define the **consequence** given information path $s_{I(j)}$ as
 
 $$Y_j:S_{I(j)}↦ℂ,$$
 
 where $ℂ$ is the set of consequences. In the code, the consequences are implicit, and we map information paths directly to the utility values.
+
 
 ## Utilities
 The **utility function** maps consequences to real-valued utilities
@@ -96,81 +101,6 @@ $$U:ℂ↦ℝ.$$
 The **utility of a path** is defined as the sum of utilities for consequences of value nodes $j∈V$ with information paths $I(j)$
 
 $$\mathcal{U}(s) = ∑_{j∈V} U(Y_j(s_{I(j)})).$$
-
-
-## Model Formulation
-The mixed-integer linear program maximizes the expected utility (1) over all decision strategies as follows.
-
-$$\underset{Z∈ℤ}{\text{maximize}}\quad
-∑_{s∈S} π(s) \mathcal{U}(s) \tag{1}$$
-
-Subject to
-
-$$z(s_j∣s_{I(j)}) ∈ \{0,1\},\quad ∀j∈D, s_j∈S_j, s_{I(j)}∈S_{I(j)} \tag{2}$$
-
-$$∑_{s_j∈S_j} z(s_j∣s_{I(j)})=1,\quad ∀j∈D, s_{I(j)}∈S_{I(j)} \tag{3}$$
-
-$$0≤π(s)≤p(s),\quad ∀s∈S \tag{4}$$
-
-$$π(s) ≤ z(s_j∣s_{I(j)}),\quad ∀j∈D, s∈S \tag{5}$$
-
-$$π(s) ≥ p(s) + ∑_{j∈D} z(s_j∣s_{I(j)}) - |D|,\quad ∀s∈S \tag{6}$$
-
-**Decision variables** $z$ are binary variables (2) that model different decision strategies. The condition (3) limits decisions $s_j$ to one per information path $s_{I(j)}.$ Decision strategy $Z_j(s_I(j))=s_j$ is equivalent to $z(s_j∣s_{I(j)})=1.$
-
-We denote the probability distribution of paths using $π.$ The **path probability** $π(s)$ is between zero and the upper bound of the path probability (4). The path probability is zero on paths where at least one decision variable is zero (5) and equal to the upper bound on paths if all decision variables on the path are one (6).
-
-We can omit the constraint (6) from the model if we use a positive utility function $U^+$ which is an affine transformation of utility function $U.$ As an example, we can normalize and add one to the original utility function.
-
-$$U^+(c) = \frac{U(c) - \min_{c∈ℂ}U(c)}{\max_{c∈ℂ}U(c) - \min_{c∈ℂ}U(c)} + 1.$$
-
-There are also alternative objectives and ways to model risk. We discuss extensions to the model on the [Extensions](@ref) page.
-
-
-## Active Paths
-An **active path** is path $s∈S$ that is compatible with decision strategy $Z.$ We denote the set of **all active paths** using $S^+.$ Since each decision strategy $Z_j$ chooses only one state out of all of its states, the **number of active paths** is
-
-$$|S^+|=|S|/\prod_{j∈D}|S_j|=\prod_{j∈C}|S_j|.$$
-
-
-## Lazy Cuts
-Probability sum cut
-
-$$∑_{s∈S}π(s)=1$$
-
-Number of active paths cut
-
-$$∑_{s∈S}π(s)/p(s)=|S^+|$$
-
-
-## Complexity
-Number of paths
-
-$|S|=∏_{i∈C∪D} |S_i| = ∏_{i∈C} |S_i| ⋅ ∏_{i∈D} |S_i|$
-
-Probability stages
-
-$⋃_{i∈C} (S_{I(i)}×S_i)$
-
-Number of probability stages
-
-$∑_{i∈C}|S_{I(i)}| |S_i|$
-
-Decision stages
-
-$⋃_{i∈D} (S_{I(i)}×S_i)$
-
-Number of decision stages
-
-$∑_{i∈D}|S_{I(i)}| |S_i|$
-
-Utility stages
-
-$⋃_{i∈V} S_{I(i)}$
-
-Number of utility stages
-
-$∑_{v∈V}|S_{I(v)}|$
 
 
 ## References

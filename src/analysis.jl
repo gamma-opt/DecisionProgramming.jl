@@ -5,12 +5,13 @@ function is_compatible(s, z, D, I_j)
     all(isone(z[j][s[[I_j[j]; j]]...]) for j in D)
 end
 
-"""Generate all active paths from a decision strategy."""
+"""Generate all active paths from a decision strategy with fixed states."""
 function active_paths(z, diagram::InfluenceDiagram, fixed::Dict{Int, Int})
     @unpack D, S_j, I_j = diagram
     return (s for s in paths(S_j, fixed) if is_compatible(s, z, D, I_j))
 end
 
+"""Generate all active paths from a decision strategy."""
 function active_paths(z, diagram::InfluenceDiagram)
     active_paths(z, diagram, Dict{Int, Int}())
 end
@@ -80,6 +81,7 @@ function utility_distribution(z, diagram::InfluenceDiagram, params::Params)
     return x2, y2
 end
 
+"""Print number of paths, number of active paths and expected utility."""
 function print_results(z, diagram, params)
     @unpack C, D, V, I_j, S_j = diagram
     @unpack X, Y = params
@@ -92,10 +94,12 @@ function print_results(z, diagram, params)
     println("Expected utility: ", expected_utility)
 end
 
+"""Print decision strategy."""
 function print_decision_strategy(z, diagram)
     @unpack C, D, V, I_j, S_j = diagram
-    println("Z | s_I | s_j")
+    println("j | s_I(j) | s_j")
     for j in D
+        println("I($j) = $(I_j[j])")
         for s_I in paths(S_j[I_j[j]])
             _, s_j = findmax(z[j][s_I..., :])
             @printf("%i | %s | %s \n", j, s_I, s_j)
@@ -103,6 +107,7 @@ function print_decision_strategy(z, diagram)
     end
 end
 
+"""Print state probabilities with fixed states."""
 function print_state_probabilities(probs, nodes, states, fixed::Dict{Int, Int})
     print("Node")
     for label in states
@@ -121,6 +126,7 @@ function print_state_probabilities(probs, nodes, states, fixed::Dict{Int, Int})
     end
 end
 
+"""Print state probabilities."""
 function print_state_probabilities(probs, nodes, labels)
     return print_state_probabilities(probs, nodes, labels, Dict{Int, Int}())
 end
