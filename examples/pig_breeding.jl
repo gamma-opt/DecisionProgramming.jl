@@ -124,7 +124,7 @@ optimize!(model)
 
 @info("Extracting results.")
 round_int(z) = Int(round(z))
-z = Dict(i => round_int.(value.(model[:z][i])) for i in D)
+z = Dict{Int, Array{Int}}(i => round_int.(value.(model[:z][i])) for i in D)
 
 @info("Printing results")
 print_results(z, diagram, params)

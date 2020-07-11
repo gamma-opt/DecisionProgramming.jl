@@ -20,12 +20,12 @@ end
 
 """Path probability (upper bound)."""
 function path_probability(s, C, I_j, X)
-    return prod(X[j][s[[I_j[j]; j]]...] for j in C)
+    prod(X[j][s[[I_j[j]; j]]...] for j in C)
 end
 
 """Minimum path probability."""
 function minimum_path_probability(C, I_j, X, S_j)
-    return minimum(path_probability(s, C, I_j, X) for s in paths(S_j))
+    minimum(path_probability(s, C, I_j, X) for s in paths(S_j))
 end
 
 """Total utility of a path."""
@@ -202,7 +202,8 @@ function DecisionModel(specs::Specs, diagram::InfluenceDiagram, params::Params)
 
     # --- Variables ---
     π = variables(model, S_j)
-    z = Dict(j => variables(model, S_j[[I_j[j]; j]]; binary=true) for j in D)
+    z = Dict{Int, Array{VariableRef}}(
+        j => variables(model, S_j[[I_j[j]; j]]; binary=true) for j in D)
 
     # Add variable to the model.obj_dict.
     model[:π] = π

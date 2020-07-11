@@ -19,6 +19,10 @@ active_paths
 is_compatible
 state_probabilities
 utility_distribution
+```
+
+## Printing
+```@docs
 print_results
 print_decision_strategy
 print_state_probabilities
