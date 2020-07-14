@@ -1,10 +1,12 @@
 # Influence Diagram
-## Definition
-![](figures/influence-diagram.svg)
-
+## Introduction
 Based on [^1], sections 3.
 
 The paper [^2] explains details about influence diagrams.
+
+
+## Definition
+![](figures/influence-diagram.svg)
 
 We define the **influence diagram** as a directed, acyclic graph such that part of its nodes have a finite number of states associated with them
 
@@ -60,7 +62,11 @@ We denote elements of the sets using notation $s_j∈S_j$, $s∈S$, and $s_{I(j)
 ## Probabilities
 For each chance node $j∈C$, we denote the **probability** of state $s_j$ given information path $s_{I(j)}$ as
 
-$$ℙ(X_j=s_j∣X_{I(j)}=s_{I(j)})∈[0, 1].$$
+$$ℙ(X_j=s_j∣X_{I(j)}=s_{I(j)})∈[0, 1],$$
+
+with
+
+$$∑_{s_j∈S_j} ℙ(X_j=s_j∣X_{I(j)}=s_{I(j)}) = 1.$$
 
 We define the **upper bound of path probability** $s$ as
 
@@ -76,13 +82,7 @@ $$Z_j:S_{I(j)}↦S_j.$$
 
 A decision stategy $Z∈ℤ$ is **compatible** with the path $s∈S$ if and only if $Z_j(s_{I(j)})=s_j$ forall $Z_j∈Z$ and $j∈D.$
 
-The probability of path $s$ that is compatible with decision strategy $Z$ is $ℙ(s∣Z)=p(s).$ Otherwise, the path cannot occur $ℙ(s∣Z)=0.$
-
-
-## Active Paths
-An **active path** is path $s∈S$ that is compatible with decision strategy $Z.$ We denote the set of **all active paths** using $S^+.$ Since each decision strategy $Z_j$ chooses only one state out of all of its states, the **number of active paths** is
-
-$$|S^+|=|S|/\prod_{j∈D}|S_j|=\prod_{j∈C}|S_j|.$$
+The path probability $ℙ(s∣Z)$ equals $p(s)$ if the path $s$ is compatible with the decision strategy $Z$. Otherwise, the path cannot occur and the probability is zero.
 
 
 ## Consequences
@@ -92,15 +92,23 @@ $$Y_j:S_{I(j)}↦ℂ,$$
 
 where $ℂ$ is the set of consequences. In the code, the consequences are implicit, and we map information paths directly to the utility values.
 
-
-## Utilities
 The **utility function** maps consequences to real-valued utilities
 
 $$U:ℂ↦ℝ.$$
 
-The **utility of a path** is defined as the sum of utilities for consequences of value nodes $j∈V$ with information paths $I(j)$
+The **path utility** is defined as the sum of utilities for consequences of value nodes $j∈V$ with information paths $I(j)$
 
-$$\mathcal{U}(s) = ∑_{j∈V} U(Y_j(s_{I(j)})).$$
+$$\mathcal{C}(s) = ∑_{j∈V} U(Y_j(s_{I(j)})).$$
+
+
+## Active Paths
+An **active path** is path $s∈S$ that is compatible with decision strategy $Z.$ We denote the set of **all active paths** using $S^+.$ Since each decision strategy $Z_j$ chooses only one state out of all of its states, the **number of active paths** is
+
+$$|S^+|=|S|/\prod_{j∈D}|S_j|=\prod_{j∈C}|S_j|.$$
+
+
+## Path Distribution
+A **path distribution** conditional to the decision strategy $Z$ comprises path utilities $\mathcal{C}(s)$ and path probabilities $ℙ(s∣Z)$ associated with each path $s∈S.$
 
 
 ## References

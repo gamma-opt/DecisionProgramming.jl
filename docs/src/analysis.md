@@ -1,5 +1,16 @@
 # Analysis
 ## Utility Distribution
+First, we generate the active paths $S^+$ from the decision strategy $Z$. Then, the unique path utility values are
+
+$$C^∗=\{\mathcal{C}(s)∣s∈S^+\}.$$
+
+The probability mass function of the **utility distribution** associates each unique path utility $c∈C^∗$ to a probability as follows
+
+$$ℙ(X=c)=∑_{s∈S^+∣\mathcal{C}(s)=c} ℙ(s∣Z).$$
+
+Number of unique utilities is limited by
+
+$$|C^∗|≤ ∏_{j∈V}|S_j|.$$
 
 
 ## State Probabilities
