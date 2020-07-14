@@ -98,12 +98,6 @@ end
 @info("Creating consequences.")
 @time Y = consequences(cost, price)
 
-@info("Defining specs")
-specs = Specs(
-    probability_sum_cut=false,
-    num_paths=prod(S_j[j] for j in C)
-)
-
 @info("Defining InfluenceDiagram")
 @time diagram = InfluenceDiagram(C, D, V, A, S_j)
 
@@ -111,7 +105,11 @@ specs = Specs(
 @time params = Params(diagram, X, Y)
 
 @info("Defining DecisionModel")
-@time model = DecisionModel(specs, diagram, params)
+@time model = DecisionModel(diagram, params)
+
+@info("Adding number of paths cut")
+num_paths = prod(S_j[j] for j in C)
+@time number_of_paths_cut(model, diagram, params, num_paths)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
@@ -171,4 +169,4 @@ plot!(p, x, cumsum(y),
     markershape=:circle,
     yticks=cumsum(y),
     label="Cumulative distribution")
-savefig(p, "utility-distribution.svg")
+savefig(p, "pig-breeding-utility-distribution.svg")

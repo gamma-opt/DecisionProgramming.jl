@@ -4,10 +4,9 @@ using DecisionProgramming
 
 Random.seed!(111)
 
-specs = Specs()
 diagram = random_influence_diagram(5, 3, 2, 2, [2, 3])
 params = random_params(diagram)
-model = DecisionModel(specs, diagram, params)
+model = DecisionModel(diagram, params)
 
 optimizer = optimizer_with_attributes(
     Gurobi.Optimizer,

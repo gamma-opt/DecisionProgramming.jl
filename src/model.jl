@@ -39,17 +39,6 @@ end
 """Defines the DecisionModel type."""
 const DecisionModel = Model
 
-"""Specification for different model scenarios. For example, we can specify toggling on and off constraints and objectives.
-
-# Arguments
-- `probability_sum_cut::Bool`: Toggle probability sum cuts on and off.
-- `num_paths::Int`: If larger than zero, enables the number of paths cuts using the supplied value.
-"""
-@with_kw struct Specs
-    probability_sum_cut::Bool = false
-    num_paths::Int = 0
-end
-
 """Influence diagram."""
 struct InfluenceDiagram
     C::Vector{Int}
@@ -140,7 +129,7 @@ function Params(diagram::InfluenceDiagram, X::Dict{Int, Array{Float64}}, Y::Dict
     Params(X, Y)
 end
 
-"""Create multidimensional array of variables."""
+"""Create a multidimensional array of variables."""
 function variables(model::Model, dims::Vector{Int}; binary::Bool=false)
     v = Array{VariableRef}(undef, dims...)
     for i in eachindex(v)
@@ -149,8 +138,11 @@ function variables(model::Model, dims::Vector{Int}; binary::Bool=false)
     return v
 end
 
-"""Probability sum lazy cut."""
-function probability_sum_cut(model, ϵ)
+"""Adds a probability sum cut to the model as a lazy constraint."""
+function probability_sum_cut(model::DecisionModel, diagram::InfluenceDiagram, params::Params)
+    @unpack C, S_j, I_j = diagram
+    @unpack X = params
+    ϵ = minimum_path_probability(C, I_j, X, S_j)
     # Add the constraints only once
     flag = false
     function probability_sum_cut(cb_data)
@@ -163,10 +155,14 @@ function probability_sum_cut(model, ϵ)
             flag = true
         end
     end
+    MOI.set(model, MOI.LazyConstraintCallback(), probability_sum_cut)
 end
 
-"""Number of paths lazy cut."""
-function number_of_paths_cut(model, ϵ, num_paths, C, S_j, I_j, X; atol = 0.9)
+"""Adds a number of paths cut to the model as a lazy constraint."""
+function number_of_paths_cut(model::DecisionModel, diagram::InfluenceDiagram, params::Params, num_paths::Int; atol::Float64 = 0.9)
+    @unpack C, S_j, I_j = diagram
+    @unpack X = params
+    ϵ = minimum_path_probability(C, I_j, X, S_j)
     # Add the constraints only once
     flag = false
     function number_of_paths_cut(cb_data)
@@ -179,16 +175,16 @@ function number_of_paths_cut(model, ϵ, num_paths, C, S_j, I_j, X; atol = 0.9)
             flag = true
         end
     end
+    MOI.set(model, MOI.LazyConstraintCallback(), number_of_paths_cut)
 end
 
-"""Construct a DecisionModel from specification, influence diagram and parameters.
+"""Construct a DecisionModel from an influence diagram and parameters.
 
 # Arguments
-- `specs::Specs`
 - `diagram::InfluenceDiagram`
 - `params::Params`
 """
-function DecisionModel(specs::Specs, diagram::InfluenceDiagram, params::Params)
+function DecisionModel(diagram::InfluenceDiagram, params::Params)
     @unpack C, D, V, A, S_j, I_j = diagram
     @unpack X, Y = params
 
@@ -223,21 +219,6 @@ function DecisionModel(specs::Specs, diagram::InfluenceDiagram, params::Params)
 
     for s in paths(S_j), j in D
         @constraint(model, π[s...] ≤ z[j][s[[I_j[j]; j]]...])
-    end
-
-    # --- Lazy Constraints ---
-    ϵ = minimum_path_probability(C, I_j, X, S_j)
-
-    if specs.probability_sum_cut
-        MOI.set(
-            model, MOI.LazyConstraintCallback(),
-            probability_sum_cut(model, ϵ))
-    end
-
-    if specs.num_paths > 0
-        MOI.set(
-            model, MOI.LazyConstraintCallback(),
-            number_of_paths_cut(model, ϵ, specs.num_paths, C, S_j, I_j, X; atol=0.9))
     end
 
     return model

@@ -102,12 +102,6 @@ end
 @info("Creating consequences.")
 @time Y = consequences(A_k, F, T, S_j)
 
-@info("Defining specs")
-specs = Specs(
-    probability_sum_cut=true,
-    num_paths=prod(S_j[j] for j in C)
-)
-
 @info("Defining InfluenceDiagram")
 @time diagram = InfluenceDiagram(C, D, V, A, S_j)
 
@@ -115,7 +109,14 @@ specs = Specs(
 @time params = Params(diagram, X, Y)
 
 @info("Defining DecisionModel")
-@time model = DecisionModel(specs, diagram, params)
+@time model = DecisionModel(diagram, params)
+
+@info("Adding probability sum cut")
+@time probability_sum_cut(model, diagram, params)
+
+@info("Adding number of paths cut")
+num_paths = prod(S_j[j] for j in C)
+@time number_of_paths_cut(model, diagram, params, num_paths)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
