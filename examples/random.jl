@@ -7,6 +7,8 @@ Random.seed!(111)
 diagram = random_influence_diagram(5, 3, 2, 2, [2, 3])
 params = random_params(diagram)
 model = DecisionModel(diagram, params)
+E = expected_value(model, diagram, params)
+@objective(model, Max, E)
 
 optimizer = optimizer_with_attributes(
     Gurobi.Optimizer,

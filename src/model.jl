@@ -33,6 +33,13 @@ function path_utility(s, Y, I_j, V)
     sum(Y[v][s[I_j[v]]...] for v in V)
 end
 
+"""Affine transformation to positive utility function: Normalize plus one."""
+function transform_affine(Y)
+    v_min = minimum(minimum(v) for (k, v) in Y)
+    v_max = maximum(maximum(v) for (k, v) in Y)
+    return Dict(k => (@. (v - v_min)/(v_max - v_min) + 1) for (k, v) in Y)
+end
+
 
 # --- Model ---
 
@@ -188,11 +195,6 @@ function DecisionModel(diagram::InfluenceDiagram, params::Params)
     @unpack C, D, V, A, S_j, I_j = diagram
     @unpack X, Y = params
 
-    # Affine transformation to positive utility function: Normalize plus one.
-    v_min = minimum(minimum(v) for (k, v) in Y)
-    v_max = maximum(maximum(v) for (k, v) in Y)
-    Y′ = Dict(k => (@. (v - v_min)/(v_max - v_min) + 1) for (k, v) in Y)
-
     # Initialize the model
     model = DecisionModel()
 
@@ -201,12 +203,9 @@ function DecisionModel(diagram::InfluenceDiagram, params::Params)
     z = Dict{Int, Array{VariableRef}}(
         j => variables(model, S_j[[I_j[j]; j]]; binary=true) for j in D)
 
-    # Add variable to the model.obj_dict.
+    # Add variable to the model.
     model[:π] = π
     model[:z] = z
-
-    # --- Objectives ---
-    @objective(model, Max, sum(π[s...] * path_utility(s, Y′, I_j, V) for s in paths(S_j)))
 
     # --- Constraints ---
     for j in D, s_I in paths(S_j[I_j[j]])
@@ -222,4 +221,13 @@ function DecisionModel(diagram::InfluenceDiagram, params::Params)
     end
 
     return model
+end
+
+"""Expected value"""
+function expected_value(model::DecisionModel, diagram::InfluenceDiagram, params::Params)
+    @unpack V, S_j, I_j = diagram
+    @unpack Y = params
+    π = model[:π]
+    Y′ = transform_affine(Y)
+    return @expression(model, sum(π[s...] * path_utility(s, Y′, I_j, V) for s in paths(S_j)))
 end

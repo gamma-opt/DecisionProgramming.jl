@@ -118,6 +118,10 @@ end
 num_paths = prod(S_j[j] for j in C)
 @time number_of_paths_cut(model, diagram, params, num_paths)
 
+@info("Creating model objective.")
+@time E = expected_value(model, diagram, params)
+@objective(model, Max, E)
+
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
     Gurobi.Optimizer,

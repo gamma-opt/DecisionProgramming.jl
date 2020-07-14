@@ -10,6 +10,7 @@ DecisionModel
 DecisionModel(::InfluenceDiagram, ::Params)
 probability_sum_cut
 number_of_paths_cut
+expected_value
 ```
 
 ## Analysis
