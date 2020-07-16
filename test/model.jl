@@ -1,4 +1,4 @@
-using Test, Random
+using Test, Random, Parameters
 using JuMP
 using DecisionProgramming
 
@@ -10,7 +10,11 @@ model = DecisionModel(diagram, params)
 probability_sum_cut(model, diagram, params)
 num_paths = prod(diagram.S_j[j] for j in diagram.C)
 number_of_paths_cut(model, diagram, params, num_paths)
-E = expected_value(model, diagram, params)
+@unpack V, S_j, I_j = diagram
+@unpack Y = params
+@time U(s) = sum(Y[v][s[I_j[v]]...] for v in V)
+@time U⁺ = transform_affine_positive(U, S_j)
+@time E = expected_value(model, U⁺, S_j)
 @objective(model, Max, E)
 
 @test true

@@ -98,7 +98,7 @@ $$U:ℂ↦ℝ.$$
 
 The **path utility** is defined as the sum of utilities for consequences of value nodes $j∈V$ with information paths $I(j)$
 
-$$\mathcal{C}(s) = ∑_{j∈V} U(Y_j(s_{I(j)})).$$
+$$\mathcal{U}(s) = ∑_{j∈V} U(Y_j(s_{I(j)})).$$
 
 
 ## Active Paths
@@ -108,7 +108,7 @@ $$|S^+|=|S|/\prod_{j∈D}|S_j|=\prod_{j∈C}|S_j|.$$
 
 
 ## Path Distribution
-A **path distribution** conditional to the decision strategy $Z$ comprises path utilities $\mathcal{C}(s)$ and path probabilities $ℙ(s∣Z)$ associated with each path $s∈S.$
+A **path distribution** conditional to the decision strategy $Z$ comprises path utilities $\mathcal{U}(s)$ and path probabilities $ℙ(s∣Z)$ associated with each path $s∈S.$
 
 
 ## References

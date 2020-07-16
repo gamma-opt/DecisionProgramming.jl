@@ -7,9 +7,9 @@ export DecisionModel,
     paths,
     path_probability,
     minimum_path_probability,
-    path_utility,
     probability_sum_cut,
     number_of_paths_cut,
+    transform_affine_positive,
     expected_value
 
 include("analysis.jl")

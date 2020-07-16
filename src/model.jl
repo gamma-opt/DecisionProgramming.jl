@@ -28,16 +28,10 @@ function minimum_path_probability(C, I_j, X, S_j)
     minimum(path_probability(s, C, I_j, X) for s in paths(S_j))
 end
 
-"""Total utility of a path."""
-function path_utility(s, Y, I_j, V)
-    sum(Y[v][s[I_j[v]]...] for v in V)
-end
-
-"""Affine transformation to positive utility function: Normalize plus one."""
-function transform_affine(Y)
-    v_min = minimum(minimum(v) for (k, v) in Y)
-    v_max = maximum(maximum(v) for (k, v) in Y)
-    return Dict(k => (@. (v - v_min)/(v_max - v_min) + 1) for (k, v) in Y)
+"""Affine positive tranformation of path utility."""
+function transform_affine_positive(U::Function, S_j)
+    (u_min, u_max) = extrema(U(s) for s in paths(S_j))
+    return s -> (U(s) - u_min)/(u_max - u_min) + 1
 end
 
 
@@ -223,11 +217,7 @@ function DecisionModel(diagram::InfluenceDiagram, params::Params)
     return model
 end
 
-"""Expected value"""
-function expected_value(model::DecisionModel, diagram::InfluenceDiagram, params::Params)
-    @unpack V, S_j, I_j = diagram
-    @unpack Y = params
-    π = model[:π]
-    Y′ = transform_affine(Y)
-    return @expression(model, sum(π[s...] * path_utility(s, Y′, I_j, V) for s in paths(S_j)))
+"""Expected value."""
+function expected_value(model::DecisionModel, U::Function, S_j)
+    @expression(model, sum(model[:π][s...] * U(s) for s in paths(S_j)))
 end

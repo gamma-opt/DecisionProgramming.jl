@@ -1,12 +1,12 @@
 using Printf, Parameters
 
 """Print number of paths, number of active paths and expected utility."""
-function print_results(z::Dict{Int, Array{Int}}, diagram::InfluenceDiagram, params::Params)
+function print_results(z::Dict{Int, Array{Int}}, diagram::InfluenceDiagram, params::Params, U::Function)
     @unpack C, D, V, I_j, S_j = diagram
     @unpack X, Y = params
     # Total expected utility of the decision strategy.
     expected_utility = sum(
-        path_probability(s, C, I_j, X) * path_utility(s, Y, I_j, V)
+        path_probability(s, C, I_j, X) * U(s)
         for s in active_paths(z, diagram))
     println("Number of paths: ", prod(S_j))
     println("Number of active paths: ", prod(S_j[j] for j in C))

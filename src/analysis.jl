@@ -51,13 +51,13 @@ plot!(p, x, y2,
 savefig(p, "distribution.svg")
 ```
 """
-function utility_distribution(z::Dict{Int, Array{Int}}, diagram::InfluenceDiagram, params::Params)
+function utility_distribution(z::Dict{Int, Array{Int}}, diagram::InfluenceDiagram, params::Params, U::Function)
     @unpack C, D, V, I_j, S_j = diagram
     @unpack X, Y = params
     utilities = Vector{Float64}()
     probabilities = Vector{Float64}()
     for s in active_paths(z, diagram)
-        push!(utilities, path_utility(s, Y, I_j, V))
+        push!(utilities, U(s))
         push!(probabilities, path_probability(s, C, I_j, X))
     end
     i = sortperm(utilities[:])

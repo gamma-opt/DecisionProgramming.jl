@@ -6,10 +6,10 @@
 
 
 ## Formulation
-### Project
+### Individual Projects
 ![](figures/multi-period-investment.svg)
 
-Influence diagram of an individual multi-period investment project.
+The influence diagram of an individual multi-period investment project.
 
 Decision states to develop patents
 
@@ -23,27 +23,23 @@ Chance states of technical competitiveness $c^T∈C^T$
 
 Chance states of market size $c^M∈C^M$
 
-Probability $ℙ(c^T∣d^P)$
+Probability $ℙ(c^T∣d^P)∈[0,1]$
 
-Probability $ℙ(c^M∣c^T,d^A)$
+Probability $ℙ(c^M∣c^T,d^A)∈[0,1]$
 
 
 ### Portfolio Selection
 Technology project $i$ costs $r_i^T∈ℝ^+$ and generates $p_i^T∈ℕ$ patents.
 
-Application project $k$ costs $r_k^A∈ℝ^+$ and generates $a_k^A∈ℕ$ applications. If completed, provides cash flow $V(k∣c^M)∈ℝ^+.$
+Application project $k$ costs $r_k^A∈ℝ^+$ and generates $a_k^A∈ℕ$ applications. If completed, provides cash flow $Y(k∣c^M)∈ℝ^+.$
 
-Binary decision variables
+Decision variables $x^T(i)∈\{0, 1\}$ indicate which technologies are selected.
 
-$$x^T(i), x^A(k∣c^T)∈\{0, 1\}$$
+Decision variables $x^A(k∣c_j^T)∈\{0, 1\}$ indicate which applications are selected.
 
-Number of patents
+Number of patents $x^T = ∑_i x^T(i) p_i^T$
 
-$$x^T = ∑_i x^T(i) p_i^T$$
-
-Number of applications
-
-$$x^A = ∑_k x^A(k∣c^T) a_k^A$$
+Number of applications $x_j^A = ∑_k x^A(k∣c_j^T) a_k^A$
 
 Constraints
 
@@ -53,22 +49,24 @@ $$x_j^A - y_{j,k}^A M ≤ q_k^A ≤ x_j^A + (1 - y_{j,k}^A) M,\quad ∀j, k$$
 
 $$∑_i y_i^P=1$$
 
-$$∑_k y_{j,k}^A=1$$
+$$∑_k y_{j,k}^A=1,\quad ∀j$$
 
-$$y_i^P, y_{j,k}^A∈\{0, 1\}$$
+$$y_i^P∈\{0, 1\},\quad ∀i$$
+
+$$y_{j,k}^A∈\{0, 1\},\quad ∀j,k$$
 
 $$y_0^P=y_{j,0}^A=0$$
 
-$$z(d_i^P)=y_i^P-y_{i-1}^P$$
+$$z(d_i^P)=y_i^P-y_{i-1}^P,\quad ∀i$$
 
-$$z(d_k^A∣c_j^T)=y_{j,k}^A-y_{j,k-1}^A$$
+$$z(d_k^A∣c_j^T)=y_{j,k}^A-y_{j,k-1}^A,\quad ∀j,k$$
 
 Large constant $M$ (value?)
 
 Path utility
 
-$$\mathcal{C}(s) =
-∑_k x^A(k∣c^T) (V(i∣c^M) - r_j^A) - ∑_i x^T(i) r_i^T$$
+$$\mathcal{U}(s) =
+∑_k x^A(k∣c^T) (Y(k∣c^M) - r_k^A) - ∑_i x^T(i) r_i^T$$
 
 
 ## References

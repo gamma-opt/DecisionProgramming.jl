@@ -119,7 +119,10 @@ num_paths = prod(S_j[j] for j in C)
 @time number_of_paths_cut(model, diagram, params, num_paths)
 
 @info("Creating model objective.")
-@time E = expected_value(model, diagram, params)
+I_j = diagram.I_j
+@time U(s) = sum(Y[v][s[I_j[v]]...] for v in V)
+@time U⁺ = transform_affine_positive(U, S_j)
+@time E = expected_value(model, U⁺, S_j)
 @objective(model, Max, E)
 
 @info("Starting the optimization process.")
@@ -136,7 +139,7 @@ round_int(z) = Int(round(z))
 z = Dict{Int, Array{Int}}(i => round_int.(value.(model[:z][i])) for i in D)
 
 @info("Printing results")
-print_results(z, diagram, params)
+print_results(z, diagram, params, U)
 
 @info("Printing decision strategy:")
 print_decision_strategy(z, diagram)
