@@ -55,11 +55,11 @@ Given a **probability level** $α∈(0, 1]$ and decision strategy $Z$ we denote 
 
 Pre-computed parameters
 
-$$c^∗=\max\{\mathcal{U}(s)∣s∈S\}$$
+$$u^+=\max\{\mathcal{U}(s)∣s∈S\}$$
 
-$$c^∘=\min\{\mathcal{U}(s)∣s∈S\}$$
+$$u^-=\min\{\mathcal{U}(s)∣s∈S\}$$
 
-$$M=c^∗-c^∘$$
+$$M=u^+-u^-$$
 
 $$ϵ=\frac{1}{2} \min\{|\mathcal{U}(s)-\mathcal{U}(s^′)| ∣ |\mathcal{U}(s)-\mathcal{U}(s^′)| > 0, s, s^′∈S\}$$
 
@@ -77,7 +77,7 @@ $$η-\mathcal{U}(s)≤(M+ϵ) \bar{λ}(s) - ϵ,\quad ∀s∈S \tag{?}$$
 
 $$η-\mathcal{U}(s)≥M (\bar{λ}(s) - 1),\quad ∀s∈S \tag{?}$$
 
-$$\bar{ρ}≤\bar{λ}(s),\quad ∀s∈S \tag{?}$$
+$$\bar{ρ}(s) ≤ \bar{λ}(s),\quad ∀s∈S \tag{?}$$
 
 $$π(s) - (1 - λ(s)) ≤ ρ(s) ≤ λ(s),\quad ∀s∈S \tag{?}$$
 
@@ -89,11 +89,11 @@ $$\bar{λ}(s), λ(s)∈\{0, 1\},\quad ∀s∈S \tag{?}$$
 
 $$\bar{ρ}(s),ρ(s)∈[0, 1],\quad ∀s∈S \tag{?}$$
 
-$$η∈[c^∘, c^∗] \tag{?}$$
+$$η∈[u^-, u^+] \tag{?}$$
 
 Solution
 
-$$\operatorname{VaR}_α(Z)=η^∗ \tag{?}$$
+$$\operatorname{VaR}_α(Z)=η \tag{?}$$
 
 $$\operatorname{CVaR}_α(Z)=\frac{1}{α}∑_{s∈S}\bar{ρ}(s) \mathcal{U}(s)\tag{?}$$
 

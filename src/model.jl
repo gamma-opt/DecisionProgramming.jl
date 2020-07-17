@@ -197,10 +197,6 @@ function DecisionModel(diagram::InfluenceDiagram, params::Params)
     z = Dict{Int, Array{VariableRef}}(
         j => variables(model, S_j[[I_j[j]; j]]; binary=true) for j in D)
 
-    # Add variable to the model.
-    model[:π] = π
-    model[:z] = z
-
     # --- Constraints ---
     for j in D, s_I in paths(S_j[I_j[j]])
         @constraint(model, sum(z[j][[s_I...; s_j]...] for s_j in 1:S_j[j]) == 1)
@@ -214,10 +210,58 @@ function DecisionModel(diagram::InfluenceDiagram, params::Params)
         @constraint(model, π[s...] ≤ z[j][s[[I_j[j]; j]]...])
     end
 
+    # Add variables to the model.
+    model[:π] = π
+    model[:z] = z
+
     return model
 end
 
 """Expected value."""
-function expected_value(model::DecisionModel, U::Function, S_j)
+function expected_value(model::DecisionModel, U::Function, S_j::Vector{Int})
     @expression(model, sum(model[:π][s...] * U(s) for s in paths(S_j)))
+end
+
+"""Value-at-risk."""
+function value_at_risk(model::DecisionModel, U::Function, S_j::Vector{Int}, α::Float64)
+    # Pre-computer parameters
+    u = collect(Iterators.flatten(U(s) for s in paths(S_j)))
+    u_sorted = sort(u)
+    u_min = u_sorted[1]
+    u_max = u_sorted[end]
+    M = u_max - u_min
+    ϵ = minimum(filter(!iszero, abs.(diff(u_sorted)))) / 2
+
+    # Variables
+    @variable(model, u_min ≤ η ≤ u_max)
+    λ = variables(model, S_j; binary=true)
+    λ_bar = variables(model, S_j; binary=true)
+    ρ = variables(model, S_j)
+    ρ_bar = variables(model, S_j)
+
+    # Constraints
+    π = model[:π]
+    for s in paths(S_j)
+        u_s = U(s)
+        @constraint(model, η - u_s ≤ M * λ[s...])
+        @constraint(model, η - u_s ≥ (M + ϵ) * λ[s...] - M)
+        @constraint(model, η - u_s ≤ (M + ϵ) * λ_bar[s...] - ϵ)
+        @constraint(model, η - u_s ≥ M * (λ_bar[s...] - 1))
+        @constraint(model, 0 ≤ ρ[s...])
+        @constraint(model, 0 ≤ ρ_bar[s...])
+        @constraint(model, ρ[s...] ≤ λ[s...])
+        @constraint(model, ρ_bar[s...] ≤ λ_bar[s...])
+        @constraint(model, ρ[s...] ≤ ρ_bar[s...])
+        @constraint(model, ρ_bar[s...] ≤ π[s...])
+        @constraint(model, π[s...] - (1 - λ[s...]) ≤ ρ[s...])
+    end
+    @constraint(model, sum(ρ_bar[s...] for s in paths(S_j)) == α)
+
+    # Add variables to the model
+    model[:η] = η
+    model[:ρ] = ρ
+    model[:ρ_bar] = ρ_bar
+
+    # Return CVaR as an expression
+    return @expression(model, sum(ρ_bar[s...] * U(s) for s in paths(S_j)) / α)
 end
