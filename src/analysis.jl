@@ -6,77 +6,58 @@ function is_compatible(s, z, D, I_j)
 end
 
 """Generate all active paths from a decision strategy with fixed states."""
-function active_paths(z::Dict{Int, Array{Int}}, diagram::InfluenceDiagram, fixed::Dict{Int, Int})
+function active_paths(z::DecisionStrategy, diagram::InfluenceDiagram, fixed::Dict{Int, Int})
     @unpack D, S_j, I_j = diagram
     return (s for s in paths(S_j, fixed) if is_compatible(s, z, D, I_j))
 end
 
 """Generate all active paths from a decision strategy."""
-function active_paths(z::Dict{Int, Array{Int}}, diagram::InfluenceDiagram)
+function active_paths(z::DecisionStrategy, diagram::InfluenceDiagram)
     active_paths(z, diagram, Dict{Int, Int}())
 end
 
-"""State probabilities."""
-function state_probabilities(z::Dict{Int, Array{Int}}, diagram::InfluenceDiagram, params::Params, prior::Float64, fixed::Dict{Int, Int})::Dict{Int, Vector{Float64}}
-    @unpack C, D, S_j, I_j = diagram
-    @unpack X = params
-    probs = Dict(i => zeros(S_j[i]) for i in (C ∪ D))
-    for s in active_paths(z, diagram, fixed), i in (C ∪ D)
-        probs[i][s[i]] += path_probability(s, C, I_j, X) / prior
-    end
-    return probs
-end
-
-"""State probabilities."""
-function state_probabilities(z::Dict{Int, Array{Int}}, diagram::InfluenceDiagram, params::Params)
-    return state_probabilities(z, diagram, params, 1.0, Dict{Int, Int}())
-end
-
-"""The probability distribution of utilities.
-
-```julia
-using Plots
-x, y = distribution(z, diagram, params)
-y2 = cumsum(y)
-p = plot(x, y,
-    linestyle=:dash,
-    markershape=:circle,
-    ylims=(0, 1.1),
-    label="Distribution",
-    legend=:topleft)
-plot!(p, x, y2,
-    linestyle=:dash,
-    markershape=:circle,
-    label="Cumulative distribution")
-savefig(p, "distribution.svg")
-```
-"""
-function utility_distribution(z::Dict{Int, Array{Int}}, diagram::InfluenceDiagram, params::Params, U::Function)
+"""The probability mass function."""
+function utility_distribution(z::DecisionStrategy, diagram::InfluenceDiagram, params::Params, U::UtilityFunction)
     @unpack C, D, V, I_j, S_j = diagram
     @unpack X, Y = params
     utilities = Vector{Float64}()
     probabilities = Vector{Float64}()
     for s in active_paths(z, diagram)
         push!(utilities, U(s))
-        push!(probabilities, path_probability(s, C, I_j, X))
+        push!(probabilities, path_probability(s, diagram, params))
     end
     i = sortperm(utilities[:])
-    x = utilities[i]
-    y = probabilities[i]
+    u = utilities[i]
+    p = probabilities[i]
 
     # Squash equal consecutive utilities into one, sum probabilities
     j = 1
-    x2 = [x[1]]
-    y2 = [y[1]]
-    for k in 2:length(x)
-        if x[k] == x2[j]
-            y2[j] += y[k]
+    u2 = [u[1]]
+    p2 = [p[1]]
+    for k in 2:length(u)
+        if u[k] == u2[j]
+            p2[j] += p[k]
         else
-            push!(x2, x[k])
-            push!(y2, y[k])
+            push!(u2, u[k])
+            push!(p2, p[k])
             j += 1
         end
     end
 
-    return x2, y2
+    return u2, p2
+end
+
+"""State probabilities."""
+function state_probabilities(z::DecisionStrategy, diagram::InfluenceDiagram, params::Params, prior::Float64, fixed::Dict{Int, Int})::Dict{Int, Vector{Float64}}
+    @unpack C, D, S_j, I_j = diagram
+    probs = Dict(i => zeros(S_j[i]) for i in (C ∪ D))
+    for s in active_paths(z, diagram, fixed), i in (C ∪ D)
+        probs[i][s[i]] += path_probability(s, diagram, params) / prior
+    end
+    return probs
+end
+
+"""State probabilities."""
+function state_probabilities(z::DecisionStrategy, diagram::InfluenceDiagram, params::Params)
+    return state_probabilities(z, diagram, params, 1.0, Dict{Int, Int}())
 end

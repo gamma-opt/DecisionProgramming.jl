@@ -128,12 +128,7 @@ set_optimizer(model, optimizer)
 optimize!(model)
 
 @info("Extracting results.")
-round_int(z) = Int(round(z))
-z = Dict{Int, Array{Int}}(i => round_int.(value.(model[:z][i])) for i in D)
-
-@info("Printing results")
-print_results(z, diagram, params, U)
-println()
+z = DecisionStrategy(model)
 
 @info("Printing decision strategy:")
 print_decision_strategy(z, diagram)
@@ -161,19 +156,40 @@ println()
 #     end
 # end
 
-@info("Plot the cumulative distribution.")
-using Plots
-@time x, y = utility_distribution(z, diagram, params, U)
-p = plot(x, y,
-    linestyle=:dash,
-    markershape=:circle,
-    ylims=(0, 1.1),
-    xticks=x,
-    label="Distribution",
-    legend=:topleft)
-plot!(p, x, cumsum(y),
-    linestyle=:dash,
-    markershape=:circle,
-    yticks=cumsum(y),
-    label="Cumulative distribution")
-savefig(p, "pig-breeding-utility-distribution.svg")
+@info("Create results directory.")
+using Dates
+directory = joinpath("pig-breeding", string(now()))
+if !ispath(directory)
+    mkpath(directory)
+end
+
+@info("Plot the utility distributions.")
+@time u, p = utility_distribution(z, diagram, params, U)
+
+mean = sum(@. p*u)
+var = sum(@. p*(u - mean)^2)
+
+println("Mean: ", mean)
+println("Variance: ", var)
+println("Standard deviation: ", sqrt(var))
+
+# using Plots
+# p1 = plot(u, p,
+#     linewidth=0,
+#     markershape=:circle,
+#     ylims=(0, maximum(p) + 0.15),
+#     xticks = u,
+#     yticks = p,
+#     label="Distribution",
+#     legend=:topleft)
+# savefig(p1, joinpath(directory, "utility-distribution.svg"))
+
+# p2 = plot(u, cumsum(p),
+#     linestyle=:dash,
+#     markershape=:circle,
+#     ylims=(0, 1 + 0.15),
+#     xticks = u,
+#     yticks = cumsum(p),
+#     label="Cumulative distribution",
+#     legend=:topleft)
+# savefig(p2, joinpath(directory, "cumulative-utility-distribution.svg"))

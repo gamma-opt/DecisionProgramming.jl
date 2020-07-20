@@ -84,6 +84,10 @@ A decision stategy $Z∈ℤ$ is **compatible** with the path $s∈S$ if and only
 
 The path probability $ℙ(s∣Z)$ equals $p(s)$ if the path $s$ is compatible with the decision strategy $Z$. Otherwise, the path cannot occur and the probability is zero.
 
+An **active path** is path $s∈S$ that is compatible with decision strategy $Z.$ We denote the set of **all active paths** using $S^Z.$ Since each decision strategy $Z_j$ chooses only one state out of all of its states, the **number of active paths** is
+
+$$|S^Z|=|S|/\prod_{j∈D}|S_j|=\prod_{j∈C}|S_j|.$$
+
 
 ## Consequences
 For each value node $j∈V$, we define the **consequence** given information path $s_{I(j)}$ as
@@ -101,14 +105,12 @@ The **path utility** is defined as the sum of utilities for consequences of valu
 $$\mathcal{U}(s) = ∑_{j∈V} U(Y_j(s_{I(j)})).$$
 
 
-## Active Paths
-An **active path** is path $s∈S$ that is compatible with decision strategy $Z.$ We denote the set of **all active paths** using $S^+.$ Since each decision strategy $Z_j$ chooses only one state out of all of its states, the **number of active paths** is
-
-$$|S^+|=|S|/\prod_{j∈D}|S_j|=\prod_{j∈C}|S_j|.$$
-
-
 ## Path Distribution
-A **path distribution** conditional to the decision strategy $Z$ comprises path utilities $\mathcal{U}(s)$ and path probabilities $ℙ(s∣Z)$ associated with each path $s∈S.$
+A **path distribution** is a pair
+
+$$(ℙ(s∣Z), \mathcal{U}(s))$$
+
+that comprises of path probability function and path utility function over paths $s∈S$ conditional to the decision strategy $Z.$
 
 
 ## References

@@ -13,9 +13,9 @@ makedocs(
         "Decision Programming" => Any[
             "decision-programming/influence-diagram.md",
             "decision-programming/decision-model.md",
+            "decision-programming/analyzing-decision-strategies.md",
             "decision-programming/complexity.md",
         ],
-        "analysis.md",
         "Examples" => Any[
             "examples/pig-breeding.md",
             "examples/n-monitoring.md",

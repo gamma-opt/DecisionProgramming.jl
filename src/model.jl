@@ -2,43 +2,7 @@ using Parameters, JuMP
 using Base.Iterators: product
 
 
-# --- Functions ---
-
-"""Iterate over paths."""
-function paths(num_states::Vector{T}) where T <: Integer
-    product(UnitRange.(one(T), num_states)...)
-end
-
-"""Iterate over paths with fixed states."""
-function paths(num_states::Vector{T}, fixed::Dict{Int, T}) where T <: Integer
-    iters = collect(UnitRange.(one(T), num_states))
-    for (i, v) in fixed
-        iters[i] = UnitRange(v, v)
-    end
-    product(iters...)
-end
-
-"""Path probability (upper bound)."""
-function path_probability(s, C, I_j, X)
-    prod(X[j][s[[I_j[j]; j]]...] for j in C)
-end
-
-"""Minimum path probability."""
-function minimum_path_probability(C, I_j, X, S_j)
-    minimum(path_probability(s, C, I_j, X) for s in paths(S_j))
-end
-
-"""Affine positive tranformation of path utility."""
-function transform_affine_positive(U::Function, S_j)
-    (u_min, u_max) = extrema(U(s) for s in paths(S_j))
-    return s -> (U(s) - u_min)/(u_max - u_min) + 1
-end
-
-
-# --- Model ---
-
-"""Defines the DecisionModel type."""
-const DecisionModel = Model
+# --- Types ---
 
 """Influence diagram."""
 struct InfluenceDiagram
@@ -49,6 +13,48 @@ struct InfluenceDiagram
     S_j::Vector{Int}
     I_j::Vector{Vector{Int}}
 end
+
+"""Decision model parameters."""
+struct Params
+    X::Dict{Int, Array{Float64}}
+    Y::Dict{Int, Array{Float64}}
+end
+
+"""UtilityFunction type. Maps path to real."""
+const UtilityFunction = Function
+
+"""Defines the DecisionModel type."""
+const DecisionModel = Model
+
+"""Decision strategy type."""
+const DecisionStrategy = Dict{Int, Array{Int}}
+
+
+# --- Functions ---
+
+"""Iterate over paths."""
+function paths(num_states::Vector{Int})
+    product(UnitRange.(one(Int), num_states)...)
+end
+
+"""Iterate over paths with fixed states."""
+function paths(num_states::Vector{Int}, fixed::Dict{Int, Int})
+    iters = collect(UnitRange.(one(Int), num_states))
+    for (i, v) in fixed
+        iters[i] = UnitRange(v, v)
+    end
+    product(iters...)
+end
+
+"""Path probability (upper bound)."""
+function path_probability(s::NTuple{N, Int}, diagram::InfluenceDiagram, params::Params) where N
+    @unpack C, I_j = diagram
+    @unpack X = params
+    prod(X[j][s[[I_j[j]; j]]...] for j in C)
+end
+
+
+# --- Model ---
 
 """Construct and validate an influence diagram.
 
@@ -95,12 +101,6 @@ function InfluenceDiagram(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vec
     InfluenceDiagram(C, D, V, A, S_j, I_j)
 end
 
-"""Decision model parameters."""
-struct Params
-    X::Dict{Int, Array{Float64}}
-    Y::Dict{Int, Array{Float64}}
-end
-
 """Construct and validate decision model parameters.
 
 # Arguments
@@ -139,11 +139,50 @@ function variables(model::Model, dims::Vector{Int}; binary::Bool=false)
     return v
 end
 
+"""Construct a DecisionModel from an influence diagram and parameters.
+
+# Arguments
+- `diagram::InfluenceDiagram`
+- `params::Params`
+"""
+function DecisionModel(diagram::InfluenceDiagram, params::Params)
+    @unpack C, D, S_j, I_j = diagram
+    @unpack X = params
+
+    model = DecisionModel()
+
+    π = variables(model, S_j)
+    z = Dict{Int, Array{VariableRef}}(
+        j => variables(model, S_j[[I_j[j]; j]]; binary=true) for j in D)
+
+    for j in D, s_I in paths(S_j[I_j[j]])
+        @constraint(model, sum(z[j][[s_I...; s_j]...] for s_j in 1:S_j[j]) == 1)
+    end
+
+    for s in paths(S_j)
+        @constraint(model, 0 ≤ π[s...] ≤ path_probability(s, diagram, params))
+    end
+
+    for s in paths(S_j), j in D
+        @constraint(model, π[s...] ≤ z[j][s[[I_j[j]; j]]...])
+    end
+
+    model[:π] = π
+    model[:z] = z
+
+    return model
+end
+
+"""Extract values for decision variables from a decision model."""
+function DecisionStrategy(model::DecisionModel)
+    DecisionStrategy(i => (@. Int(round(value(v)))) for (i, v) in model[:z])
+end
+
 """Adds a probability sum cut to the model as a lazy constraint."""
 function probability_sum_cut(model::DecisionModel, diagram::InfluenceDiagram, params::Params)
     @unpack C, S_j, I_j = diagram
     @unpack X = params
-    ϵ = minimum_path_probability(C, I_j, X, S_j)
+    ϵ = minimum(path_probability(s, diagram, params) for s in paths(S_j))
     # Add the constraints only once
     flag = false
     function probability_sum_cut(cb_data)
@@ -163,7 +202,7 @@ end
 function number_of_paths_cut(model::DecisionModel, diagram::InfluenceDiagram, params::Params, num_paths::Int; atol::Float64 = 0.9)
     @unpack C, S_j, I_j = diagram
     @unpack X = params
-    ϵ = minimum_path_probability(C, I_j, X, S_j)
+    ϵ = minimum(path_probability(s, diagram, params) for s in paths(S_j))
     # Add the constraints only once
     flag = false
     function number_of_paths_cut(cb_data)
@@ -171,7 +210,7 @@ function number_of_paths_cut(model::DecisionModel, diagram::InfluenceDiagram, pa
         π = model[:π]
         πnum = sum(callback_value(cb_data, π[s]) ≥ ϵ for s in eachindex(π))
         if !isapprox(πnum, num_paths, atol = atol)
-            con = @build_constraint(sum(π[s...] / path_probability(s, C, I_j, X) for s in paths(S_j)) == num_paths)
+            con = @build_constraint(sum(π[s...] / path_probability(s, diagram, params) for s in paths(S_j)) == num_paths)
             MOI.submit(model, MOI.LazyConstraint(cb_data), con)
             flag = true
         end
@@ -179,51 +218,19 @@ function number_of_paths_cut(model::DecisionModel, diagram::InfluenceDiagram, pa
     MOI.set(model, MOI.LazyConstraintCallback(), number_of_paths_cut)
 end
 
-"""Construct a DecisionModel from an influence diagram and parameters.
-
-# Arguments
-- `diagram::InfluenceDiagram`
-- `params::Params`
-"""
-function DecisionModel(diagram::InfluenceDiagram, params::Params)
-    @unpack C, D, V, A, S_j, I_j = diagram
-    @unpack X, Y = params
-
-    # Initialize the model
-    model = DecisionModel()
-
-    # --- Variables ---
-    π = variables(model, S_j)
-    z = Dict{Int, Array{VariableRef}}(
-        j => variables(model, S_j[[I_j[j]; j]]; binary=true) for j in D)
-
-    # --- Constraints ---
-    for j in D, s_I in paths(S_j[I_j[j]])
-        @constraint(model, sum(z[j][[s_I...; s_j]...] for s_j in 1:S_j[j]) == 1)
-    end
-
-    for s in paths(S_j)
-        @constraint(model, 0 ≤ π[s...] ≤ path_probability(s, C, I_j, X))
-    end
-
-    for s in paths(S_j), j in D
-        @constraint(model, π[s...] ≤ z[j][s[[I_j[j]; j]]...])
-    end
-
-    # Add variables to the model.
-    model[:π] = π
-    model[:z] = z
-
-    return model
+"""Affine positive tranformation of path utility."""
+function transform_affine_positive(U::UtilityFunction, S_j)
+    (u_min, u_max) = extrema(U(s) for s in paths(S_j))
+    return s -> (U(s) - u_min)/(u_max - u_min) + 1
 end
 
 """Expected value."""
-function expected_value(model::DecisionModel, U::Function, S_j::Vector{Int})
+function expected_value(model::DecisionModel, U::UtilityFunction, S_j::Vector{Int})
     @expression(model, sum(model[:π][s...] * U(s) for s in paths(S_j)))
 end
 
 """Value-at-risk."""
-function value_at_risk(model::DecisionModel, U::Function, S_j::Vector{Int}, α::Float64)
+function value_at_risk(model::DecisionModel, U::UtilityFunction, S_j::Vector{Int}, α::Float64)
     # Pre-computer parameters
     u = collect(Iterators.flatten(U(s) for s in paths(S_j)))
     u_sorted = sort(u)
@@ -233,7 +240,7 @@ function value_at_risk(model::DecisionModel, U::Function, S_j::Vector{Int}, α::
     ϵ = minimum(filter(!iszero, abs.(diff(u_sorted)))) / 2
 
     # Variables
-    @variable(model, u_min ≤ η ≤ u_max)
+    η = @variable(model)
     λ = variables(model, S_j; binary=true)
     λ_bar = variables(model, S_j; binary=true)
     ρ = variables(model, S_j)
@@ -241,6 +248,7 @@ function value_at_risk(model::DecisionModel, U::Function, S_j::Vector{Int}, α::
 
     # Constraints
     π = model[:π]
+    @constraint(model, u_min ≤ η ≤ u_max)
     for s in paths(S_j)
         u_s = U(s)
         @constraint(model, η - u_s ≤ M * λ[s...])

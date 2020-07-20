@@ -12,7 +12,12 @@ model = DecisionModel(diagram, params)
 @time U(s) = sum(Y[v][s[I_j[v]]...] for v in V)
 @time U⁺ = transform_affine_positive(U, S_j)
 @time E = expected_value(model, U⁺, S_j)
-@objective(model, Max, E)
+# @objective(model, Max, E)
+α = 0.2
+@time CVaR = value_at_risk(model, U⁺, S_j, α)
+@objective(model, Max, CVaR)
+# w = 0.8
+# @objective(model, Max, w * E + (1 - w) * CVaR)
 
 optimizer = optimizer_with_attributes(
     Gurobi.Optimizer,
@@ -23,14 +28,10 @@ set_optimizer(model, optimizer)
 optimize!(model)
 
 @info("Extracting results.")
-round_int(z) = Int(round(z))
-z = Dict(i => round_int.(value.(model[:z][i])) for i in diagram.D)
+z = DecisionStrategy(model)
 
-@info("Printing results")
-print_results(z, diagram, params, U)
-
-@info("Printing decision strategy:")
-print_decision_strategy(z, diagram)
+# @info("Printing decision strategy:")
+# print_decision_strategy(z, diagram)
 
 @info("Printing state probabilities:")
 probs = state_probabilities(z, diagram, params)
@@ -38,17 +39,29 @@ print_state_probabilities(probs, diagram.C, [])
 print_state_probabilities(probs, diagram.D, [])
 println()
 
-@info("Plot the cumulative distribution.")
+@info("Create results directory.")
+using Dates
+directory = joinpath("random", string(now()))
+if !ispath(directory)
+    mkpath(directory)
+end
+
+@info("Plot the utility distributions.")
 using Plots
-@time x, y = utility_distribution(z, diagram, params, U)
-p = plot(x, y,
-    linestyle=:dash,
+@time u, p = utility_distribution(z, diagram, params, U)
+
+p1 = plot(u, p,
+    linewidth=0,
     markershape=:circle,
-    ylims=(0, 1.1),
+    ylims=(0, maximum(p) + 0.15),
     label="Distribution",
     legend=:topleft)
-plot!(p, x, cumsum(y),
+savefig(p1, joinpath(directory, "utility-distribution.svg"))
+
+p2 = plot(u, cumsum(p),
     linestyle=:dash,
     markershape=:circle,
-    label="Cumulative distribution")
-savefig(p, "random-utility-distribution.svg")
+    ylims=(0, 1 + 0.15),
+    label="Cumulative distribution",
+    legend=:topleft)
+savefig(p2, joinpath(directory, "cumulative-utility-distribution.svg"))

@@ -1,13 +1,13 @@
 # Decision Model
 ## Introduction
-**Decision programming** aims to find decision strategies which optimizes characteristics of the path distribution on an influence diagram. The **decision model** is a mixed-integer linear programming formulation of this optimization problem. The model that is presented here, is based on [^1], sections 3 and 5. We recommend reading it for motivation, details, and proofs of the formulation.
+**Decision programming** aims to find a decision strategy $Z$ which optimizes some metric of the path distribution on an influence diagram such as expected value or risk. The **decision model** is a mixed-integer linear programming formulation of this optimization problem. The model that is presented here, is based on [^1], sections 3 and 5. We recommend reading it for motivation, details, and proofs of the formulation.
 
 
 ## Formulation
-The mixed-integer linear program maximizes the linear objective function that depends on the path distribution over all decision strategies as follows.
+The mixed-integer linear program maximizes a linear objective function $f$ that acts on the path distribution over all decision strategies as follows.
 
 $$\underset{Z∈ℤ}{\text{maximize}}\quad
-f(π, \mathcal{U}) \tag{1}$$
+f(\{(ℙ(s∣Z), \mathcal{U}(s)) ∣ s∈S\}) \tag{1}$$
 
 **Decision variables** $z(s_j∣s_{I(j)})$ are equivalent to the decision strategies $Z$ such that $Z_j(s_I(j))=s_j$ if and only if $z(s_j∣s_{I(j)})=1$, otherwise $z(s_j∣s_{I(j)})=0.$ Constraint $(2)$ defines the decisions to be binary variables and the constraint $(3)$ limits decisions to one per information path.
 
@@ -37,9 +37,9 @@ We can exploit the fact that the path probabilities sum to one by using the **pr
 
 $$∑_{s∈S}π(s)=1. \tag{7}$$
 
-For problems where the number of active paths $|S^+|$ is known, we can exploit it by using the **number of active paths cut**
+For problems where the number of active paths $|S^Z|$ is known, we can exploit it by using the **number of active paths cut**
 
-$$∑_{s∈S} \frac{π(s)}{p(s)}=|S^+|. \tag{8}$$
+$$∑_{s∈S} \frac{π(s)}{p(s)}=|S^Z|. \tag{8}$$
 
 
 ## Expected Value

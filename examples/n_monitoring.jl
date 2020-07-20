@@ -135,11 +135,7 @@ set_optimizer(model, optimizer)
 optimize!(model)
 
 @info("Extracting results.")
-round_int(z) = Int(round(z))
-z = Dict{Int, Array{Int}}(i => round_int.(value.(model[:z][i])) for i in D)
-
-@info("Printing results")
-print_results(z, diagram, params, U)
+z = DecisionStrategy(model)
 
 @info("Printing decision strategy:")
 print_decision_strategy(z, diagram)
@@ -152,3 +148,13 @@ print_state_probabilities(probs, R_k, R_k_states)
 print_state_probabilities(probs, A_k, A_k_states)
 print_state_probabilities(probs, F, F_states)
 println()
+
+@info("Plot the utility distributions.")
+@time u, p = utility_distribution(z, diagram, params, U)
+
+mean = sum(@. p*u)
+var = sum(@. p*(u - mean)^2)
+
+println("Mean: ", mean)
+println("Variance: ", var)
+println("Standard deviation: ", sqrt(var))
