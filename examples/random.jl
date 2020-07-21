@@ -1,14 +1,14 @@
-using Random, Parameters
+using Random, Parameters, Printf
 using JuMP, Gurobi
 using DecisionProgramming
 
 Random.seed!(111)
 
-diagram = random_influence_diagram(5, 3, 2, 2, [2, 3])
-params = random_params(diagram)
-model = DecisionModel(diagram, params)
-@unpack V, S_j, I_j = diagram
-@unpack Y = params
+G = random_influence_diagram(5, 3, 2, 2, [2, 3])
+X = random_probabilities(G)
+Y = random_consequences(G)
+model = DecisionModel(G, X)
+@unpack V, S_j, I_j = G
 @time U(s) = sum(Y[v][s[I_j[v]]...] for v in V)
 @time U⁺ = transform_affine_positive(U, S_j)
 @time E = expected_value(model, U⁺, S_j)
@@ -28,40 +28,29 @@ set_optimizer(model, optimizer)
 optimize!(model)
 
 @info("Extracting results.")
-z = DecisionStrategy(model)
+Z = DecisionStrategy(model)
 
 # @info("Printing decision strategy:")
 # print_decision_strategy(z, diagram)
 
 @info("Printing state probabilities:")
-probs = state_probabilities(z, diagram, params)
-print_state_probabilities(probs, diagram.C, [])
-print_state_probabilities(probs, diagram.D, [])
+probs = state_probabilities(Z, G, X)
+print_state_probabilities(probs, G.C, [])
+print_state_probabilities(probs, G.D, [])
 println()
 
-@info("Create results directory.")
-using Dates
-directory = joinpath("random", string(now()))
-if !ispath(directory)
-    mkpath(directory)
+@info("Print utility distribution statistics.")
+@time u, p = utility_distribution(Z, G, X, U)
+
+using StatsBase
+using StatsBase.Statistics
+w = ProbabilityWeights(p)
+println("Mean: ", mean(u, w))
+println("Std: ", std(u, w, corrected=false))
+println("Skewness: ", skewness(u, w))
+println("Kurtosis: ", kurtosis(u, w))
+println("Value-at-risk (VaR)")
+println("α | VaR_α(Z)")
+for α in [0.01, 0.05, 0.1, 0.2]
+    @printf("%.2f | %.2f \n", α, quantile(u, w, α))
 end
-
-@info("Plot the utility distributions.")
-using Plots
-@time u, p = utility_distribution(z, diagram, params, U)
-
-p1 = plot(u, p,
-    linewidth=0,
-    markershape=:circle,
-    ylims=(0, maximum(p) + 0.15),
-    label="Distribution",
-    legend=:topleft)
-savefig(p1, joinpath(directory, "utility-distribution.svg"))
-
-p2 = plot(u, cumsum(p),
-    linestyle=:dash,
-    markershape=:circle,
-    ylims=(0, 1 + 0.15),
-    label="Cumulative distribution",
-    legend=:topleft)
-savefig(p2, joinpath(directory, "cumulative-utility-distribution.svg"))

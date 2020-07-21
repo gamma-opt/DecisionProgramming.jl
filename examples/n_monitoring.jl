@@ -96,30 +96,27 @@ function consequences(A_k, F, T, S_j)
     return Y
 end
 
+@info("Defining InfluenceDiagram")
+@time G = InfluenceDiagram(C, D, V, A, S_j)
+
 @info("Creating probabilities.")
-@time X = probabilities(L, R_k, A_k, F, S_j)
+@time X = validate_probabilities(G, probabilities(L, R_k, A_k, F, S_j))
 
 @info("Creating consequences.")
-@time Y = consequences(A_k, F, T, S_j)
-
-@info("Defining InfluenceDiagram")
-@time diagram = InfluenceDiagram(C, D, V, A, S_j)
-
-@info("Defining Params")
-@time params = Params(diagram, X, Y)
+@time Y = validate_consequences(G, consequences(A_k, F, T, S_j))
 
 @info("Defining DecisionModel")
-@time model = DecisionModel(diagram, params)
+@time model = DecisionModel(G, X)
 
 @info("Adding probability sum cut")
-@time probability_sum_cut(model, diagram, params)
+@time probability_sum_cut(model, G, X)
 
 @info("Adding number of paths cut")
 num_paths = prod(S_j[j] for j in C)
-@time number_of_paths_cut(model, diagram, params, num_paths)
+@time number_of_paths_cut(model, G, X, num_paths)
 
 @info("Creating model objective.")
-I_j = diagram.I_j
+I_j = G.I_j
 @time U(s) = sum(Y[v][s[I_j[v]]...] for v in V)
 @time U⁺ = transform_affine_positive(U, S_j)
 @time E = expected_value(model, U⁺, S_j)
@@ -135,26 +132,32 @@ set_optimizer(model, optimizer)
 optimize!(model)
 
 @info("Extracting results.")
-z = DecisionStrategy(model)
+Z = DecisionStrategy(model)
 
 @info("Printing decision strategy:")
-print_decision_strategy(z, diagram)
+print_decision_strategy(Z, G)
 println()
 
 @info("Printing state probabilities:")
-probs = state_probabilities(z, diagram, params)
+probs = state_probabilities(Z, G, X)
 print_state_probabilities(probs, L, L_states)
 print_state_probabilities(probs, R_k, R_k_states)
 print_state_probabilities(probs, A_k, A_k_states)
 print_state_probabilities(probs, F, F_states)
 println()
 
-@info("Plot the utility distributions.")
-@time u, p = utility_distribution(z, diagram, params, U)
+@info("Print utility distribution statistics.")
+@time u, p = utility_distribution(Z, G, X, U)
 
-mean = sum(@. p*u)
-var = sum(@. p*(u - mean)^2)
-
-println("Mean: ", mean)
-println("Variance: ", var)
-println("Standard deviation: ", sqrt(var))
+using StatsBase
+using StatsBase.Statistics
+w = ProbabilityWeights(p)
+println("Mean: ", mean(u, w))
+println("Std: ", std(u, w, corrected=false))
+println("Skewness: ", skewness(u, w))
+println("Kurtosis: ", kurtosis(u, w))
+println("Value-at-risk (VaR)")
+println("α | VaR_α(Z)")
+for α in [0.01, 0.05, 0.1, 0.2]
+    @printf("%.2f | %.2f \n", α, quantile(u, w, α))
+end

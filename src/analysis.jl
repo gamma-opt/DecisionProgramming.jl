@@ -1,30 +1,29 @@
 using Parameters
 
 """Test is path is compatible with a decision strategy."""
-function is_compatible(s, z, D, I_j)
-    all(isone(z[j][s[[I_j[j]; j]]...]) for j in D)
+function is_compatible(s, Z, D, I_j)
+    all(isone(Z[j][s[[I_j[j]; j]]...]) for j in D)
 end
 
 """Generate all active paths from a decision strategy with fixed states."""
-function active_paths(z::DecisionStrategy, diagram::InfluenceDiagram, fixed::Dict{Int, Int})
-    @unpack D, S_j, I_j = diagram
-    return (s for s in paths(S_j, fixed) if is_compatible(s, z, D, I_j))
+function active_paths(Z::DecisionStrategy, G::InfluenceDiagram, fixed::Dict{Int, Int})
+    @unpack D, S_j, I_j = G
+    return (s for s in paths(S_j, fixed) if is_compatible(s, Z, D, I_j))
 end
 
 """Generate all active paths from a decision strategy."""
-function active_paths(z::DecisionStrategy, diagram::InfluenceDiagram)
-    active_paths(z, diagram, Dict{Int, Int}())
+function active_paths(Z::DecisionStrategy, G::InfluenceDiagram)
+    active_paths(Z, G, Dict{Int, Int}())
 end
 
 """The probability mass function."""
-function utility_distribution(z::DecisionStrategy, diagram::InfluenceDiagram, params::Params, U::UtilityFunction)
-    @unpack C, D, V, I_j, S_j = diagram
-    @unpack X, Y = params
+function utility_distribution(Z::DecisionStrategy, G::InfluenceDiagram, X::Probabilities, U::UtilityFunction)
+    @unpack C, D, V, I_j, S_j = G
     utilities = Vector{Float64}()
     probabilities = Vector{Float64}()
-    for s in active_paths(z, diagram)
+    for s in active_paths(Z, G)
         push!(utilities, U(s))
-        push!(probabilities, path_probability(s, diagram, params))
+        push!(probabilities, path_probability(s, G, X))
     end
     i = sortperm(utilities[:])
     u = utilities[i]
@@ -48,16 +47,16 @@ function utility_distribution(z::DecisionStrategy, diagram::InfluenceDiagram, pa
 end
 
 """State probabilities."""
-function state_probabilities(z::DecisionStrategy, diagram::InfluenceDiagram, params::Params, prior::Float64, fixed::Dict{Int, Int})::Dict{Int, Vector{Float64}}
-    @unpack C, D, S_j, I_j = diagram
+function state_probabilities(Z::DecisionStrategy, G::InfluenceDiagram, X::Probabilities, prior::Float64, fixed::Dict{Int, Int})::Dict{Int, Vector{Float64}}
+    @unpack C, D, S_j, I_j = G
     probs = Dict(i => zeros(S_j[i]) for i in (C ∪ D))
-    for s in active_paths(z, diagram, fixed), i in (C ∪ D)
-        probs[i][s[i]] += path_probability(s, diagram, params) / prior
+    for s in active_paths(Z, G, fixed), i in (C ∪ D)
+        probs[i][s[i]] += path_probability(s, G, X) / prior
     end
     return probs
 end
 
 """State probabilities."""
-function state_probabilities(z::DecisionStrategy, diagram::InfluenceDiagram, params::Params)
-    return state_probabilities(z, diagram, params, 1.0, Dict{Int, Int}())
+function state_probabilities(Z::DecisionStrategy, G::InfluenceDiagram, X::Probabilities)
+    return state_probabilities(Z, G, X, 1.0, Dict{Int, Int}())
 end

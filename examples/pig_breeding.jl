@@ -92,27 +92,24 @@ function consequences(cost, price)
     return Y
 end
 
+@info("Defining InfluenceDiagram")
+@time G = InfluenceDiagram(C, D, V, A, S_j)
+
 @info("Creating probabilities.")
-@time X = probabilities(health, treat, test, S_j)
+@time X = validate_probabilities(G, probabilities(health, treat, test, S_j))
 
 @info("Creating consequences.")
-@time Y = consequences(cost, price)
-
-@info("Defining InfluenceDiagram")
-@time diagram = InfluenceDiagram(C, D, V, A, S_j)
-
-@info("Defining Params")
-@time params = Params(diagram, X, Y)
+@time Y = validate_consequences(G, consequences(cost, price))
 
 @info("Defining DecisionModel")
-@time model = DecisionModel(diagram, params)
+@time model = DecisionModel(G, X)
 
 @info("Adding number of paths cut")
 num_paths = prod(S_j[j] for j in C)
-@time number_of_paths_cut(model, diagram, params, num_paths)
+@time number_of_paths_cut(model, G, X, num_paths)
 
 @info("Creating model objective.")
-I_j = diagram.I_j
+I_j = G.I_j
 @time U(s) = sum(Y[v][s[I_j[v]]...] for v in V)
 @time U⁺ = transform_affine_positive(U, S_j)
 @time E = expected_value(model, U⁺, S_j)
@@ -128,14 +125,14 @@ set_optimizer(model, optimizer)
 optimize!(model)
 
 @info("Extracting results.")
-z = DecisionStrategy(model)
+Z = DecisionStrategy(model)
 
 @info("Printing decision strategy:")
-print_decision_strategy(z, diagram)
+print_decision_strategy(Z, G)
 println()
 
 @info("State probabilities:")
-probs = state_probabilities(z, diagram, params)
+probs = state_probabilities(Z, G, X)
 print_state_probabilities(probs, health, health_states)
 print_state_probabilities(probs, test, test_states)
 print_state_probabilities(probs, treat, treat_states)
@@ -148,7 +145,7 @@ println()
 #         prior = probs[node][state]
 #         (isapprox(prior, 0, atol=1e-4) | isapprox(prior, 1, atol=1e-4)) && continue
 #         @info("Conditional state probabilities")
-#         probs2 = state_probabilities(z, diagram, params, prior, fixed)
+#         probs2 = state_probabilities(z, G, X, prior, fixed)
 #         print_state_probabilities(probs2, health, health_states, fixed)
 #         print_state_probabilities(probs2, test, test_states, fixed)
 #         print_state_probabilities(probs2, treat, treat_states, fixed)
@@ -156,40 +153,18 @@ println()
 #     end
 # end
 
-@info("Create results directory.")
-using Dates
-directory = joinpath("pig-breeding", string(now()))
-if !ispath(directory)
-    mkpath(directory)
+@info("Print utility distribution statistics.")
+@time u, p = utility_distribution(Z, G, X, U)
+
+using StatsBase
+using StatsBase.Statistics
+w = ProbabilityWeights(p)
+println("Mean: ", mean(u, w))
+println("Std: ", std(u, w, corrected=false))
+println("Skewness: ", skewness(u, w))
+println("Kurtosis: ", kurtosis(u, w))
+println("Value-at-risk (VaR)")
+println("α | VaR_α(Z)")
+for α in [0.01, 0.05, 0.1, 0.2]
+    @printf("%.2f | %.2f \n", α, quantile(u, w, α))
 end
-
-@info("Plot the utility distributions.")
-@time u, p = utility_distribution(z, diagram, params, U)
-
-mean = sum(@. p*u)
-var = sum(@. p*(u - mean)^2)
-
-println("Mean: ", mean)
-println("Variance: ", var)
-println("Standard deviation: ", sqrt(var))
-
-# using Plots
-# p1 = plot(u, p,
-#     linewidth=0,
-#     markershape=:circle,
-#     ylims=(0, maximum(p) + 0.15),
-#     xticks = u,
-#     yticks = p,
-#     label="Distribution",
-#     legend=:topleft)
-# savefig(p1, joinpath(directory, "utility-distribution.svg"))
-
-# p2 = plot(u, cumsum(p),
-#     linestyle=:dash,
-#     markershape=:circle,
-#     ylims=(0, 1 + 0.15),
-#     xticks = u,
-#     yticks = cumsum(p),
-#     label="Cumulative distribution",
-#     legend=:topleft)
-# savefig(p2, joinpath(directory, "cumulative-utility-distribution.svg"))

@@ -36,7 +36,7 @@ $$ℙ(ϵ) = \sum_{s∈S_ϵ} p(s) = 1.$$
 
 **State probabilities** for each node $i∈C∪D$ and state $s_i∈S_i$ denote how likely the state occurs given all path probabilities
 
-$$ℙ(s_i∣ϵ) = \sum_{s∈S_{ϵ,s_i}} \frac{p(s)}{ℙ(ϵ)} = \sum_{s∈S_{ϵ,s_i}} ℙ(s∣Z)$$
+$$ℙ(s_i∣ϵ) = \sum_{s∈S_{ϵ,s_i}} \frac{p(s)}{ℙ(ϵ)} = \sum_{s∈S_{ϵ,s_i}} p(s)$$
 
 An **active state** is a state with positive state probability $ℙ(s_i∣c)>0$ given conditions $c.$
 

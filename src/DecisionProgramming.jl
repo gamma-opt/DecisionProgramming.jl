@@ -1,13 +1,16 @@
 module DecisionProgramming
 
 include("model.jl")
-export DecisionModel,
-    DecisionStrategy,
-    InfluenceDiagram,
-    Params,
+export InfluenceDiagram,
+    Probabilities,
+    Consequences,
     UtilityFunction,
+    DecisionModel,
+    DecisionStrategy,
     paths,
     path_probability,
+    validate_probabilities,
+    validate_consequences,
     variables,
     probability_sum_cut,
     number_of_paths_cut,
@@ -27,8 +30,7 @@ export print_decision_strategy,
 
 include("random.jl")
 export random_influence_diagram,
-    random_probabilites,
-    random_consequences,
-    random_params
+    random_probabilities,
+    random_consequences
 
 end # module

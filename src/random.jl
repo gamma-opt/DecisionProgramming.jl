@@ -30,8 +30,7 @@ function random_influence_diagram(n_C::Int, n_D::Int, n_V::Int, n_A::Int, num_st
     return InfluenceDiagram(C, D, V, A, S_j)
 end
 
-"""Generate random probabilities"""
-function random_probabilites(states, state)
+function random_probability(states, state)
     X = zeros([states; state]...)
     for s in paths(states)
         x = rand(state)
@@ -43,17 +42,18 @@ function random_probabilites(states, state)
     return X
 end
 
-"""Generate random utilities"""
-function random_consequences(states)
+"""Generate random probabilities"""
+function random_probabilities(G::InfluenceDiagram)
+    @unpack C, V, S_j, I_j = G
+    Probabilities(i => random_probability(S_j[I_j[i]], S_j[i]) for i in C)
+end
+
+function random_consequence(states)
     return reshape(rand(prod(states)), states...)
 end
 
-"""Generate random params."""
-function random_params(diagram::InfluenceDiagram)
-    @unpack C, V, S_j, I_j = diagram
-    X = Dict{Int, Array{Float64}}(
-        i => random_probabilites(S_j[I_j[i]], S_j[i]) for i in C)
-    Y = Dict{Int, Array{Float64}}(
-        i => random_consequences(S_j[I_j[i]]) for i in V)
-    return Params(X, Y)
+"""Generate random utilities"""
+function random_consequences(G::InfluenceDiagram)
+    @unpack C, V, S_j, I_j = G
+    Consequences(i => random_consequence(S_j[I_j[i]]) for i in V)
 end

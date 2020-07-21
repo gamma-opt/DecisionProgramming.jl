@@ -1,13 +1,13 @@
 using Printf, Parameters
 
 """Print decision strategy."""
-function print_decision_strategy(z::DecisionStrategy, diagram::InfluenceDiagram)
-    @unpack C, D, V, I_j, S_j = diagram
+function print_decision_strategy(Z::DecisionStrategy, G::InfluenceDiagram)
+    @unpack C, D, V, I_j, S_j = G
     println("j | s_I(j) | s_j")
     for j in D
         println("I($j) = $(I_j[j])")
         for s_I in paths(S_j[I_j[j]])
-            _, s_j = findmax(z[j][s_I..., :])
+            _, s_j = findmax(Z[j][s_I..., :])
             @printf("%i | %s | %s \n", j, s_I, s_j)
         end
     end

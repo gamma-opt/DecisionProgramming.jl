@@ -14,11 +14,11 @@ struct InfluenceDiagram
     I_j::Vector{Vector{Int}}
 end
 
-"""Decision model parameters."""
-struct Params
-    X::Dict{Int, Array{Float64}}
-    Y::Dict{Int, Array{Float64}}
-end
+"""Probabilities type."""
+const Probabilities = Dict{Int, Array{Float64}}
+
+"""Consequences type."""
+const Consequences = Dict{Int, Array{Float64}}
 
 """UtilityFunction type. Maps path to real."""
 const UtilityFunction = Function
@@ -47,9 +47,8 @@ function paths(num_states::Vector{Int}, fixed::Dict{Int, Int})
 end
 
 """Path probability (upper bound)."""
-function path_probability(s::NTuple{N, Int}, diagram::InfluenceDiagram, params::Params) where N
-    @unpack C, I_j = diagram
-    @unpack X = params
+function path_probability(s::NTuple{N, Int}, G::InfluenceDiagram, X::Probabilities) where N
+    @unpack C, I_j = G
     prod(X[j][s[[I_j[j]; j]]...] for j in C)
 end
 
@@ -101,17 +100,9 @@ function InfluenceDiagram(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vec
     InfluenceDiagram(C, D, V, A, S_j, I_j)
 end
 
-"""Construct and validate decision model parameters.
-
-# Arguments
-- `diagram::InfluenceDiagram`: The influence diagram associated with the probabilities and consequences.
-- `X::Dict{Int, Array{Float64}}`: Probabilities
-- `Y::Dict{Int, Array{Float64}}`: Consequences
-"""
-function Params(diagram::InfluenceDiagram, X::Dict{Int, Array{Float64}}, Y::Dict{Int, Array{Float64}})
-    @unpack C, V, S_j, I_j = diagram
-
-    # Validate Probabilities
+"""Validate probabilities."""
+function validate_probabilities(G::InfluenceDiagram, X::Probabilities)::Probabilities
+    @unpack C, S_j, I_j = G
     for j in C
         S_I = S_j[I_j[j]]
         S_I_j = [S_I; S_j[j]]
@@ -121,13 +112,16 @@ function Params(diagram::InfluenceDiagram, X::Dict{Int, Array{Float64}}, Y::Dict
             sum(X[j][[s_I...; s_j]...] for s_j in 1:S_j[j]) ≈ 1 || error("probabilities shoud sum to one.")
         end
     end
+    return X
+end
 
-    # Validate consequences
+"""Validate consequences."""
+function validate_consequences(G::InfluenceDiagram, Y::Consequences)::Consequences
+    @unpack V, S_j, I_j = G
     for j in V
         size(Y[j]) == Tuple(S_j[I_j[j]]) || error("Array should be dimension |S_I(j)|.")
     end
-
-    Params(X, Y)
+    return Y
 end
 
 """Create a multidimensional array of variables."""
@@ -142,12 +136,12 @@ end
 """Construct a DecisionModel from an influence diagram and parameters.
 
 # Arguments
-- `diagram::InfluenceDiagram`
-- `params::Params`
+- `G::InfluenceDiagram`
+- `X::Probabilities`
+- `positive_path_utility::Bool=true`
 """
-function DecisionModel(diagram::InfluenceDiagram, params::Params)
-    @unpack C, D, S_j, I_j = diagram
-    @unpack X = params
+function DecisionModel(G::InfluenceDiagram, X::Probabilities; positive_path_utility::Bool=true)
+    @unpack C, D, S_j, I_j = G
 
     model = DecisionModel()
 
@@ -160,11 +154,19 @@ function DecisionModel(diagram::InfluenceDiagram, params::Params)
     end
 
     for s in paths(S_j)
-        @constraint(model, 0 ≤ π[s...] ≤ path_probability(s, diagram, params))
+        @constraint(model, 0 ≤ π[s...] ≤ path_probability(s, G, X))
     end
 
     for s in paths(S_j), j in D
         @constraint(model, π[s...] ≤ z[j][s[[I_j[j]; j]]...])
+    end
+
+    if !positive_path_utility
+        for s in paths(S_j)
+            @constraint(model,
+                π[s...] ≥ path_probability(s, G, X) +
+                          sum(z[j][s[[I_j[j]; j]]...] for j in D) - length(D))
+        end
     end
 
     model[:π] = π
@@ -179,10 +181,9 @@ function DecisionStrategy(model::DecisionModel)
 end
 
 """Adds a probability sum cut to the model as a lazy constraint."""
-function probability_sum_cut(model::DecisionModel, diagram::InfluenceDiagram, params::Params)
-    @unpack C, S_j, I_j = diagram
-    @unpack X = params
-    ϵ = minimum(path_probability(s, diagram, params) for s in paths(S_j))
+function probability_sum_cut(model::DecisionModel, G::InfluenceDiagram, X::Probabilities)
+    @unpack C, S_j, I_j = G
+    ϵ = minimum(path_probability(s, G, X) for s in paths(S_j))
     # Add the constraints only once
     flag = false
     function probability_sum_cut(cb_data)
@@ -199,10 +200,9 @@ function probability_sum_cut(model::DecisionModel, diagram::InfluenceDiagram, pa
 end
 
 """Adds a number of paths cut to the model as a lazy constraint."""
-function number_of_paths_cut(model::DecisionModel, diagram::InfluenceDiagram, params::Params, num_paths::Int; atol::Float64 = 0.9)
-    @unpack C, S_j, I_j = diagram
-    @unpack X = params
-    ϵ = minimum(path_probability(s, diagram, params) for s in paths(S_j))
+function number_of_paths_cut(model::DecisionModel, G::InfluenceDiagram, X::Probabilities, num_paths::Int; atol::Float64 = 0.9)
+    @unpack C, S_j, I_j = G
+    ϵ = minimum(path_probability(s, G, X) for s in paths(S_j))
     # Add the constraints only once
     flag = false
     function number_of_paths_cut(cb_data)
@@ -210,7 +210,7 @@ function number_of_paths_cut(model::DecisionModel, diagram::InfluenceDiagram, pa
         π = model[:π]
         πnum = sum(callback_value(cb_data, π[s]) ≥ ϵ for s in eachindex(π))
         if !isapprox(πnum, num_paths, atol = atol)
-            con = @build_constraint(sum(π[s...] / path_probability(s, diagram, params) for s in paths(S_j)) == num_paths)
+            con = @build_constraint(sum(π[s...] / path_probability(s, G, X) for s in paths(S_j)) == num_paths)
             MOI.submit(model, MOI.LazyConstraint(cb_data), con)
             flag = true
         end
@@ -219,7 +219,7 @@ function number_of_paths_cut(model::DecisionModel, diagram::InfluenceDiagram, pa
 end
 
 """Affine positive tranformation of path utility."""
-function transform_affine_positive(U::UtilityFunction, S_j)
+function transform_affine_positive(U::UtilityFunction, S_j::Array{Int})
     (u_min, u_max) = extrema(U(s) for s in paths(S_j))
     return s -> (U(s) - u_min)/(u_max - u_min) + 1
 end

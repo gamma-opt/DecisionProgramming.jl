@@ -7,14 +7,21 @@ path_probability
 
 ```@docs
 InfluenceDiagram
-InfluenceDiagram(::Vector{Int}, ::Vector{Int}, ::Vector{Int}, ::Vector{Pair{Int, Int}}, ::Vector{Int})
-Params
-Params(::InfluenceDiagram, ::Dict{Int, Array{Float64}}, ::Dict{Int, Array{Float64}})
+Probabilities
+Consequences
+UtilityFunction
+DecisionModel
+DecisionStrategy
 ```
 
 ```@docs
-DecisionModel
-DecisionModel(::InfluenceDiagram, ::Params)
+InfluenceDiagram(::Vector{Int}, ::Vector{Int}, ::Vector{Int}, ::Vector{Pair{Int, Int}}, ::Vector{Int})
+validate_probabilities(::InfluenceDiagram, ::Dict{Int, Array{Float64}})
+validate_consequences(::InfluenceDiagram, ::Dict{Int, Array{Float64}})
+```
+
+```@docs
+DecisionModel(::InfluenceDiagram, ::Probabilities; ::Bool)
 probability_sum_cut
 number_of_paths_cut
 ```
@@ -26,7 +33,6 @@ value_at_risk
 ```
 
 ```@docs
-DecisionStrategy
 DecisionStrategy(::DecisionModel)
 ```
 
@@ -47,5 +53,6 @@ print_state_probabilities
 ## random.jl
 ```@docs
 random_influence_diagram
-random_params
+random_probabilities
+random_consequences
 ```
