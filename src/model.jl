@@ -229,8 +229,8 @@ function expected_value(model::DecisionModel, U::UtilityFunction, S_j::Vector{In
     @expression(model, sum(model[:π][s...] * U(s) for s in paths(S_j)))
 end
 
-"""Value-at-risk."""
-function value_at_risk(model::DecisionModel, U::UtilityFunction, S_j::Vector{Int}, α::Float64)
+"""Conditional value-at-risk (CVaR)."""
+function conditional_value_at_risk(model::DecisionModel, U::UtilityFunction, S_j::Vector{Int}, α::Float64)
     # Pre-computer parameters
     u = collect(Iterators.flatten(U(s) for s in paths(S_j)))
     u_sorted = sort(u)

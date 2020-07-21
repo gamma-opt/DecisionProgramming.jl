@@ -13,11 +13,11 @@ model = DecisionModel(G, X)
 @time U⁺ = transform_affine_positive(U, S_j)
 @time E = expected_value(model, U⁺, S_j)
 # @objective(model, Max, E)
-α = 0.2
-@time CVaR = value_at_risk(model, U⁺, S_j, α)
-@objective(model, Max, CVaR)
-# w = 0.8
-# @objective(model, Max, w * E + (1 - w) * CVaR)
+α = 0.05
+@time CVaR = conditional_value_at_risk(model, U⁺, S_j, α)
+# @objective(model, Max, CVaR)
+w = 0.8
+@objective(model, Max, w * E + (1 - w) * CVaR)
 
 optimizer = optimizer_with_attributes(
     Gurobi.Optimizer,

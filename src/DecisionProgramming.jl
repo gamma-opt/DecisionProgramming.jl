@@ -16,11 +16,10 @@ export InfluenceDiagram,
     number_of_paths_cut,
     transform_affine_positive,
     expected_value,
-    value_at_risk
+    conditional_value_at_risk
 
 include("analysis.jl")
-export active_paths,
-    is_compatible,
+export ActivePaths,
     state_probabilities,
     utility_distribution
 
