@@ -105,6 +105,9 @@ end
 @info("Creating consequences.")
 @time Y = validate_consequences(G, consequences(A_k, F, T, S_j))
 
+@info("Creating path utility function.")
+@time U(s) = sum(Y[v][s[G.I_j[v]]...] for v in V)
+
 @info("Defining DecisionModel")
 @time model = DecisionModel(G, X)
 
@@ -116,8 +119,6 @@ num_paths = prod(S_j[j] for j in C)
 @time number_of_paths_cut(model, G, X, num_paths)
 
 @info("Creating model objective.")
-I_j = G.I_j
-@time U(s) = sum(Y[v][s[I_j[v]]...] for v in V)
 @time U⁺ = transform_affine_positive(U, S_j)
 @time E = expected_value(model, U⁺, S_j)
 @objective(model, Max, E)
@@ -148,16 +149,5 @@ println()
 
 @info("Print utility distribution statistics.")
 @time u, p = utility_distribution(Z, G, X, U)
-
-using StatsBase
-using StatsBase.Statistics
-w = ProbabilityWeights(p)
-println("Mean: ", mean(u, w))
-println("Std: ", std(u, w, corrected=false))
-println("Skewness: ", skewness(u, w))
-println("Kurtosis: ", kurtosis(u, w))
-println("Value-at-risk (VaR)")
-println("α | VaR_α(Z)")
-for α in [0.01, 0.05, 0.1, 0.2]
-    @printf("%.2f | %.2f \n", α, quantile(u, w, α))
-end
+include("statistics.jl")
+print_stats(u, p)

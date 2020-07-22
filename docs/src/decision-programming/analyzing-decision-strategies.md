@@ -18,7 +18,7 @@ The probability mass function of the **utility distribution** associates each un
 
 $$ℙ(X=u)=∑_{s∈S^Z∣\mathcal{U}(s)=u} p(s),\quad ∀u∈\mathcal{U}^∗.$$
 
-From the utility distribution, we can calculate the cumulative utility distribution, statistics such as expected value, standard deviation, skewness and kurtosis, and risk metrics such as value-at-risk and conditional value-at-risk.
+From the utility distribution, we can calculate the cumulative distribution, statistics, and risk measures. The relevant statistics are expected value, standard deviation, skewness and kurtosis. Risk measures focus on the conditional value-at-risk (CVaR), also known as, expected shortfall.
 
 
 ## State Probabilities
