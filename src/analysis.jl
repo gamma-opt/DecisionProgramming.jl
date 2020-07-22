@@ -12,9 +12,12 @@ struct ActivePaths
     G::InfluenceDiagram
     Z::DecisionStrategy
     fixed::Dict{Int, Int}
+    ActivePaths(G, Z, fixed) = !all(k∈G.C for k in keys(fixed)) ? error("You can only fix chance states.") : new(G, Z, fixed)
 end
 
-ActivePaths(G, Z) = ActivePaths(G, Z, Dict{Int, Int}())
+function ActivePaths(G::InfluenceDiagram, Z::DecisionStrategy)
+    ActivePaths(G, Z, Dict{Int, Int}())
+end
 
 function active_path(G::InfluenceDiagram, Z::DecisionStrategy, s_C::NTuple{N, Int}) where N
     @unpack C, D, I_j = G
@@ -29,7 +32,9 @@ end
 
 function Base.iterate(a::ActivePaths)
     @unpack G, Z = a
-    iter = paths(G.S_j[G.C], a.fixed)
+    ks = sort(collect(keys(a.fixed)))
+    fixed = Dict{Int, Int}(i => a.fixed[k] for (i, k) in enumerate(ks))
+    iter = paths(G.S_j[G.C], fixed)
     next = iterate(iter)
     if next !== nothing
         s_C, state = next
