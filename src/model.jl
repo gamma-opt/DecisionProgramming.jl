@@ -4,42 +4,51 @@ using Base.Iterators: product
 
 # --- Types ---
 
+"""Node type."""
+const Node = Int
+
+"""State type."""
+const State = Int
+
 """Influence diagram."""
 struct InfluenceDiagram
-    C::Vector{Int}
-    D::Vector{Int}
-    V::Vector{Int}
-    A::Vector{Pair{Int, Int}}
-    S_j::Vector{Int}
-    I_j::Vector{Vector{Int}}
+    C::Vector{Node}
+    D::Vector{Node}
+    V::Vector{Node}
+    A::Vector{Pair{Node, Node}}
+    S_j::Vector{State}
+    I_j::Vector{Vector{Node}}
 end
 
 """Probabilities type."""
-const Probabilities = Dict{Int, Array{Float64}}
+const Probabilities = Dict{Node, Array{Float64, N} where N}
 
 """Consequences type."""
-const Consequences = Dict{Int, Array{Float64}}
+const Consequences = Dict{Node, Array{Float64, N} where N}
 
-"""UtilityFunction type. Maps path to real."""
+"""Path type."""
+const Path = NTuple{N, State} where N
+
+"""UtilityFunction type. Maps Path to Real."""
 const UtilityFunction = Function
 
 """Defines the DecisionModel type."""
 const DecisionModel = Model
 
 """Decision strategy type."""
-const DecisionStrategy = Dict{Int, Array{Int}}
+const DecisionStrategy = Dict{Node, Array{Int, N} where N}
 
 
 # --- Functions ---
 
 """Iterate over paths."""
-function paths(num_states::Vector{Int})
-    product(UnitRange.(one(Int), num_states)...)
+function paths(num_states::Vector{State})
+    product(UnitRange.(one(eltype(num_states)), num_states)...)
 end
 
 """Iterate over paths with fixed states."""
-function paths(num_states::Vector{Int}, fixed::Dict{Int, Int})
-    iters = collect(UnitRange.(one(Int), num_states))
+function paths(num_states::Vector{State}, fixed::Dict{Int, Int})
+    iters = collect(UnitRange.(one(eltype(num_states)), num_states))
     for (i, v) in fixed
         iters[i] = UnitRange(v, v)
     end
@@ -47,7 +56,7 @@ function paths(num_states::Vector{Int}, fixed::Dict{Int, Int})
 end
 
 """Path probability (upper bound)."""
-function path_probability(s::NTuple{N, Int}, G::InfluenceDiagram, X::Probabilities) where N
+function path_probability(s::Path, G::InfluenceDiagram, X::Probabilities)
     @unpack C, I_j = G
     prod(X[j][s[[I_j[j]; j]]...] for j in C)
 end
@@ -58,13 +67,13 @@ end
 """Construct and validate an influence diagram.
 
 # Arguments
-- `C::Vector{Int}`: Change nodes.
-- `D::Vector{Int}`: Decision nodes.
-- `V::Vector{Int}`: Value nodes.
-- `A::Vector{Pair{Int, Int}}`: Arcs between nodes.
-- `S_j::Vector{Int}`: Number of states.
+- `C::Vector{Node}`: Change nodes.
+- `D::Vector{Node}`: Decision nodes.
+- `V::Vector{Node}`: Value nodes.
+- `A::Vector{Pair{Node, Node}}`: Arcs between nodes.
+- `S_j::Vector{State}`: Number of states.
 """
-function InfluenceDiagram(C::Vector{Int}, D::Vector{Int}, V::Vector{Int}, A::Vector{Pair{Int, Int}}, S_j::Vector{Int})
+function InfluenceDiagram(C::Vector{Node}, D::Vector{Node}, V::Vector{Node}, A::Vector{Pair{Node, Node}}, S_j::Vector{State})
     # Enforce sorted and unique elements.
     C = sort(unique(C))
     D = sort(unique(D))
@@ -141,7 +150,7 @@ end
 - `positive_path_utility::Bool=true`
 """
 function DecisionModel(G::InfluenceDiagram, X::Probabilities; positive_path_utility::Bool=true)
-    @unpack C, D, S_j, I_j = G
+    @unpack D, S_j, I_j = G
 
     model = DecisionModel()
 
@@ -182,8 +191,7 @@ end
 
 """Adds a probability sum cut to the model as a lazy constraint."""
 function probability_sum_cut(model::DecisionModel, G::InfluenceDiagram, X::Probabilities)
-    @unpack C, S_j, I_j = G
-    ϵ = minimum(path_probability(s, G, X) for s in paths(S_j))
+    ϵ = minimum(path_probability(s, G, X) for s in paths(G.S_j))
     # Add the constraints only once
     flag = false
     function probability_sum_cut(cb_data)
@@ -201,8 +209,7 @@ end
 
 """Adds a number of paths cut to the model as a lazy constraint."""
 function number_of_paths_cut(model::DecisionModel, G::InfluenceDiagram, X::Probabilities, num_paths::Int; atol::Float64 = 0.9)
-    @unpack C, S_j, I_j = G
-    ϵ = minimum(path_probability(s, G, X) for s in paths(S_j))
+    ϵ = minimum(path_probability(s, G, X) for s in paths(G.S_j))
     # Add the constraints only once
     flag = false
     function number_of_paths_cut(cb_data)
@@ -210,7 +217,7 @@ function number_of_paths_cut(model::DecisionModel, G::InfluenceDiagram, X::Proba
         π = model[:π]
         πnum = sum(callback_value(cb_data, π[s]) ≥ ϵ for s in eachindex(π))
         if !isapprox(πnum, num_paths, atol = atol)
-            con = @build_constraint(sum(π[s...] / path_probability(s, G, X) for s in paths(S_j)) == num_paths)
+            con = @build_constraint(sum(π[s...] / path_probability(s, G, X) for s in paths(G.S_j)) == num_paths)
             MOI.submit(model, MOI.LazyConstraint(cb_data), con)
             flag = true
         end

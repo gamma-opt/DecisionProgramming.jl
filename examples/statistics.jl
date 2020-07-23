@@ -2,14 +2,14 @@ using StatsBase
 using StatsBase.Statistics
 
 """Value-at-risk."""
-function VaR(u, w, α)
+function value_at_risk(u, w, α)
     u_α = u[w .≤ α]
     return if isempty(u_α) 0.0 else -maximum(u_α) end
 end
 
 """Conditional value-at-risk."""
-function CVaR(u, w, α)
-    x_α = -VaR(u, w, α)
+function conditional_value_at_risk(u, w, α)
+    x_α = -value_at_risk(u, w, α)
     tail = u .≤ x_α
     return -(mean(u[tail], w[tail]) + (α - sum(w[tail])) * x_α) / α
 end
@@ -22,6 +22,8 @@ function print_stats(u, p; αs=[0.01, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2, 1.0])
     println("Kurtosis: ", kurtosis(u, w))
     println("  α | VaR_α(Z) | CVaR_α(Z)")
     for α in αs
-        @printf("%.3f | %.2f | %.2f \n", α, VaR(u, w, α), CVaR(u, w, α))
+        @printf("%.3f | %.2f | %.2f \n", α,
+            value_at_risk(u, w, α),
+            conditional_value_at_risk(u, w, α))
     end
 end

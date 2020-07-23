@@ -1,9 +1,12 @@
 # API Reference
 ## model.jl
 ```@docs
+Node
+State
 InfluenceDiagram
 Probabilities
 Consequences
+Path
 UtilityFunction
 DecisionModel
 DecisionStrategy

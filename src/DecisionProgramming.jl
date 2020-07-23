@@ -1,9 +1,12 @@
 module DecisionProgramming
 
 include("model.jl")
-export InfluenceDiagram,
+export Node,
+    State,
+    InfluenceDiagram,
     Probabilities,
     Consequences,
+    Path,
     UtilityFunction,
     DecisionModel,
     DecisionStrategy,
