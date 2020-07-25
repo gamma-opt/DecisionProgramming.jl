@@ -107,8 +107,7 @@ end
 @time model = DecisionModel(G, X)
 
 @info("Adding number of paths cut")
-num_paths = prod(S_j[j] for j in C)
-@time number_of_paths_cut(model, G, X, num_paths)
+@time number_of_paths_cut(model, G, X)
 
 @info("Creating model objective.")
 @time U⁺ = transform_affine_positive(G, U)
