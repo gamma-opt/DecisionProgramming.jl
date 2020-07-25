@@ -8,3 +8,5 @@ In the second step, we create a decision model with an objective for the influen
 In the third step, we analyze the resulting decision strategies for the influence diagram. In particular, we are interested in utility distribution and its associated statistics and risk measures.
 
 DecisionProgramming.jl provides the necessary functionality for expressing and solving decision problems but does not explain how to design influence diagrams. The rest of this documentation will describe the mathematical and programmatic details, touch on the computational challenges, and provide concrete examples of solving decision problems.
+
+DecisionProgramming.jl is developed in the [Systems Analysis Laboratory](https://sal.aalto.fi/en/) at Aalto University by *Ahti Salo*,  *Fabricio Oliveira*, *Juho Andelmin*, *Olli Herala*, and *Jaan Tollander de Balsch*.

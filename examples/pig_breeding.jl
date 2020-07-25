@@ -1,5 +1,4 @@
-using Printf, Parameters
-using JuMP, Gurobi
+using Printf, JuMP, Gurobi
 using DecisionProgramming
 
 if isempty(ARGS)
@@ -102,7 +101,7 @@ end
 @time Y = validate_consequences(G, consequences(cost, price))
 
 @info("Creating path utility function.")
-@time U(s) = sum(Y[v][s[G.I_j[v]]...] for v in V)
+@time U(s) = sum(Y[v][s[G.I_j[v]]...] for v in G.V)
 
 @info("Defining DecisionModel")
 @time model = DecisionModel(G, X)
@@ -112,8 +111,8 @@ num_paths = prod(S_j[j] for j in C)
 @time number_of_paths_cut(model, G, X, num_paths)
 
 @info("Creating model objective.")
-@time U⁺ = transform_affine_positive(U, S_j)
-@time E = expected_value(model, U⁺, S_j)
+@time U⁺ = transform_affine_positive(G, U)
+@time E = expected_value(model, G, U⁺)
 @objective(model, Max, E)
 
 @info("Starting the optimization process.")
@@ -158,3 +157,10 @@ println()
 @time u, p = utility_distribution(Z, G, X, U)
 include("statistics.jl")
 print_stats(u, p)
+
+include("plotting.jl")
+p1 = plot_distribution(u, p; label="Expected value objective")
+p2 = plot_cumulative_distribution(u, p; label="Expected value objective")
+directory = create_directory("pigs")
+savefig(p1, joinpath(directory, "utility-distribution.svg"))
+savefig(p2, joinpath(directory, "cumulative-utility-distribution.svg"))

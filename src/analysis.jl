@@ -2,6 +2,11 @@ using Parameters
 
 """Interface for iterating over active paths given influence diagram and decision strategy.
 
+1) Initialize path `s` of length `n`
+2) Fill chance states `s[C]` by generating subpaths `paths(G.C)`
+3) Fill decision states `s[D]` by decision strategy `Z` and path `s`
+
+# Examples
 ```julia
 for s in ActivePaths(G, Z)
     ...
@@ -19,7 +24,6 @@ function ActivePaths(G::InfluenceDiagram, Z::DecisionStrategy)
     ActivePaths(G, Z, Dict{Int, Int}())
 end
 
-"""Decision state Z_j : s_I(j) → s_j"""
 function decision_state(G::InfluenceDiagram, Z::DecisionStrategy, s::Path, j::Int)
     findmax(Z[j][s[G.I_j[j]]..., :])[2]
 end
@@ -61,8 +65,14 @@ end
 Base.eltype(::Type{ActivePaths}) = Path
 Base.length(a::ActivePaths) = prod(a.G.S_j[a.G.C])
 
-"""The probability mass function."""
-function utility_distribution(Z::DecisionStrategy, G::InfluenceDiagram, X::Probabilities, U::UtilityFunction)
+"""The probability mass function for path utilities on active paths.
+
+# Examples
+```julia
+u, p = utility_distribution(Z, G, X, U)
+```
+"""
+function utility_distribution(Z::DecisionStrategy, G::InfluenceDiagram, X::Probabilities, U::PathUtility)
     @unpack C, D, V, I_j, S_j = G
 
     # Extract utilities and probabilities of active paths
@@ -96,8 +106,19 @@ function utility_distribution(Z::DecisionStrategy, G::InfluenceDiagram, X::Proba
     return u2, p2
 end
 
-"""State probabilities."""
-function state_probabilities(Z::DecisionStrategy, G::InfluenceDiagram, X::Probabilities, prior::Float64, fixed::Dict{Int, Int})::Dict{Int, Vector{Float64}}
+"""Associates each node with array of conditional probabilities for each of its states occuring in active paths given fixed states and prior probability.
+
+# Examples
+```julia
+probs = state_probabilities(Z, G, X)
+node = ...
+state = ...
+fixed = Dict(node => state)
+prior = probs[node][state]
+probs2 = state_probabilities(z, G, X, prior, fixed)
+```
+"""
+function state_probabilities(Z::DecisionStrategy, G::InfluenceDiagram, X::Probabilities, prior::Float64, fixed::Dict{Node, State})::Dict{Node, Vector{Float64}}
     @unpack C, D, S_j, I_j = G
     probs = Dict(i => zeros(S_j[i]) for i in (C ∪ D))
     for s in ActivePaths(G, Z, fixed), i in (C ∪ D)
@@ -106,7 +127,13 @@ function state_probabilities(Z::DecisionStrategy, G::InfluenceDiagram, X::Probab
     return probs
 end
 
-"""State probabilities."""
+"""Associates each node with array of probabilities for each of its states occuring in active paths.
+
+# Examples
+```julia
+probs = state_probabilities(Z, G, X)
+```
+"""
 function state_probabilities(Z::DecisionStrategy, G::InfluenceDiagram, X::Probabilities)
-    return state_probabilities(Z, G, X, 1.0, Dict{Int, Int}())
+    return state_probabilities(Z, G, X, 1.0, Dict{Node, State}())
 end

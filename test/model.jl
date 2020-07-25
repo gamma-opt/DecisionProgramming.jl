@@ -1,25 +1,23 @@
-using Logging, Test, Random, Parameters, JuMP, GLPK
+using Logging, Test, Random, JuMP, GLPK
 using DecisionProgramming
 
-Random.seed!(111)
+Random.seed!(4)
 
 @info "Creating influence diagram, probabilities and consequences."
-G = random_influence_diagram(3, 3, 3, 2, [2])
+G = random_influence_diagram(4, 2, 3, 2, [2])
 X = validate_probabilities(G, random_probabilities(G))
 Y = validate_consequences(G, random_consequences(G))
+U(s) = sum(Y[v][s[G.I_j[v]]...] for v in G.V)
 
 @info "Creating decision model."
 model = DecisionModel(G, X)
 probability_sum_cut(model, G, X)
-num_paths = prod(G.S_j[j] for j in G.C)
-number_of_paths_cut(model, G, X, num_paths)
+number_of_paths_cut(model, G, X)
 
 @info "Adding objectives to the model."
-@unpack V, S_j, I_j = G
-U(s) = sum(Y[v][s[I_j[v]]...] for v in V)
-U⁺ = transform_affine_positive(U, S_j)
-EV = expected_value(model, U⁺, S_j)
-ES = conditional_value_at_risk(model, U⁺, S_j, 0.2)
+U⁺ = transform_affine_positive(G, U)
+EV = expected_value(model, G, U⁺)
+ES = conditional_value_at_risk(model, G, U⁺, 0.2)
 w = 0.5
 @objective(model, Max, w * EV + (1 - w) * ES)
 
@@ -32,5 +30,10 @@ optimize!(model)
 Z = DecisionStrategy(model)
 u, p = utility_distribution(Z, G, X, U)
 probs = state_probabilities(Z, G, X)
+
+@info "Printing results"
+print_decision_strategy(Z, G)
+print_state_probabilities(probs, G.C, [])
+print_state_probabilities(probs, G.D, [])
 
 @test true

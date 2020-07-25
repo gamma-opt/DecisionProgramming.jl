@@ -26,27 +26,47 @@ const Probabilities = Dict{Node, Array{Float64, N} where N}
 """Consequences type."""
 const Consequences = Dict{Node, Array{Float64, N} where N}
 
-"""Path type."""
-const Path = NTuple{N, State} where N
-
-"""UtilityFunction type. Maps Path to Real."""
-const UtilityFunction = Function
-
-"""Defines the DecisionModel type."""
-const DecisionModel = Model
-
 """Decision strategy type."""
 const DecisionStrategy = Dict{Node, Array{Int, N} where N}
 
+"""Path type."""
+const Path = NTuple{N, State} where N
 
-# --- Functions ---
+"""PathUtility type. Path utility is a function that maps paths to real values.
 
-"""Iterate over paths."""
+# Examples
+```julia
+U(s::Path)::Real = ...
+```
+"""
+const PathUtility = Function
+
+"""DecisionModel type."""
+const DecisionModel = Model
+
+
+# --- Path Functions ---
+
+"""Iterate over paths in lexicographical order.
+
+# Examples
+```julia-repl
+julia> collect(paths([2, 3]))
+(1, 1), (1, 2), (1, 3), (2, 1), (2, 2), (2, 3)
+```
+"""
 function paths(num_states::Vector{State})
     product(UnitRange.(one(eltype(num_states)), num_states)...)
 end
 
-"""Iterate over paths with fixed states."""
+"""Iterate over paths with fixed states in lexicographical order.
+
+# Examples
+```julia-repl
+julia> collect(paths([2, 3], fixed=Dict(1=>2)))
+(2, 1), (2, 2), (2, 3)
+```
+"""
 function paths(num_states::Vector{State}, fixed::Dict{Int, Int})
     iters = collect(UnitRange.(one(eltype(num_states)), num_states))
     for (i, v) in fixed
@@ -62,16 +82,19 @@ function path_probability(s::Path, G::InfluenceDiagram, X::Probabilities)
 end
 
 
-# --- Model ---
+# --- Influence Diagram ---
 
 """Construct and validate an influence diagram.
 
-# Arguments
-- `C::Vector{Node}`: Change nodes.
-- `D::Vector{Node}`: Decision nodes.
-- `V::Vector{Node}`: Value nodes.
-- `A::Vector{Pair{Node, Node}}`: Arcs between nodes.
-- `S_j::Vector{State}`: Number of states.
+# Examples
+```julia
+C = [1, 3]
+D = [2, 4]
+V = [5]
+A = [1=>2, 3=>4, 2=>5, 3=>5]
+S_j = [2, 3, 2, 4]
+G = InfluenceDiagram(C, D, V, A, S_j)
+```
 """
 function InfluenceDiagram(C::Vector{Node}, D::Vector{Node}, V::Vector{Node}, A::Vector{Pair{Node, Node}}, S_j::Vector{State})
     # Enforce sorted and unique elements.
@@ -109,7 +132,14 @@ function InfluenceDiagram(C::Vector{Node}, D::Vector{Node}, V::Vector{Node}, A::
     InfluenceDiagram(C, D, V, A, S_j, I_j)
 end
 
-"""Validate probabilities."""
+"""Validate probabilities for an influence diagram.
+
+# Examples
+```julia
+X = ...  # Unvalidated probabilities
+X = validate_probabilities(G, X)
+```
+"""
 function validate_probabilities(G::InfluenceDiagram, X::Probabilities)::Probabilities
     @unpack C, S_j, I_j = G
     for j in C
@@ -124,7 +154,14 @@ function validate_probabilities(G::InfluenceDiagram, X::Probabilities)::Probabil
     return X
 end
 
-"""Validate consequences."""
+"""Validate consequences for an influence diagram.
+
+# Examples
+```julia
+Y = ...  # Unvalidated consequences
+Y = validate_consequences(G, Y)
+```
+"""
 function validate_consequences(G::InfluenceDiagram, Y::Consequences)::Consequences
     @unpack V, S_j, I_j = G
     for j in V
@@ -133,7 +170,10 @@ function validate_consequences(G::InfluenceDiagram, Y::Consequences)::Consequenc
     return Y
 end
 
-"""Create a multidimensional array of variables."""
+
+# --- Decision Model ---
+
+"""Create a multidimensional array of JuMP variables."""
 function variables(model::Model, dims::Vector{Int}; binary::Bool=false)
     v = Array{VariableRef}(undef, dims...)
     for i in eachindex(v)
@@ -142,12 +182,12 @@ function variables(model::Model, dims::Vector{Int}; binary::Bool=false)
     return v
 end
 
-"""Construct a DecisionModel from an influence diagram and parameters.
+"""Construct a DecisionModel from an influence diagram and probabilities.
 
-# Arguments
-- `G::InfluenceDiagram`
-- `X::Probabilities`
-- `positive_path_utility::Bool=true`
+# Examples
+```julia
+model = DecisionModel(G, X; positive_path_utility=true)
+```
 """
 function DecisionModel(G::InfluenceDiagram, X::Probabilities; positive_path_utility::Bool=true)
     @unpack D, S_j, I_j = G
@@ -184,12 +224,13 @@ function DecisionModel(G::InfluenceDiagram, X::Probabilities; positive_path_util
     return model
 end
 
-"""Extract values for decision variables from a decision model."""
-function DecisionStrategy(model::DecisionModel)
-    DecisionStrategy(i => (@. Int(round(value(v)))) for (i, v) in model[:z])
-end
+"""Adds a probability sum cut to the model as a lazy constraint.
 
-"""Adds a probability sum cut to the model as a lazy constraint."""
+# Examples
+```julia
+probability_sum_cut(model, G, X)
+```
+"""
 function probability_sum_cut(model::DecisionModel, G::InfluenceDiagram, X::Probabilities)
     ϵ = minimum(path_probability(s, G, X) for s in paths(G.S_j))
     # Add the constraints only once
@@ -207,9 +248,17 @@ function probability_sum_cut(model::DecisionModel, G::InfluenceDiagram, X::Proba
     MOI.set(model, MOI.LazyConstraintCallback(), probability_sum_cut)
 end
 
-"""Adds a number of paths cut to the model as a lazy constraint."""
-function number_of_paths_cut(model::DecisionModel, G::InfluenceDiagram, X::Probabilities, num_paths::Int; atol::Float64 = 0.9)
+"""Adds a number of paths cut to the model as a lazy constraint.
+
+# Examples
+```julia
+atol = 0.9  # Tolerance to trigger the creation of the lazy cut
+number_of_paths_cut(model, G, X; atol=atol)
+```
+"""
+function number_of_paths_cut(model::DecisionModel, G::InfluenceDiagram, X::Probabilities; atol::Float64 = 0.9)
     ϵ = minimum(path_probability(s, G, X) for s in paths(G.S_j))
+    num_paths = prod(G.S_j[G.C])
     # Add the constraints only once
     flag = false
     function number_of_paths_cut(cb_data)
@@ -225,19 +274,45 @@ function number_of_paths_cut(model::DecisionModel, G::InfluenceDiagram, X::Proba
     MOI.set(model, MOI.LazyConstraintCallback(), number_of_paths_cut)
 end
 
-"""Affine positive tranformation of path utility."""
-function transform_affine_positive(U::UtilityFunction, S_j::Array{Int})
-    (u_min, u_max) = extrema(U(s) for s in paths(S_j))
+
+# --- Objective Functions ---
+
+"""Affine positive tranformation of path utility.
+
+# Examples
+```julia
+U(s::Path)::Real = ...
+U⁺ = transform_affine_positive(G, U)
+```
+"""
+function transform_affine_positive(G::InfluenceDiagram, U::PathUtility)::PathUtility
+    (u_min, u_max) = extrema(U(s) for s in paths(G.S_j))
     return s -> (U(s) - u_min)/(u_max - u_min) + 1
 end
 
-"""Expected value."""
-function expected_value(model::DecisionModel, U::UtilityFunction, S_j::Vector{Int})
-    @expression(model, sum(model[:π][s...] * U(s) for s in paths(S_j)))
+"""Expected value objective.
+
+# Examples
+```julia
+EV = expected_value(model, G, U⁺)
+```
+"""
+function expected_value(model::DecisionModel, G::InfluenceDiagram, U::PathUtility)
+    @expression(model, sum(model[:π][s...] * U(s) for s in paths(G.S_j)))
 end
 
-"""Conditional value-at-risk (CVaR)."""
-function conditional_value_at_risk(model::DecisionModel, U::UtilityFunction, S_j::Vector{Int}, α::Float64)
+"""Conditional value-at-risk (CVaR) objective. Also known as Expected Shortfall (ES).
+
+# Examples
+```julia
+α = 0.05  # Parameter such that 0 ≤ α ≤ 1
+ES = conditional_value_at_risk(model, G, U⁺, α)
+```
+"""
+function conditional_value_at_risk(model::DecisionModel, G::InfluenceDiagram, U::PathUtility, α::Float64)
+    @unpack S_j = G
+    0 ≤ α ≤ 1 || error("α should be 0 ≤ α ≤ 1")
+
     # Pre-computer parameters
     u = collect(Iterators.flatten(U(s) for s in paths(S_j)))
     u_sorted = sort(u)
@@ -279,4 +354,18 @@ function conditional_value_at_risk(model::DecisionModel, U::UtilityFunction, S_j
 
     # Return CVaR as an expression
     return @expression(model, sum(ρ_bar[s...] * U(s) for s in paths(S_j)) / α)
+end
+
+
+# --- Decision Strategy ---
+
+"""Extract values for decision variables from a decision model.
+
+# Examples
+```julia
+Z = DecisionStrategy(model)
+```
+"""
+function DecisionStrategy(model::DecisionModel)
+    DecisionStrategy(i => (@. Int(round(value(v)))) for (i, v) in model[:z])
 end

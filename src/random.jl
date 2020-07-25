@@ -1,6 +1,15 @@
 using Random, Parameters
 
-"""Create random influence diagram of given size."""
+"""Create random influence diagram of given size.
+
+# Examples
+```julia
+n_C, n_D, n_V = 4, 2, 1  # Number of chance, decision and value states
+n_A = s  # Upper limit on information set size for any node
+num_states = [2, 3]  # Set of possible number of states
+G = random_influence_diagram(n_C, n_D, n_V, n_A, num_states)
+```
+"""
 function random_influence_diagram(n_C::Int, n_D::Int, n_V::Int, n_A::Int, num_states::Vector{Int})
     # Create nodes
     n = n_C + n_D
@@ -42,7 +51,13 @@ function random_probability(states, state)
     return X
 end
 
-"""Generate random probabilities"""
+"""Generate random probabilities for an influence diagram.
+
+# Examples
+```julia
+X = random_probabilities(G)
+```
+"""
 function random_probabilities(G::InfluenceDiagram)
     @unpack C, V, S_j, I_j = G
     Probabilities(i => random_probability(S_j[I_j[i]], S_j[i]) for i in C)
@@ -52,7 +67,13 @@ function random_consequence(states)
     return reshape(rand(prod(states)), states...)
 end
 
-"""Generate random utilities"""
+"""Generate random consequences  for an influence diagram.
+
+# Examples
+```julia
+Y = random_consequences(G)
+```
+"""
 function random_consequences(G::InfluenceDiagram)
     @unpack C, V, S_j, I_j = G
     Consequences(i => random_consequence(S_j[I_j[i]]) for i in V)

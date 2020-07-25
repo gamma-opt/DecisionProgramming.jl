@@ -1,5 +1,4 @@
-using Random, Parameters, Printf
-using JuMP, Gurobi
+using Random, Parameters, Printf, JuMP, Gurobi
 using DecisionProgramming
 
 Random.seed!(111)
@@ -7,15 +6,14 @@ Random.seed!(111)
 G = random_influence_diagram(5, 3, 2, 2, [2, 3])
 X = random_probabilities(G)
 Y = random_consequences(G)
-@unpack V, S_j, I_j = G
-U(s) = sum(Y[v][s[I_j[v]]...] for v in V)
+U(s) = sum(Y[v][s[G.I_j[v]]...] for v in G.V)
 
 model = DecisionModel(G, X)
-U⁺ = transform_affine_positive(U, S_j)
-EV = expected_value(model, U⁺, S_j)
+U⁺ = transform_affine_positive(G, U)
+EV = expected_value(model, G, U⁺)
+ES = conditional_value_at_risk(model, G, U⁺, 0.2)
+
 # @objective(model, Max, EV)
-α = 0.20
-ES = conditional_value_at_risk(model, U⁺, S_j, α)
 @objective(model, Max, ES)
 # w = 0.5
 # @objective(model, Max, w * EV + (1 - w) * ES)

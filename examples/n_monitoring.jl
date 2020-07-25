@@ -1,5 +1,4 @@
-using Printf, Random, Parameters, Logging
-using JuMP, Gurobi
+using Printf, Random, Logging, JuMP, Gurobi
 using DecisionProgramming
 
 Random.seed!(11)
@@ -115,12 +114,11 @@ end
 @time probability_sum_cut(model, G, X)
 
 @info("Adding number of paths cut")
-num_paths = prod(S_j[j] for j in C)
-@time number_of_paths_cut(model, G, X, num_paths)
+@time number_of_paths_cut(model, G, X)
 
 @info("Creating model objective.")
-@time U⁺ = transform_affine_positive(U, S_j)
-@time E = expected_value(model, U⁺, S_j)
+@time U⁺ = transform_affine_positive(G, U)
+@time E = expected_value(model, G, U⁺)
 @objective(model, Max, E)
 
 @info("Starting the optimization process.")
