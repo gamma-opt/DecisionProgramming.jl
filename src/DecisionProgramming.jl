@@ -23,8 +23,8 @@ export Node,
 
 include("analysis.jl")
 export ActivePaths,
-    state_probabilities,
-    utility_distribution
+    UtilityDistribution,
+    StateProbabilities
 
 include("printing.jl")
 export print_decision_strategy,

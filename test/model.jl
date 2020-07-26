@@ -28,12 +28,14 @@ optimize!(model)
 
 @info "Analyzing results."
 Z = DecisionStrategy(model)
-u, p = utility_distribution(Z, G, X, U)
-probs = state_probabilities(Z, G, X)
+udist = UtilityDistribution(G, X, Z, U)
+sprobs = StateProbabilities(G, X, Z)
 
 @info "Printing results"
-print_decision_strategy(Z, G)
-print_state_probabilities(probs, G.C, [])
-print_state_probabilities(probs, G.D, [])
+print_decision_strategy(G, Z)
+println()
+print_state_probabilities(sprobs, G.C, [])
+print_state_probabilities(sprobs, G.D, [])
+println()
 
 @test true

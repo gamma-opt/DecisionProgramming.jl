@@ -5,7 +5,7 @@ using Random, Parameters
 # Examples
 ```julia
 n_C, n_D, n_V = 4, 2, 1  # Number of chance, decision and value states
-n_A = s  # Upper limit on information set size for any node
+n_A = 2  # Upper limit on information set size for any node
 num_states = [2, 3]  # Set of possible number of states
 G = random_influence_diagram(n_C, n_D, n_V, n_A, num_states)
 ```

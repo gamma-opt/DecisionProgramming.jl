@@ -1,7 +1,13 @@
 using Printf, Parameters
 
-"""Print decision strategy."""
-function print_decision_strategy(Z::DecisionStrategy, G::InfluenceDiagram)
+"""Print decision strategy.
+
+# Examples
+```julia
+print_decision_strategy(G, Z)
+```
+"""
+function print_decision_strategy(G::InfluenceDiagram, Z::DecisionStrategy)
     @unpack C, D, V, I_j, S_j = G
     println("j | s_I(j) | s_j")
     for j in D
@@ -13,10 +19,19 @@ function print_decision_strategy(Z::DecisionStrategy, G::InfluenceDiagram)
     end
 end
 
-"""Print state probabilities with fixed states."""
-function print_state_probabilities(probs, nodes, states, fixed::Dict{Int, Int})
+"""Print state probabilities with fixed states.
+
+# Examples
+```julia
+sprobs = StateProbabilities(G, X, Z)
+print_state_probabilities(sprobs, [1, 2], ["A", "B"])
+```
+"""
+function print_state_probabilities(sprobs::StateProbabilities, nodes::Vector{Node}, labels)
+    probs = sprobs.probs
+    fixed = sprobs.fixed
     print("Node")
-    for label in states
+    for label in labels
         print(" | ", label)
     end
     println()
@@ -30,9 +45,4 @@ function print_state_probabilities(probs, nodes, states, fixed::Dict{Int, Int})
         end
         println()
     end
-end
-
-"""Print state probabilities."""
-function print_state_probabilities(probs, nodes, labels)
-    return print_state_probabilities(probs, nodes, labels, Dict{Int, Int}())
 end

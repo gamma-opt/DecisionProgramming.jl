@@ -16,15 +16,15 @@ end
 struct ActivePaths
     G::InfluenceDiagram
     Z::DecisionStrategy
-    fixed::Dict{Int, Int}
+    fixed::Dict{Node, State}
     ActivePaths(G, Z, fixed) = !all(k∈G.C for k in keys(fixed)) ? error("You can only fix chance states.") : new(G, Z, fixed)
 end
 
 function ActivePaths(G::InfluenceDiagram, Z::DecisionStrategy)
-    ActivePaths(G, Z, Dict{Int, Int}())
+    ActivePaths(G, Z, Dict{Node, State}())
 end
 
-function decision_state(G::InfluenceDiagram, Z::DecisionStrategy, s::Path, j::Int)
+function decision_state(G::InfluenceDiagram, Z::DecisionStrategy, s::Path, j::Node)
     findmax(Z[j][s[G.I_j[j]]..., :])[2]
 end
 
@@ -42,9 +42,13 @@ end
 function Base.iterate(a::ActivePaths)
     @unpack G, Z = a
     @unpack C, S_j = G
-    ks = sort(collect(keys(a.fixed)))
-    fixed = Dict{Int, Int}(i => a.fixed[k] for (i, k) in enumerate(ks))
-    iter = paths(S_j[C], fixed)
+    if isempty(a.fixed)
+        iter = paths(S_j[C])
+    else
+        ks = sort(collect(keys(a.fixed)))
+        fixed = Dict{Int, Int}(i => a.fixed[k] for (i, k) in enumerate(ks))
+        iter = paths(S_j[C], fixed)
+    end
     next = iterate(iter)
     if next !== nothing
         s_C, state = next
@@ -65,14 +69,20 @@ end
 Base.eltype(::Type{ActivePaths}) = Path
 Base.length(a::ActivePaths) = prod(a.G.S_j[a.G.C])
 
-"""The probability mass function for path utilities on active paths.
+"""UtilityDistribution type."""
+struct UtilityDistribution
+    u::Vector{Float64}
+    p::Vector{Float64}
+end
+
+"""Constructs the probability mass function for path utilities on active paths.
 
 # Examples
 ```julia
-u, p = utility_distribution(Z, G, X, U)
+UtilityDistribution(G, X, Z, U)
 ```
 """
-function utility_distribution(Z::DecisionStrategy, G::InfluenceDiagram, X::Probabilities, U::PathUtility)
+function UtilityDistribution(G::InfluenceDiagram, X::Probabilities, Z::DecisionStrategy, U::PathUtility)
     @unpack C, D, V, I_j, S_j = G
 
     # Extract utilities and probabilities of active paths
@@ -103,37 +113,52 @@ function utility_distribution(Z::DecisionStrategy, G::InfluenceDiagram, X::Proba
         end
     end
 
-    return u2, p2
+    UtilityDistribution(u2, p2)
+end
+
+"""StateProbabilities type."""
+struct StateProbabilities
+    probs::Dict{Node, Vector{Float64}}
+    fixed::Dict{Node, State}
 end
 
 """Associates each node with array of conditional probabilities for each of its states occuring in active paths given fixed states and prior probability.
 
 # Examples
 ```julia
-probs = state_probabilities(Z, G, X)
-node = ...
-state = ...
-fixed = Dict(node => state)
-prior = probs[node][state]
-probs2 = state_probabilities(z, G, X, prior, fixed)
+# Prior probabilities
+prev = StateProbabilities(G, X, Z)
+
+# Select node and fix its state
+node = 1
+state = 2
+StateProbabilities(G, X, Z, node, state, prev)
 ```
 """
-function state_probabilities(Z::DecisionStrategy, G::InfluenceDiagram, X::Probabilities, prior::Float64, fixed::Dict{Node, State})::Dict{Node, Vector{Float64}}
+function StateProbabilities(G::InfluenceDiagram, X::Probabilities, Z::DecisionStrategy, node::Node, state::State, prev::StateProbabilities)
     @unpack C, D, S_j, I_j = G
+    prior = prev.probs[node][state]
+    fixed = prev.fixed
+    push!(fixed, node => state)
     probs = Dict(i => zeros(S_j[i]) for i in (C ∪ D))
     for s in ActivePaths(G, Z, fixed), i in (C ∪ D)
         probs[i][s[i]] += path_probability(s, G, X) / prior
     end
-    return probs
+    StateProbabilities(probs, fixed)
 end
 
 """Associates each node with array of probabilities for each of its states occuring in active paths.
 
 # Examples
 ```julia
-probs = state_probabilities(Z, G, X)
+StateProbabilities(G, X, Z)
 ```
 """
-function state_probabilities(Z::DecisionStrategy, G::InfluenceDiagram, X::Probabilities)
-    return state_probabilities(Z, G, X, 1.0, Dict{Node, State}())
+function StateProbabilities(G::InfluenceDiagram, X::Probabilities, Z::DecisionStrategy)
+    @unpack C, D, S_j, I_j = G
+    probs = Dict(i => zeros(S_j[i]) for i in (C ∪ D))
+    for s in ActivePaths(G, Z), i in (C ∪ D)
+        probs[i][s[i]] += path_probability(s, G, X)
+    end
+    StateProbabilities(probs, Dict{Node, State}())
 end

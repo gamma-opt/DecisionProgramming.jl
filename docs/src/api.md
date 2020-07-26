@@ -50,8 +50,11 @@ DecisionStrategy(::DecisionModel)
 ## `analysis.jl`
 ```@docs
 ActivePaths
-utility_distribution
-state_probabilities
+UtilityDistribution
+UtilityDistribution(::InfluenceDiagram, ::Probabilities, ::DecisionStrategy, ::PathUtility)
+StateProbabilities
+StateProbabilities(::InfluenceDiagram, ::Probabilities, ::DecisionStrategy)
+StateProbabilities(::InfluenceDiagram, ::Probabilities, ::DecisionStrategy, ::Node, ::State, ::StateProbabilities)
 ```
 
 ## `printing.jl`

@@ -127,39 +127,36 @@ optimize!(model)
 Z = DecisionStrategy(model)
 
 @info("Printing decision strategy:")
-print_decision_strategy(Z, G)
+print_decision_strategy(G, Z)
 println()
 
 @info("State probabilities:")
-probs = state_probabilities(Z, G, X)
-print_state_probabilities(probs, health, health_states)
-print_state_probabilities(probs, test, test_states)
-print_state_probabilities(probs, treat, treat_states)
+sprobs = StateProbabilities(G, X, Z)
+print_state_probabilities(sprobs, health, health_states)
+print_state_probabilities(sprobs, test, test_states)
+print_state_probabilities(sprobs, treat, treat_states)
 println()
 
-# # Conditional state probabilities when pig is treat or not treated.
-# for node in treat
-#     for state in 1:2
-#         fixed = Dict(node => state)
-#         prior = probs[node][state]
-#         (isapprox(prior, 0, atol=1e-4) | isapprox(prior, 1, atol=1e-4)) && continue
-#         @info("Conditional state probabilities")
-#         probs2 = state_probabilities(z, G, X, prior, fixed)
-#         print_state_probabilities(probs2, health, health_states, fixed)
-#         print_state_probabilities(probs2, test, test_states, fixed)
-#         print_state_probabilities(probs2, treat, treat_states, fixed)
-#         println()
-#     end
-# end
+node = 1
+for state in 1:2
+    # (isapprox(prior, 0, atol=1e-4) | isapprox(prior, 1, atol=1e-4)) && continue
+    @info("Conditional state probabilities")
+    sprobs2 = StateProbabilities(G, X, Z, node, state, sprobs)
+    print_state_probabilities(sprobs2, health, health_states)
+    print_state_probabilities(sprobs2, test, test_states)
+    print_state_probabilities(sprobs2, treat, treat_states)
+    println()
+end
 
 @info("Print utility distribution statistics.")
-@time u, p = utility_distribution(Z, G, X, U)
+@time udist = UtilityDistribution(G, X, Z, U)
+u, p = udist.u, udist.p
 include("statistics.jl")
 print_stats(u, p)
 
 include("plotting.jl")
 p1 = plot_distribution(u, p; label="Expected value objective")
-p2 = plot_cumulative_distribution(u, p; label="Expected value objective")
-directory = create_directory("pigs")
-savefig(p1, joinpath(directory, "utility-distribution.svg"))
-savefig(p2, joinpath(directory, "cumulative-utility-distribution.svg"))
+p2 = plot_distribution(u, cumsum(p); label="Expected value objective")
+directory = create_directory(joinpath("results", "pig_breeding"))
+savefig(p1, joinpath(directory, "pmf.svg"))
+savefig(p2, joinpath(directory, "cfd.svg"))
