@@ -1,4 +1,4 @@
-using Printf, Random, Logging, JuMP, Gurobi
+using Printf, Random, Logging, Parameters, JuMP, Gurobi
 using DecisionProgramming
 
 Random.seed!(11)
@@ -139,13 +139,21 @@ println()
 
 @info("Printing state probabilities:")
 sprobs = StateProbabilities(G, X, Z)
-print_state_probabilities(sprobs, L, L_states)
-print_state_probabilities(sprobs, R_k, R_k_states)
-print_state_probabilities(sprobs, A_k, A_k_states)
-print_state_probabilities(sprobs, F, F_states)
+print_state_probabilities(sprobs, L)
+print_state_probabilities(sprobs, R_k)
+print_state_probabilities(sprobs, A_k)
+print_state_probabilities(sprobs, F)
 println()
 
-@info("Print utility distribution statistics.")
+@info("Computing utility distribution.")
 @time udist = UtilityDistribution(G, X, Z, U)
-include("statistics.jl")
-print_stats(udist.u, udist.p)
+
+@info("Printing utility distribution.")
+print_utility_distribution(udist)
+
+@info("Printing statistics")
+print_statistics(udist)
+
+@info("Printing risk measures")
+αs = [0.01, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2]
+print_risk_measures(udist, αs)

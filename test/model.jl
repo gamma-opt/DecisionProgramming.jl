@@ -33,9 +33,10 @@ sprobs = StateProbabilities(G, X, Z)
 
 @info "Printing results"
 print_decision_strategy(G, Z)
-println()
-print_state_probabilities(sprobs, G.C, [])
-print_state_probabilities(sprobs, G.D, [])
-println()
+print_utility_distribution(udist)
+print_state_probabilities(sprobs, G.C)
+print_state_probabilities(sprobs, G.D)
+print_statistics(udist)
+print_risk_measures(udist, [0.0, 0.05, 0.1, 0.2, 1.0])
 
 @test true

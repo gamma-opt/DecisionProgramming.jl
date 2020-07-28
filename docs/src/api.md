@@ -61,6 +61,8 @@ StateProbabilities(::InfluenceDiagram, ::Probabilities, ::DecisionStrategy, ::No
 ```@docs
 print_decision_strategy
 print_state_probabilities
+print_statistics
+print_risk_measures
 ```
 
 ## `random.jl`

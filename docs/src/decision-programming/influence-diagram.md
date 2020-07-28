@@ -73,7 +73,7 @@ We define the **upper bound of path probability** $s$ as
 $$p(s) = ∏_{j∈C} ℙ(X_j=s_j∣X_{I(j)}=s_{I(j)}).$$
 
 
-## Decisions
+## Decision Strategies
 For each decision node $j∈D,$ a **local decision strategy** maps an information path $s_{I(j)}$ to a state $s_j$
 
 $$Z_j:S_{I(j)}↦S_j.$$

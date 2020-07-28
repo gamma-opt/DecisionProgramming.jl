@@ -4,7 +4,7 @@ We can analyze fixed decision strategies $Z$ on an influence diagram $G$, such a
 
 The path probability for all active paths is equal to the upper bound
 
-$$ℙ(s∣Z)=p(s), \quad ∀s∈S_Z.$$
+$$ℙ(s∣Z)=p(s), \quad ∀s∈S^Z.$$
 
 We exclude inactive paths from the analysis because their path probabilities are zero.
 

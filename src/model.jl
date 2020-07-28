@@ -51,8 +51,8 @@ const DecisionModel = Model
 
 # Examples
 ```julia-repl
-julia> collect(paths([2, 3]))
-(1, 1), (1, 2), (1, 3), (2, 1), (2, 2), (2, 3)
+julia> collect(paths([2, 3]))[:]
+[(1, 1), (2, 1), (1, 2), (2, 2), (1, 3), (2, 3)]
 ```
 """
 function paths(num_states::Vector{State})
@@ -63,8 +63,8 @@ end
 
 # Examples
 ```julia-repl
-julia> collect(paths([2, 3], fixed=Dict(1=>2)))
-(2, 1), (2, 2), (2, 3)
+julia> collect(paths([2, 3], fixed=Dict(1=>2)))[:]
+[(2, 1), (2, 2), (2, 3)]
 ```
 """
 function paths(num_states::Vector{State}, fixed::Dict{Int, Int})

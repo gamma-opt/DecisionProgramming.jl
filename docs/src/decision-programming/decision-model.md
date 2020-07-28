@@ -50,7 +50,7 @@ $$\operatorname{E}(Z) = ∑_{s∈S} π(s) \mathcal{U}(s). \tag{?}$$
 However, the expected value objective does not account for risk caused by the variablity in the path distribution.
 
 
-## Value-at-Risk
+## Conditional Value-at-Risk
 Given a **probability level** $α∈(0, 1]$ and decision strategy $Z$ we denote **value-at-Risk** $\operatorname{VaR}_α(Z)$ and **conditional Value-at-Risk** $\operatorname{CVaR}_α(Z).$
 
 Pre-computed parameters
@@ -98,7 +98,7 @@ $$\operatorname{VaR}_α(Z)=η \tag{?}$$
 $$\operatorname{CVaR}_α(Z)=\frac{1}{α}∑_{s∈S}\bar{ρ}(s) \mathcal{U}(s)\tag{?}$$
 
 
-## Expected Value and Value-at-Risk
+## Mixed Objective
 We can formulate
 
 $$w \operatorname{E}(Z) + (1-w) \operatorname{CVaR}_α(Z) \tag{?}$$

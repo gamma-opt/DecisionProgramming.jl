@@ -28,7 +28,10 @@ export ActivePaths,
 
 include("printing.jl")
 export print_decision_strategy,
-    print_state_probabilities
+    print_utility_distribution,
+    print_state_probabilities,
+    print_statistics,
+    print_risk_measures
 
 include("random.jl")
 export random_influence_diagram,

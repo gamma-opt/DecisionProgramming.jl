@@ -34,11 +34,19 @@ Z = DecisionStrategy(model)
 
 @info("Printing state probabilities:")
 probs = StateProbabilities(G, X, Z)
-print_state_probabilities(probs, G.C, [])
-print_state_probabilities(probs, G.D, [])
+print_state_probabilities(probs, G.C)
+print_state_probabilities(probs, G.D)
 println()
 
-@info("Print utility distribution statistics.")
+@info("Computing utility distribution.")
 @time udist = UtilityDistribution(G, X, Z, U)
-include("statistics.jl")
-print_stats(udist.u, udist.p)
+
+@info("Printing utility distribution.")
+print_utility_distribution(udist)
+
+@info("Printing statistics")
+print_statistics(udist)
+
+@info("Printing risk measures")
+αs = [0.01, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2]
+print_risk_measures(udist, αs)

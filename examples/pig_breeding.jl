@@ -1,4 +1,4 @@
-using Printf, JuMP, Gurobi
+using Printf, Parameters, JuMP, Gurobi
 using DecisionProgramming
 
 if isempty(ARGS)
@@ -132,31 +132,30 @@ println()
 
 @info("State probabilities:")
 sprobs = StateProbabilities(G, X, Z)
-print_state_probabilities(sprobs, health, health_states)
-print_state_probabilities(sprobs, test, test_states)
-print_state_probabilities(sprobs, treat, treat_states)
+print_state_probabilities(sprobs, health)
+print_state_probabilities(sprobs, test)
+print_state_probabilities(sprobs, treat)
 println()
 
+@info("Conditional state probabilities")
 node = 1
 for state in 1:2
-    # (isapprox(prior, 0, atol=1e-4) | isapprox(prior, 1, atol=1e-4)) && continue
-    @info("Conditional state probabilities")
     sprobs2 = StateProbabilities(G, X, Z, node, state, sprobs)
-    print_state_probabilities(sprobs2, health, health_states)
-    print_state_probabilities(sprobs2, test, test_states)
-    print_state_probabilities(sprobs2, treat, treat_states)
+    print_state_probabilities(sprobs2, health)
+    print_state_probabilities(sprobs2, test)
+    print_state_probabilities(sprobs2, treat)
     println()
 end
 
-@info("Print utility distribution statistics.")
+@info("Computing utility distribution.")
 @time udist = UtilityDistribution(G, X, Z, U)
-u, p = udist.u, udist.p
-include("statistics.jl")
-print_stats(u, p)
 
-include("plotting.jl")
-p1 = plot_distribution(u, p; label="Expected value objective")
-p2 = plot_distribution(u, cumsum(p); label="Expected value objective")
-directory = create_directory(joinpath("results", "pig_breeding"))
-savefig(p1, joinpath(directory, "pmf.svg"))
-savefig(p2, joinpath(directory, "cfd.svg"))
+@info("Printing utility distribution.")
+print_utility_distribution(udist)
+
+@info("Printing statistics")
+print_statistics(udist)
+
+@info("Printing risk measures")
+αs = [0.01, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2]
+print_risk_measures(udist, αs)
