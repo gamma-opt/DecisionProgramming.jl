@@ -18,7 +18,7 @@ The probability mass function of the **utility distribution** associates each un
 
 $$ℙ(X=u)=∑_{s∈S^Z∣\mathcal{U}(s)=u} p(s),\quad ∀u∈\mathcal{U}^∗.$$
 
-From the utility distribution, we can calculate the cumulative distribution, statistics, and risk measures. The relevant statistics are expected value, standard deviation, skewness and kurtosis. Risk measures focus on the conditional value-at-risk (CVaR), also known as, expected shortfall.
+From the utility distribution, we can calculate the cumulative distribution, statistics, and risk measures. The relevant statistics are expected value, standard deviation, skewness and kurtosis. Risk measures focus on the conditional value-at-risk (CVaR), also known as expected shortfall.
 
 
 ## State Probabilities
@@ -40,7 +40,7 @@ $$ℙ(s_i∣ϵ) = \sum_{s∈S_{ϵ,s_i}} \frac{p(s)}{ℙ(ϵ)} = \sum_{s∈S_{ϵ,s
 
 An **active state** is a state with positive state probability $ℙ(s_i∣c)>0$ given conditions $c.$
 
-We can **generalize the state probabilities** as conditional probabilities using a recursive definition. Generalized state probabilities allow us to explore how fixing active states affect the probabilities of other states. First, we choose an active state $s_i$ and fix its value. Fixing an inactive state would make all state probabilities zero. Then, we can compute the conditional state probabilities as follows.
+We can **generalize the state probabilities** as conditional probabilities using a recursive definition. Generalized state probabilities allow us to explore how fixing active states affects the probabilities of other states. First, we choose an active state $s_i$ and fix its value. Fixing an inactive state would make all state probabilities zero. Then, we can compute the conditional state probabilities as follows.
 
 $$ℙ(s_j∣ϵ,s_i) = \sum_{s∈S_{ϵ,s_i,s_j}} \frac{p(s)}{ℙ(s_i∣ϵ)}$$
 

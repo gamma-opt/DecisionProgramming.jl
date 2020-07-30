@@ -2,7 +2,7 @@
 ## Introduction
 Based on [^1], sections 3.
 
-The paper [^2] explains details about influence diagrams.
+The papers [^2] and [^3] explain details about influence diagrams.
 
 
 ## Definition
@@ -18,9 +18,7 @@ $$A⊆\{(i,j)∣1≤i<j≤|N|,i∉V\}.$$
 
 The condition enforces that the graph is directed and acyclic, and there are no arcs from value nodes to other nodes.
 
-Each chance and decision node $j∈C∪D$ is associates with a finite number of **states** $S_j.$ We use integers from one to number of states $|S_j|$ to encode individual states
-
-$$S_j=\{1,...,|S_j|\}.$$
+Each chance and decision node $j∈C∪D$ is associated with a finite number of **states** $s_j ∈ S_j.$
 
 We define the **information set** of node $j∈N$ to be its predecessor nodes
 
@@ -36,13 +34,13 @@ $$s=(s_1, s_2, ...,s_n),$$
 
 where each state $s_i∈S_i$ for all chance and decision nodes $i∈C∪D.$
 
-We define a **subpath** of $s$ is a subsequence
+We define a **subpath** of $s$ as a subsequence
 
 $$(s_{i_1}, s_{i_2}, ..., s_{i_{k}}),$$
 
 where $1≤i_1<i_2<...<i_k≤n$ and $k≤n.$
 
-The **information path** of node $j∈N$ on path $s$ is a subpath defined as
+The **information state** of node $j∈N$ on path $s$ is a subpath defined as
 
 $$s_{I(j)}=(s_i ∣ i∈I(j)).$$
 
@@ -52,7 +50,7 @@ We define the set of **all paths** as a product set of all states
 
 $$S=∏_{j∈C∪D} S_j.$$
 
-The set of **information paths** of node $j∈N$ is the product set of the states in its information set
+The set of **information states** of node $j∈N$ is the product set of the states in its information set
 
 $$S_{I(j)}=∏_{i∈I(j)} S_i.$$
 
@@ -60,21 +58,23 @@ We denote elements of the sets using notation $s_j∈S_j$, $s∈S$, and $s_{I(j)
 
 
 ## Probabilities
-For each chance node $j∈C$, we denote the **probability** of state $s_j$ given information path $s_{I(j)}$ as
+For each chance node $j∈C$, we denote the **probability** of state $s_j$ given information state $s_{I(j)}$ as
 
 $$ℙ(X_j=s_j∣X_{I(j)}=s_{I(j)})∈[0, 1],$$
 
 with
 
-$$∑_{s_j∈S_j} ℙ(X_j=s_j∣X_{I(j)}=s_{I(j)}) = 1.$$
+$$∑_{s_j∈S_j} ℙ(X_j=s_j∣X_{I(j)}=s_{I(j)}) = 1,$$
 
-We define the **upper bound of path probability** $s$ as
+where $X_j$ denotes both random variables (j ∈ C) and decision variables (j ∈ D).
+
+We define the **upper bound of path probability** $π(s)$ as
 
 $$p(s) = ∏_{j∈C} ℙ(X_j=s_j∣X_{I(j)}=s_{I(j)}).$$
 
 
 ## Decision Strategies
-For each decision node $j∈D,$ a **local decision strategy** maps an information path $s_{I(j)}$ to a state $s_j$
+For each decision node $j∈D,$ a **local decision strategy** maps the information state $s_{I(j)}$ to a state $s_j$
 
 $$Z_j:S_{I(j)}↦S_j.$$
 
@@ -82,9 +82,9 @@ $$Z_j:S_{I(j)}↦S_j.$$
 
 A decision stategy $Z∈ℤ$ is **compatible** with the path $s∈S$ if and only if $Z_j(s_{I(j)})=s_j$ forall $Z_j∈Z$ and $j∈D.$
 
-The path probability $ℙ(s∣Z)$ equals $p(s)$ if the path $s$ is compatible with the decision strategy $Z$. Otherwise, the path cannot occur and the probability is zero.
+The path probability $π(s) = ℙ(s∣Z)$ equals $p(s)$ if the path $s$ is compatible with the decision strategy $Z$. Otherwise, the path cannot occur and the probability is zero.
 
-An **active path** is path $s∈S$ that is compatible with decision strategy $Z.$ We denote the set of **all active paths** using $S^Z.$ Since each decision strategy $Z_j$ chooses only one state out of all of its states, the **number of active paths** is
+An **active path** is path $s∈S$ that is compatible with decision strategy $Z.$ We denote the set of **all active paths** using $S^Z.$ Since each decision strategy $Z_j$ chooses only one state for each decision node in a path, the **number of active paths** is
 
 $$|S^Z|=|S|/\prod_{j∈D}|S_j|=\prod_{j∈C}|S_j|.$$
 
@@ -116,4 +116,6 @@ that comprises of path probability function and path utility function over paths
 ## References
 [^1]: Salo, A., Andelmin, J., & Oliveira, F. (2019). Decision Programming for Multi-Stage Optimization under Uncertainty, 1–35. Retrieved from [http://arxiv.org/abs/1910.09196](http://arxiv.org/abs/1910.09196)
 
-[^2]: Bielza, C., Gómez, M., & Shenoy, P. P. (2011). A review of representation issues and modeling challenges with influence diagrams. Omega, 39(3), 227–241. https://doi.org/10.1016/j.omega.2010.07.003
+[^2]: Shachter, R. D. (1986). Evaluating influence diagrams. Operations research, 34(6), 871-882. https://doi.org/10.1287/opre.34.6.871
+
+[^3]: Howard, R. A., & Matheson, J. E. (2005). Influence diagrams. Decision Analysis, 2(3), 127-143. https://doi.org/10.1287/deca.1050.0020

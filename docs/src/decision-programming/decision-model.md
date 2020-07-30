@@ -1,6 +1,6 @@
 # Decision Model
 ## Introduction
-**Decision programming** aims to find a decision strategy $Z$ which optimizes some metric of the path distribution on an influence diagram such as expected value or risk. The **decision model** is a mixed-integer linear programming formulation of this optimization problem. The model that is presented here, is based on [^1], sections 3 and 5. We recommend reading it for motivation, details, and proofs of the formulation.
+**Decision programming** aims to find a decision strategy $Z$ which optimizes some metric of the path distribution on an influence diagram such as expected value or Value-At-Risk. The **decision model** is a mixed-integer linear programming formulation of this optimization problem. The model that is presented here is based on [^1], sections 3 and 5. We recommend reading it for motivation, details, and proofs of the formulation.
 
 
 ## Formulation
@@ -9,7 +9,7 @@ The mixed-integer linear program maximizes a linear objective function $f$ that 
 $$\underset{Z∈ℤ}{\text{maximize}}\quad
 f(\{(ℙ(s∣Z), \mathcal{U}(s)) ∣ s∈S\}) \tag{1}$$
 
-**Decision variables** $z(s_j∣s_{I(j)})$ are equivalent to the decision strategies $Z$ such that $Z_j(s_I(j))=s_j$ if and only if $z(s_j∣s_{I(j)})=1$, otherwise $z(s_j∣s_{I(j)})=0.$ Constraint $(2)$ defines the decisions to be binary variables and the constraint $(3)$ limits decisions to one per information path.
+**Decision variables** $z(s_j∣s_{I(j)})$ are equivalent to the decision strategies $Z$ such that $Z_j(s_I(j))=s_j$ if and only if $z(s_j∣s_{I(j)})=1$, otherwise $z(s_j∣s_{I(j)})=0.$ Constraint $(2)$ defines the decisions to be binary variables and the constraint $(3)$ limits decisions to one per information state.
 
 $$z(s_j∣s_{I(j)}) ∈ \{0,1\},\quad ∀j∈D, s_j∈S_j, s_{I(j)}∈S_{I(j)} \tag{2}$$
 
@@ -27,7 +27,7 @@ We can omit the constraint $(6)$ from the model if we use a positive path utilit
 
 $$\mathcal{U}^+(s) = \frac{\mathcal{U}(s) - \min_{s∈S} \mathcal{U}(s)}{\max_{s∈S} \mathcal{U}(s) - \min_{s∈S} \mathcal{U}(s)} + 1.$$
 
-Next we discuss lazy constraint and concrete objective functions below.
+Next we discuss lazy constraints and concrete objective functions.
 
 
 ## Lazy Constraints
@@ -47,10 +47,10 @@ We define the **expected value** as
 
 $$\operatorname{E}(Z) = ∑_{s∈S} π(s) \mathcal{U}(s). \tag{?}$$
 
-However, the expected value objective does not account for risk caused by the variablity in the path distribution.
+However, the expected value objective does not account for risk caused by the variablity in the path distribution and other objectives might thus be important in some problems.
 
 
-## Conditional Value-at-Risk
+## (Conditional) Value-at-Risk
 Given a **probability level** $α∈(0, 1]$ and decision strategy $Z$ we denote **value-at-Risk** $\operatorname{VaR}_α(Z)$ and **conditional Value-at-Risk** $\operatorname{CVaR}_α(Z).$
 
 Pre-computed parameters
@@ -103,7 +103,7 @@ We can formulate
 
 $$w \operatorname{E}(Z) + (1-w) \operatorname{CVaR}_α(Z) \tag{?}$$
 
-where $w∈(0, 1)$ is the **trade-off** between maximization of
+where $w∈(0, 1)$ is the **trade-off** between maximization of expected utility and conditional value-at-risk
 
 
 ## References
