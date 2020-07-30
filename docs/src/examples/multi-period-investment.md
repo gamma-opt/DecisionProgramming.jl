@@ -6,67 +6,69 @@
 
 
 ## Formulation
-### Individual Projects
+### Projects
 ![](figures/multi-period-investment.svg)
 
 The influence diagram of an individual multi-period investment project.
 
+There are $i∈\{1,...,n_T\}$ technology development projects and $k∈\{1,...,n_A\}$ application development projects.
+
 Decision states to develop patents
 
-$$d^P∈D^P=\{[q_1^P, q_2^P], [q_2^P, q_3^P], ..., [q_{|D^P|}^P, q_{|D^P|+1}^P]\}$$
+$$d_i^P∈D_i^P=\{[q_1^P, q_2^P], [q_2^P, q_3^P], ..., [q_{|D^P|}^P, q_{|D^P|+1}^P]\}$$
+
+Chance states of technical competitiveness $c_i^T∈C_i^T$
 
 Decision states to develop applications
 
-$$d^A∈D^A=\{[q_1^A, q_2^A], [q_2^A, q_3^A], ..., [q_{|D^A|}^A, q_{|D^A|+1}^A]\}$$
+$$d_k^A∈D^A=\{[q_1^A, q_2^A], [q_2^A, q_3^A], ..., [q_{|D^A|}^A, q_{|D^A|+1}^A]\}$$
 
-Chance states of technical competitiveness $c^T∈C^T$
+Chance states of market size $c_k^M∈C_k^M$
 
-Chance states of market size $c^M∈C^M$
+Probability $ℙ(c_i^T∣d_i^P)∈[0,1]$
 
-Probability $ℙ(c^T∣d^P)∈[0,1]$
-
-Probability $ℙ(c^M∣c^T,d^A)∈[0,1]$
+Probability $ℙ(c_k^M∣d_k^A,c_{n_T}^T,...,c_{1}^T)∈[0,1]$
 
 
 ### Portfolio Selection
 Technology project $i$ costs $r_i^T∈ℝ^+$ and generates $p_i^T∈ℕ$ patents.
 
-Application project $k$ costs $r_k^A∈ℝ^+$ and generates $a_k^A∈ℕ$ applications. If completed, provides cash flow $Y(k∣c^M)∈ℝ^+.$
+Application project $k$ costs $r_k^A∈ℝ^+$ and generates $a_k^A∈ℕ$ applications. If completed, provides cash flow $Y(c_k^M)∈ℝ^+.$
 
 Decision variables $x^T(i)∈\{0, 1\}$ indicate which technologies are selected.
 
-Decision variables $x^A(k∣c_j^T)∈\{0, 1\}$ indicate which applications are selected.
+Decision variables $x^A(k∣c_{n_T}^T,...,c_{1}^T)∈\{0, 1\}$ indicate which applications are selected.
 
 Number of patents $x^T = ∑_i x^T(i) p_i^T$
 
-Number of applications $x_j^A = ∑_k x^A(k∣c_j^T) a_k^A$
+Number of applications $x^A = ∑_k x^A(k∣c_{n_T}^T,...,c_{1}^T) a_k^A$
 
 Constraints
 
 $$x^T - y_i^P M ≤ q_i^P ≤ x^T + (1 - y_i^P) M,\quad ∀i$$
 
-$$x_j^A - y_{j,k}^A M ≤ q_k^A ≤ x_j^A + (1 - y_{j,k}^A) M,\quad ∀j, k$$
+$$x^A - y_{k}^A M ≤ q_k^A ≤ x^A + (1 - y_{k}^A) M,\quad ∀ k$$
 
 $$∑_i y_i^P=1$$
 
-$$∑_k y_{j,k}^A=1,\quad ∀j$$
+$$∑_k y_{k}^A=1$$
 
 $$y_i^P∈\{0, 1\},\quad ∀i$$
 
-$$y_{j,k}^A∈\{0, 1\},\quad ∀j,k$$
+$$y_{k}^A∈\{0, 1\},\quad ∀k$$
 
-$$y_0^P=y_{j,0}^A=0$$
+$$y_0^P=y_{0}^A=0$$
 
 $$z(d_i^P)=y_i^P-y_{i-1}^P,\quad ∀i$$
 
-$$z(d_k^A∣c_j^T)=y_{j,k}^A-y_{j,k-1}^A,\quad ∀j,k$$
+$$z(d_k^A∣c_{n_T}^T,...,c_{1}^T)=y_{k}^A-y_{k-1}^A,\quad ∀k$$
 
 Large constant $M$ (value?)
 
 Path utility
 
 $$\mathcal{U}(s) =
-∑_k x^A(k∣c^T) (Y(k∣c^M) - r_k^A) - ∑_i x^T(i) r_i^T$$
+∑_k x^A(k∣c_{n_T}^T,...,c_{1}^T) (Y(c_k^M) - r_k^A) - ∑_i x^T(i) r_i^T$$
 
 
 ## References
