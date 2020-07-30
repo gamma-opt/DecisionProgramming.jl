@@ -64,15 +64,16 @@ end
 
 """Value-at-risk."""
 function _value_at_risk(u, p, α)
-    u_α = u[p .≤ α]
-    return if isempty(u_α) 0.0 else -maximum(u_α) end
+    cs = cumsum(p[sortperm(u)])
+    VaR = u[findfirst(x -> x>α, cs)]
+    return if isnothing(VaR) 0.0 else VaR end
 end
 
 """Conditional value-at-risk."""
 function _conditional_value_at_risk(u, p, α)
-    x_α = -_value_at_risk(u, p, α)
+    x_α = _value_at_risk(u, p, α)
     tail = u .≤ x_α
-    return -(sum(u[tail] .* p[tail])/sum(p[tail]) + (α - sum(p[tail])) * x_α) / α
+    return (sum(u[tail] .* p[tail]) - (sum(p[tail]) - α) * x_α) / α
 end
 
 """Print statistics."""
