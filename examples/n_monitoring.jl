@@ -58,7 +58,7 @@ function probabilities(L, R_k, A_k, F, S_j)
     for i in R_k
         p = zeros(S_j[L...], S_j[i])
         x, y = rand(2)
-        p[1, 1] = max(x, 1-y)
+        p[1, 1] = max(x, 1-x)
         p[1, 2] = 1.0 - p[1, 1]
         p[2, 2] = max(y, 1-y)
         p[2, 1] = 1.0 - p[2, 2]
@@ -68,12 +68,12 @@ function probabilities(L, R_k, A_k, F, S_j)
     # Probabilities of failure=1 / success=2
     for i in F
         p = zeros(S_j[L...], S_j[A_k]..., S_j[i])
-        z, w = rand(2)
+        x, y = rand(2)
         for s in paths(S_j[A_k])
             d = exp(sum(fortification(k, a) for (k, a) in enumerate(s)))
-            p[1, s..., 1] = z / d
+            p[1, s..., 1] = max(x, 1-x) / d
             p[1, s..., 2] = 1.0 - p[1, s..., 1]
-            p[2, s..., 1] = w / d
+            p[2, s..., 1] = min(y, 1-y) / d
             p[2, s..., 2] = 1.0 - p[2, s..., 1]
         end
         X[i] = p
