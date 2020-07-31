@@ -3,11 +3,7 @@ using DecisionProgramming
 
 Random.seed!(11)
 
-if isempty(ARGS)
-    const N = 4
-else
-    const N = parse(Int, ARGS[1])
-end
+const N = 4
 const L = [1]
 const R_k = [k + 1 for k in 1:N]
 const A_k = [(N + 1) + k for k in 1:N]

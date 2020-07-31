@@ -1,11 +1,7 @@
 using Printf, Parameters, JuMP, Gurobi
 using DecisionProgramming
 
-if isempty(ARGS)
-    const N = 4
-else
-    const N = parse(Int, ARGS[1])
-end
+const N = 4
 const health = [3*k - 2 for k in 1:N]
 const test = [3*k - 1 for k in 1:(N-1)]
 const treat = [3*k for k in 1:(N-1)]
