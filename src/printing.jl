@@ -12,7 +12,7 @@ function print_decision_strategy(G::InfluenceDiagram, Z::DecisionStrategy)
     @unpack C, D, V, I_j, S_j = G
     for j in D
         a1 = collect(paths(S_j[I_j[j]]))[:]
-        a2 = [findmax(Z[j][s_I..., :])[2] for s_I in a1]
+        a2 = [Z(j, s_I) for s_I in a1]
         df = DataFrame(a1 = a1, a2 = a2)
         pretty_table(df, ["$((I_j[j]...,))", "$j"])
     end
@@ -63,15 +63,15 @@ function print_state_probabilities(sprobs::StateProbabilities, nodes::Vector{Nod
 end
 
 """Value-at-risk."""
-function _value_at_risk(u, p, α)
+function value_at_risk(u::Vector{Float64}, p::Vector{Float64}, α::Float64)
     cs = cumsum(p[sortperm(u)])
-    VaR = u[findfirst(x -> x>α, cs)]
-    return if isnothing(VaR) 0.0 else VaR end
+    index = findfirst(x -> x>α, cs)
+    return if isnothing(index) 0.0 else u[index] end
 end
 
 """Conditional value-at-risk."""
-function _conditional_value_at_risk(u, p, α)
-    x_α = _value_at_risk(u, p, α)
+function conditional_value_at_risk(u::Vector{Float64}, p::Vector{Float64}, α::Float64)
+    x_α = value_at_risk(u, p, α)
     tail = u .≤ x_α
     return (sum(u[tail] .* p[tail]) - (sum(p[tail]) - α) * x_α) / α
 end
@@ -80,6 +80,7 @@ end
 function print_statistics(udist::UtilityDistribution; fmt = "%f")
     @unpack u, p = udist
     w = ProbabilityWeights(p)
+    # TODO: DataFrame
     pretty_table(
         [mean(u, w), std(u, w, corrected=false), skewness(u, w), kurtosis(u, w)],
         ["Statistics"],
@@ -90,8 +91,9 @@ end
 """Print risk measures."""
 function print_risk_measures(udist::UtilityDistribution, αs::Vector{Float64}; fmt = "%f")
     @unpack u, p = udist
-    VaR = [_value_at_risk(u, p, α) for α in αs]
-    CVaR = [_conditional_value_at_risk(u, p, α) for α in αs]
+    VaR = [value_at_risk(u, p, α) for α in αs]
+    CVaR = [conditional_value_at_risk(u, p, α) for α in αs]
+    # TODO: DataFrame
     pretty_table(
         hcat(αs, VaR, CVaR),
         ["α", "VaR_α", "CVaR_α"],

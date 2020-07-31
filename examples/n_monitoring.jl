@@ -99,26 +99,30 @@ end
 @time G = InfluenceDiagram(C, D, V, A, S_j)
 
 @info("Creating probabilities.")
-@time X = validate_probabilities(G, probabilities(L, R_k, A_k, F, S_j))
+X = probabilities(L, R_k, A_k, F, S_j)
+@time X = Probabilities(G, X)
 
 @info("Creating consequences.")
-@time Y = validate_consequences(G, consequences(A_k, F, T, S_j))
+Y = consequences(A_k, F, T, S_j)
+@time Y = Consequences(G, Y)
 
-@info("Creating path utility function.")
-@time U(s) = sum(Y[v][s[G.I_j[v]]...] for v in V)
+@info("Creating path probability.")
+P = PathProbability(G, X)
+
+@info("Creating path utility.")
+U = PathUtility(G, Y)
 
 @info("Defining DecisionModel")
-@time model = DecisionModel(G, X)
+@time model = DecisionModel(G, P)
 
 @info("Adding probability sum cut")
-@time probability_sum_cut(model, G, X)
+@time probability_sum_cut(model, P)
 
 @info("Adding number of paths cut")
-@time number_of_paths_cut(model, G, X)
+@time number_of_paths_cut(model, G, P)
 
 @info("Creating model objective.")
-@time U⁺ = transform_affine_positive(G, U)
-@time E = expected_value(model, G, U⁺)
+@time E = expected_value(model, G, U)
 @objective(model, Max, E)
 
 @info("Starting the optimization process.")
@@ -138,7 +142,7 @@ print_decision_strategy(G, Z)
 println()
 
 @info("Printing state probabilities:")
-sprobs = StateProbabilities(G, X, Z)
+sprobs = StateProbabilities(G, P, Z)
 print_state_probabilities(sprobs, L)
 print_state_probabilities(sprobs, R_k)
 print_state_probabilities(sprobs, A_k)
@@ -146,7 +150,7 @@ print_state_probabilities(sprobs, F)
 println()
 
 @info("Computing utility distribution.")
-@time udist = UtilityDistribution(G, X, Z, U)
+@time udist = UtilityDistribution(G, P, U, Z)
 
 @info("Printing utility distribution.")
 print_utility_distribution(udist)

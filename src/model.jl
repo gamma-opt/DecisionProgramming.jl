@@ -2,7 +2,7 @@ using Parameters, JuMP
 using Base.Iterators: product
 
 
-# --- Types ---
+# --- Influence Diagram ---
 
 """Node type."""
 const Node = Int
@@ -19,70 +19,6 @@ struct InfluenceDiagram
     S_j::Vector{State}
     I_j::Vector{Vector{Node}}
 end
-
-"""Probabilities type."""
-const Probabilities = Dict{Node, Array{Float64, N} where N}
-
-"""Consequences type."""
-const Consequences = Dict{Node, Array{Float64, N} where N}
-
-"""Decision strategy type."""
-const DecisionStrategy = Dict{Node, Array{Int, N} where N}
-
-"""Path type."""
-const Path = NTuple{N, State} where N
-
-"""PathUtility type. Path utility is a function that maps paths to real values.
-
-# Examples
-```julia
-U(s::Path)::Real = ...
-```
-"""
-const PathUtility = Function
-
-"""DecisionModel type."""
-const DecisionModel = Model
-
-
-# --- Path Functions ---
-
-"""Iterate over paths in lexicographical order.
-
-# Examples
-```julia-repl
-julia> collect(paths([2, 3]))[:]
-[(1, 1), (2, 1), (1, 2), (2, 2), (1, 3), (2, 3)]
-```
-"""
-function paths(num_states::Vector{State})
-    product(UnitRange.(one(eltype(num_states)), num_states)...)
-end
-
-"""Iterate over paths with fixed states in lexicographical order.
-
-# Examples
-```julia-repl
-julia> collect(paths([2, 3], fixed=Dict(1=>2)))[:]
-[(2, 1), (2, 2), (2, 3)]
-```
-"""
-function paths(num_states::Vector{State}, fixed::Dict{Int, Int})
-    iters = collect(UnitRange.(one(eltype(num_states)), num_states))
-    for (i, v) in fixed
-        iters[i] = UnitRange(v, v)
-    end
-    product(iters...)
-end
-
-"""Path probability (upper bound)."""
-function path_probability(s::Path, G::InfluenceDiagram, X::Probabilities)
-    @unpack C, I_j = G
-    prod(X[j][s[[I_j[j]; j]]...] for j in C)
-end
-
-
-# --- Influence Diagram ---
 
 """Construct and validate an influence diagram.
 
@@ -124,7 +60,7 @@ function InfluenceDiagram(C::Vector{Node}, D::Vector{Node}, V::Vector{Node}, A::
     all(S_j[j] ≥ 1 for j in 1:n) || error("Each change and decision node should have ≥ 1 states.")
 
     # Construct the information set
-    I_j = [Vector{Int}() for i in 1:N]
+    I_j = [Vector{Node}() for i in 1:N]
     for (i, j) in A
         push!(I_j[j], i)
     end
@@ -132,43 +68,179 @@ function InfluenceDiagram(C::Vector{Node}, D::Vector{Node}, V::Vector{Node}, A::
     InfluenceDiagram(C, D, V, A, S_j, I_j)
 end
 
-"""Validate probabilities for an influence diagram.
+
+# --- Paths ---
+
+"""Path type."""
+const Path = NTuple{N, State} where N
+
+"""Iterate over paths in lexicographical order.
+
+# Examples
+```julia-repl
+julia> collect(paths([2, 3]))[:]
+[(1, 1), (2, 1), (1, 2), (2, 2), (1, 3), (2, 3)]
+```
+"""
+function paths(num_states::Vector{State})
+    product(UnitRange.(one(eltype(num_states)), num_states)...)
+end
+
+"""Iterate over paths with fixed states in lexicographical order.
+
+# Examples
+```julia-repl
+julia> collect(paths([2, 3], fixed=Dict(1=>2)))[:]
+[(2, 1), (2, 2), (2, 3)]
+```
+"""
+function paths(num_states::Vector{State}, fixed::Dict{Int, Int})
+    iters = collect(UnitRange.(one(eltype(num_states)), num_states))
+    for (i, v) in fixed
+        iters[i] = UnitRange(v, v)
+    end
+    product(iters...)
+end
+
+
+# --- Probabilities ---
+
+"""Type alias for probability."""
+const Probability = Array{Float64, N} where N
+
+"""Probabilities type."""
+struct Probabilities
+    X::Dict{Node, Probability}
+end
+
+"""Validate probabilities on an influence diagram.
 
 # Examples
 ```julia
-X = ...  # Unvalidated probabilities
-X = validate_probabilities(G, X)
+X = Probabilities(G, X)
 ```
 """
-function validate_probabilities(G::InfluenceDiagram, X::Probabilities)::Probabilities
+function Probabilities(G::InfluenceDiagram, X::Dict{Node, Probability})
     @unpack C, S_j, I_j = G
     for j in C
-        S_I = S_j[I_j[j]]
-        S_I_j = [S_I; S_j[j]]
-        size(X[j]) == Tuple(S_I_j) || error("Array should be dimension |S_I(j)|*|S_j|.")
+        size(X[j]) == Tuple(S_j[[I_j[j]; j]]) || error("Array should be dimension |S_I(j)|*|S_j|.")
         all(x > 0 for x in X[j]) || error("Probabilities should be positive.")
-        for s_I in paths(S_I)
+        for s_I in paths(S_j[I_j[j]])
             sum(X[j][[s_I...; s_j]...] for s_j in 1:S_j[j]) ≈ 1 || error("probabilities shoud sum to one.")
         end
     end
-    return X
+    Probabilities(X)
 end
 
-"""Validate consequences for an influence diagram.
+(X::Probabilities)(j::Node) = X.X[j]
+(X::Probabilities)(j::Node, s::Path) = X.X[j][s...]
+(X::Probabilities)(j::Node, s::Path, G::InfluenceDiagram) = X(j, s[[G.I_j[j]; j]])
+
+
+# --- Consequences ---
+
+"""Type alias for consequence."""
+const Consequence = Array{Float64, N} where N
+
+"""Consequences type."""
+struct Consequences
+    Y::Dict{Node, Consequence}
+end
+
+"""Validate consequences on an influence diagram.
 
 # Examples
 ```julia
-Y = ...  # Unvalidated consequences
-Y = validate_consequences(G, Y)
+Y = Consequences(G, Y)
 ```
 """
-function validate_consequences(G::InfluenceDiagram, Y::Consequences)::Consequences
+function Consequences(G::InfluenceDiagram, Y::Dict{Node, Consequence})
     @unpack V, S_j, I_j = G
     for j in V
         size(Y[j]) == Tuple(S_j[I_j[j]]) || error("Array should be dimension |S_I(j)|.")
     end
-    return Y
+    Consequences(Y)
 end
+
+(Y::Consequences)(j::Node) = Y.Y[j]
+(Y::Consequences)(j::Node, s::Path) = Y.Y[j][s...]
+(Y::Consequences)(j::Node, s::Path, G::InfluenceDiagram) = Y(j, s[G.I_j[j]])
+
+
+# --- Path Probability ---
+
+function path_probability(G::InfluenceDiagram, X::Probabilities, s::Path)
+    prod(X(j, s, G) for j in G.C)
+end
+
+"""Path probability type.
+
+# Examples
+```julia
+P = PathProbability(G, X)
+```
+"""
+struct PathProbability
+    G::InfluenceDiagram
+    X::Probabilities
+    min::Float64
+    function PathProbability(G::InfluenceDiagram, X::Probabilities)
+        x_min = minimum(path_probability(G, X, s) for s in paths(G.S_j))
+        new(G, X, x_min)
+    end
+end
+
+"""Evaluate path probability.
+
+# Examples
+```julia
+P(s)
+```
+"""
+(P::PathProbability)(s::Path) = path_probability(P.G, P.X, s)
+
+
+# --- Path Utility ---
+
+function path_utility(G::InfluenceDiagram, Y::Consequences, s::Path)
+    sum(Y(j, s, G) for j in G.V)
+end
+
+"""Path utility type.
+
+# Examples
+```julia
+U = PathUtility(G, Y)
+```
+"""
+struct PathUtility
+    G::InfluenceDiagram
+    Y::Consequences
+    min::Float64
+    max::Float64
+    function PathUtility(G::InfluenceDiagram, Y::Consequences)
+        (u_min, u_max) = extrema(path_utility(G, Y, s) for s in paths(G.S_j))
+        new(G, Y, u_min, u_max)
+    end
+end
+
+"""Evaluate path utility.
+
+# Examples
+```julia
+U(s)
+```
+"""
+(U::PathUtility)(s::Path) = path_utility(U.G, U.Y, s)
+
+"""Evaluate positive affine transformation of the path utility.
+
+# Examples
+```julia
+1 ≤ positive_affine(U, s) ≤ 2
+```
+"""
+positive_affine(U::PathUtility, s::Path) = (U(s) - U.min)/(U.max - U.min) + 1
 
 
 # --- Decision Model ---
@@ -182,14 +254,17 @@ function variables(model::Model, dims::Vector{Int}; binary::Bool=false)
     return v
 end
 
+"""DecisionModel type."""
+const DecisionModel = Model
+
 """Construct a DecisionModel from an influence diagram and probabilities.
 
 # Examples
 ```julia
-model = DecisionModel(G, X; positive_path_utility=true)
+model = DecisionModel(G, P; positive_path_utility=true)
 ```
 """
-function DecisionModel(G::InfluenceDiagram, X::Probabilities; positive_path_utility::Bool=true)
+function DecisionModel(G::InfluenceDiagram, P::PathProbability; positive_path_utility::Bool=true)
     @unpack D, S_j, I_j = G
 
     model = DecisionModel()
@@ -203,7 +278,7 @@ function DecisionModel(G::InfluenceDiagram, X::Probabilities; positive_path_util
     end
 
     for s in paths(S_j)
-        @constraint(model, 0 ≤ π[s...] ≤ path_probability(s, G, X))
+        @constraint(model, 0 ≤ π[s...] ≤ P(s))
     end
 
     for s in paths(S_j), j in D
@@ -213,8 +288,7 @@ function DecisionModel(G::InfluenceDiagram, X::Probabilities; positive_path_util
     if !positive_path_utility
         for s in paths(S_j)
             @constraint(model,
-                π[s...] ≥ path_probability(s, G, X) +
-                          sum(z[j][s[[I_j[j]; j]]...] for j in D) - length(D))
+                π[s...] ≥ P(s) + sum(z[j][s[[I_j[j]; j]]...] for j in D) - length(D))
         end
     end
 
@@ -228,18 +302,17 @@ end
 
 # Examples
 ```julia
-probability_sum_cut(model, G, X)
+probability_sum_cut(model, P)
 ```
 """
-function probability_sum_cut(model::DecisionModel, G::InfluenceDiagram, X::Probabilities)
-    ϵ = minimum(path_probability(s, G, X) for s in paths(G.S_j))
+function probability_sum_cut(model::DecisionModel, P::PathProbability)
     # Add the constraints only once
     flag = false
     function probability_sum_cut(cb_data)
         flag && return
         π = model[:π]
         πsum = sum(callback_value(cb_data, π[s]) for s in eachindex(π))
-        if !isapprox(πsum, 1.0, atol=ϵ)
+        if !isapprox(πsum, 1.0, atol=P.min)
             con = @build_constraint(sum(π) == 1.0)
             MOI.submit(model, MOI.LazyConstraint(cb_data), con)
             flag = true
@@ -253,20 +326,19 @@ end
 # Examples
 ```julia
 atol = 0.9  # Tolerance to trigger the creation of the lazy cut
-number_of_paths_cut(model, G, X; atol=atol)
+number_of_paths_cut(model, G, P; atol=atol)
 ```
 """
-function number_of_paths_cut(model::DecisionModel, G::InfluenceDiagram, X::Probabilities; atol::Float64 = 0.9)
-    ϵ = minimum(path_probability(s, G, X) for s in paths(G.S_j))
-    num_paths = prod(G.S_j[G.C])
+function number_of_paths_cut(model::DecisionModel, G::InfluenceDiagram, P::PathProbability; atol::Float64 = 0.9)
+    num_active_paths = prod(G.S_j[G.C])
     # Add the constraints only once
     flag = false
     function number_of_paths_cut(cb_data)
         flag && return
         π = model[:π]
-        πnum = sum(callback_value(cb_data, π[s]) ≥ ϵ for s in eachindex(π))
-        if !isapprox(πnum, num_paths, atol = atol)
-            con = @build_constraint(sum(π[s...] / path_probability(s, G, X) for s in paths(G.S_j)) == num_paths)
+        πnum = sum(callback_value(cb_data, π[s]) ≥ P.min for s in eachindex(π))
+        if !isapprox(πnum, num_active_paths, atol = atol)
+            con = @build_constraint(sum(π[s...] / P(s) for s in paths(G.S_j)) == num_active_paths)
             MOI.submit(model, MOI.LazyConstraint(cb_data), con)
             flag = true
         end
@@ -277,28 +349,15 @@ end
 
 # --- Objective Functions ---
 
-"""Affine positive tranformation of path utility.
-
-# Examples
-```julia
-U(s::Path)::Real = ...
-U⁺ = transform_affine_positive(G, U)
-```
-"""
-function transform_affine_positive(G::InfluenceDiagram, U::PathUtility)::PathUtility
-    (u_min, u_max) = extrema(U(s) for s in paths(G.S_j))
-    return s -> (U(s) - u_min)/(u_max - u_min) + 1
-end
-
 """Expected value objective.
 
 # Examples
 ```julia
-EV = expected_value(model, G, U⁺)
+EV = expected_value(model, G, U)
 ```
 """
 function expected_value(model::DecisionModel, G::InfluenceDiagram, U::PathUtility)
-    @expression(model, sum(model[:π][s...] * U(s) for s in paths(G.S_j)))
+    @expression(model, sum(model[:π][s...] * positive_affine(U, s) for s in paths(G.S_j)))
 end
 
 """Conditional value-at-risk (CVaR) objective. Also known as Expected Shortfall (ES).
@@ -306,7 +365,7 @@ end
 # Examples
 ```julia
 α = 0.05  # Parameter such that 0 ≤ α ≤ 1
-ES = conditional_value_at_risk(model, G, U⁺, α)
+ES = conditional_value_at_risk(model, G, U, α)
 ```
 """
 function conditional_value_at_risk(model::DecisionModel, G::InfluenceDiagram, U::PathUtility, α::Float64)
@@ -314,7 +373,7 @@ function conditional_value_at_risk(model::DecisionModel, G::InfluenceDiagram, U:
     0 ≤ α ≤ 1 || error("α should be 0 ≤ α ≤ 1")
 
     # Pre-computer parameters
-    u = collect(Iterators.flatten(U(s) for s in paths(S_j)))
+    u = collect(Iterators.flatten(positive_affine(U, s) for s in paths(S_j)))
     u_sorted = sort(u)
     u_min = u_sorted[1]
     u_max = u_sorted[end]
@@ -332,7 +391,7 @@ function conditional_value_at_risk(model::DecisionModel, G::InfluenceDiagram, U:
     π = model[:π]
     @constraint(model, u_min ≤ η ≤ u_max)
     for s in paths(S_j)
-        u_s = U(s)
+        u_s = positive_affine(U, s)
         @constraint(model, η - u_s ≤ M * λ[s...])
         @constraint(model, η - u_s ≥ (M + ϵ) * λ[s...] - M)
         @constraint(model, η - u_s ≤ (M + ϵ) * λ_bar[s...] - ϵ)
@@ -353,11 +412,20 @@ function conditional_value_at_risk(model::DecisionModel, G::InfluenceDiagram, U:
     model[:ρ_bar] = ρ_bar
 
     # Return CVaR as an expression
-    return @expression(model, sum(ρ_bar[s...] * U(s) for s in paths(S_j)) / α)
+    return @expression(model, sum(ρ_bar[s...] * positive_affine(U, s) for s in paths(S_j)) / α)
 end
 
 
 # --- Decision Strategy ---
+
+"""Decision strategy type."""
+struct DecisionStrategy
+    Z::Dict{Node, Array{State, N} where N}
+end
+
+(d::DecisionStrategy)(j::Node) = d.Z[j]
+(d::DecisionStrategy)(j::Node, s::Path) = findmax(d.Z[j][s..., :])[2]
+(d::DecisionStrategy)(j::Node, s::Path, G::InfluenceDiagram) = d(j, s[G.I_j[j]])
 
 """Extract values for decision variables from a decision model.
 
@@ -367,5 +435,5 @@ Z = DecisionStrategy(model)
 ```
 """
 function DecisionStrategy(model::DecisionModel)
-    DecisionStrategy(i => (@. Int(round(value(v)))) for (i, v) in model[:z])
+    DecisionStrategy(Dict(i => (@. Int(round(value(v)))) for (i, v) in model[:z]))
 end
