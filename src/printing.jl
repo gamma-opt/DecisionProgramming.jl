@@ -13,8 +13,9 @@ function print_decision_strategy(G::InfluenceDiagram, Z::DecisionStrategy)
     for j in D
         a1 = collect(paths(S_j[I_j[j]]))[:]
         a2 = [Z(j, s_I) for s_I in a1]
-        df = DataFrame(a1 = a1, a2 = a2)
-        pretty_table(df, ["$((I_j[j]...,))", "$j"])
+        labels = fill("States", length(a1))
+        df = DataFrame(labels = labels, a1 = a1, a2 = a2)
+        pretty_table(df, ["Nodes", "$((I_j[j]...,))", "$j"])
     end
 end
 
@@ -28,11 +29,11 @@ print_utility_distribution(udist)
 """
 function print_utility_distribution(udist::UtilityDistribution; util_fmt="%f", prob_fmt="%f")
     @unpack u, p = udist
-    df = DataFrame(utility = u, probability = p)
+    df = DataFrame(Utility = u, Probability = p)
     formatters = (
         ft_printf(util_fmt, [1]),
         ft_printf(prob_fmt, [2]))
-    pretty_table(df, row_names=1:length(u); formatters = formatters)
+    pretty_table(df; formatters = formatters)
 end
 
 """Print state probabilities with fixed states.
@@ -55,11 +56,12 @@ function print_state_probabilities(sprobs::StateProbabilities, nodes::Vector{Nod
     limit = maximum(length(probs[i]) for i in nodes)
     states = 1:limit
     df = DataFrame()
+    df[!, :Node] = nodes
     for state in states
-        df[!, Symbol(state)] = [prob(probs[i], state) for i in nodes]
+        df[!, Symbol("State $state")] = [prob(probs[i], state) for i in nodes]
     end
-    df[!, :fixed] = [fix_state(i) for i in nodes]
-    pretty_table(df, row_names=nodes; formatters = ft_printf(prob_fmt, states))
+    df[!, Symbol("Fixed state")] = [fix_state(i) for i in nodes]
+    pretty_table(df; formatters = ft_printf(prob_fmt, (first(states)+1):(last(states)+1)))
 end
 
 """Value-at-risk."""
@@ -80,12 +82,10 @@ end
 function print_statistics(udist::UtilityDistribution; fmt = "%f")
     @unpack u, p = udist
     w = ProbabilityWeights(p)
-    # TODO: DataFrame
-    pretty_table(
-        [mean(u, w), std(u, w, corrected=false), skewness(u, w), kurtosis(u, w)],
-        ["Statistics"],
-        row_names = ["Mean", "Std", "Skewness", "Kurtosis"],
-        formatters = ft_printf(fmt))
+    names = ["Mean", "Std", "Skewness", "Kurtosis"]
+    statistics = [mean(u, w), std(u, w, corrected=false), skewness(u, w), kurtosis(u, w)]
+    df = DataFrame(Name = names, Statistics = statistics)
+    pretty_table(df, formatters = ft_printf(fmt, [2]))
 end
 
 """Print risk measures."""
@@ -93,9 +93,6 @@ function print_risk_measures(udist::UtilityDistribution, αs::Vector{Float64}; f
     @unpack u, p = udist
     VaR = [value_at_risk(u, p, α) for α in αs]
     CVaR = [conditional_value_at_risk(u, p, α) for α in αs]
-    # TODO: DataFrame
-    pretty_table(
-        hcat(αs, VaR, CVaR),
-        ["α", "VaR_α", "CVaR_α"],
-        formatters = ft_printf(fmt))
+    df = DataFrame(α = αs, VaR = VaR, CVaR = CVaR)
+    pretty_table(df, formatters = ft_printf(fmt))
 end
