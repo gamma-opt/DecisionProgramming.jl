@@ -1,7 +1,7 @@
 # API Reference
 `DecisionProgramming.jl` API reference.
 
-## `model.jl`
+## `influence_diagram.jl`
 ### Influence Diagram
 ```@docs
 Node
@@ -43,6 +43,8 @@ PathUtility(::Path)
 positive_affine(::PathUtility, ::Path)
 ```
 
+
+## `decision_model.jl`
 ### Decision Model
 ```@docs
 variables

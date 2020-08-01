@@ -17,90 +17,72 @@ const c_k = rand(N)
 fortification(k, a) = [c_k[k], 0][a]
 consequence(k, a) = [-c_k[k], 0][a]
 
-@info("Defining influence diagram parameters.")
-C = L ∪ R_k ∪ F
-D = A_k
-V = T
-A = Vector{Pair{Int, Int}}()
-S_j = Vector{Int}(undef, length(C)+length(D))
-
-@info("Defining arcs.")
-add_arcs(from, to) = append!(A, (i => j for (i, j) in zip(from, to)))
-add_arcs(repeat(L, N), R_k)
-add_arcs(L, F)
-add_arcs(R_k, A_k)
-add_arcs(A_k, repeat(F, N))
-add_arcs(F, T)
-add_arcs(A_k, repeat(T, N))
-
-@info("Defining states.")
+C = Vector{ChanceNode}()
+D = Vector{DecisionNode}()
+V = Vector{ValueNode}()
+S_j = Vector{State}(undef, length(L) + length(R_k) + length(A_k) + length(F))
 S_j[L] = fill(length(L_states), length(L))
 S_j[R_k] = fill(length(R_k_states), length(R_k))
 S_j[A_k] = fill(length(A_k_states), length(A_k))
 S_j[F] = fill(length(F_states), length(F))
 
-function probabilities(L, R_k, A_k, F, S_j)
-    X = Dict{Int, Array{Float64}}()
-
-    # Probability of high=1 / low=2 load
-    for i in L
-        p = zeros(S_j[i])
-        p[1] = rand()
-        p[2] = 1.0 - p[1]
-        X[i] = p
-    end
-
-    # Probabilities of high=1 / low=2 reports
-    for i in R_k
-        p = zeros(S_j[L...], S_j[i])
-        x, y = rand(2)
-        p[1, 1] = max(x, 1-x)
-        p[1, 2] = 1.0 - p[1, 1]
-        p[2, 2] = max(y, 1-y)
-        p[2, 1] = 1.0 - p[2, 2]
-        X[i] = p
-    end
-
-    # Probabilities of failure=1 / success=2
-    for i in F
-        p = zeros(S_j[L...], S_j[A_k]..., S_j[i])
-        x, y = rand(2)
-        for s in paths(S_j[A_k])
-            d = exp(sum(fortification(k, a) for (k, a) in enumerate(s)))
-            p[1, s..., 1] = max(x, 1-x) / d
-            p[1, s..., 2] = 1.0 - p[1, s..., 1]
-            p[2, s..., 1] = min(y, 1-y) / d
-            p[2, s..., 2] = 1.0 - p[2, s..., 1]
-        end
-        X[i] = p
-    end
-    return X
+for j in L
+    I_j = Vector{Node}()
+    X_j = zeros(S_j[j])
+    X_j[1] = rand()
+    X_j[2] = 1.0 - X_j[1]
+    push!(C, ChanceNode(j, I_j, S_j[j], X_j))
 end
 
-function consequences(A_k, F, T, S_j)
-    Y = Dict{Int, Array{Float64}}()
-    for v in T
-        y = zeros([S_j[A_k]; S_j[F...]]...)
-        for s in paths(S_j[A_k])
-            c = sum(consequence(k, a) for (k, a) in enumerate(s))
-            y[s..., 1] = c + 0
-            y[s..., 2] = c + 100
-        end
-        Y[v] = y
+for j in R_k
+    I_j = L
+    x, y = rand(2)
+    X_j = zeros(S_j[I_j]..., S_j[j])
+    X_j[1, 1] = max(x, 1-x)
+    X_j[1, 2] = 1.0 - X_j[1, 1]
+    X_j[2, 2] = max(y, 1-y)
+    X_j[2, 1] = 1.0 - X_j[2, 2]
+    push!(C, ChanceNode(j, I_j, S_j[j], X_j))
+end
+
+for (i, j) in zip(R_k, A_k)
+    I_j = [i]
+    push!(D, DecisionNode(j, I_j, S_j[j]))
+end
+
+for j in F
+    I_j = L ∪ A_k
+    x, y = rand(2)
+    X_j = zeros(S_j[I_j]..., S_j[j])
+    for s in paths(S_j[A_k])
+        d = exp(sum(fortification(k, a) for (k, a) in enumerate(s)))
+        X_j[1, s..., 1] = max(x, 1-x) / d
+        X_j[1, s..., 2] = 1.0 - X_j[1, s..., 1]
+        X_j[2, s..., 1] = min(y, 1-y) / d
+        X_j[2, s..., 2] = 1.0 - X_j[2, s..., 1]
     end
-    return Y
+    push!(C, ChanceNode(j, I_j, S_j[j], X_j))
+end
+
+for j in T
+    I_j = A_k ∪ F
+    Y_j = zeros(S_j[I_j]...)
+    for s in paths(S_j[A_k])
+        c = sum(consequence(k, a) for (k, a) in enumerate(s))
+        Y_j[s..., 1] = c + 0
+        Y_j[s..., 2] = c + 100
+    end
+    push!(V, ValueNode(j, I_j, Y_j))
 end
 
 @info("Defining InfluenceDiagram")
-@time G = InfluenceDiagram(C, D, V, A, S_j)
+G = InfluenceDiagram(C, D, V)
 
 @info("Creating probabilities.")
-X = probabilities(L, R_k, A_k, F, S_j)
-@time X = Probabilities(G, X)
+X = Probabilities(G, C)
 
 @info("Creating consequences.")
-Y = consequences(A_k, F, T, S_j)
-@time Y = Consequences(G, Y)
+Y = Consequences(G, V)
 
 @info("Creating path probability.")
 P = PathProbability(G, X)

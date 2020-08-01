@@ -1,6 +1,6 @@
 module DecisionProgramming
 
-include("model.jl")
+include("influence_diagram.jl")
 include("random.jl")
 export Node,
     State,
@@ -10,12 +10,17 @@ export Node,
     Consequence,
     Consequences,
     Path,
+    paths,
     PathProbability,
     PathUtility,
     positive_affine,
-    DecisionModel,
+    ChanceNode,
+    ValueNode,
+    DecisionNode
+
+include("decision_model.jl")
+export DecisionModel,
     DecisionStrategy,
-    paths,
     variables,
     probability_sum_cut,
     number_of_paths_cut,
