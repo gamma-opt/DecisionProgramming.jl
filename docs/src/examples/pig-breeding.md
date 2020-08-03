@@ -28,7 +28,7 @@ The probability that pig is ill in the first month.
 
 $$ℙ(h_1 = ill)=0.1$$
 
-The probability that the pig is ill in the subsequent months $k=2,...,N$ given the treatment decision in and state of health in the previous month.
+The probability that the pig is ill in the subsequent months $k=2,...,N$ given the treatment decision and state of health in the previous month.
 
 $$ℙ(h_k = ill ∣ d_{k-1} = pass, h_{k-1} = healthy)=0.2$$
 

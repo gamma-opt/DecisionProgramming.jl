@@ -10,7 +10,7 @@ The $2$-monitoring problem.
 
 ![](figures/n-monitoring.svg)
 
-The incluence diagram of generalized $N$-monitoring problem where $N≥1$ and indices $k=1,...,N.$ The nodes are associated with states as follows. **Load state** $L=\{high, low\}$ denotes the load, **report states** $R_k=\{high, low\}$ report the load state to the **action states** $A_k=\{yes, no\}$ which decide whether to fortificate **failure state** $F=\{failure, success\}.$ Finally, the utility at target $T$ depends on the whether $F$ fails and the fortification costs.
+The incluence diagram of generalized $N$-monitoring problem where $N≥1$ and indices $k=1,...,N.$ The nodes are associated with states as follows. **Load state** $L=\{high, low\}$ denotes the load, **report states** $R_k=\{high, low\}$ report the load state to the **action states** $A_k=\{yes, no\}$ which decide whether to fortificate the structure, **failure state** $F=\{failure, success\}.$ Finally, the utility at target $T$ depends on the whether the structure fails in $F$ and the fortification costs.
 
 We draw the magnitude and cost of fortification $c_k∼U(0,1)$ from a uniform distribution. Fortification is defined
 
@@ -20,21 +20,21 @@ c_k, & A_k=yes \\
 0, & A_k=no
 \end{cases}$$
 
-The probability that the load is high. We draw $x∼U(0,1)$ from uniform distribution.
+The probability that the load is high is drawn from uniform distribution $x∼U(0,1)$.
 
 $$ℙ(L=high)=x$$
 
 The probabilities of the report states correspond to the load state. We draw the values $x∼U(0,1)$ and $y∼U(0,1)$ from uniform distribution.
 
-$$ℙ(R_k=high∣L=high)=\max\{x,x-1\}$$
+$$ℙ(R_k=high∣L=high)=\max\{x,1-x\}$$
 
-$$ℙ(R_k=low∣L=low)=\max\{y,y-1\}$$
+$$ℙ(R_k=low∣L=low)=\max\{y,1-y\}$$
 
 The probabilities of failure which are decresead by fortifications. We draw the values $z∼U(0,1)$ and $w∼U(0,1)$ from uniform distribution.
 
-$$ℙ(F=failure∣A_N,...,A_1,L=high)=\frac{z}{\exp(∑_{k=1,...,N} f(A_k))}$$
+$$ℙ(F=failure∣A_N,...,A_1,L=high)=\frac{\max\{z,1-z\}}{\exp(∑_{k=1,...,N} f(A_k))}$$
 
-$$ℙ(F=failure∣A_N,...,A_1,L=low)=\frac{w}{\exp(∑_{k=1,...,N} f(A_k))}$$
+$$ℙ(F=failure∣A_N,...,A_1,L=low)=\frac{\min\{w,1-w\}}{\exp(∑_{k=1,...,N} f(A_k))}$$
 
 Utility from consequences at target $T$ from failure state $F$
 
