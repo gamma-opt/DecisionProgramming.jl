@@ -26,93 +26,83 @@ const T_states = ["no test", "test"]
 const R_states = ["no test", "lemon", "peach"]
 const A_states = ["buy without guarantee", "buy with guarantee", "don't buy"]
 
-@info("Defining influence diagram parameters.")
-C = O ∪ R                                       # Chance nodes
-D = T ∪ A                                       # Decision nodes
-V = [5, 6, 7]                                   # Value nodes
-arcs = Vector{Pair{Int, Int}}()                 # Arcs
-S_j = Vector{Int}(undef, length(C)+length(D))   # States
-
-@info("Defining arcs.")
-add_arcs(from, to) = append!(arcs, (i => j for (i, j) in zip(from, to)))
-add_arcs(O, R)
-add_arcs(O, 7)
-add_arcs(T, R)
-add_arcs(T, 5)
-add_arcs(R, A)
-add_arcs(A, 6)
-add_arcs(A, 7)
-
-@info("Defining number of states.")
+C = Vector{ChanceNode}()
+D = Vector{DecisionNode}()
+V = Vector{ValueNode}()
+S_j = Vector{State}(undef, 4)
 S_j[O] = length(O_states)
 S_j[T] = length(T_states)
 S_j[R] = length(R_states)
 S_j[A] = length(A_states)
 ```
 
-We start by defining the influence diagram structure. The decision and chance nodes, as well as their states are defined in the first block. Next, the influence diagram parameters consisting of the node sets, the arcs and the state spaces of the arcs are defined.
+We start by defining the influence diagram structure. The decision and chance nodes, as well as their states are defined in the first block. Next, the influence diagram parameters consisting of the node sets and the state spaces of the nodes are defined.
 
 ```julia
-function probabilities(O, T, R, S_j)
-    X = Dict{Int, Array{Float64}}()
+# Node O: no predecessors
+I_O = Vector{Node}()
+X_O = [0.2,0.8]
+push!(C, ChanceNode(O, I_O, S_j[O], X_O))
 
-    # P(lemon) = 0.2
-    X[O] = [0.2,0.8]
+# Node T: no predecessors
+I_T = Vector{Node}()
+push!(D, DecisionNode(T, I_T, S_j[T]))
 
-    # Test is sure to give the correct result
-    p = zeros(S_j[O], S_j[T], S_j[R])
-    # p[1, 1, :] = [1,0,0]
-    # p[1, 2, :] = [0,1,0]
-    # p[2, 1, :] = [1,0,0]
-    # p[2, 2, :] = [0,0,1]
-    p[1, 1, :] = [1 - 2E-9, 1E-9, 1E-9]
-    p[1, 2, :] = [1E-9, 1 - 2E-9, 1E-9]
-    p[2, 1, :] = [1 - 2E-9, 1E-9, 1E-9]
-    p[2, 2, :] = [1E-9, 1E-9, 1 - 2E-9]
-    X[R] = p
+# Node R: dependent on nodes O and T
+I_R = [O,T]
+X_R = zeros(S_j[O], S_j[T], S_j[R])
+X_R[1, 1, :] = [1,0,0]
+X_R[1, 2, :] = [0,1,0]
+X_R[2, 1, :] = [1,0,0]
+X_R[2, 2, :] = [0,0,1]
+push!(C, ChanceNode(R, I_R, S_j[R], X_R))
 
-    return X
-end
+# Node A: dependent on node R
+I_A = [R]
+push!(D, DecisionNode(A, I_A, S_j[A]))
 
-function consequences(T, A, V)
-    Y = Dict{Int, Array{Float64}}()
-    Y[V[1]] = [0, -25]
-    Y[V[2]] = [100, 40, 0]
-    Y[V[3]] = [-200 0 0; -40 -20 0]
-    return Y
-end
+# Cost of test
+I_V1 = [T]
+Y_V1 = [0, -25]
+push!(V, ValueNode(5, I_V1, Y_V1))
+
+# Base profit of purchase alternatives
+I_V2 = [A]
+Y_V2 = [100, 40, 0]
+push!(V, ValueNode(6, I_V2, Y_V2))
+
+# Repair costs
+I_V3 = [O,A]
+Y_V3 = [-200 0 0; -40 -20 0]
+push!(V, ValueNode(7, I_V3, Y_V3))
+
 ```
 
-We continue by defining the probabilities associated with chance nodes and utilities (consequences) associated with value nodes. The rows of the consequence matrix correspond to the state of the car, while the columns correspond to the decision made in node $A$.
+We continue by defining the probabilities associated with chance nodes and utilities (consequences) associated with value nodes. The rows of the consequence matrix Y_V3 correspond to the state of the car, while the columns correspond to the decision made in node $A$.
 
 ### Decision model
 
 ```julia
 @info("Defining InfluenceDiagram")
-@time G = InfluenceDiagram(C, D, V, arcs, S_j)
+G = InfluenceDiagram(C, D, V)
 
 @info("Creating probabilities.")
-@time X = validate_probabilities(G, probabilities(O, T, R, S_j))
-# @time X = probabilities(O, T, R, S_j)
+X = Probabilities(G, C)
 
 @info("Creating consequences.")
-@time Y = validate_consequences(G, consequences(T, A, V))
+Y = Consequences(G, V)
 
-@info("Creating path utility function.")
-@time U(s) = sum(Y[v][s[G.I_j[v]]...] for v in V)
+@info("Creating path probability.")
+P = PathProbability(G, X)
+
+@info("Creating path utility.")
+U = PathUtility(G, Y)
 
 @info("Defining DecisionModel")
-@time model = DecisionModel(G, X)
-
-@info("Adding probability sum cut")
-@time probability_sum_cut(model, G, X)
-
-@info("Adding number of paths cut")
-@time number_of_paths_cut(model, G, X)
+@time model = DecisionModel(G, P)
 
 @info("Creating model objective.")
-@time U⁺ = transform_affine_positive(G, U)
-@time E = expected_value(model, G, U⁺)
+@time E = expected_value(model, G, U)
 @objective(model, Max, E)
 ```
 We then construct the decision model using the DecisionProgramming.jl package.
@@ -159,14 +149,14 @@ In the bottom table, we have node number 4 (node $A$) and its predecessor, node 
 
 ```julia
 @info("Computing utility distribution.")
-@time udist = UtilityDistribution(G, X, Z, U)
+@time udist = UtilityDistribution(G, P, U, Z)
 
 @info("Printing utility distribution.")
 print_utility_distribution(udist)
 
 @info("Printing expected utility.")
-@printf("Expected utility: %.1f", value(expected_value(model, G, U)))
-
+@unpack u, p = udist
+@printf("Expected utility: %.1f", sum(u[i]*p[i] for i in 1:length(u)))
 ```
 
 From the utility distribution, we can see that Joe's profit with this strategy is \$15 with a 20% probability (the car is a lemon) and \$35 with a 80% probability (the car is a peach). The expected profit is thus \$31.
