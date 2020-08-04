@@ -123,7 +123,7 @@ function Probabilities(G::InfluenceDiagram, X::Dict{Node, <:Probability})
     @unpack C, S_j, I_j = G
     for j in C
         size(X[j]) == Tuple(S_j[[I_j[j]; j]]) || error("Array should be dimension |S_I(j)|*|S_j|.")
-        all(x > 0 for x in X[j]) || error("Probabilities should be positive.")
+        all(x > 0 for x in X[j]) || @warn("Probabilities are not all positive, do not use number of paths cuts.")
         for s_I in paths(S_j[I_j[j]])
             sum(X[j][[s_I...; s_j]...] for s_j in 1:S_j[j]) ≈ 1 || error("probabilities shoud sum to one.")
         end
