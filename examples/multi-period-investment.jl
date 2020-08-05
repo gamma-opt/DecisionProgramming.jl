@@ -1,12 +1,12 @@
 using Printf, Random, Parameters, Logging
+using Base.Iterators: product
 using JuMP, Gurobi
 using DecisionProgramming
 
 Random.seed!(11)
 
-# Number of projects
-n_T = if isempty(ARGS) 2 else parse(Int, ARGS[1]) end
-n_A = if isempty(ARGS) 2 else parse(Int, ARGS[2]) end
+n_T = 2
+n_A = 3
 D_P = [i for i in 1:n_T]
 C_T = [n_T + i for i in 1:n_T]
 D_A = [2*n_T + k for k in 1:n_A]
@@ -27,12 +27,13 @@ A = Vector{Pair{Int, Int}}()
 S_j = Vector{Int}(undef, length(C)+length(D))
 
 @info("Defining arcs.")
-add_arcs(from, to) = append!(A, (i => j for (i, j) in zip(from, to)))
-add_arcs(D_P, C_T)
-add_arcs(C_T, D_A) # FIXME: all combinations
-add_arcs(C_T, C_M) # FIXME: all combinations
-add_arcs(D_A, C_M)
-add_arcs(C_M, V)
+one_to_one(from, to) = append!(A, (i => j for (i, j) in zip(from, to)))
+one_to_many(from, to) = append!(A, (i => j for (i, j) in product(from, to)))
+one_to_one(D_P, C_T)
+one_to_many(C_T, D_A)
+one_to_many(C_T, C_M)
+one_to_one(D_A, C_M)
+one_to_one(C_M, V)
 
 @info("Defining states.")
 S_j[D_P] = fill(2, length(D_P))
@@ -41,14 +42,15 @@ S_j[C_T] = fill(2, length(C_T))
 S_j[C_M] = fill(2, length(C_M))
 
 @info("Defining InfluenceDiagram")
-@time diagram = InfluenceDiagram(C, D, V, A, S_j)
+G = InfluenceDiagram(C, D, V, A, S_j)
+X = random_probabilities(G)
+Y = random_consequences(G)
 
-@info("Defining Params")
-@time params = random_params(diagram)
+@info("Defining Model")
+model = DecisionModel(G, X)
 
-@info("Defining DecisionModel")
-@time model = DecisionModel(diagram, params)
+# Problem specific constraints and expressions
+x_T = variables(model, [n_T]; binary=true)
+x_A = variables(model, [S_j[C_T]..., n_A]; binary=true)
 
-# TODO: problem specific constraints and expressions
-
-# TODO: path utility, modified objective
+# Path utility and objective function

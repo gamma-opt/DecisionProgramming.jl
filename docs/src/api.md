@@ -40,13 +40,13 @@ PathProbability(::Path)
 ```@docs
 PathUtility
 PathUtility(::Path)
-positive_affine(::PathUtility, ::Path)
 ```
 
 
 ## `decision_model.jl`
 ### Decision Model
 ```@docs
+PositivePathUtility
 variables
 DecisionModel
 DecisionModel(::InfluenceDiagram, ::PathProbability; ::Bool)

@@ -7,25 +7,25 @@
 The mixed-integer linear program maximizes a linear objective function $f$ that acts on the path distribution over all decision strategies as follows.
 
 $$\underset{Z∈ℤ}{\text{maximize}}\quad
-f(\{(ℙ(s∣Z), \mathcal{U}(s)) ∣ s∈S\}) \tag{1}$$
+f(\{(ℙ(𝐬∣Z), \mathcal{U}(𝐬)) ∣ 𝐬∈𝐒\}) \tag{1}$$
 
-**Decision variables** $z(s_j∣s_{I(j)})$ are equivalent to the decision strategies $Z$ such that $Z_j(s_I(j))=s_j$ if and only if $z(s_j∣s_{I(j)})=1$, otherwise $z(s_j∣s_{I(j)})=0.$ Constraint $(2)$ defines the decisions to be binary variables and the constraint $(3)$ limits decisions to one per information path.
+**Decision variables** $z(s_j∣𝐬_{I(j)})$ are equivalent to the decision strategies $Z$ such that $Z_j(𝐬_I(j))=s_j$ if and only if $z(s_j∣𝐬_{I(j)})=1$ and $z(s_{j^′}∣𝐬_{I(j)})=0$ for all $s_{j^′}≠s_j.$ Constraint $(2)$ defines the decisions to be binary variables and the constraint $(3)$ limits decisions to one per information path.
 
-$$z(s_j∣s_{I(j)}) ∈ \{0,1\},\quad ∀j∈D, s_j∈S_j, s_{I(j)}∈S_{I(j)} \tag{2}$$
+$$z(𝐬_j∣𝐬_{I(j)}) ∈ \{0,1\},\quad ∀j∈D, 𝐬_j∈𝐒_j, 𝐬_{I(j)}∈𝐒_{I(j)} \tag{2}$$
 
-$$∑_{s_j∈S_j} z(s_j∣s_{I(j)})=1,\quad ∀j∈D, s_{I(j)}∈S_{I(j)} \tag{3}$$
+$$∑_{s_j∈S_j} z(s_j∣𝐬_{I(j)})=1,\quad ∀j∈D, 𝐬_{I(j)}∈𝐒_{I(j)} \tag{3}$$
 
-**Path probability variables** $π(s)$ are equivalent to the path probabilities $ℙ(s∣Z)$ where decision variables $z$ define the decision strategy $Z$. The constraint $(4)$ defines the lower and upper bound to the probability, constraint $(5)$ defines that the probability equals zero if path is not compatible with the decision strategy, and constraint $(6)$ defines that probability equals path probability if the path is compatible with the decision strategy.
+**Path probability variables** $π(𝐬)$ are equivalent to the path probabilities $ℙ(𝐬∣Z)$ where decision variables $z$ define the decision strategy $Z$. The constraint $(4)$ defines the lower and upper bound to the probability, constraint $(5)$ defines that the probability equals zero if path is not compatible with the decision strategy, and constraint $(6)$ defines that probability equals path probability if the path is compatible with the decision strategy.
 
-$$0≤π(s)≤p(s),\quad ∀s∈S \tag{4}$$
+$$0≤π(𝐬)≤p(𝐬),\quad ∀𝐬∈𝐒 \tag{4}$$
 
-$$π(s) ≤ z(s_j∣s_{I(j)}),\quad ∀j∈D, s∈S \tag{5}$$
+$$π(𝐬) ≤ z(𝐬_j∣𝐬_{I(j)}),\quad ∀j∈D, 𝐬∈𝐒 \tag{5}$$
 
-$$π(s) ≥ p(s) + ∑_{j∈D} z(s_j∣s_{I(j)}) - |D|,\quad ∀s∈S \tag{6}$$
+$$π(𝐬) ≥ p(𝐬) + ∑_{j∈D} z(𝐬_j∣𝐬_{I(j)}) - |D|,\quad ∀𝐬∈𝐒 \tag{6}$$
 
-We can omit the constraint $(6)$ from the model if we use a positive path utility function $\mathcal{U}^+$ which is an **affine transformation of path utility function** $\mathcal{U}.$ As an example, we can normalize the original utility function and then add one as follows.
+We can omit the constraint $(6)$ from the model if we use a **positive path utility** function $\mathcal{U}^+$ which is an affine transformation of path utility function $\mathcal{U}.$ As an example, we can normalize the original utility function and then add one as follows.
 
-$$\mathcal{U}^+(s) = \frac{\mathcal{U}(s) - \min_{s∈S} \mathcal{U}(s)}{\max_{s∈S} \mathcal{U}(s) - \min_{s∈S} \mathcal{U}(s)} + 1.$$
+$$\mathcal{U}^+(𝐬) = \frac{\mathcal{U}(𝐬) - \min_{𝐬∈𝐒} \mathcal{U}(𝐬)}{\max_{𝐬∈𝐒} \mathcal{U}(𝐬) - \min_{𝐬∈𝐒} \mathcal{U}(𝐬)} + 1.$$
 
 Next we discuss lazy constraint and concrete objective functions below.
 
@@ -35,17 +35,17 @@ Valid equalities are equalities that can be be derived from the problem structur
 
 We can exploit the fact that the path probabilities sum to one by using the **probability sum cut**
 
-$$∑_{s∈S}π(s)=1. \tag{7}$$
+$$∑_{𝐬∈𝐒}π(𝐬)=1. \tag{7}$$
 
-For problems where the number of active paths $|S^Z|$ is known, we can exploit it by using the **number of active paths cut**
+For problems where the number of active paths $|𝐒^Z|$ is known, we can exploit it by using the **number of active paths cut**
 
-$$∑_{s∈S} \frac{π(s)}{p(s)}=|S^Z|. \tag{8}$$
+$$∑_{𝐬∈𝐒} \frac{π(𝐬)}{p(𝐬)}=|𝐒^Z|. \tag{8}$$
 
 
 ## Expected Value
 We define the **expected value** as
 
-$$\operatorname{E}(Z) = ∑_{s∈S} π(s) \mathcal{U}(s). \tag{?}$$
+$$\operatorname{E}(Z) = ∑_{𝐬∈𝐒} π(𝐬) \mathcal{U}(𝐬). \tag{?}$$
 
 However, the expected value objective does not account for risk caused by the variablity in the path distribution.
 
@@ -55,13 +55,13 @@ Given a **probability level** $α∈(0, 1]$ and decision strategy $Z$ we denote 
 
 Pre-computed parameters
 
-$$u^+=\max\{\mathcal{U}(s)∣s∈S\}$$
+$$u^+=\max\{\mathcal{U}(𝐬)∣𝐬∈𝐒\}$$
 
-$$u^-=\min\{\mathcal{U}(s)∣s∈S\}$$
+$$u^-=\min\{\mathcal{U}(𝐬)∣𝐬∈𝐒\}$$
 
 $$M=u^+-u^-$$
 
-$$ϵ=\frac{1}{2} \min\{|\mathcal{U}(s)-\mathcal{U}(s^′)| ∣ |\mathcal{U}(s)-\mathcal{U}(s^′)| > 0, s, s^′∈S\}$$
+$$ϵ=\frac{1}{2} \min\{|\mathcal{U}(𝐬)-\mathcal{U}(𝐬^′)| ∣ |\mathcal{U}(𝐬)-\mathcal{U}(𝐬^′)| > 0, 𝐬, 𝐬^′∈𝐒\}$$
 
 Objective
 
@@ -69,25 +69,25 @@ $$\min η$$
 
 Constraints
 
-$$η-\mathcal{U}(s)≤M λ(s),\quad ∀s∈S \tag{?}$$
+$$η-\mathcal{U}(𝐬)≤M λ(𝐬),\quad ∀𝐬∈𝐒 \tag{?}$$
 
-$$η-\mathcal{U}(s)≥(M+ϵ) λ(s) - M,\quad ∀s∈S \tag{?}$$
+$$η-\mathcal{U}(𝐬)≥(M+ϵ) λ(𝐬) - M,\quad ∀𝐬∈𝐒 \tag{?}$$
 
-$$η-\mathcal{U}(s)≤(M+ϵ) \bar{λ}(s) - ϵ,\quad ∀s∈S \tag{?}$$
+$$η-\mathcal{U}(𝐬)≤(M+ϵ) \bar{λ}(𝐬) - ϵ,\quad ∀𝐬∈𝐒 \tag{?}$$
 
-$$η-\mathcal{U}(s)≥M (\bar{λ}(s) - 1),\quad ∀s∈S \tag{?}$$
+$$η-\mathcal{U}(𝐬)≥M (\bar{λ}(𝐬) - 1),\quad ∀𝐬∈𝐒 \tag{?}$$
 
-$$\bar{ρ}(s) ≤ \bar{λ}(s),\quad ∀s∈S \tag{?}$$
+$$\bar{ρ}(𝐬) ≤ \bar{λ}(𝐬),\quad ∀𝐬∈𝐒 \tag{?}$$
 
-$$π(s) - (1 - λ(s)) ≤ ρ(s) ≤ λ(s),\quad ∀s∈S \tag{?}$$
+$$π(𝐬) - (1 - λ(𝐬)) ≤ ρ(𝐬) ≤ λ(𝐬),\quad ∀𝐬∈𝐒 \tag{?}$$
 
-$$ρ(s) ≤ \bar{ρ}(s) ≤ π(s),\quad ∀s∈S \tag{?}$$
+$$ρ(𝐬) ≤ \bar{ρ}(𝐬) ≤ π(𝐬),\quad ∀𝐬∈𝐒 \tag{?}$$
 
-$$∑_{s∈S}\bar{ρ}(s) = α \tag{?}$$
+$$∑_{𝐬∈𝐒}\bar{ρ}(𝐬) = α \tag{?}$$
 
-$$\bar{λ}(s), λ(s)∈\{0, 1\},\quad ∀s∈S \tag{?}$$
+$$\bar{λ}(𝐬), λ(𝐬)∈\{0, 1\},\quad ∀𝐬∈𝐒 \tag{?}$$
 
-$$\bar{ρ}(s),ρ(s)∈[0, 1],\quad ∀s∈S \tag{?}$$
+$$\bar{ρ}(𝐬),ρ(𝐬)∈[0, 1],\quad ∀𝐬∈𝐒 \tag{?}$$
 
 $$η∈[u^-, u^+] \tag{?}$$
 
@@ -95,7 +95,7 @@ Solution
 
 $$\operatorname{VaR}_α(Z)=η \tag{?}$$
 
-$$\operatorname{CVaR}_α(Z)=\frac{1}{α}∑_{s∈S}\bar{ρ}(s) \mathcal{U}(s)\tag{?}$$
+$$\operatorname{CVaR}_α(Z)=\frac{1}{α}∑_{𝐬∈𝐒}\bar{ρ}(𝐬) \mathcal{U}(𝐬)\tag{?}$$
 
 
 ## Mixed Objective

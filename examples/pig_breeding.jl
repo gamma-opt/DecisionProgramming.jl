@@ -10,7 +10,6 @@ const price = [(3*N - 2) + N]
 const health_states = ["ill", "healthy"]
 const test_states = ["positive", "negative"]
 const treat_states = ["treat", "pass"]
-# const no_forgetting = false
 
 C = Vector{ChanceNode}()
 D = Vector{DecisionNode}()
@@ -89,14 +88,15 @@ P = PathProbability(G, X)
 U = PathUtility(G, Y)
 
 @info("Defining DecisionModel")
-@time model = DecisionModel(G, P)
+U⁺ = PositivePathUtility(U)
+@time model = DecisionModel(G, P; positive_path_utility=true)
 
 @info("Adding number of paths cut")
 @time number_of_paths_cut(model, G, P)
 
 @info("Creating model objective.")
-@time E = expected_value(model, G, U)
-@objective(model, Max, E)
+@time EV = expected_value(model, G, U⁺)
+@objective(model, Max, EV)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
@@ -112,14 +112,12 @@ Z = DecisionStrategy(model)
 
 @info("Printing decision strategy:")
 print_decision_strategy(G, Z)
-println()
 
 @info("State probabilities:")
 sprobs = StateProbabilities(G, P, Z)
 print_state_probabilities(sprobs, health)
 print_state_probabilities(sprobs, test)
 print_state_probabilities(sprobs, treat)
-println()
 
 @info("Conditional state probabilities")
 node = 1
@@ -128,7 +126,6 @@ for state in 1:2
     print_state_probabilities(sprobs2, health)
     print_state_probabilities(sprobs2, test)
     print_state_probabilities(sprobs2, treat)
-    println()
 end
 
 @info("Computing utility distribution.")

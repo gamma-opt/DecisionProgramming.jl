@@ -10,13 +10,13 @@ The paper [^2] explains details about influence diagrams.
 
 We define the **influence diagram** as a directed, acyclic graph such that part of its nodes have a finite number of states associated with them
 
-$$G=(N,A,S_j).$$
+$$G=(C,D,V,A,S).$$
 
-The set of nodes $N=C∪D∪V$ consists of **chance nodes** $C,$ **decision nodes** $D,$ and **value nodes** $V$. We index the nodes such that $C∪D=\{1,...,n\}$ and $V=\{n+1,...,n+|V|\}$ where $n=|C|+|D|.$ The set of **arcs** consists of pairs of nodes such that
+The sets of nodes consists of **chance nodes** $C,$ **decision nodes** $D,$ and **value nodes** $V$. We index the nodes such that $C∪D=\{1,...,n\}$ and $V=\{n+1,...,n+|V|\}$ where $n=|C|+|D|.$ The set of **arcs** consists of pairs of nodes such that
 
-$$A⊆\{(i,j)∣1≤i<j≤|N|,i∉V\}.$$
+$$A⊆\{(i,j)∣1≤i<j≤|N|,i∉V\},$$
 
-The condition enforces that the graph is directed and acyclic, and there are no arcs from value nodes to other nodes.
+where $|N|=|C|+|D|+|V|.$ The condition enforces that the graph is directed and acyclic, and there are no arcs from value nodes to other nodes.
 
 Each chance and decision node $j∈C∪D$ is associates with a finite number of **states** $S_j.$ We use integers from one to number of states $|S_j|$ to encode individual states
 
@@ -32,67 +32,65 @@ Practically, the information set is an edge list to reverse direction in the gra
 ## Paths
 Paths in influence diagrams represent realizations of states for chance and decision nodes. Formally, a **path** is a sequence of states
 
-$$s=(s_1, s_2, ...,s_n),$$
+$$𝐬=(s_1, s_2, ...,s_n),$$
 
 where each state $s_i∈S_i$ for all chance and decision nodes $i∈C∪D.$
 
-We define a **subpath** of $s$ is a subsequence
+We define a **subpath** of $𝐬$ is a subsequence
 
-$$(s_{i_1}, s_{i_2}, ..., s_{i_{k}}),$$
+$$(𝐬_{i_1}, 𝐬_{i_2}, ..., 𝐬_{i_{k}}),$$
 
 where $1≤i_1<i_2<...<i_k≤n$ and $k≤n.$
 
-The **information path** of node $j∈N$ on path $s$ is a subpath defined as
+The **information path** of node $j∈N$ on path $𝐬$ is a subpath defined as
 
-$$s_{I(j)}=(s_i ∣ i∈I(j)).$$
-
-**Concatenation of two paths** $s$ and $s^′$ is denoted $s;s^′.$
+$$𝐬_{I(j)}=(𝐬_i ∣ i∈I(j)).$$
 
 We define the set of **all paths** as a product set of all states
 
-$$S=∏_{j∈C∪D} S_j.$$
+$$𝐒=∏_{j∈C∪D} S_j.$$
 
 The set of **information paths** of node $j∈N$ is the product set of the states in its information set
 
-$$S_{I(j)}=∏_{i∈I(j)} S_i.$$
+$$𝐒_{I(j)}=∏_{i∈I(j)} S_i.$$
 
-We denote elements of the sets using notation $s_j∈S_j$, $s∈S$, and $s_{I(j)}∈S_{I(j)}.$
+We denote elements of the sets using notation $s_j∈S_j$, $𝐬∈𝐒$, and $𝐬_{I(j)}∈𝐒_{I(j)}.$
 
 
 ## Probabilities
-For each chance node $j∈C$, we denote the **probability** of state $s_j$ given information path $s_{I(j)}$ as
+For each chance node $j∈C$, we denote the **probability** of state $s_j$ given information path $𝐬_{I(j)}$ as
 
-$$ℙ(X_j=s_j∣X_{I(j)}=s_{I(j)})∈[0, 1],$$
+$$ℙ(X_j=s_j∣X_{I(j)}=𝐬_{I(j)})=ℙ(s_j∣𝐬_{I(j)})∈[0, 1],$$
 
 with
 
-$$∑_{s_j∈S_j} ℙ(X_j=s_j∣X_{I(j)}=s_{I(j)}) = 1.$$
+$$∑_{s_j∈S_j} ℙ(s_j∣𝐬_{I(j)}) = 1.$$
 
 We define the **upper bound of path probability** $s$ as
 
-$$p(s) = ∏_{j∈C} ℙ(X_j=s_j∣X_{I(j)}=s_{I(j)}).$$
+$$p(𝐬) = ∏_{j∈C} ℙ(𝐬_j∣𝐬_{I(j)}).$$
 
 
 ## Decision Strategies
-For each decision node $j∈D,$ a **local decision strategy** maps an information path $s_{I(j)}$ to a state $s_j$
+For each decision node $j∈D,$ a **local decision strategy** maps an information path $𝐬_{I(j)}$ to a state $s_j$
 
-$$Z_j:S_{I(j)}↦S_j.$$
+$$Z_j:𝐒_{I(j)}↦S_j.$$
 
 **Decision strategy** $Z$ contains one local decision strategy for each decision node. Set of **all decision strategies** is denoted $ℤ.$
 
-A decision stategy $Z∈ℤ$ is **compatible** with the path $s∈S$ if and only if $Z_j(s_{I(j)})=s_j$ forall $Z_j∈Z$ and $j∈D.$
+A decision stategy $Z∈ℤ$ is **compatible** with the path $𝐬∈𝐒$ if and only if $Z_j(𝐬_{I(j)})=s_j$ forall $Z_j∈Z$ and $j∈D.$
 
-The path probability $ℙ(s∣Z)$ equals $p(s)$ if the path $s$ is compatible with the decision strategy $Z$. Otherwise, the path cannot occur and the probability is zero.
+The path probability $ℙ(𝐬∣Z)$ equals $p(𝐬)$ if the path $𝐬$ is compatible with the decision strategy $Z$. Otherwise, the path cannot occur and the probability is zero.
 
-An **active path** is path $s∈S$ that is compatible with decision strategy $Z.$ We denote the set of **all active paths** using $S^Z.$ Since each decision strategy $Z_j$ chooses only one state out of all of its states, the **number of active paths** is
+An **active path** is path $𝐬∈𝐒$ that is compatible with decision strategy $Z.$ We denote the set of **all active paths** using $𝐒^Z.$ Since each decision strategy $Z_j$ chooses only one state out of all of its states, the **number of active paths** is
 
-$$|S^Z|=|S|/\prod_{j∈D}|S_j|=\prod_{j∈C}|S_j|.$$
+$$|𝐒^Z|=|𝐒|/\prod_{j∈D}|S_j|=\prod_{j∈C}|S_j|.$$
 
 
 ## Consequences
-For each value node $j∈V$, we define the **consequence** given information path $s_{I(j)}$ as
+For each value node $j∈V$, we define the **consequence** given information path $𝐬_{I(j)}$ as
 
-$$Y_j:S_{I(j)}↦ℂ,$$
+$$Y_j:𝐒_{I(j)}↦ℂ,$$
 
 where $ℂ$ is the set of consequences. In the code, the consequences are implicit, and we map information paths directly to the utility values.
 
@@ -102,15 +100,15 @@ $$U:ℂ↦ℝ.$$
 
 The **path utility** is defined as the sum of utilities for consequences of value nodes $j∈V$ with information paths $I(j)$
 
-$$\mathcal{U}(s) = ∑_{j∈V} U(Y_j(s_{I(j)})).$$
+$$\mathcal{U}(𝐬) = ∑_{j∈V} U(Y_j(𝐬_{I(j)})).$$
 
 
 ## Path Distribution
 A **path distribution** is a pair
 
-$$(ℙ(s∣Z), \mathcal{U}(s))$$
+$$(ℙ(𝐬∣Z), \mathcal{U}(𝐬))$$
 
-that comprises of path probability function and path utility function over paths $s∈S$ conditional to the decision strategy $Z.$
+that comprises of path probability function and path utility function over paths $𝐬∈𝐒$ conditional to the decision strategy $Z.$
 
 
 ## References

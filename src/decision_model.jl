@@ -1,5 +1,26 @@
 using Parameters, JuMP
 
+"""Positive affine transformation of path utility. Normalized to into range from 1 to 2."""
+struct PositivePathUtility
+    U::PathUtility
+    min::Float64
+    max::Float64
+    function PositivePathUtility(U::PathUtility)
+        (u_min, u_max) = extrema(U(s) for s in paths(U.G.S_j))
+        new(U, u_min, u_max)
+    end
+end
+
+"""Evaluate positive affine transformation of the path utility.
+
+# Examples
+```julia
+U⁺ = PositivePathUtility(U)
+1 ≤ U⁺(s) ≤ 2
+```
+"""
+(U::PositivePathUtility)(s::Path) = (U.U(s) - U.min)/(U.max - U.min) + 1
+
 """Create a multidimensional array of JuMP variables."""
 function variables(model::Model, dims::Vector{Int}; binary::Bool=false)
     v = Array{VariableRef}(undef, dims...)
@@ -111,8 +132,8 @@ end
 EV = expected_value(model, G, U)
 ```
 """
-function expected_value(model::DecisionModel, G::InfluenceDiagram, U::PathUtility)
-    @expression(model, sum(model[:π][s...] * positive_affine(U, s) for s in paths(G.S_j)))
+function expected_value(model::DecisionModel, G::InfluenceDiagram, U::Union{PathUtility, PositivePathUtility})
+    @expression(model, sum(model[:π][s...] * U(s) for s in paths(G.S_j)))
 end
 
 """Conditional value-at-risk (CVaR) objective. Also known as Expected Shortfall (ES).
@@ -120,15 +141,15 @@ end
 # Examples
 ```julia
 α = 0.05  # Parameter such that 0 ≤ α ≤ 1
-ES = conditional_value_at_risk(model, G, U, α)
+CVaR = conditional_value_at_risk(model, G, U, α)
 ```
 """
-function conditional_value_at_risk(model::DecisionModel, G::InfluenceDiagram, U::PathUtility, α::Float64)
+function conditional_value_at_risk(model::DecisionModel, G::InfluenceDiagram, U::Union{PathUtility, PositivePathUtility}, α::Float64)
     @unpack S_j = G
     0 ≤ α ≤ 1 || error("α should be 0 ≤ α ≤ 1")
 
     # Pre-computer parameters
-    u = collect(Iterators.flatten(positive_affine(U, s) for s in paths(S_j)))
+    u = collect(Iterators.flatten(U(s) for s in paths(S_j)))
     u_sorted = sort(u)
     u_min = u_sorted[1]
     u_max = u_sorted[end]
@@ -146,7 +167,7 @@ function conditional_value_at_risk(model::DecisionModel, G::InfluenceDiagram, U:
     π = model[:π]
     @constraint(model, u_min ≤ η ≤ u_max)
     for s in paths(S_j)
-        u_s = positive_affine(U, s)
+        u_s = U(s)
         @constraint(model, η - u_s ≤ M * λ[s...])
         @constraint(model, η - u_s ≥ (M + ϵ) * λ[s...] - M)
         @constraint(model, η - u_s ≤ (M + ϵ) * λ_bar[s...] - ϵ)
@@ -167,7 +188,9 @@ function conditional_value_at_risk(model::DecisionModel, G::InfluenceDiagram, U:
     model[:ρ_bar] = ρ_bar
 
     # Return CVaR as an expression
-    return @expression(model, sum(ρ_bar[s...] * positive_affine(U, s) for s in paths(S_j)) / α)
+    CVaR = @expression(model, sum(ρ_bar[s...] * U(s) for s in paths(S_j)) / α)
+
+    return CVaR
 end
 
 

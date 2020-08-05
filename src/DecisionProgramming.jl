@@ -13,7 +13,6 @@ export Node,
     paths,
     PathProbability,
     PathUtility,
-    positive_affine,
     ChanceNode,
     ValueNode,
     DecisionNode
@@ -24,6 +23,7 @@ export DecisionModel,
     variables,
     probability_sum_cut,
     number_of_paths_cut,
+    PositivePathUtility,
     expected_value,
     conditional_value_at_risk
 

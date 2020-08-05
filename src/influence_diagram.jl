@@ -201,10 +201,6 @@ P(s)
 
 # --- Path Utility ---
 
-function path_utility(G::InfluenceDiagram, Y::Consequences, s::Path)
-    sum(Y(j, s, G) for j in G.V)
-end
-
 """Path utility type.
 
 # Examples
@@ -215,31 +211,16 @@ U = PathUtility(G, Y)
 struct PathUtility
     G::InfluenceDiagram
     Y::Consequences
-    min::Float64
-    max::Float64
-    function PathUtility(G::InfluenceDiagram, Y::Consequences)
-        (u_min, u_max) = extrema(path_utility(G, Y, s) for s in paths(G.S_j))
-        new(G, Y, u_min, u_max)
-    end
 end
 
-"""Evaluate path utility.
+"""Evaluate path utility. Can be overwritten.
 
 # Examples
 ```julia
 U(s)
 ```
 """
-(U::PathUtility)(s::Path) = path_utility(U.G, U.Y, s)
-
-"""Evaluate positive affine transformation of the path utility.
-
-# Examples
-```julia
-1 ≤ positive_affine(U, s) ≤ 2
-```
-"""
-positive_affine(U::PathUtility, s::Path) = (U(s) - U.min)/(U.max - U.min) + 1
+(U::PathUtility)(s::Path) = sum(U.Y(j, s, U.G) for j in U.G.V)
 
 
 # --- Alternative Constructors ---

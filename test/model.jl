@@ -11,16 +11,17 @@ P = PathProbability(G, X)
 U = PathUtility(G, Y)
 
 @info "Creating decision model."
-model = DecisionModel(G, P)
+U⁺ = PositivePathUtility(U)
+model = DecisionModel(G, P; positive_path_utility=true)
 probability_sum_cut(model, P)
 number_of_paths_cut(model, G, P)
 
 @info "Adding objectives to the model."
 α = 0.2
 w = 0.5
-EV = expected_value(model, G, U)
-ES = conditional_value_at_risk(model, G, U, α)
-@objective(model, Max, w * EV + (1 - w) * ES)
+EV = expected_value(model, G, U⁺)
+CVaR = conditional_value_at_risk(model, G, U⁺, α)
+@objective(model, Max, w * EV + (1 - w) * CVaR)
 
 @info "Solving the model."
 optimizer = optimizer_with_attributes(GLPK.Optimizer)

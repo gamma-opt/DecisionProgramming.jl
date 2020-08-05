@@ -91,7 +91,8 @@ P = PathProbability(G, X)
 U = PathUtility(G, Y)
 
 @info("Defining DecisionModel")
-@time model = DecisionModel(G, P)
+U⁺ = PositivePathUtility(U)
+@time model = DecisionModel(G, P; positive_path_utility=true)
 
 @info("Adding probability sum cut")
 @time probability_sum_cut(model, P)
@@ -100,8 +101,8 @@ U = PathUtility(G, Y)
 @time number_of_paths_cut(model, G, P)
 
 @info("Creating model objective.")
-@time E = expected_value(model, G, U)
-@objective(model, Max, E)
+@time EV = expected_value(model, G, U⁺)
+@objective(model, Max, EV)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
@@ -117,7 +118,6 @@ Z = DecisionStrategy(model)
 
 @info("Printing decision strategy:")
 print_decision_strategy(G, Z)
-println()
 
 @info("Printing state probabilities:")
 sprobs = StateProbabilities(G, P, Z)
@@ -125,7 +125,6 @@ print_state_probabilities(sprobs, L)
 print_state_probabilities(sprobs, R_k)
 print_state_probabilities(sprobs, A_k)
 print_state_probabilities(sprobs, F)
-println()
 
 @info("Computing utility distribution.")
 @time udist = UtilityDistribution(G, P, U, Z)

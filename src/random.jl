@@ -41,7 +41,7 @@ function InfluenceDiagram(rng::AbstractRNG, n_C::Int, n_D::Int, n_V::Int, n_A::I
     return InfluenceDiagram(C, D, V, A, S_j)
 end
 
-function random_probability(rng::AbstractRNG, states, state)
+function random_probability(rng::AbstractRNG, states::Vector{State}, state::State)
     X = zeros([states; state]...)
     for s in paths(states)
         x = rand(rng, state)
@@ -69,7 +69,7 @@ end
 
 scale(x::Float64, low::Float64, high::Float64) = x * (high - low) + low
 
-function random_consequence(rng::AbstractRNG, states, low::Float64, high::Float64)
+function random_consequence(rng::AbstractRNG, states::Vector{State}, low::Float64, high::Float64)
     x = rand(rng, prod(states))
     x = scale.(x, low, high)
     return reshape(x, states...)
@@ -89,3 +89,11 @@ function Consequences(rng::AbstractRNG, G::InfluenceDiagram; low::Float64 = -1.0
     high > low || error("")
     Consequences(Dict(i => random_consequence(rng, S_j[I_j[i]], low, high) for i in V))
 end
+
+# function random_decision_strategy(rng::AbstractRNG, states::Vector{State}, state::State)
+#     # TODO:
+# end
+
+# function DecisionStrategy(rng::AbstractRNG, G::InfluenceDiagram)
+#     # TODO:
+# end

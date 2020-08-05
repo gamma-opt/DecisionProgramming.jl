@@ -9,15 +9,16 @@ Y = Consequences(rng, G)
 P = PathProbability(G, X)
 U = PathUtility(G, Y)
 
+U⁺ = PositivePathUtility(U)
 model = DecisionModel(G, P)
 # probability_sum_cut(model, P)
 # number_of_paths_cut(model, G, P)
 
-α = 0.2
+α = 0.20
 w = 0.5
-EV = expected_value(model, G, U)
-ES = conditional_value_at_risk(model, G, U, α)
-@objective(model, Max, w * EV + (1 - w) * ES)
+EV = expected_value(model, G, U⁺)
+CVaR = conditional_value_at_risk(model, G, U⁺, α)
+@objective(model, Max, w * EV + (1 - w) * CVaR)
 
 optimizer = optimizer_with_attributes(
     Gurobi.Optimizer,
@@ -37,7 +38,6 @@ print_decision_strategy(G, Z)
 probs = StateProbabilities(G, P, Z)
 print_state_probabilities(probs, G.C)
 print_state_probabilities(probs, G.D)
-println()
 
 @info("Computing utility distribution.")
 @time udist = UtilityDistribution(G, P, U, Z)

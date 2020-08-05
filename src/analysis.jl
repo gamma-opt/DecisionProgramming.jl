@@ -28,7 +28,7 @@ function ActivePaths(G::InfluenceDiagram, Z::DecisionStrategy)
 end
 
 function active_path(G::InfluenceDiagram, Z::DecisionStrategy, s_C::Path)
-    @unpack C, D, I_j = G
+    @unpack C, D = G
     n = length(C) + length(D)
     s = Array{Int}(undef, n)
     s[C] .= s_C
@@ -82,8 +82,6 @@ UtilityDistribution(G, P, U, Z)
 ```
 """
 function UtilityDistribution(G::InfluenceDiagram, P::PathProbability, U::PathUtility, Z::DecisionStrategy)
-    @unpack C, D, V, I_j, S_j = G
-
     # Extract utilities and probabilities of active paths
     S_Z = ActivePaths(G, Z)
     utilities = Vector{Float64}(undef, length(S_Z))
@@ -135,12 +133,12 @@ StateProbabilities(G, P, Z, node, state, prev)
 ```
 """
 function StateProbabilities(G::InfluenceDiagram, P::PathProbability, Z::DecisionStrategy, node::Node, state::State, prev::StateProbabilities)
-    @unpack C, D, S_j, I_j = G
+    @unpack S_j = G
     prior = prev.probs[node][state]
     fixed = prev.fixed
     push!(fixed, node => state)
-    probs = Dict(i => zeros(S_j[i]) for i in (C ∪ D))
-    for s in ActivePaths(G, Z, fixed), i in (C ∪ D)
+    probs = Dict(i => zeros(S_j[i]) for i in 1:length(S_j))
+    for s in ActivePaths(G, Z, fixed), i in 1:length(S_j)
         probs[i][s[i]] += P(s) / prior
     end
     StateProbabilities(probs, fixed)
@@ -154,9 +152,9 @@ StateProbabilities(G, P, Z)
 ```
 """
 function StateProbabilities(G::InfluenceDiagram, P::PathProbability, Z::DecisionStrategy)
-    @unpack C, D, S_j, I_j = G
-    probs = Dict(i => zeros(S_j[i]) for i in (C ∪ D))
-    for s in ActivePaths(G, Z), i in (C ∪ D)
+    @unpack S_j = G
+    probs = Dict(i => zeros(S_j[i]) for i in 1:length(S_j))
+    for s in ActivePaths(G, Z), i in 1:length(S_j)
         probs[i][s[i]] += P(s)
     end
     StateProbabilities(probs, Dict{Node, State}())
