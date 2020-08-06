@@ -8,65 +8,67 @@ using Parameters
 
 # Examples
 ```julia
-for s in ActivePaths(G, Z)
+for s in ActivePaths(S, C, Z)
     ...
 end
 ```
 """
 struct ActivePaths
-    G::InfluenceDiagram
-    Z::DecisionStrategy
+    S::States
+    C::Vector{ChanceNode}
+    Z::GlobalDecisionStrategy
     fixed::Dict{Node, State}
-    function ActivePaths(G, Z, fixed)
-        !all(k∈G.C for k in keys(fixed)) && error("You can only fix chance states.")
-        new(G, Z, fixed)
+    function ActivePaths(S, C, Z, fixed)
+        C_j = Set([c.j for c in C])
+        !all(k∈C_j for k in keys(fixed)) && error("You can only fix chance states.")
+        new(S, C, Z, fixed)
     end
 end
 
-function ActivePaths(G::InfluenceDiagram, Z::DecisionStrategy)
-    ActivePaths(G, Z, Dict{Node, State}())
+function ActivePaths(S::States, C::Vector{ChanceNode}, Z::GlobalDecisionStrategy)
+    ActivePaths(S, C, Z, Dict{Node, State}())
 end
 
-function active_path(G::InfluenceDiagram, Z::DecisionStrategy, s_C::Path)
-    @unpack C, D = G
-    n = length(C) + length(D)
-    s = Array{Int}(undef, n)
-    s[C] .= s_C
-    for j in D
-        s[j] = Z(j, (s...,), G)
+function active_path(S::States, C::Vector{ChanceNode}, Z::GlobalDecisionStrategy, s_C::Path)
+    s = Array{Int}(undef, length(S))
+    for (c, s_C_j) in zip(C, s_C)
+        s[c.j] = s_C_j
+    end
+    for (d, Z_j) in zip(Z.D, Z.Z_j)
+        s[d.j] = Z_j((s...,), d.I_j)
     end
     return (s...,)
 end
 
 function Base.iterate(a::ActivePaths)
-    @unpack G, Z = a
-    @unpack C, S_j = G
+    @unpack S, C, Z = a
+    C_j = [c.j for c in C]
     if isempty(a.fixed)
-        iter = paths(S_j[C])
+        iter = paths(S[C_j])
     else
         ks = sort(collect(keys(a.fixed)))
         fixed = Dict{Int, Int}(i => a.fixed[k] for (i, k) in enumerate(ks))
-        iter = paths(S_j[C], fixed)
+        iter = paths(S[C_j], fixed)
     end
     next = iterate(iter)
     if next !== nothing
         s_C, state = next
-        return (active_path(G, Z, s_C), (iter, state))
+        return (active_path(S, C, Z, s_C), (iter, state))
     end
 end
 
 function Base.iterate(a::ActivePaths, gen)
-    @unpack G, Z = a
+    @unpack S, C, Z = a
     iter, state = gen
     next = iterate(iter, state)
     if next !== nothing
         s_C, state = next
-        return (active_path(G, Z, s_C), (iter, state))
+        return (active_path(S, C, Z, s_C), (iter, state))
     end
 end
 
 Base.eltype(::Type{ActivePaths}) = Path
-Base.length(a::ActivePaths) = prod(a.G.S_j[a.G.C])
+Base.length(a::ActivePaths) = prod(a.S[c.j] for c in a.C)
 
 """UtilityDistribution type."""
 struct UtilityDistribution
@@ -78,12 +80,12 @@ end
 
 # Examples
 ```julia
-UtilityDistribution(G, P, U, Z)
+UtilityDistribution(S, P, U, Z)
 ```
 """
-function UtilityDistribution(G::InfluenceDiagram, P::PathProbability, U::PathUtility, Z::DecisionStrategy)
+function UtilityDistribution(S::States, P::PathProbability, U::AbstractPathUtility, Z::GlobalDecisionStrategy)
     # Extract utilities and probabilities of active paths
-    S_Z = ActivePaths(G, Z)
+    S_Z = ActivePaths(S, P.C, Z)
     utilities = Vector{Float64}(undef, length(S_Z))
     probabilities = Vector{Float64}(undef, length(S_Z))
     for (i, s) in enumerate(S_Z)
@@ -129,16 +131,15 @@ prev = StateProbabilities(G, P, Z)
 # Select node and fix its state
 node = 1
 state = 2
-StateProbabilities(G, P, Z, node, state, prev)
+StateProbabilities(S, P, Z, node, state, prev)
 ```
 """
-function StateProbabilities(G::InfluenceDiagram, P::PathProbability, Z::DecisionStrategy, node::Node, state::State, prev::StateProbabilities)
-    @unpack S_j = G
+function StateProbabilities(S::States, P::PathProbability, Z::GlobalDecisionStrategy, node::Node, state::State, prev::StateProbabilities)
     prior = prev.probs[node][state]
     fixed = prev.fixed
     push!(fixed, node => state)
-    probs = Dict(i => zeros(S_j[i]) for i in 1:length(S_j))
-    for s in ActivePaths(G, Z, fixed), i in 1:length(S_j)
+    probs = Dict(i => zeros(S[i]) for i in 1:length(S))
+    for s in ActivePaths(S, P.C, Z, fixed), i in 1:length(S)
         probs[i][s[i]] += P(s) / prior
     end
     StateProbabilities(probs, fixed)
@@ -148,13 +149,12 @@ end
 
 # Examples
 ```julia
-StateProbabilities(G, P, Z)
+StateProbabilities(S, P, Z)
 ```
 """
-function StateProbabilities(G::InfluenceDiagram, P::PathProbability, Z::DecisionStrategy)
-    @unpack S_j = G
-    probs = Dict(i => zeros(S_j[i]) for i in 1:length(S_j))
-    for s in ActivePaths(G, Z), i in 1:length(S_j)
+function StateProbabilities(S::States, P::PathProbability, Z::GlobalDecisionStrategy)
+    probs = Dict(i => zeros(S[i]) for i in 1:length(S))
+    for s in ActivePaths(S, P.C, Z), i in 1:length(S)
         probs[i][s[i]] += P(s)
     end
     StateProbabilities(probs, Dict{Node, State}())

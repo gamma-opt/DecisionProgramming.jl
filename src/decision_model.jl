@@ -1,12 +1,12 @@
 using Parameters, JuMP
 
 """Positive affine transformation of path utility. Normalized to into range from 1 to 2."""
-struct PositivePathUtility
-    U::PathUtility
+struct PositivePathUtility <: AbstractPathUtility
+    U::AbstractPathUtility
     min::Float64
     max::Float64
-    function PositivePathUtility(U::PathUtility)
-        (u_min, u_max) = extrema(U(s) for s in paths(U.G.S_j))
+    function PositivePathUtility(S::States, U::AbstractPathUtility)
+        (u_min, u_max) = extrema(U(s) for s in paths(S))
         new(U, u_min, u_max)
     end
 end
@@ -15,7 +15,7 @@ end
 
 # Examples
 ```julia
-U⁺ = PositivePathUtility(U)
+U⁺ = PositivePathUtility(S, U)
 1 ≤ U⁺(s) ≤ 2
 ```
 """
@@ -37,34 +37,32 @@ const DecisionModel = Model
 
 # Examples
 ```julia
-model = DecisionModel(G, P; positive_path_utility=true)
+model = DecisionModel(S, D, P; positive_path_utility=true)
 ```
 """
-function DecisionModel(G::InfluenceDiagram, P::PathProbability; positive_path_utility::Bool=true)
-    @unpack D, S_j, I_j = G
-
+function DecisionModel(S::States, D::Vector{DecisionNode}, P::PathProbability; positive_path_utility::Bool=true)
     model = DecisionModel()
 
-    π = variables(model, S_j)
-    z = Dict{Int, Array{VariableRef}}(
-        j => variables(model, S_j[[I_j[j]; j]]; binary=true) for j in D)
+    π = variables(model, S[:])
+    # z = Vector{Array{VariableRef}}(variables(model, S[[d.I_j; d.j]]; binary=true) for d in D)
+    z = [variables(model, S[[d.I_j; d.j]]; binary=true) for d in D]
 
-    for j in D, s_I in paths(S_j[I_j[j]])
-        @constraint(model, sum(z[j][[s_I...; s_j]...] for s_j in 1:S_j[j]) == 1)
+    for (d, z_j) in zip(D, z), s_I in paths(S[d.I_j])
+        @constraint(model, sum(z_j[[s_I...; s_j]...] for s_j in 1:S[d.j]) == 1)
     end
 
-    for s in paths(S_j)
+    for s in paths(S)
         @constraint(model, 0 ≤ π[s...] ≤ P(s))
     end
 
-    for s in paths(S_j), j in D
-        @constraint(model, π[s...] ≤ z[j][s[[I_j[j]; j]]...])
+    for s in paths(S), (d, z_j) in zip(D, z)
+        @constraint(model, π[s...] ≤ z_j[s[[d.I_j; d.j]]...])
     end
 
     if !positive_path_utility
-        for s in paths(S_j)
+        for s in paths(S)
             @constraint(model,
-                π[s...] ≥ P(s) + sum(z[j][s[[I_j[j]; j]]...] for j in D) - length(D))
+                π[s...] ≥ P(s) + sum(z_j[s[[d.I_j; d.j]]...] for (d, z_j) in zip(D, z)) - length(D))
         end
     end
 
@@ -78,17 +76,18 @@ end
 
 # Examples
 ```julia
-probability_sum_cut(model, P)
+probability_sum_cut(model, S, P)
 ```
 """
-function probability_sum_cut(model::DecisionModel, P::PathProbability)
+function probability_sum_cut(model::DecisionModel, S::States, P::PathProbability)
     # Add the constraints only once
+    ϵ = minimum(P(s) for s in paths(S))
     flag = false
     function probability_sum_cut(cb_data)
         flag && return
         π = model[:π]
         πsum = sum(callback_value(cb_data, π[s]) for s in eachindex(π))
-        if !isapprox(πsum, 1.0, atol=P.min)
+        if !isapprox(πsum, 1.0, atol=ϵ)
             con = @build_constraint(sum(π) == 1.0)
             MOI.submit(model, MOI.LazyConstraint(cb_data), con)
             flag = true
@@ -102,19 +101,20 @@ end
 # Examples
 ```julia
 atol = 0.9  # Tolerance to trigger the creation of the lazy cut
-number_of_paths_cut(model, G, P; atol=atol)
+number_of_paths_cut(model, S, P; atol=atol)
 ```
 """
-function number_of_paths_cut(model::DecisionModel, G::InfluenceDiagram, P::PathProbability; atol::Float64 = 0.9)
-    num_active_paths = prod(G.S_j[G.C])
+function number_of_paths_cut(model::DecisionModel, S::States, P::PathProbability; atol::Float64 = 0.9)
+    ϵ = minimum(P(s) for s in paths(S))
+    num_active_paths = prod(S[c.j] for c in P.C)
     # Add the constraints only once
     flag = false
     function number_of_paths_cut(cb_data)
         flag && return
         π = model[:π]
-        πnum = sum(callback_value(cb_data, π[s]) ≥ P.min for s in eachindex(π))
+        πnum = sum(callback_value(cb_data, π[s]) ≥ ϵ for s in eachindex(π))
         if !isapprox(πnum, num_active_paths, atol = atol)
-            con = @build_constraint(sum(π[s...] / P(s) for s in paths(G.S_j)) == num_active_paths)
+            con = @build_constraint(sum(π[s...] / P(s) for s in paths(S)) == num_active_paths)
             MOI.submit(model, MOI.LazyConstraint(cb_data), con)
             flag = true
         end
@@ -129,11 +129,11 @@ end
 
 # Examples
 ```julia
-EV = expected_value(model, G, U)
+EV = expected_value(model, S, U)
 ```
 """
-function expected_value(model::DecisionModel, G::InfluenceDiagram, U::Union{PathUtility, PositivePathUtility})
-    @expression(model, sum(model[:π][s...] * U(s) for s in paths(G.S_j)))
+function expected_value(model::DecisionModel, S::States, U::AbstractPathUtility)
+    @expression(model, sum(model[:π][s...] * U(s) for s in paths(S)))
 end
 
 """Conditional value-at-risk (CVaR) objective. Also known as Expected Shortfall (ES).
@@ -141,15 +141,14 @@ end
 # Examples
 ```julia
 α = 0.05  # Parameter such that 0 ≤ α ≤ 1
-CVaR = conditional_value_at_risk(model, G, U, α)
+CVaR = conditional_value_at_risk(model, S, U, α)
 ```
 """
-function conditional_value_at_risk(model::DecisionModel, G::InfluenceDiagram, U::Union{PathUtility, PositivePathUtility}, α::Float64)
-    @unpack S_j = G
+function conditional_value_at_risk(model::DecisionModel, S::States, U::AbstractPathUtility, α::Float64)
     0 ≤ α ≤ 1 || error("α should be 0 ≤ α ≤ 1")
 
     # Pre-computer parameters
-    u = collect(Iterators.flatten(U(s) for s in paths(S_j)))
+    u = collect(Iterators.flatten(U(s) for s in paths(S)))
     u_sorted = sort(u)
     u_min = u_sorted[1]
     u_max = u_sorted[end]
@@ -158,15 +157,15 @@ function conditional_value_at_risk(model::DecisionModel, G::InfluenceDiagram, U:
 
     # Variables
     η = @variable(model)
-    λ = variables(model, S_j; binary=true)
-    λ_bar = variables(model, S_j; binary=true)
-    ρ = variables(model, S_j)
-    ρ_bar = variables(model, S_j)
+    λ = variables(model, S[:]; binary=true)
+    λ_bar = variables(model, S[:]; binary=true)
+    ρ = variables(model, S[:])
+    ρ_bar = variables(model, S[:])
 
     # Constraints
     π = model[:π]
     @constraint(model, u_min ≤ η ≤ u_max)
-    for s in paths(S_j)
+    for s in paths(S)
         u_s = U(s)
         @constraint(model, η - u_s ≤ M * λ[s...])
         @constraint(model, η - u_s ≥ (M + ϵ) * λ[s...] - M)
@@ -180,7 +179,7 @@ function conditional_value_at_risk(model::DecisionModel, G::InfluenceDiagram, U:
         @constraint(model, ρ_bar[s...] ≤ π[s...])
         @constraint(model, π[s...] - (1 - λ[s...]) ≤ ρ[s...])
     end
-    @constraint(model, sum(ρ_bar[s...] for s in paths(S_j)) == α)
+    @constraint(model, sum(ρ_bar[s...] for s in paths(S)) == α)
 
     # Add variables to the model
     model[:η] = η
@@ -188,7 +187,7 @@ function conditional_value_at_risk(model::DecisionModel, G::InfluenceDiagram, U:
     model[:ρ_bar] = ρ_bar
 
     # Return CVaR as an expression
-    CVaR = @expression(model, sum(ρ_bar[s...] * U(s) for s in paths(S_j)) / α)
+    CVaR = @expression(model, sum(ρ_bar[s...] * U(s) for s in paths(S)) / α)
 
     return CVaR
 end
@@ -197,21 +196,36 @@ end
 # --- Decision Strategy ---
 
 """Decision strategy type."""
-struct DecisionStrategy
-    Z::Dict{Node, Array{State, N} where N}
+struct DecisionStrategy # <: AbstractArray{Int, N} where N
+    values::Array{Int, N} where N
 end
 
-(d::DecisionStrategy)(j::Node) = d.Z[j]
-(d::DecisionStrategy)(j::Node, s::Path) = findmax(d.Z[j][s..., :])[2]
-(d::DecisionStrategy)(j::Node, s::Path, G::InfluenceDiagram) = d(j, s[G.I_j[j]])
+# Base.getindex(Z::DecisionStrategy, i) = getindex(Z.values, i)
+
+function DecisionStrategy(z::Array{VariableRef})
+    DecisionStrategy(@. Int(round(value(z))))
+end
+
+function (Z::DecisionStrategy)(s_I::Path)::State
+    findmax(Z.values[s_I..., :])[2]
+end
+
+function (Z::DecisionStrategy)(s::Path, I_j::Vector{Node})::State
+    findmax(Z.values[s[I_j]..., :])[2]
+end
+
+struct GlobalDecisionStrategy
+    D::Vector{DecisionNode}
+    Z_j::Vector{DecisionStrategy}
+end
 
 """Extract values for decision variables from a decision model.
 
 # Examples
 ```julia
-Z = DecisionStrategy(model)
+Z = GlobalDecisionStrategy(model, D)
 ```
 """
-function DecisionStrategy(model::DecisionModel)
-    DecisionStrategy(Dict(i => (@. Int(round(value(v)))) for (i, v) in model[:z]))
+function GlobalDecisionStrategy(model::DecisionModel, D::Vector{DecisionNode})
+    GlobalDecisionStrategy(D, [DecisionStrategy(v) for v in model[:z]])
 end
