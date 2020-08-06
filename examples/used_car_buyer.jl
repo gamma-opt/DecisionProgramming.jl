@@ -67,11 +67,12 @@ P = PathProbability(G, X)
 U = PathUtility(G, Y)
 
 @info("Defining DecisionModel")
-@time model = DecisionModel(G, P)
+U⁺ = PositivePathUtility(U)
+@time model = DecisionModel(G, P; positive_path_utility=true)
 
 @info("Creating model objective.")
-@time E = expected_value(model, G, U)
-@objective(model, Max, E)
+@time EV = expected_value(model, G, U⁺)
+@objective(model, Max, EV)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
