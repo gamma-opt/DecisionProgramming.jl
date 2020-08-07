@@ -14,17 +14,23 @@ const treat_states = ["treat", "pass"]
 C = Vector{ChanceNode}()
 D = Vector{DecisionNode}()
 V = Vector{ValueNode}()
+
+X = Vector{Probabilities}()
+Y = Vector{Consequences}()
+
 S_j = Vector{State}(undef, length(health) + length(test) + length(treat))
 S_j[health] = fill(length(health_states), length(health))
 S_j[test] = fill(length(test_states), length(test))
 S_j[treat] = fill(length(treat_states), length(treat))
+S = States(S_j)
 
 for j in health[[1]]
     I_j = Vector{Node}()
     X_j = zeros(S_j[j])
     X_j[1] = 0.1
     X_j[2] = 1.0 - X_j[1]
-    push!(C, ChanceNode(j, I_j, S_j[j], X_j))
+    push!(C, ChanceNode(j, I_j))
+    push!(X, Probabilities(X_j))
 end
 
 for (i, j) in zip(health, test)
@@ -34,12 +40,13 @@ for (i, j) in zip(health, test)
     X_j[1, 2] = 1.0 - X_j[1, 1]
     X_j[2, 2] = 0.9
     X_j[2, 1] = 1.0 - X_j[2, 2]
-    push!(C, ChanceNode(j, I_j, S_j[j], X_j))
+    push!(C, ChanceNode(j, I_j))
+    push!(X, Probabilities(X_j))
 end
 
 for (i, j) in zip(test, treat)
     I_j = [i]
-    push!(D, DecisionNode(j, I_j, S_j[j]))
+    push!(D, DecisionNode(j, I_j))
 end
 
 for (i, k, j) in zip(health[1:end-1], treat, health[2:end])
@@ -53,7 +60,8 @@ for (i, k, j) in zip(health[1:end-1], treat, health[2:end])
     X_j[1, 2, 2] = 1.0 - X_j[1, 2, 1]
     X_j[1, 1, 1] = 0.5
     X_j[1, 1, 2] = 1.0 - X_j[1, 1, 1]
-    push!(C, ChanceNode(j, I_j, S_j[j], X_j))
+    push!(C, ChanceNode(j, I_j))
+    push!(X, Probabilities(X_j))
 end
 
 for (i, j) in zip(treat, cost)
@@ -61,7 +69,8 @@ for (i, j) in zip(treat, cost)
     Y_j = zeros(S_j[I_j]...)
     Y_j[1] = -100
     Y_j[2] = 0
-    push!(V, ValueNode(j, I_j, Y_j))
+    push!(V, ValueNode(j, I_j))
+    push!(Y, Consequences(Y_j))
 end
 
 for (i, j) in zip(health[end], price)
@@ -69,33 +78,28 @@ for (i, j) in zip(health[end], price)
     Y_j = zeros(S_j[I_j]...)
     Y_j[1] = 300
     Y_j[2] = 1000
-    push!(V, ValueNode(j, I_j, Y_j))
+    push!(V, ValueNode(j, I_j))
+    push!(Y, Consequences(Y_j))
 end
 
-@info("Defining InfluenceDiagram")
-G = InfluenceDiagram(C, D, V)
-
-@info("Creating probabilities.")
-X = Probabilities(G, C)
-
-@info("Creating consequences.")
-Y = Consequences(G, V)
+@info("Validate influence diagram.")
+S, C, D, V, X, Y = validate_influence_diagram(S, C, D, V, X, Y)
 
 @info("Creating path probability.")
-P = PathProbability(G, X)
+P = PathProbability(C, X)
 
 @info("Creating path utility.")
-U = PathUtility(G, Y)
+U = DefaultPathUtility(V, Y)
 
 @info("Defining DecisionModel")
-U⁺ = PositivePathUtility(U)
-@time model = DecisionModel(G, P; positive_path_utility=true)
+U⁺ = PositivePathUtility(S, U)
+@time model = DecisionModel(S, D, P; positive_path_utility=true)
 
 @info("Adding number of paths cut")
-@time number_of_paths_cut(model, G, P)
+@time number_of_paths_cut(model, S, P)
 
 @info("Creating model objective.")
-@time EV = expected_value(model, G, U⁺)
+@time EV = expected_value(model, S, U⁺)
 @objective(model, Max, EV)
 
 @info("Starting the optimization process.")
@@ -108,13 +112,13 @@ set_optimizer(model, optimizer)
 optimize!(model)
 
 @info("Extracting results.")
-Z = DecisionStrategy(model)
+Z = GlobalDecisionStrategy(model, D)
 
 @info("Printing decision strategy:")
-print_decision_strategy(G, Z)
+print_decision_strategy(S, Z)
 
 @info("State probabilities:")
-sprobs = StateProbabilities(G, P, Z)
+sprobs = StateProbabilities(S, P, Z)
 print_state_probabilities(sprobs, health)
 print_state_probabilities(sprobs, test)
 print_state_probabilities(sprobs, treat)
@@ -122,14 +126,14 @@ print_state_probabilities(sprobs, treat)
 @info("Conditional state probabilities")
 node = 1
 for state in 1:2
-    sprobs2 = StateProbabilities(G, P, Z, node, state, sprobs)
+    sprobs2 = StateProbabilities(S, P, Z, node, state, sprobs)
     print_state_probabilities(sprobs2, health)
     print_state_probabilities(sprobs2, test)
     print_state_probabilities(sprobs2, treat)
 end
 
 @info("Computing utility distribution.")
-@time udist = UtilityDistribution(G, P, U, Z)
+@time udist = UtilityDistribution(S, P, U, Z)
 
 @info("Printing utility distribution.")
 print_utility_distribution(udist)

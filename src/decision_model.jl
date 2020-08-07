@@ -196,24 +196,22 @@ end
 # --- Decision Strategy ---
 
 """Decision strategy type."""
-struct DecisionStrategy # <: AbstractArray{Int, N} where N
+struct DecisionStrategy
     values::Array{Int, N} where N
+    # TODO: validate decision strategy
 end
 
-# Base.getindex(Z::DecisionStrategy, i) = getindex(Z.values, i)
-
+"""Construct decision strategy from variable refs."""
 function DecisionStrategy(z::Array{VariableRef})
     DecisionStrategy(@. Int(round(value(z))))
 end
 
+"""Evalute decision strategy."""
 function (Z::DecisionStrategy)(s_I::Path)::State
     findmax(Z.values[s_I..., :])[2]
 end
 
-function (Z::DecisionStrategy)(s::Path, I_j::Vector{Node})::State
-    findmax(Z.values[s[I_j]..., :])[2]
-end
-
+"""Global decision strategy type."""
 struct GlobalDecisionStrategy
     D::Vector{DecisionNode}
     Z_j::Vector{DecisionStrategy}

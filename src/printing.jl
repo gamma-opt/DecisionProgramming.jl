@@ -22,7 +22,7 @@ end
 
 # Examples
 ```julia
-udist = UtilityDistribution(G, X, Z)
+udist = UtilityDistribution(S, P, U, Z)
 print_utility_distribution(udist)
 ```
 """
@@ -40,9 +40,9 @@ end
 
 # Examples
 ```julia
-sprobs = StateProbabilities(G, X, Z)
-print_state_probabilities(sprobs, G.C)
-print_state_probabilities(sprobs, G.D)
+sprobs = StateProbabilities(S, P, U, Z)
+print_state_probabilities(sprobs, [c.j for c in C])
+print_state_probabilities(sprobs, [d.j for d in D])
 ```
 """
 function print_state_probabilities(sprobs::StateProbabilities, nodes::Vector{Node}; prob_fmt="%f")

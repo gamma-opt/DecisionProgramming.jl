@@ -35,7 +35,7 @@ function active_path(S::States, C::Vector{ChanceNode}, Z::GlobalDecisionStrategy
         s[c.j] = s_C_j
     end
     for (d, Z_j) in zip(Z.D, Z.Z_j)
-        s[d.j] = Z_j((s...,), d.I_j)
+        s[d.j] = Z_j((s[d.I_j]...,))
     end
     return (s...,)
 end
@@ -126,7 +126,7 @@ end
 # Examples
 ```julia
 # Prior probabilities
-prev = StateProbabilities(G, P, Z)
+prev = StateProbabilities(S, P, Z)
 
 # Select node and fix its state
 node = 1

@@ -20,18 +20,24 @@ consequence(k, a) = [-c_k[k], 0][a]
 C = Vector{ChanceNode}()
 D = Vector{DecisionNode}()
 V = Vector{ValueNode}()
+
+X = Vector{Probabilities}()
+Y = Vector{Consequences}()
+
 S_j = Vector{State}(undef, length(L) + length(R_k) + length(A_k) + length(F))
 S_j[L] = fill(length(L_states), length(L))
 S_j[R_k] = fill(length(R_k_states), length(R_k))
 S_j[A_k] = fill(length(A_k_states), length(A_k))
 S_j[F] = fill(length(F_states), length(F))
+S = States(S_j)
 
 for j in L
     I_j = Vector{Node}()
     X_j = zeros(S_j[j])
     X_j[1] = rand()
     X_j[2] = 1.0 - X_j[1]
-    push!(C, ChanceNode(j, I_j, S_j[j], X_j))
+    push!(C, ChanceNode(j, I_j))
+    push!(X, Probabilities(X_j))
 end
 
 for j in R_k
@@ -42,12 +48,13 @@ for j in R_k
     X_j[1, 2] = 1.0 - X_j[1, 1]
     X_j[2, 2] = max(y, 1-y)
     X_j[2, 1] = 1.0 - X_j[2, 2]
-    push!(C, ChanceNode(j, I_j, S_j[j], X_j))
+    push!(C, ChanceNode(j, I_j))
+    push!(X, Probabilities(X_j))
 end
 
 for (i, j) in zip(R_k, A_k)
     I_j = [i]
-    push!(D, DecisionNode(j, I_j, S_j[j]))
+    push!(D, DecisionNode(j, I_j))
 end
 
 for j in F
@@ -61,7 +68,8 @@ for j in F
         X_j[2, s..., 1] = min(y, 1-y) / d
         X_j[2, s..., 2] = 1.0 - X_j[2, s..., 1]
     end
-    push!(C, ChanceNode(j, I_j, S_j[j], X_j))
+    push!(C, ChanceNode(j, I_j))
+    push!(X, Probabilities(X_j))
 end
 
 for j in T
@@ -72,36 +80,31 @@ for j in T
         Y_j[s..., 1] = c + 0
         Y_j[s..., 2] = c + 100
     end
-    push!(V, ValueNode(j, I_j, Y_j))
+    push!(V, ValueNode(j, I_j))
+    push!(Y, Consequences(Y_j))
 end
 
-@info("Defining InfluenceDiagram")
-G = InfluenceDiagram(C, D, V)
-
-@info("Creating probabilities.")
-X = Probabilities(G, C)
-
-@info("Creating consequences.")
-Y = Consequences(G, V)
+@info("Validate influence diagram.")
+S, C, D, V, X, Y = validate_influence_diagram(S, C, D, V, X, Y)
 
 @info("Creating path probability.")
-P = PathProbability(G, X)
+P = PathProbability(C, X)
 
 @info("Creating path utility.")
-U = PathUtility(G, Y)
+U = DefaultPathUtility(V, Y)
 
 @info("Defining DecisionModel")
-U⁺ = PositivePathUtility(U)
-@time model = DecisionModel(G, P; positive_path_utility=true)
+U⁺ = PositivePathUtility(S, U)
+@time model = DecisionModel(S, D, P; positive_path_utility=true)
 
 @info("Adding probability sum cut")
-@time probability_sum_cut(model, P)
+@time probability_sum_cut(model, S, P)
 
 @info("Adding number of paths cut")
-@time number_of_paths_cut(model, G, P)
+@time number_of_paths_cut(model, S, P)
 
 @info("Creating model objective.")
-@time EV = expected_value(model, G, U⁺)
+@time EV = expected_value(model, S, U⁺)
 @objective(model, Max, EV)
 
 @info("Starting the optimization process.")
@@ -114,20 +117,20 @@ set_optimizer(model, optimizer)
 optimize!(model)
 
 @info("Extracting results.")
-Z = DecisionStrategy(model)
+Z = GlobalDecisionStrategy(model, D)
 
 @info("Printing decision strategy:")
-print_decision_strategy(G, Z)
+print_decision_strategy(S, Z)
 
 @info("Printing state probabilities:")
-sprobs = StateProbabilities(G, P, Z)
+sprobs = StateProbabilities(S, P, Z)
 print_state_probabilities(sprobs, L)
 print_state_probabilities(sprobs, R_k)
 print_state_probabilities(sprobs, A_k)
 print_state_probabilities(sprobs, F)
 
 @info("Computing utility distribution.")
-@time udist = UtilityDistribution(G, P, U, Z)
+@time udist = UtilityDistribution(S, P, U, Z)
 
 @info("Printing utility distribution.")
 print_utility_distribution(udist)

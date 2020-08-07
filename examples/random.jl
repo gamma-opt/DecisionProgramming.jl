@@ -3,21 +3,24 @@ using DecisionProgramming
 
 rng = MersenneTwister(111)
 
-G = InfluenceDiagram(rng, 5, 3, 2, 2, [2, 3])
-X = Probabilities(rng, G)
-Y = Consequences(rng, G)
-P = PathProbability(G, X)
-U = PathUtility(G, Y)
+C, D, V = random_diagram(rng, 5, 3, 2, 2)
+S = States(rng, [2, 3], length(C) + length(D))
+X = [Probabilities(rng, c, S) for c in C]
+Y = [Consequences(rng, v, S) for v in V]
 
-U⁺ = PositivePathUtility(U)
-model = DecisionModel(G, P)
-# probability_sum_cut(model, P)
-# number_of_paths_cut(model, G, P)
+S, C, D, V, X, Y = validate_influence_diagram(S, C, D, V, X, Y)
+P = PathProbability(C, X)
+U = DefaultPathUtility(V, Y)
 
-α = 0.20
+U⁺ = PositivePathUtility(S, U)
+model = DecisionModel(S, D, P; positive_path_utility=true)
+# probability_sum_cut(model, S, P)
+# number_of_paths_cut(model, S, P)
+
+α = 0.2
 w = 0.5
-EV = expected_value(model, G, U⁺)
-CVaR = conditional_value_at_risk(model, G, U⁺, α)
+EV = expected_value(model, S, U⁺)
+CVaR = conditional_value_at_risk(model, S, U⁺, α)
 @objective(model, Max, w * EV + (1 - w) * CVaR)
 
 optimizer = optimizer_with_attributes(
@@ -29,18 +32,18 @@ set_optimizer(model, optimizer)
 optimize!(model)
 
 @info("Extracting results.")
-Z = DecisionStrategy(model)
+Z = GlobalDecisionStrategy(model, D)
 
 @info("Printing decision strategy:")
-print_decision_strategy(G, Z)
+print_decision_strategy(S, Z)
 
 @info("Printing state probabilities:")
-probs = StateProbabilities(G, P, Z)
-print_state_probabilities(probs, G.C)
-print_state_probabilities(probs, G.D)
+sprobs = StateProbabilities(S, P, Z)
+print_state_probabilities(sprobs, [c.j for c in C])
+print_state_probabilities(sprobs, [d.j for d in D])
 
 @info("Computing utility distribution.")
-@time udist = UtilityDistribution(G, P, U, Z)
+@time udist = UtilityDistribution(S, P, U, Z)
 
 @info("Printing utility distribution.")
 print_utility_distribution(udist)
