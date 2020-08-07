@@ -3,7 +3,7 @@ using Parameters
 """Interface for iterating over active paths given influence diagram and decision strategy.
 
 1) Initialize path `s` of length `n`
-2) Fill chance states `s[C]` by generating subpaths `paths(G.C)`
+2) Fill chance states `s[C]` by generating subpaths `paths(C)`
 3) Fill decision states `s[D]` by decision strategy `Z` and path `s`
 
 # Examples

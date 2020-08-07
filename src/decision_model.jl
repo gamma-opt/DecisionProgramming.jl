@@ -1,6 +1,12 @@
 using Parameters, JuMP
 
-"""Positive affine transformation of path utility. Normalized to into range from 1 to 2."""
+"""Positive affine transformation of path utility. Normalized to into range from 1 to 2.
+
+# Examples
+```julia
+U⁺ = PositivePathUtility(S, U)
+```
+"""
 struct PositivePathUtility <: AbstractPathUtility
     U::AbstractPathUtility
     min::Float64
@@ -14,14 +20,22 @@ end
 """Evaluate positive affine transformation of the path utility.
 
 # Examples
-```julia
-U⁺ = PositivePathUtility(S, U)
-1 ≤ U⁺(s) ≤ 2
+```julia-repl
+julia> 1 ≤ U⁺(s) ≤ 2
+true
 ```
 """
 (U::PositivePathUtility)(s::Path) = (U.U(s) - U.min)/(U.max - U.min) + 1
 
-"""Create a multidimensional array of JuMP variables."""
+"""Create a multidimensional array of JuMP variables.
+
+# Examples
+```julia
+model = Model()
+v1 = variables(model, [2, 3, 2])
+v2 = variables(model, [2, 3, 2]; binary=true)
+```
+"""
 function variables(model::Model, dims::Vector{Int}; binary::Bool=false)
     v = Array{VariableRef}(undef, dims...)
     for i in eachindex(v)
@@ -30,10 +44,10 @@ function variables(model::Model, dims::Vector{Int}; binary::Bool=false)
     return v
 end
 
-"""DecisionModel type."""
+"""DecisionModel type. Alias for `JuMP.Model`."""
 const DecisionModel = Model
 
-"""Construct a DecisionModel from an influence diagram and probabilities.
+"""Construct a DecisionModel from states, decision nodes and path probability.
 
 # Examples
 ```julia
@@ -44,7 +58,6 @@ function DecisionModel(S::States, D::Vector{DecisionNode}, P::PathProbability; p
     model = DecisionModel()
 
     π = variables(model, S[:])
-    # z = Vector{Array{VariableRef}}(variables(model, S[[d.I_j; d.j]]; binary=true) for d in D)
     z = [variables(model, S[[d.I_j; d.j]]; binary=true) for d in D]
 
     for (d, z_j) in zip(D, z), s_I in paths(S[d.I_j])
@@ -125,7 +138,7 @@ end
 
 # --- Objective Functions ---
 
-"""Expected value objective.
+"""Create an expected value objective.
 
 # Examples
 ```julia
@@ -136,7 +149,7 @@ function expected_value(model::DecisionModel, S::States, U::AbstractPathUtility)
     @expression(model, sum(model[:π][s...] * U(s) for s in paths(S)))
 end
 
-"""Conditional value-at-risk (CVaR) objective. Also known as Expected Shortfall (ES).
+"""Create a conditional value-at-risk (CVaR) objective.
 
 # Examples
 ```julia
@@ -198,7 +211,11 @@ end
 """Decision strategy type."""
 struct DecisionStrategy
     values::Array{Int, N} where N
-    # TODO: validate decision strategy
+    function DecisionStrategy(values)
+        all(0 ≤ x ≤ 1 for x in values) || error("All values x must be 0 ≤ x ≤ 1.")
+        # TODO: sum(values[s_I..., :]) == 1 for all s_I
+        new(values)
+    end
 end
 
 """Construct decision strategy from variable refs."""
@@ -217,7 +234,7 @@ struct GlobalDecisionStrategy
     Z_j::Vector{DecisionStrategy}
 end
 
-"""Extract values for decision variables from a decision model.
+"""Extract values for decision variables from solved decision model.
 
 # Examples
 ```julia

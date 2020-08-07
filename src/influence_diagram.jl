@@ -1,7 +1,7 @@
 using Parameters
 using Base.Iterators: product
 
-"""Node type alias."""
+"""Node type. Alias for `Int`."""
 const Node = Int
 
 function validate_node(j::Node, I_j::Vector{Node})
@@ -10,31 +10,55 @@ function validate_node(j::Node, I_j::Vector{Node})
     return j, I_j
 end
 
-"""Chance node type."""
+"""Chance node type.
+
+# Examples
+```julia
+c = ChanceNode(3, [1, 2])
+```
+"""
 struct ChanceNode
     j::Node
     I_j::Vector{Node}
     ChanceNode(j, I_j) = new(validate_node(j, I_j)...)
 end
 
-"""Decision node type."""
+"""Decision node type.
+
+# Examples
+```julia
+d = DecisionNode(2, [1])
+```
+"""
 struct DecisionNode
     j::Node
     I_j::Vector{Node}
     DecisionNode(j, I_j) = new(validate_node(j, I_j)...)
 end
 
-"""Value node type."""
+"""Value node type.
+
+# Examples
+```julia
+v = ValueNode(4, [1, 3])
+```
+"""
 struct ValueNode
     j::Node
     I_j::Vector{Node}
     ValueNode(j, I_j) = new(validate_node(j, I_j)...)
 end
 
-"""State type alias."""
+"""State type. Alias for `Int`."""
 const State = Int
 
-"""States type."""
+"""States type. Works like `Vector{State}`.
+
+# Examples
+```julia
+S = States([2, 3, 2, 4])
+```
+"""
 struct States <: AbstractArray{State, 1}
     vals::Vector{State}
     States(vals) = all(vals .≥ 1) ? new(vals) : error("All states must be ≥ 1.")
@@ -46,7 +70,7 @@ Base.getindex(S::States, i::Int) = getindex(S.vals, i)
 Base.length(S::States) = length(S.vals)
 Base.eltype(S::States) = eltype(S.vals)
 
-"""Path type alias."""
+"""Path type. Alias for `NTuple{N, State} where N`."""
 const Path = NTuple{N, State} where N
 
 """Iterate over paths in lexicographical order.
@@ -84,17 +108,24 @@ paths(S::States, fixed::Dict{Int, Int}) = paths(S.vals, fixed)
 
 # --- Probabilities ---
 
-"""Construct and validate stage probabilities."""
+"""Construct and validate stage probabilities.
+
+# Examples
+```julia
+vals = [0.5 0.5 ; 0.2 0.8]
+X = Probabilities(vals)
+```
+"""
 struct Probabilities
     vals::Array{Float64, N} where N
-    function Probabilities(X::Array{Float64, N} where N)
-        all(x > 0 for x in X) || @warn("Probabilities are not all positive, do not use number of paths cuts.")
+    function Probabilities(vals::Array{Float64, N} where N)
+        all(x > 0 for x in vals) || @warn("Probabilities are not all positive, do not use number of paths cuts.")
         # TODO: indexing without paths function
-        states = Int[size(X)[1:end-1]...]
+        states = Int[size(vals)[1:end-1]...]
         for s_I in paths(states)
-            sum(X[s_I..., :]) ≈ 1 || error("Probabilities should sum to one.")
+            sum(vals[s_I..., :]) ≈ 1 || error("Probabilities should sum to one.")
         end
-        new(X)
+        new(vals)
     end
 end
 
@@ -104,7 +135,14 @@ Base.getindex(X::Probabilities, s::Path) = getindex(X.vals, s...)
 
 # --- Consequences ---
 
-"""State utilities."""
+"""State utilities.
+
+# Examples
+```julia
+vals = [1.0 -2.0; 3.0 4.0]
+Y = Consequences(vals)
+```
+"""
 struct Consequences
     vals::Array{Float64, N} where N
 end
@@ -115,7 +153,13 @@ Base.getindex(Y::Consequences, s::Path) = getindex(Y.vals, s...)
 
 # --- Path Probability ---
 
-"""Path probability."""
+"""Path probability.
+
+# Examples
+```julia
+P = PathProbability(C, X)
+```
+"""
 struct PathProbability
     C::Vector{ChanceNode}
     X::Vector{Probabilities}
