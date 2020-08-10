@@ -83,7 +83,15 @@ for (i, j) in zip(health[end], price)
 end
 
 @info("Validate influence diagram.")
-S, C, D, V, X, Y = validate_influence_diagram(S, C, D, V, X, Y)
+validate_influence_diagram(S, C, D, V)
+s_c = sortperm([c.j for c in C])
+s_d = sortperm([d.j for d in D])
+s_v = sortperm([v.j for v in V])
+C = C[s_c]
+D = D[s_d]
+V = V[s_v]
+X = X[s_c]
+Y = Y[s_v]
 
 @info("Creating path probability.")
 P = DefaultPathProbability(C, X)

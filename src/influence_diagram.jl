@@ -240,23 +240,12 @@ end
 # --- Validate influence diagram
 
 """Validate influence diagram."""
-function validate_influence_diagram(S::States, C::Vector{ChanceNode}, D::Vector{DecisionNode}, V::Vector{ValueNode}, X::Vector{<:Probabilities}, Y::Vector{<:Consequences})
+function validate_influence_diagram(S::States, C::Vector{ChanceNode}, D::Vector{DecisionNode}, V::Vector{ValueNode})
     n = length(C) + length(D)
-    N = n + length(V)
-    C_j = [c.j for c in C]
-    D_j = [d.j for d in D]
-    V_j = [v.j for v in V]
-
-    length(S) == n || error("Each change and decision node should have states.")
-
-    # Validate nodes
-    Set(C_j ∪ D_j) == Set(1:n) || error("Union of change and decision nodes should be {1,...,n}.")
-    Set(V_j) == Set((n+1):N) || error("Values nodes should be {n+1,...,n+|V|}.")
-
-    # TODO: avoid implicit sorting
-    k1 = sortperm(C_j)
-    k2 = sortperm(D_j)
-    k3 = sortperm(V_j)
-
-    return S, C[k1], D[k2], V[k3], X[k1], Y[k3]
+    length(S) == n || error(
+        "Each change and decision node should have states.")
+    Set(c.j for c in C) ∪ Set(d.j for d in D) == Set(1:n) || error(
+        "Union of change and decision nodes should be {1,...,n}.")
+    Set(v.j for v in V) == Set((n+1):(n+length(V))) || error(
+        "Values nodes should be {n+1,...,n+|V|}.")
 end
