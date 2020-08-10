@@ -115,7 +115,7 @@ S = States([2, 2])
 DecisionStrategy(rng, d, S)
 ```
 """
-function DecisionStrategy(rng::AbstractRNG, d::DecisionNode, S::States)
+function LocalDecisionStrategy(rng::AbstractRNG, d::DecisionNode, S::States)
     states = S[d.I_j]
     state = S[d.j]
     Z = zeros(Int, [states; state]...)
@@ -123,5 +123,5 @@ function DecisionStrategy(rng::AbstractRNG, d::DecisionNode, S::States)
         s_j = rand(rng, 1:state)
         Z[s..., s_j] = 1
     end
-    DecisionStrategy(Z)
+    LocalDecisionStrategy(Z)
 end

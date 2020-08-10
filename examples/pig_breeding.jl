@@ -112,7 +112,7 @@ set_optimizer(model, optimizer)
 optimize!(model)
 
 @info("Extracting results.")
-Z = GlobalDecisionStrategy(model, D)
+Z = DecisionStrategy(model, D)
 
 @info("Printing decision strategy:")
 print_decision_strategy(S, Z)

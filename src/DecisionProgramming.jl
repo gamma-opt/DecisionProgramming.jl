@@ -22,8 +22,8 @@ export Node,
     validate_influence_diagram
 
 export DecisionModel,
+    LocalDecisionStrategy,
     DecisionStrategy,
-    GlobalDecisionStrategy,
     variables,
     probability_sum_cut,
     number_of_paths_cut,

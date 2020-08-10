@@ -32,7 +32,7 @@ set_optimizer(model, optimizer)
 optimize!(model)
 
 @info "Analyzing results."
-Z = GlobalDecisionStrategy(model, D)
+Z = DecisionStrategy(model, D)
 udist = UtilityDistribution(S, P, U, Z)
 sprobs = StateProbabilities(S, P, Z)
 

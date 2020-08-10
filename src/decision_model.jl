@@ -209,9 +209,9 @@ end
 # --- Decision Strategy ---
 
 """Decision strategy type."""
-struct DecisionStrategy
+struct LocalDecisionStrategy
     values::Array{Int, N} where N
-    function DecisionStrategy(values)
+    function LocalDecisionStrategy(values)
         all(0 ≤ x ≤ 1 for x in values) || error("All values x must be 0 ≤ x ≤ 1.")
         # TODO: sum(values[s_I..., :]) == 1 for all s_I
         new(values)
@@ -219,19 +219,19 @@ struct DecisionStrategy
 end
 
 """Construct decision strategy from variable refs."""
-function DecisionStrategy(z::Array{VariableRef})
-    DecisionStrategy(@. Int(round(value(z))))
+function LocalDecisionStrategy(z::Array{VariableRef})
+    LocalDecisionStrategy(@. Int(round(value(z))))
 end
 
 """Evalute decision strategy."""
-function (Z::DecisionStrategy)(s_I::Path)::State
+function (Z::LocalDecisionStrategy)(s_I::Path)::State
     findmax(Z.values[s_I..., :])[2]
 end
 
 """Global decision strategy type."""
-struct GlobalDecisionStrategy
+struct DecisionStrategy
     D::Vector{DecisionNode}
-    Z_j::Vector{DecisionStrategy}
+    Z_j::Vector{LocalDecisionStrategy}
 end
 
 """Extract values for decision variables from solved decision model.
@@ -241,6 +241,6 @@ end
 Z = GlobalDecisionStrategy(model, D)
 ```
 """
-function GlobalDecisionStrategy(model::DecisionModel, D::Vector{DecisionNode})
-    GlobalDecisionStrategy(D, [DecisionStrategy(v) for v in model[:z]])
+function DecisionStrategy(model::DecisionModel, D::Vector{DecisionNode})
+    DecisionStrategy(D, [LocalDecisionStrategy(v) for v in model[:z]])
 end

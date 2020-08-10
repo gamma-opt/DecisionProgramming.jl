@@ -14,8 +14,8 @@ P = PathProbability(C, X)
 U = DefaultPathUtility(V, Y)
 
 @info("Creating random decision strategy")
-Z_j = [DecisionStrategy(rng, d, S) for d in D]
-Z = GlobalDecisionStrategy(D, Z_j)
+Z_j = [LocalDecisionStrategy(rng, d, S) for d in D]
+Z = DecisionStrategy(D, Z_j)
 
 @info "Analyzing results."
 udist = UtilityDistribution(S, P, U, Z)

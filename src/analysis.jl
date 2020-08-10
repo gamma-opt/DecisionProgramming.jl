@@ -16,7 +16,7 @@ end
 struct ActivePaths
     S::States
     C::Vector{ChanceNode}
-    Z::GlobalDecisionStrategy
+    Z::DecisionStrategy
     fixed::Dict{Node, State}
     function ActivePaths(S, C, Z, fixed)
         C_j = Set([c.j for c in C])
@@ -25,11 +25,11 @@ struct ActivePaths
     end
 end
 
-function ActivePaths(S::States, C::Vector{ChanceNode}, Z::GlobalDecisionStrategy)
+function ActivePaths(S::States, C::Vector{ChanceNode}, Z::DecisionStrategy)
     ActivePaths(S, C, Z, Dict{Node, State}())
 end
 
-function active_path(S::States, C::Vector{ChanceNode}, Z::GlobalDecisionStrategy, s_C::Path)
+function active_path(S::States, C::Vector{ChanceNode}, Z::DecisionStrategy, s_C::Path)
     s = Array{Int}(undef, length(S))
     for (c, s_C_j) in zip(C, s_C)
         s[c.j] = s_C_j
@@ -83,7 +83,7 @@ end
 UtilityDistribution(S, P, U, Z)
 ```
 """
-function UtilityDistribution(S::States, P::PathProbability, U::AbstractPathUtility, Z::GlobalDecisionStrategy)
+function UtilityDistribution(S::States, P::PathProbability, U::AbstractPathUtility, Z::DecisionStrategy)
     # Extract utilities and probabilities of active paths
     S_Z = ActivePaths(S, P.C, Z)
     utilities = Vector{Float64}(undef, length(S_Z))
@@ -134,7 +134,7 @@ state = 2
 StateProbabilities(S, P, Z, node, state, prev)
 ```
 """
-function StateProbabilities(S::States, P::PathProbability, Z::GlobalDecisionStrategy, node::Node, state::State, prev::StateProbabilities)
+function StateProbabilities(S::States, P::PathProbability, Z::DecisionStrategy, node::Node, state::State, prev::StateProbabilities)
     prior = prev.probs[node][state]
     fixed = prev.fixed
     push!(fixed, node => state)
@@ -152,7 +152,7 @@ end
 StateProbabilities(S, P, Z)
 ```
 """
-function StateProbabilities(S::States, P::PathProbability, Z::GlobalDecisionStrategy)
+function StateProbabilities(S::States, P::PathProbability, Z::DecisionStrategy)
     probs = Dict(i => zeros(S[i]) for i in 1:length(S))
     for s in ActivePaths(S, P.C, Z), i in 1:length(S)
         probs[i][s[i]] += P(s)
