@@ -21,19 +21,20 @@ paths
 ### Probabilities
 ```@docs
 Probabilities
-getindex(::Probabilities, ::Path)
+Probabilities(::Path)
+```
+
+### Path Probability
+```@docs
+AbstractPathProbability
+DefaultPathProbability
+DefaultPathProbability(::Path)
 ```
 
 ### Consequences
 ```@docs
 Consequences
-getindex(::Consequences, ::Path)
-```
-
-### Path Probability
-```@docs
-PathProbability
-PathProbability(::Path)
+Consequences(::Path)
 ```
 
 ### Path Utility
@@ -43,6 +44,10 @@ DefaultPathUtility
 DefaultPathUtility(::Path)
 ```
 
+### Validate
+```@docs
+validate_influence_diagram
+```
 
 ## `decision_model.jl`
 ### Decision Model
@@ -51,9 +56,9 @@ PositivePathUtility
 PositivePathUtility(::Path)
 variables
 DecisionModel
-DecisionModel(::States, ::Vector{DecisionNode}, ::PathProbability; ::Bool)
-probability_sum_cut(::DecisionModel, ::States, ::PathProbability)
-number_of_paths_cut(::DecisionModel, ::States, ::PathProbability; ::Float64)
+DecisionModel(::States, ::Vector{DecisionNode}, ::AbstractPathProbability; ::Bool)
+probability_sum_cut(::DecisionModel, ::States, ::AbstractPathProbability)
+number_of_paths_cut(::DecisionModel, ::States, ::AbstractPathProbability; ::Float64)
 ```
 
 ### Objective Functions
@@ -64,21 +69,21 @@ conditional_value_at_risk(::DecisionModel, ::States, ::AbstractPathUtility, ::Fl
 
 ### Decision Strategy
 ```@docs
+LocalDecisionStrategy
+LocalDecisionStrategy(::Vector{VariableRef})
+LocalDecisionStrategy(::Path)
 DecisionStrategy
-DecisionStrategy(::Vector{VariableRef})
-DecisionStrategy(::Path)
-GlobalDecisionStrategy
-GlobalDecisionStrategy(::DecisionModel, ::Vector{DecisionNode})
+DecisionStrategy(::DecisionModel, ::Vector{DecisionNode})
 ```
 
 ## `analysis.jl`
 ```@docs
 ActivePaths
 UtilityDistribution
-UtilityDistribution(::States, ::PathProbability, ::AbstractPathUtility, ::GlobalDecisionStrategy)
+UtilityDistribution(::States, ::AbstractPathProbability, ::AbstractPathUtility, ::DecisionStrategy)
 StateProbabilities
-StateProbabilities(::States, ::PathProbability, ::GlobalDecisionStrategy)
-StateProbabilities(::States, ::PathProbability, ::GlobalDecisionStrategy, ::Node, ::State, ::StateProbabilities)
+StateProbabilities(::States, ::AbstractPathProbability, ::DecisionStrategy)
+StateProbabilities(::States, ::AbstractPathProbability, ::DecisionStrategy, ::Node, ::State, ::StateProbabilities)
 ```
 
 ## `printing.jl`
@@ -98,5 +103,5 @@ random_diagram(::AbstractRNG, ::Int, ::Int, ::Int, ::Int)
 States(::AbstractRNG, ::Vector{State}, ::Int)
 Probabilities(::AbstractRNG, ::ChanceNode, ::States)
 Consequences(::AbstractRNG, ::ValueNode, ::States; ::Float64, ::Float64)
-DecisionStrategy(::AbstractRNG, ::DecisionNode, ::States)
+LocalDecisionStrategy(::AbstractRNG, ::DecisionNode, ::States)
 ```

@@ -10,7 +10,7 @@ X = [Probabilities(rng, c, S) for c in C]
 Y = [Consequences(rng, v, S) for v in V]
 
 S, C, D, V, X, Y = validate_influence_diagram(S, C, D, V, X, Y)
-P = PathProbability(C, X)
+P = DefaultPathProbability(C, X)
 U = DefaultPathUtility(V, Y)
 
 @info "Creating decision model."

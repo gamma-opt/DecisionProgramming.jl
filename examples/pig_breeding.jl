@@ -86,7 +86,7 @@ end
 S, C, D, V, X, Y = validate_influence_diagram(S, C, D, V, X, Y)
 
 @info("Creating path probability.")
-P = PathProbability(C, X)
+P = DefaultPathProbability(C, X)
 
 @info("Creating path utility.")
 U = DefaultPathUtility(V, Y)

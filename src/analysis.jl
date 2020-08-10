@@ -83,7 +83,7 @@ end
 UtilityDistribution(S, P, U, Z)
 ```
 """
-function UtilityDistribution(S::States, P::PathProbability, U::AbstractPathUtility, Z::DecisionStrategy)
+function UtilityDistribution(S::States, P::AbstractPathProbability, U::AbstractPathUtility, Z::DecisionStrategy)
     # Extract utilities and probabilities of active paths
     S_Z = ActivePaths(S, P.C, Z)
     utilities = Vector{Float64}(undef, length(S_Z))
@@ -134,7 +134,7 @@ state = 2
 StateProbabilities(S, P, Z, node, state, prev)
 ```
 """
-function StateProbabilities(S::States, P::PathProbability, Z::DecisionStrategy, node::Node, state::State, prev::StateProbabilities)
+function StateProbabilities(S::States, P::AbstractPathProbability, Z::DecisionStrategy, node::Node, state::State, prev::StateProbabilities)
     prior = prev.probs[node][state]
     fixed = prev.fixed
     push!(fixed, node => state)
@@ -152,7 +152,7 @@ end
 StateProbabilities(S, P, Z)
 ```
 """
-function StateProbabilities(S::States, P::PathProbability, Z::DecisionStrategy)
+function StateProbabilities(S::States, P::AbstractPathProbability, Z::DecisionStrategy)
     probs = Dict(i => zeros(S[i]) for i in 1:length(S))
     for s in ActivePaths(S, P.C, Z), i in 1:length(S)
         probs[i][s[i]] += P(s)

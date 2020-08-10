@@ -54,22 +54,26 @@ const DecisionModel = Model
 model = DecisionModel(S, D, P; positive_path_utility=true)
 ```
 """
-function DecisionModel(S::States, D::Vector{DecisionNode}, P::PathProbability; positive_path_utility::Bool=true)
+function DecisionModel(S::States, D::Vector{DecisionNode}, P::AbstractPathProbability; positive_path_utility::Bool=true)
     model = DecisionModel()
 
     π = variables(model, S[:])
     z = [variables(model, S[[d.I_j; d.j]]; binary=true) for d in D]
 
-    for (d, z_j) in zip(D, z), s_I in paths(S[d.I_j])
-        @constraint(model, sum(z_j[[s_I...; s_j]...] for s_j in 1:S[d.j]) == 1)
+    for (d, z_j) in zip(D, z)
+        for s_I in paths(S[d.I_j])
+            @constraint(model, sum(z_j[s_I..., s_j] for s_j in 1:S[d.j]) == 1)
+        end
     end
 
     for s in paths(S)
         @constraint(model, 0 ≤ π[s...] ≤ P(s))
     end
 
-    for s in paths(S), (d, z_j) in zip(D, z)
-        @constraint(model, π[s...] ≤ z_j[s[[d.I_j; d.j]]...])
+    for s in paths(S)
+        for (d, z_j) in zip(D, z)
+            @constraint(model, π[s...] ≤ z_j[s[[d.I_j; d.j]]...])
+        end
     end
 
     if !positive_path_utility
@@ -92,7 +96,7 @@ end
 probability_sum_cut(model, S, P)
 ```
 """
-function probability_sum_cut(model::DecisionModel, S::States, P::PathProbability)
+function probability_sum_cut(model::DecisionModel, S::States, P::AbstractPathProbability)
     # Add the constraints only once
     ϵ = minimum(P(s) for s in paths(S))
     flag = false
@@ -117,7 +121,7 @@ atol = 0.9  # Tolerance to trigger the creation of the lazy cut
 number_of_paths_cut(model, S, P; atol=atol)
 ```
 """
-function number_of_paths_cut(model::DecisionModel, S::States, P::PathProbability; atol::Float64 = 0.9)
+function number_of_paths_cut(model::DecisionModel, S::States, P::AbstractPathProbability; atol::Float64 = 0.9)
     ϵ = minimum(P(s) for s in paths(S))
     num_active_paths = prod(S[c.j] for c in P.C)
     # Add the constraints only once
@@ -209,14 +213,21 @@ end
 # --- Decision Strategy ---
 
 """Decision strategy type."""
-struct LocalDecisionStrategy
-    values::Array{Int, N} where N
-    function LocalDecisionStrategy(values)
-        all(0 ≤ x ≤ 1 for x in values) || error("All values x must be 0 ≤ x ≤ 1.")
-        # TODO: sum(values[s_I..., :]) == 1 for all s_I
-        new(values)
+struct LocalDecisionStrategy{N} <: AbstractArray{Int, N}
+    data::Array{Int, N}
+    function LocalDecisionStrategy(data::Array{Int, N}) where N
+        all(0 ≤ x ≤ 1 for x in data) || error("All values x must be 0 ≤ x ≤ 1.")
+        for s_I in CartesianIndices(size(data)[1:end-1])
+            sum(data[s_I, :]) == 1 || error("")
+        end
+        new{N}(data)
     end
 end
+
+Base.size(Z::LocalDecisionStrategy) = size(Z.data)
+Base.IndexStyle(::Type{<:LocalDecisionStrategy}) = IndexLinear()
+Base.getindex(Z::LocalDecisionStrategy, i::Int) = getindex(Z.data, i)
+Base.getindex(Z::LocalDecisionStrategy, I::Vararg{Int,N}) where N = getindex(Z.data, I...)
 
 """Construct decision strategy from variable refs."""
 function LocalDecisionStrategy(z::Array{VariableRef})
@@ -224,9 +235,8 @@ function LocalDecisionStrategy(z::Array{VariableRef})
 end
 
 """Evalute decision strategy."""
-function (Z::LocalDecisionStrategy)(s_I::Path)::State
-    findmax(Z.values[s_I..., :])[2]
-end
+(Z::LocalDecisionStrategy)(s_I::Path)::State = findmax(Z[s_I..., :])[2]
+
 
 """Global decision strategy type."""
 struct DecisionStrategy

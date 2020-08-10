@@ -112,25 +112,70 @@ paths(S::States, fixed::Dict{Int, Int}) = paths(S.vals, fixed)
 
 # Examples
 ```julia
-vals = [0.5 0.5 ; 0.2 0.8]
-X = Probabilities(vals)
+data = [0.5 0.5 ; 0.2 0.8]
+X = Probabilities(data)
 ```
 """
-struct Probabilities
-    vals::Array{Float64, N} where N
-    function Probabilities(vals::Array{Float64, N} where N)
-        all(x > 0 for x in vals) || @warn("Probabilities are not all positive, do not use number of paths cuts.")
-        # TODO: indexing without paths function
-        states = Int[size(vals)[1:end-1]...]
-        for s_I in paths(states)
-            sum(vals[s_I..., :]) ≈ 1 || error("Probabilities should sum to one.")
+struct Probabilities{N} <: AbstractArray{Float64, N}
+    data::Array{Float64, N}
+    function Probabilities(data::Array{Float64, N}) where N
+        all(x > 0 for x in data) || @warn("Probabilities are not all positive, do not use number of paths cuts.")
+        for i in CartesianIndices(size(data)[1:end-1])
+            sum(data[i, :]) ≈ 1 || error("Probabilities should sum to one.")
         end
-        new(vals)
+        new{N}(data)
     end
 end
 
-"""Get probabilities of path `s`."""
-Base.getindex(X::Probabilities, s::Path) = getindex(X.vals, s...)
+Base.size(P::Probabilities) = size(P.data)
+Base.IndexStyle(::Type{<:Probabilities}) = IndexLinear()
+Base.getindex(P::Probabilities, i::Int) = getindex(P.data, i)
+Base.getindex(P::Probabilities, I::Vararg{Int,N}) where N = getindex(P.data, I...)
+
+"""Return probabilities of information path `s`.
+
+# Examples
+```julia-repl
+julia> s = (1, 2)
+julia> X(s)
+0.5
+```
+"""
+(X::Probabilities)(s::Path) = X[s...]
+
+
+# --- Path Probability ---
+
+"""Abstract path probability type.
+
+# Examples
+```julia
+struct PathProbability <: AbstractPathProbability
+    C::Vector{ChanceNode}
+    # ...
+end
+
+(U::PathProbability)(s::Path) = ...
+```
+"""
+abstract type AbstractPathProbability end
+
+"""Path probability.
+
+# Examples
+```julia
+P = DefaultPathProbability(C, X)
+```
+"""
+struct DefaultPathProbability <: AbstractPathProbability
+    C::Vector{ChanceNode}
+    X::Vector{Probabilities}
+end
+
+"""Evalute path probability."""
+function (P::DefaultPathProbability)(s::Path)
+    prod(X(s[[c.I_j; c.j]]) for (c, X) in zip(P.C, P.X))
+end
 
 
 # --- Consequences ---
@@ -143,32 +188,25 @@ vals = [1.0 -2.0; 3.0 4.0]
 Y = Consequences(vals)
 ```
 """
-struct Consequences
-    vals::Array{Float64, N} where N
+struct Consequences{N} <: AbstractArray{Float64, N}
+    data::Array{Float64, N}
 end
 
-"""Get consequences of path `s`."""
-Base.getindex(Y::Consequences, s::Path) = getindex(Y.vals, s...)
+Base.size(Y::Consequences) = size(Y.data)
+Base.IndexStyle(::Type{<:Consequences}) = IndexLinear()
+Base.getindex(Y::Consequences, i::Int) = getindex(Y.data, i)
+Base.getindex(Y::Consequences, I::Vararg{Int,N}) where N = getindex(Y.data, I...)
 
-
-# --- Path Probability ---
-
-"""Path probability.
+"""Return consequences of information path `s`.
 
 # Examples
-```julia
-P = PathProbability(C, X)
+```julia-repl
+julia> s = (1, 2)
+julia> Y(s)
+-2.0
 ```
 """
-struct PathProbability
-    C::Vector{ChanceNode}
-    X::Vector{Probabilities}
-end
-
-"""Evalute path probability."""
-function (P::PathProbability)(s::Path)
-    prod(X[s[[c.I_j; c.j]]] for (c, X) in zip(P.C, P.X))
-end
+(Y::Consequences)(s::Path) = Y[s...]
 
 
 # --- Path Utility ---
@@ -179,7 +217,7 @@ end
 ```julia
 struct PathUtility <: AbstractPathUtility
     V::Vector{ValueNode}
-    Y::Vector{Consequences}
+    # ...
 end
 
 (U::PathUtility)(s::Path) = ...
@@ -195,14 +233,14 @@ end
 
 """Evaluate default path utility."""
 function (U::DefaultPathUtility)(s::Path)
-    sum(Y[s[v.I_j]] for (v, Y) in zip(U.V, U.Y))
+    sum(Y(s[v.I_j]) for (v, Y) in zip(U.V, U.Y))
 end
 
 
 # --- Validate influence diagram
 
 """Validate influence diagram."""
-function validate_influence_diagram(S::States, C::Vector{ChanceNode}, D::Vector{DecisionNode}, V::Vector{ValueNode}, X::Vector{Probabilities}, Y::Vector{Consequences})
+function validate_influence_diagram(S::States, C::Vector{ChanceNode}, D::Vector{DecisionNode}, V::Vector{ValueNode}, X::Vector{<:Probabilities}, Y::Vector{<:Consequences})
     n = length(C) + length(D)
     N = n + length(V)
     C_j = [c.j for c in C]
