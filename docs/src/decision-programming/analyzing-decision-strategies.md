@@ -1,6 +1,14 @@
 # Analyzing Decision Strategies
 ## Introduction
-We can analyze fixed decision strategies $Z$ on an influence diagram $G$, such as ones resulting from the optimization, by generating the active paths $S^Z.$
+We can analyze fixed decision strategies $Z$ on an influence diagram $G$, such as ones resulting from the optimization, by generating the active paths $𝐒^Z.$
+
+
+## Active Paths
+We can generate active paths $𝐬∈𝐒^Z$ as follows.
+
+1) Initialize path $𝐬$ of length $n$ with undefined values.
+2) Fill path with chance states $𝐬_j∈S_j$ for all $j∈C.$
+3) In increasing order of decision nodes $j∈D$, fill decision states by computing decision strategy $𝐬_j=Z_j(𝐬_{I(j)}).$
 
 The path probability for all active paths is equal to the upper bound
 

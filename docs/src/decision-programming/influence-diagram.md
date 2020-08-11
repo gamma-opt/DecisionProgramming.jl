@@ -66,12 +66,10 @@ with
 
 $$∑_{s_j∈S_j} ℙ(s_j∣𝐬_{I(j)}) = 1.$$
 
-We define the **upper bound of path probability** $s$ as
-
-$$p(𝐬) = ∏_{j∈C} ℙ(𝐬_j∣𝐬_{I(j)}).$$
+Implementation wise, we can think probabilities as functions of information paths concatenated with state $X_j : 𝐒_{I(j)};S_j → [0, 1]$ where $∑_{s_j∈S_j} X_j(𝐬_{I(j)};s_j)=1.$
 
 
-## Decision Strategies
+## Decision Strategy
 For each decision node $j∈D,$ a **local decision strategy** maps an information path $𝐬_{I(j)}$ to a state $s_j$
 
 $$Z_j:𝐒_{I(j)}↦S_j.$$
@@ -80,11 +78,17 @@ $$Z_j:𝐒_{I(j)}↦S_j.$$
 
 A decision stategy $Z∈ℤ$ is **compatible** with the path $𝐬∈𝐒$ if and only if $Z_j(𝐬_{I(j)})=s_j$ forall $Z_j∈Z$ and $j∈D.$
 
-The path probability $ℙ(𝐬∣Z)$ equals $p(𝐬)$ if the path $𝐬$ is compatible with the decision strategy $Z$. Otherwise, the path cannot occur and the probability is zero.
-
 An **active path** is path $𝐬∈𝐒$ that is compatible with decision strategy $Z.$ We denote the set of **all active paths** using $𝐒^Z.$ Since each decision strategy $Z_j$ chooses only one state out of all of its states, the **number of active paths** is
 
 $$|𝐒^Z|=|𝐒|/\prod_{j∈D}|S_j|=\prod_{j∈C}|S_j|.$$
+
+
+## Path Probability
+We define the **path probability (upper bound)** as
+
+$$p(𝐬) = ∏_{j∈C} ℙ(𝐬_j∣𝐬_{I(j)}).$$
+
+The path probability $ℙ(𝐬∣Z)$ equals $p(𝐬)$ if the path $𝐬$ is compatible with the decision strategy $Z$. Otherwise, the path cannot occur and the probability is zero.
 
 
 ## Consequences
@@ -98,6 +102,8 @@ The **utility function** maps consequences to real-valued utilities
 
 $$U:ℂ↦ℝ.$$
 
+
+## Path Utility
 The **path utility** is defined as the sum of utilities for consequences of value nodes $j∈V$ with information paths $I(j)$
 
 $$\mathcal{U}(𝐬) = ∑_{j∈V} U(Y_j(𝐬_{I(j)})).$$
