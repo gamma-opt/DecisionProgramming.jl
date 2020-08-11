@@ -36,7 +36,7 @@ v1 = variables(model, [2, 3, 2])
 v2 = variables(model, [2, 3, 2]; binary=true)
 ```
 """
-function variables(model::Model, dims::Vector{Int}; binary::Bool=false)
+function variables(model::Model, dims::AbstractVector{Int}; binary::Bool=false)
     v = Array{VariableRef}(undef, dims...)
     for i in eachindex(v)
         v[i] = @variable(model, binary=binary)
@@ -57,7 +57,7 @@ model = DecisionModel(S, D, P; positive_path_utility=true)
 function DecisionModel(S::States, D::Vector{DecisionNode}, P::AbstractPathProbability; positive_path_utility::Bool=true)
     model = DecisionModel()
 
-    π = variables(model, S[:])
+    π = variables(model, S)
     z = [variables(model, S[[d.I_j; d.j]]; binary=true) for d in D]
 
     for (d, z_j) in zip(D, z)
@@ -174,10 +174,10 @@ function conditional_value_at_risk(model::DecisionModel, S::States, U::AbstractP
 
     # Variables
     η = @variable(model)
-    λ = variables(model, S[:]; binary=true)
-    λ_bar = variables(model, S[:]; binary=true)
-    ρ = variables(model, S[:])
-    ρ_bar = variables(model, S[:])
+    λ = variables(model, S; binary=true)
+    λ_bar = variables(model, S; binary=true)
+    ρ = variables(model, S)
+    ρ_bar = variables(model, S)
 
     # Constraints
     π = model[:π]

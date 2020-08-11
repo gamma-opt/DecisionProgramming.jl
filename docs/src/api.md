@@ -10,6 +10,7 @@ DecisionNode
 ValueNode
 State
 States
+validate_influence_diagram
 ```
 
 ### Paths
@@ -44,10 +45,6 @@ DefaultPathUtility
 DefaultPathUtility(::Path)
 ```
 
-### Validate
-```@docs
-validate_influence_diagram
-```
 
 ## `decision_model.jl`
 ### Decision Model

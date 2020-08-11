@@ -1,6 +1,9 @@
 using Parameters
 using Base.Iterators: product
 
+
+# --- Nodes and States ---
+
 """Node type. Alias for `Int`."""
 const Node = Int
 
@@ -70,6 +73,20 @@ Base.getindex(S::States, i::Int) = getindex(S.vals, i)
 Base.length(S::States) = length(S.vals)
 Base.eltype(S::States) = eltype(S.vals)
 
+"""Validate influence diagram."""
+function validate_influence_diagram(S::States, C::Vector{ChanceNode}, D::Vector{DecisionNode}, V::Vector{ValueNode})
+    n = length(C) + length(D)
+    length(S) == n || error(
+        "Each change and decision node should have states.")
+    Set(c.j for c in C) ∪ Set(d.j for d in D) == Set(1:n) || error(
+        "Union of change and decision nodes should be {1,...,n}.")
+    Set(v.j for v in V) == Set((n+1):(n+length(V))) || error(
+        "Values nodes should be {n+1,...,n+|V|}.")
+end
+
+
+# --- Paths ---
+
 """Path type. Alias for `NTuple{N, State} where N`."""
 const Path = NTuple{N, State} where N
 
@@ -77,33 +94,31 @@ const Path = NTuple{N, State} where N
 
 # Examples
 ```julia-repl
-julia> collect(paths([2, 3]))[:]
+julia> states = States([2, 3])
+julia> collect(paths(states))[:]
 [(1, 1), (2, 1), (1, 2), (2, 2), (1, 3), (2, 3)]
 ```
 """
-function paths(num_states::Vector{State})
-    product(UnitRange.(one(eltype(num_states)), num_states)...)
+function paths(states::AbstractVector{State})
+    product(UnitRange.(one(eltype(states)), states)...)
 end
-
-paths(S::States) = paths(S.vals)
 
 """Iterate over paths with fixed states in lexicographical order.
 
 # Examples
 ```julia-repl
-julia> collect(paths([2, 3], fixed=Dict(1=>2)))[:]
+julia> states = States([2, 3])
+julia> collect(paths(states, fixed=Dict(1=>2)))[:]
 [(2, 1), (2, 2), (2, 3)]
 ```
 """
-function paths(num_states::Vector{State}, fixed::Dict{Int, Int})
-    iters = collect(UnitRange.(one(eltype(num_states)), num_states))
+function paths(states::AbstractVector{State}, fixed::Dict{Int, Int})
+    iters = collect(UnitRange.(one(eltype(states)), states))
     for (i, v) in fixed
         iters[i] = UnitRange(v, v)
     end
     product(iters...)
 end
-
-paths(S::States, fixed::Dict{Int, Int}) = paths(S.vals, fixed)
 
 
 # --- Probabilities ---
@@ -119,7 +134,8 @@ X = Probabilities(data)
 struct Probabilities{N} <: AbstractArray{Float64, N}
     data::Array{Float64, N}
     function Probabilities(data::Array{Float64, N}) where N
-        all(x > 0 for x in data) || @warn("Probabilities are not all positive, do not use number of paths cuts.")
+        all(x > 0 for x in data) || @warn(
+            "Probabilities are not all positive, do not use number of paths cuts.")
         for i in CartesianIndices(size(data)[1:end-1])
             sum(data[i, :]) ≈ 1 || error("Probabilities should sum to one.")
         end
@@ -234,18 +250,4 @@ end
 """Evaluate default path utility."""
 function (U::DefaultPathUtility)(s::Path)
     sum(Y(s[v.I_j]) for (v, Y) in zip(U.V, U.Y))
-end
-
-
-# --- Validate influence diagram
-
-"""Validate influence diagram."""
-function validate_influence_diagram(S::States, C::Vector{ChanceNode}, D::Vector{DecisionNode}, V::Vector{ValueNode})
-    n = length(C) + length(D)
-    length(S) == n || error(
-        "Each change and decision node should have states.")
-    Set(c.j for c in C) ∪ Set(d.j for d in D) == Set(1:n) || error(
-        "Union of change and decision nodes should be {1,...,n}.")
-    Set(v.j for v in V) == Set((n+1):(n+length(V))) || error(
-        "Values nodes should be {n+1,...,n+|V|}.")
 end
