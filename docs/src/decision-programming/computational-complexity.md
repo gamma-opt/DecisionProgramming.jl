@@ -16,11 +16,11 @@ The following bounds for the number of paths and the number of decision stages s
 ## Number of Paths
 We define the number of paths as
 
-$$|S|=∏_{i∈C∪D} |S_i|.$$
+$$|𝐒|=∏_{i∈C∪D} |S_i|.$$
 
 From the definition of the influence diagram, we have the path length of $n=|C∪D|.$ Then, we have the bounds for the number of paths as
 
-$$\left(\min_{i∈C∪D} |S_i|\right)^n ≤ |S| ≤ \left(\max_{i∈C∪D} |S_i|\right)^n.$$
+$$\left(\min_{i∈C∪D} |S_i|\right)^n ≤ |𝐒| ≤ \left(\max_{i∈C∪D} |S_i|\right)^n.$$
 
 We assume non-trivial influence diagram such that $|S_i|≥2$ for all $i∈C∪D$. That is, each decision or chance node has at least two states. Therefore, the number of paths is always exponential to the path length of $n.$
 
@@ -28,10 +28,10 @@ We assume non-trivial influence diagram such that $|S_i|≥2$ for all $i∈C∪D
 ## Number of Decision Stages
 We define the number of decision stages as
 
-$$∑_{i∈D}|S_{I(i)}| |S_i| = ∑_{i∈D} |S_i| ∏_{j∈I(i)}|S_j| = ∑_{i∈D} ∏_{j∈I(i)∪\{i\}}|S_j|.$$
+$$∑_{i∈D}|𝐒_{I(i)}| |S_i| = ∑_{i∈D} |S_i| ∏_{j∈I(i)}|S_j| = ∑_{i∈D} ∏_{j∈I(i)∪\{i\}}|S_j|.$$
 
 From the definition of the information set, for all $i∈D$ we have $I(i)∪\{i\}⊆C∪D,$ with size $1≤|I(i)∪\{i\}|=|I(i)|+1≤m≤n$ where $m$ denotes the upper bound of influence other nodes have on any decision node. Also, we have the number of decision nodes $0≤|D|≤n.$ Thus, we have the bounds
 
-$$0 ≤ ∑_{i∈D}|S_{I(i)}| |S_i| ≤ |D| \left(\max_{i∈C∪D} |S_j|\right)^{m}.$$
+$$0 ≤ ∑_{i∈D}|𝐒_{I(i)}| |S_i| ≤ |D| \left(\max_{i∈C∪D} |S_j|\right)^{m}.$$
 
 In the worst case, $m=n$, a decision node is influenced by every other chance and decision node. However, in most practical cases, we have $m < n,$ where decision nodes are influenced only by a limited number of other chance and decision nodes, making models easier to solve.

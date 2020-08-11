@@ -22,26 +22,11 @@ Y = Y[s_v]
 P = DefaultPathProbability(C, X)
 U = DefaultPathUtility(V, Y)
 
-@info "Creating decision model."
-U⁺ = PositivePathUtility(S, U)
-model = DecisionModel(S, D, P; positive_path_utility=true)
-probability_sum_cut(model, S, P)
-number_of_paths_cut(model, S, P)
-
-@info "Adding objectives to the model."
-α = 0.2
-w = 0.5
-EV = expected_value(model, S, U⁺)
-CVaR = conditional_value_at_risk(model, S, U⁺, α)
-@objective(model, Max, w * EV + (1 - w) * CVaR)
-
-@info "Solving the model."
-optimizer = optimizer_with_attributes(GLPK.Optimizer)
-set_optimizer(model, optimizer)
-optimize!(model)
+@info("Creating random decision strategy")
+Z_j = [LocalDecisionStrategy(rng, d, S) for d in D]
+Z = DecisionStrategy(D, Z_j)
 
 @info "Analyzing results."
-Z = DecisionStrategy(model, D)
 udist = UtilityDistribution(S, P, U, Z)
 sprobs = StateProbabilities(S, P, Z)
 
@@ -52,5 +37,3 @@ print_state_probabilities(sprobs, [c.j for c in C])
 print_state_probabilities(sprobs, [d.j for d in D])
 print_statistics(udist)
 print_risk_measures(udist, [0.0, 0.05, 0.1, 0.2, 1.0])
-
-@test true

@@ -2,12 +2,15 @@
 `DecisionProgramming.jl` API reference.
 
 ## `influence_diagram.jl`
-### Influence Diagram
+### Nodes
 ```@docs
 Node
+ChanceNode
+DecisionNode
+ValueNode
 State
-InfluenceDiagram
-InfluenceDiagram(::Vector{Node}, ::Vector{Node}, ::Vector{Node}, ::Vector{Pair{Node, Node}}, ::Vector{State})
+States
+validate_influence_diagram
 ```
 
 ### Paths
@@ -18,28 +21,28 @@ paths
 
 ### Probabilities
 ```@docs
-Probability
 Probabilities
-Probabilities(::InfluenceDiagram, ::Dict{Node, Probability})
-```
-
-### Consequences
-```@docs
-Consequence
-Consequences
-Consequences(::InfluenceDiagram, ::Dict{Node, Probability})
+Probabilities(::Path)
 ```
 
 ### Path Probability
 ```@docs
-PathProbability
-PathProbability(::Path)
+AbstractPathProbability
+DefaultPathProbability
+DefaultPathProbability(::Path)
+```
+
+### Consequences
+```@docs
+Consequences
+Consequences(::Path)
 ```
 
 ### Path Utility
 ```@docs
-PathUtility
-PathUtility(::Path)
+AbstractPathUtility
+DefaultPathUtility
+DefaultPathUtility(::Path)
 ```
 
 
@@ -47,33 +50,37 @@ PathUtility(::Path)
 ### Decision Model
 ```@docs
 PositivePathUtility
+PositivePathUtility(::Path)
 variables
 DecisionModel
-DecisionModel(::InfluenceDiagram, ::PathProbability; ::Bool)
-probability_sum_cut(::DecisionModel, ::PathProbability)
-number_of_paths_cut(::DecisionModel, ::InfluenceDiagram, ::PathProbability; ::Float64)
+DecisionModel(::States, ::Vector{DecisionNode}, ::AbstractPathProbability; ::Bool)
+probability_sum_cut(::DecisionModel, ::States, ::AbstractPathProbability)
+number_of_paths_cut(::DecisionModel, ::States, ::AbstractPathProbability; ::Float64)
 ```
 
 ### Objective Functions
 ```@docs
-expected_value(::DecisionModel, ::InfluenceDiagram, ::PathUtility)
-conditional_value_at_risk(::DecisionModel, ::InfluenceDiagram, ::PathUtility, ::Float64)
+expected_value(::DecisionModel, ::States, ::AbstractPathUtility)
+conditional_value_at_risk(::DecisionModel, ::States, ::AbstractPathUtility, ::Float64)
 ```
 
 ### Decision Strategy
 ```@docs
+LocalDecisionStrategy
+LocalDecisionStrategy(::Vector{VariableRef})
+LocalDecisionStrategy(::Path)
 DecisionStrategy
-DecisionStrategy(::DecisionModel)
+DecisionStrategy(::DecisionModel, ::Vector{DecisionNode})
 ```
 
 ## `analysis.jl`
 ```@docs
 ActivePaths
 UtilityDistribution
-UtilityDistribution(::InfluenceDiagram, ::PathProbability, ::PathUtility, ::DecisionStrategy)
+UtilityDistribution(::States, ::AbstractPathProbability, ::AbstractPathUtility, ::DecisionStrategy)
 StateProbabilities
-StateProbabilities(::InfluenceDiagram, ::PathProbability, ::DecisionStrategy)
-StateProbabilities(::InfluenceDiagram, ::PathProbability, ::DecisionStrategy, ::Node, ::State, ::StateProbabilities)
+StateProbabilities(::States, ::AbstractPathProbability, ::DecisionStrategy)
+StateProbabilities(::States, ::AbstractPathProbability, ::DecisionStrategy, ::Node, ::State, ::StateProbabilities)
 ```
 
 ## `printing.jl`
@@ -89,7 +96,9 @@ conditional_value_at_risk(::Vector{Float64}, ::Vector{Float64}, ::Float64)
 
 ## `random.jl`
 ```@docs
-InfluenceDiagram(::AbstractRNG, ::Int, ::Int, ::Int, ::Int, ::Vector{Int})
-Probabilities(::AbstractRNG, ::InfluenceDiagram)
-Consequences(::AbstractRNG, ::InfluenceDiagram; ::Float64, ::Float64)
+random_diagram(::AbstractRNG, ::Int, ::Int, ::Int, ::Int)
+States(::AbstractRNG, ::Vector{State}, ::Int)
+Probabilities(::AbstractRNG, ::ChanceNode, ::States)
+Consequences(::AbstractRNG, ::ValueNode, ::States; ::Float64, ::Float64)
+LocalDecisionStrategy(::AbstractRNG, ::DecisionNode, ::States)
 ```

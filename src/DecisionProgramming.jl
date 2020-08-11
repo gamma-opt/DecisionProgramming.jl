@@ -1,24 +1,29 @@
 module DecisionProgramming
 
 include("influence_diagram.jl")
+include("decision_model.jl")
 include("random.jl")
+include("analysis.jl")
+include("printing.jl")
+
 export Node,
+    ChanceNode,
+    DecisionNode,
+    ValueNode,
     State,
-    InfluenceDiagram,
-    Probability,
-    Probabilities,
-    Consequence,
-    Consequences,
+    States,
     Path,
     paths,
-    PathProbability,
-    PathUtility,
-    ChanceNode,
-    ValueNode,
-    DecisionNode
+    Probabilities,
+    Consequences,
+    AbstractPathProbability,
+    DefaultPathProbability,
+    AbstractPathUtility,
+    DefaultPathUtility,
+    validate_influence_diagram
 
-include("decision_model.jl")
 export DecisionModel,
+    LocalDecisionStrategy,
     DecisionStrategy,
     variables,
     probability_sum_cut,
@@ -27,12 +32,12 @@ export DecisionModel,
     expected_value,
     conditional_value_at_risk
 
-include("analysis.jl")
+export random_diagram
+
 export ActivePaths,
     UtilityDistribution,
     StateProbabilities
 
-include("printing.jl")
 export print_decision_strategy,
     print_utility_distribution,
     print_state_probabilities,
@@ -42,6 +47,6 @@ export print_decision_strategy,
     conditional_value_at_risk
 
 # For API docs
-export AbstractRNG
+export AbstractRNG, VariableRef
 
 end # module

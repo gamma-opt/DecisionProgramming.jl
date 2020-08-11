@@ -5,17 +5,16 @@ using StatsBase, StatsBase.Statistics
 
 # Examples
 ```julia
-print_decision_strategy(G, Z)
+print_decision_strategy(S, Z)
 ```
 """
-function print_decision_strategy(G::InfluenceDiagram, Z::DecisionStrategy)
-    @unpack C, D, V, I_j, S_j = G
-    for j in D
-        a1 = collect(paths(S_j[I_j[j]]))[:]
-        a2 = [Z(j, s_I) for s_I in a1]
+function print_decision_strategy(S::States, Z::DecisionStrategy)
+    for (d, Z_j) in zip(Z.D, Z.Z_j)
+        a1 = collect(paths(S[d.I_j]))[:]
+        a2 = [Z_j(s_I) for s_I in a1]
         labels = fill("States", length(a1))
         df = DataFrame(labels = labels, a1 = a1, a2 = a2)
-        pretty_table(df, ["Nodes", "$((I_j[j]...,))", "$j"])
+        pretty_table(df, ["Nodes", "$((d.I_j...,))", "$(d.j)"])
     end
 end
 
@@ -23,7 +22,7 @@ end
 
 # Examples
 ```julia
-udist = UtilityDistribution(G, X, Z)
+udist = UtilityDistribution(S, P, U, Z)
 print_utility_distribution(udist)
 ```
 """
@@ -41,9 +40,9 @@ end
 
 # Examples
 ```julia
-sprobs = StateProbabilities(G, X, Z)
-print_state_probabilities(sprobs, G.C)
-print_state_probabilities(sprobs, G.D)
+sprobs = StateProbabilities(S, P, U, Z)
+print_state_probabilities(sprobs, [c.j for c in C])
+print_state_probabilities(sprobs, [d.j for d in D])
 ```
 """
 function print_state_probabilities(sprobs::StateProbabilities, nodes::Vector{Node}; prob_fmt="%f")
