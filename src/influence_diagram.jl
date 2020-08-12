@@ -23,7 +23,10 @@ c = ChanceNode(3, [1, 2])
 struct ChanceNode
     j::Node
     I_j::Vector{Node}
-    ChanceNode(j, I_j) = new(validate_node(j, I_j)...)
+    function ChanceNode(j::Node, I_j::Vector{Node})
+        j, I_j = validate_node(j, I_j)
+        new(j, I_j)
+    end
 end
 
 """Decision node type.
@@ -36,7 +39,10 @@ d = DecisionNode(2, [1])
 struct DecisionNode
     j::Node
     I_j::Vector{Node}
-    DecisionNode(j, I_j) = new(validate_node(j, I_j)...)
+    function DecisionNode(j::Node, I_j::Vector{Node})
+        j, I_j = validate_node(j, I_j)
+        new(j, I_j)
+    end
 end
 
 """Value node type.
@@ -49,7 +55,10 @@ v = ValueNode(4, [1, 3])
 struct ValueNode
     j::Node
     I_j::Vector{Node}
-    ValueNode(j, I_j) = new(validate_node(j, I_j)...)
+    function ValueNode(j::Node, I_j::Vector{Node})
+        j, I_j = validate_node(j, I_j)
+        new(j, I_j)
+    end
 end
 
 """State type. Alias for `Int`."""
