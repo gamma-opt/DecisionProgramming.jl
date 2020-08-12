@@ -17,23 +17,21 @@ const c_k = rand(N)
 fortification(k, a) = [c_k[k], 0][a]
 consequence(k, a) = [-c_k[k], 0][a]
 
+S = States([
+    (length(L_states), L),
+    (length(R_k_states), R_k),
+    (length(A_k_states), A_k),
+    (length(F_states), F)
+])
 C = Vector{ChanceNode}()
 D = Vector{DecisionNode}()
 V = Vector{ValueNode}()
-
 X = Vector{Probabilities}()
 Y = Vector{Consequences}()
 
-S_j = Vector{State}(undef, length(L) + length(R_k) + length(A_k) + length(F))
-S_j[L] = fill(length(L_states), length(L))
-S_j[R_k] = fill(length(R_k_states), length(R_k))
-S_j[A_k] = fill(length(A_k_states), length(A_k))
-S_j[F] = fill(length(F_states), length(F))
-S = States(S_j)
-
 for j in L
     I_j = Vector{Node}()
-    X_j = zeros(S_j[j])
+    X_j = zeros(S[j])
     X_j[1] = rand()
     X_j[2] = 1.0 - X_j[1]
     push!(C, ChanceNode(j, I_j))
@@ -43,7 +41,7 @@ end
 for j in R_k
     I_j = L
     x, y = rand(2)
-    X_j = zeros(S_j[I_j]..., S_j[j])
+    X_j = zeros(S[I_j]..., S[j])
     X_j[1, 1] = max(x, 1-x)
     X_j[1, 2] = 1.0 - X_j[1, 1]
     X_j[2, 2] = max(y, 1-y)
@@ -60,8 +58,8 @@ end
 for j in F
     I_j = L ∪ A_k
     x, y = rand(2)
-    X_j = zeros(S_j[I_j]..., S_j[j])
-    for s in paths(S_j[A_k])
+    X_j = zeros(S[I_j]..., S[j])
+    for s in paths(S[A_k])
         d = exp(sum(fortification(k, a) for (k, a) in enumerate(s)))
         X_j[1, s..., 1] = max(x, 1-x) / d
         X_j[1, s..., 2] = 1.0 - X_j[1, s..., 1]
@@ -74,8 +72,8 @@ end
 
 for j in T
     I_j = A_k ∪ F
-    Y_j = zeros(S_j[I_j]...)
-    for s in paths(S_j[A_k])
+    Y_j = zeros(S[I_j]...)
+    for s in paths(S[A_k])
         c = sum(consequence(k, a) for (k, a) in enumerate(s))
         Y_j[s..., 1] = c + 0
         Y_j[s..., 2] = c + 100

@@ -73,7 +73,7 @@ S = States([2, 3, 2, 4])
 """
 struct States <: AbstractArray{State, 1}
     vals::Vector{State}
-    States(vals) = all(vals .≥ 1) ? new(vals) : error("All states must be ≥ 1.")
+    States(vals::Vector{State}) = all(vals .≥ 1) ? new(vals) : error("All states must be ≥ 1.")
 end
 
 Base.size(S::States) = size(S.vals)
@@ -81,6 +81,22 @@ Base.IndexStyle(::Type{<:States}) = IndexLinear()
 Base.getindex(S::States, i::Int) = getindex(S.vals, i)
 Base.length(S::States) = length(S.vals)
 Base.eltype(S::States) = eltype(S.vals)
+
+"""Construct states from vector of (state, nodes) tuples.
+
+# Examples
+```julia-repl
+julia> S = States([(2, [1, 3]), (3, [2, 4, 5])])
+States([2, 3, 2, 3, 3])
+```
+"""
+function States(states::Vector{Tuple{State, Vector{Node}}})
+    S_j = Vector{State}(undef, sum(length(j) for (_, j) in states))
+    for (s, j) in states
+        S_j[j] .= s
+    end
+    States(S_j)
+end
 
 """Validate influence diagram."""
 function validate_influence_diagram(S::States, C::Vector{ChanceNode}, D::Vector{DecisionNode}, V::Vector{ValueNode})

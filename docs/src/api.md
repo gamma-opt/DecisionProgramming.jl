@@ -10,6 +10,7 @@ DecisionNode
 ValueNode
 State
 States
+States(::Vector{Tuple{State, Vector{Node}}})
 validate_influence_diagram
 ```
 
