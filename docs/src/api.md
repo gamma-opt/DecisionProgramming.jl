@@ -81,6 +81,8 @@ UtilityDistribution(::States, ::AbstractPathProbability, ::AbstractPathUtility, 
 StateProbabilities
 StateProbabilities(::States, ::AbstractPathProbability, ::DecisionStrategy)
 StateProbabilities(::States, ::AbstractPathProbability, ::DecisionStrategy, ::Node, ::State, ::StateProbabilities)
+value_at_risk(::Vector{Float64}, ::Vector{Float64}, ::Float64)
+conditional_value_at_risk(::Vector{Float64}, ::Vector{Float64}, ::Float64)
 ```
 
 ## `printing.jl`
@@ -90,8 +92,6 @@ print_utility_distribution
 print_state_probabilities
 print_statistics
 print_risk_measures
-value_at_risk(::Vector{Float64}, ::Vector{Float64}, ::Float64)
-conditional_value_at_risk(::Vector{Float64}, ::Vector{Float64}, ::Float64)
 ```
 
 ## `random.jl`

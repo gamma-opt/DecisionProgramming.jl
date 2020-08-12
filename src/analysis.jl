@@ -159,3 +159,17 @@ function StateProbabilities(S::States, P::AbstractPathProbability, Z::DecisionSt
     end
     StateProbabilities(probs, Dict{Node, State}())
 end
+
+"""Value-at-risk."""
+function value_at_risk(u::Vector{Float64}, p::Vector{Float64}, α::Float64)
+    cs = cumsum(p[sortperm(u)])
+    index = findfirst(x -> x>α, cs)
+    return if isnothing(index) 0.0 else u[index] end
+end
+
+"""Conditional value-at-risk."""
+function conditional_value_at_risk(u::Vector{Float64}, p::Vector{Float64}, α::Float64)
+    x_α = value_at_risk(u, p, α)
+    tail = u .≤ x_α
+    return (sum(u[tail] .* p[tail]) - (sum(p[tail]) - α) * x_α) / α
+end

@@ -30,6 +30,7 @@ export DecisionModel,
     number_of_paths_cut,
     PositivePathUtility,
     expected_value,
+    value_at_risk,
     conditional_value_at_risk
 
 export random_diagram
@@ -42,9 +43,7 @@ export print_decision_strategy,
     print_utility_distribution,
     print_state_probabilities,
     print_statistics,
-    print_risk_measures,
-    value_at_risk,
-    conditional_value_at_risk
+    print_risk_measures
 
 # For API docs
 export AbstractRNG, VariableRef
