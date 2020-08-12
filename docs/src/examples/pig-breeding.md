@@ -9,11 +9,7 @@ The pig breeding problem as described in [^1].
 > A pig has the disease in the first month with probability 0.10. A healthy pig develops the disease in the subsequent month with probability 0.20 without injection, whereas a healthy and treated pig develops the disease with probability 0.10, so the injection has some preventive effect. An untreated pig that is unhealthy will remain so in the subsequent month with probability 0.90, whereas the similar probability is 0.50 for an unhealthy pig that is treated. Thus spontaneous cure is possible, but treatment is beneficial on average.
 
 
-## Formulation
-![](figures/4-month-pig-breeding.svg)
-
-The original $4$-month formulation.
-
+## Influence Diagram
 ![](figures/n-month-pig-breeding.svg)
 
 The influence diagram for the the generalized $N$-month pig breeding. The nodes are associated with the following states. **Health states** $h_k=\{ill,healthy\}$ represents the health of the pig at month $k=1,...,N$. **Test states** $t_k=\{positive,negative\}$ represents the result from testing the pig at month $k=1,...,N-1$. **Treat state** $d_k=\{treat, pass\}$ represents the decision to treat the pig with an injection at month $k=1,...,N-1$. The dashed arcs represent the no-forgetting principle and we can toggle them on and off in the formulation.
@@ -40,21 +36,19 @@ $$ℙ(h_k = ill ∣ d_{k-1} = treat, h_{k-1} = ill)=0.5$$
 
 The cost of treatment decision for the pig at month $k=1,...,N-1$
 
-$$U(Y(d_k))=\begin{cases}
--100, & d_k = treat \\
-0, & d_k = pass
-\end{cases}$$
+$$Y(d_k=treat) = -100$$
+
+$$Y(d_k=pass) = 0$$
 
 The price of given the pig health at month $N$
 
-$$U(Y(h_N))=\begin{cases}
-300, & h_N = ill \\
-1000, & h_N = healthy
-\end{cases}$$
+$$Y(h_N=ill) = 300$$
+
+$$Y(h_N=healthy) = 1000$$
 
 Total utility
 
-$$U(Y(h_N,d_{N-1},...,d_1))=U(Y(h_n))+∑_{k=1,...,N} U(Y(d_k)).$$
+$$Y(h_N,d_{N-1},...,d_1)=Y(h_n)+∑_{k=1,...,N} Y(d_k).$$
 
 
 ## References
