@@ -117,6 +117,20 @@ $$(ℙ(𝐬∣Z), \mathcal{U}(𝐬))$$
 that comprises of path probability function and path utility function over paths $𝐬∈𝐒$ conditional to the decision strategy $Z.$
 
 
+## Attributes
+In this section, we define common attributes for influence diagrams. [^2]
+
+**Discrete** influence diagram refers to countable state space. Otherwise, the influence diagram is **continuous**. We can discretize continuous influence diagrams using bins.
+
+Two nodes are **sequential** if there exists a directed path from one node to the other in the influence diagram. Otherwise, the nodes are **parallel**. Sequential nodes often model time dimension.
+
+**Repeated subdiagram** refers to a recurring pattern within an influence diagram. Often, influence diagrams do no have a unique structure, but they consist of a repeated pattern due to the properties of the underlying problem.
+
+**Limited-memory** influence diagram refers to an influence diagram where an upper bound limits the size of the information set for decision nodes.
+
+**Isolated subdiagrams** refer to an influence diagram that consists of multiple diagrams that are not connected. Therefore, decisions on one isolated subdiagram do not affect decisions on other isolated subdiagrams.
+
+
 ## References
 [^1]: Salo, A., Andelmin, J., & Oliveira, F. (2019). Decision Programming for Multi-Stage Optimization under Uncertainty, 1–35. Retrieved from [http://arxiv.org/abs/1910.09196](http://arxiv.org/abs/1910.09196)
 
