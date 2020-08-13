@@ -8,7 +8,7 @@ const dᴬ = 3    # Decision node:
 const cᴹ = 4    # Chance node:
 const DP_states = ["0-3 patents", "3-6 patents", "6-9 patents"]
 const CT_states = ["low", "medium", "high"]
-const DA_states = ["0-2 applications", "2-4 applications", "4-6 applications"]
+const DA_states = ["0-5 applications", "5-10 applications", "10-15 applications"]
 const CM_states = ["low", "medium", "high"]
 
 C = Vector{ChanceNode}()
@@ -77,23 +77,22 @@ P = DefaultPathProbability(C, X)
 
 @info("Creating problem specific constraints and expressions")
 
-n_T = 2
-n_A = 2
-I_t = [0.5, 0.5]
-O_t = [2, 4]
-I_a = [0.5, 0.9]
-O_a = [1, 3]
+n_T = 5
+n_A = 5
+I_t = rand(n_T)*0.5
+O_t = rand(1:3,n_T)
+I_a = rand(n_T)
+O_a = rand(2:4,n_T)
 ε = 0.5*minimum([O_t O_a])
 dl_P = [0, 3, 6]
 du_P = [3, 6, 9]
-dl_A = [0, 2, 4]
-du_A = [2, 4, 6]
+dl_A = [0, 5, 10]
+du_A = [5, 10, 15]
 M = 20
 
-V_A = zeros(S_j[cᴹ], n_A)
-V_A[1, :] = [1, 1.5]
-V_A[2, :] = [1.5, 3]
-V_A[3, :] = [2.25, 6]
+V_A = rand(S_j[cᴹ], n_A).+0.5
+V_A[1, :] .+= -0.5  # Low market share: less value
+V_A[3, :] .+= 0.5   # High market share: more value
 
 x_T = variables(model, [S_j[dᴾ]...,n_T]; binary=true)
 x_A = variables(model, [S_j[dᴾ]...,S_j[cᵀ]...,S_j[dᴬ]..., n_A]; binary=true)
