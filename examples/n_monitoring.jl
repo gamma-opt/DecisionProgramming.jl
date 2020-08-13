@@ -17,6 +17,7 @@ const c_k = rand(N)
 fortification(k, a) = [c_k[k], 0][a]
 consequence(k, a) = [-c_k[k], 0][a]
 
+@info("Creating the influence diagram.")
 S = States([
     (length(L_states), L),
     (length(R_k_states), R_k),
@@ -82,7 +83,6 @@ for j in T
     push!(Y, Consequences(Y_j))
 end
 
-@info("Validate influence diagram.")
 validate_influence_diagram(S, C, D, V)
 s_c = sortperm([c.j for c in C])
 s_d = sortperm([d.j for d in D])
@@ -93,24 +93,15 @@ V = V[s_v]
 X = X[s_c]
 Y = Y[s_v]
 
-@info("Creating path probability.")
 P = DefaultPathProbability(C, X)
-
-@info("Creating path utility.")
 U = DefaultPathUtility(V, Y)
 
-@info("Defining DecisionModel")
+@info("Creating the decision model.")
 U⁺ = PositivePathUtility(S, U)
-@time model = DecisionModel(S, D, P; positive_path_utility=true)
-
-@info("Adding probability sum cut")
-@time probability_sum_cut(model, S, P)
-
-@info("Adding number of paths cut")
-@time number_of_paths_cut(model, S, P)
-
-@info("Creating model objective.")
-@time EV = expected_value(model, S, U⁺)
+model = DecisionModel(S, D, P; positive_path_utility=true)
+probability_sum_cut(model, S, P)
+number_of_paths_cut(model, S, P)
+EV = expected_value(model, S, U⁺)
 @objective(model, Max, EV)
 
 @info("Starting the optimization process.")
@@ -136,7 +127,7 @@ print_state_probabilities(sprobs, A_k)
 print_state_probabilities(sprobs, F)
 
 @info("Computing utility distribution.")
-@time udist = UtilityDistribution(S, P, U, Z)
+udist = UtilityDistribution(S, P, U, Z)
 
 @info("Printing utility distribution.")
 print_utility_distribution(udist)

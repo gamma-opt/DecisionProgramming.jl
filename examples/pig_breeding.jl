@@ -11,6 +11,7 @@ const health_states = ["ill", "healthy"]
 const test_states = ["positive", "negative"]
 const treat_states = ["treat", "pass"]
 
+@info("Creating the influence diagram.")
 S = States([
     (length(health_states), health),
     (length(test_states), test),
@@ -80,7 +81,6 @@ for (i, j) in zip(health[end], price)
     push!(Y, Consequences(Y_j))
 end
 
-@info("Validate influence diagram.")
 validate_influence_diagram(S, C, D, V)
 s_c = sortperm([c.j for c in C])
 s_d = sortperm([d.j for d in D])
@@ -91,21 +91,14 @@ V = V[s_v]
 X = X[s_c]
 Y = Y[s_v]
 
-@info("Creating path probability.")
 P = DefaultPathProbability(C, X)
-
-@info("Creating path utility.")
 U = DefaultPathUtility(V, Y)
 
-@info("Defining DecisionModel")
+@info("Creating the decision model.")
 U⁺ = PositivePathUtility(S, U)
-@time model = DecisionModel(S, D, P; positive_path_utility=true)
-
-@info("Adding number of paths cut")
-@time number_of_paths_cut(model, S, P)
-
-@info("Creating model objective.")
-@time EV = expected_value(model, S, U⁺)
+model = DecisionModel(S, D, P; positive_path_utility=true)
+number_of_paths_cut(model, S, P)
+EV = expected_value(model, S, U⁺)
 @objective(model, Max, EV)
 
 @info("Starting the optimization process.")
@@ -139,7 +132,7 @@ for state in 1:2
 end
 
 @info("Computing utility distribution.")
-@time udist = UtilityDistribution(S, P, U, Z)
+udist = UtilityDistribution(S, P, U, Z)
 
 @info("Printing utility distribution.")
 print_utility_distribution(udist)

@@ -40,7 +40,6 @@ optimizer = optimizer_with_attributes(
 set_optimizer(model, optimizer)
 optimize!(model)
 
-@info("Extracting results.")
 Z = DecisionStrategy(model, D)
 
 @info("Printing decision strategy:")
@@ -52,7 +51,7 @@ print_state_probabilities(sprobs, [c.j for c in C])
 print_state_probabilities(sprobs, [d.j for d in D])
 
 @info("Computing utility distribution.")
-@time udist = UtilityDistribution(S, P, U, Z)
+udist = UtilityDistribution(S, P, U, Z)
 
 @info("Printing utility distribution.")
 print_utility_distribution(udist)
