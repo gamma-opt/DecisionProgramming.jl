@@ -96,17 +96,21 @@ For each value node $j∈V$, we define the **consequence** given information pat
 
 $$Y_j:𝐒_{I(j)}↦ℂ,$$
 
-where $ℂ$ is the set of consequences. In the code, the consequences are implicit, and we map information paths directly to the utility values.
-
-The **utility function** maps consequences to real-valued utilities
-
-$$U:ℂ↦ℝ.$$
+where $ℂ$ is the set of real-valued consequences.
 
 
 ## Path Utility
-The **path utility** is defined as the sum of utilities for consequences of value nodes $j∈V$ with information paths $I(j)$
+The **utility function** is a function that maps consequences to real-valued utility
 
-$$\mathcal{U}(𝐬) = ∑_{j∈V} U(Y_j(𝐬_{I(j)})).$$
+$$U:ℂ^{|V|}↦ℝ.$$
+
+The **path utility** is defined as the utility function acting on the consequences of value nodes given their information paths
+
+$$\mathcal{U}(𝐬) = U(\{Y_j(𝐬_{I(j)}) ∣ j∈V\}).$$
+
+The **default path utility** is the sum of consequences
+
+$$\mathcal{U}(𝐬) = ∑_{j∈V} Y_j(𝐬_{I(j)}).$$
 
 
 ## Path Distribution
