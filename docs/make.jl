@@ -20,6 +20,7 @@ makedocs(
             "examples/used-car-buyer.md",
             "examples/pig-breeding.md",
             "examples/n-monitoring.md",
+            "examples/contingent-portfolio-programming.md",
             "examples/multi-period-investment.md",
         ],
         "api.md"
