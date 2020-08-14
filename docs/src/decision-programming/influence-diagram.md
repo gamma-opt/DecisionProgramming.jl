@@ -8,25 +8,19 @@ The paper [^2] explains details about influence diagrams.
 ## Definition
 ![](figures/influence-diagram.svg)
 
-We define the **influence diagram** as a directed, acyclic graph such that part of its nodes have a finite number of states associated with them
+We define the **influence diagram** as a directed, acyclic graph
 
-$$G=(C,D,V,A,S).$$
+$$G=(C,D,V,I,S).$$
 
-The sets of nodes consists of **chance nodes** $C,$ **decision nodes** $D,$ and **value nodes** $V$. We index the nodes such that $C∪D=\{1,...,n\}$ and $V=\{n+1,...,n+|V|\}$ where $n=|C|+|D|.$ The set of **arcs** consists of pairs of nodes such that
+The nodes $N=C∪D∪V$ consists of **chance nodes** $C,$ **decision nodes** $D,$ and **value nodes** $V$. We index the chance and decision nodes such that $C∪D=\{1,...,n\}$ and values nodes such that $V=\{n+1,...,n+|V|\}$ where $n=|C|+|D|.$
 
-$$A⊆\{(i,j)∣1≤i<j≤|N|,i∉V\},$$
+We define the **information set** $I$ of node $j∈N$ as
 
-where $|N|=|C|+|D|+|V|.$ The condition enforces that the graph is directed and acyclic, and there are no arcs from value nodes to other nodes.
+$$I_j⊆\{i∈C∪D∣i<j\}$$
 
-Each chance and decision node $j∈C∪D$ is associates with a finite number of **states** $S_j.$ We use integers from one to number of states $|S_j|$ to encode individual states
+The condition enforces that the graph is directed and acyclic, and there are no arcs from value nodes to other nodes. Practically, the information set is an edge list to reverse direction in the graph. Furthermore, if $I_j=∅$ node $j$ is called a **root** node.
 
-$$S_j=\{1,...,|S_j|\}.$$
-
-We define the **information set** of node $j∈N$ to be its predecessor nodes
-
-$$I(j)=\{i∣(i,j)∈A\}.$$
-
-Practically, the information set is an edge list to reverse direction in the graph.
+We refer to $S$ as the **state space**. Each chance and decision node $j∈C∪D$ is associates with a finite number of **states** $S_j$ that we encode using integers $\{1,...,|S_j|\}$ from one to number of states $|S_j|.$
 
 
 ## Paths
