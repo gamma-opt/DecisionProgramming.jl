@@ -23,9 +23,9 @@ $$π(𝐬) ≤ z(𝐬_j∣𝐬_{I(j)}),\quad ∀j∈D, 𝐬∈𝐒 \tag{5}$$
 
 $$π(𝐬) ≥ p(𝐬) + ∑_{j∈D} z(𝐬_j∣𝐬_{I(j)}) - |D|,\quad ∀𝐬∈𝐒 \tag{6}$$
 
-We can omit the constraint $(6)$ from the model if we use a **positive path utility** function $\mathcal{U}^+$ which is an affine transformation of path utility function $\mathcal{U}.$ As an example, we can normalize the original utility function and then add one as follows.
+We can omit the constraint $(6)$ from the model if we use a **positive path utility** function $\mathcal{U}^+$ which is an affine transformation of path utility function $\mathcal{U}.$ As an example, we can subtract the minimum of the original utility function and then add one as follows.
 
-$$\mathcal{U}^+(𝐬) = \frac{\mathcal{U}(𝐬) - \min_{𝐬∈𝐒} \mathcal{U}(𝐬)}{\max_{𝐬∈𝐒} \mathcal{U}(𝐬) - \min_{𝐬∈𝐒} \mathcal{U}(𝐬)} + 1.$$
+$$\mathcal{U}^+(𝐬) = \mathcal{U}(𝐬) - \min_{𝐬∈𝐒} \mathcal{U}(𝐬) + 1.$$
 
 Next we discuss lazy constraint and concrete objective functions below.
 

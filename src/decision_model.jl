@@ -1,6 +1,6 @@
 using Parameters, JuMP
 
-"""Positive affine transformation of path utility. Normalized to into range from 1 to 2.
+"""Positive affine transformation of path utility.
 
 # Examples
 ```julia
@@ -10,10 +10,9 @@ U⁺ = PositivePathUtility(S, U)
 struct PositivePathUtility <: AbstractPathUtility
     U::AbstractPathUtility
     min::Float64
-    max::Float64
     function PositivePathUtility(S::States, U::AbstractPathUtility)
-        (u_min, u_max) = extrema(U(s) for s in paths(S))
-        new(U, u_min, u_max)
+        u_min = minimum(U(s) for s in paths(S))
+        new(U, u_min)
     end
 end
 
@@ -21,11 +20,11 @@ end
 
 # Examples
 ```julia-repl
-julia> 1 ≤ U⁺(s) ≤ 2
+julia> all(U⁺(s) ≥ 1 for s in paths(S))
 true
 ```
 """
-(U::PositivePathUtility)(s::Path) = (U.U(s) - U.min)/(U.max - U.min) + 1
+(U::PositivePathUtility)(s::Path) = U.U(s) - U.min + 1
 
 """Create a multidimensional array of JuMP variables.
 
