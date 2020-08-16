@@ -6,8 +6,6 @@ The paper [^2] explains details about influence diagrams.
 
 
 ## Definition
-![](figures/influence-diagram.svg)
-
 We define the **influence diagram** as a directed, acyclic graph
 
 $$G=(C,D,V,I,S).$$
@@ -16,11 +14,44 @@ The nodes $N=C∪D∪V$ consists of **chance nodes** $C,$ **decision nodes** $D,
 
 We define the **information set** $I$ of node $j∈N$ as
 
-$$I_j⊆\{i∈C∪D∣i<j\}$$
+$$I(j)⊆\{i∈C∪D∣i<j\}$$
 
-The condition enforces that the graph is directed and acyclic, and there are no arcs from value nodes to other nodes. Practically, the information set is an edge list to reverse direction in the graph. Furthermore, if $I_j=∅$ node $j$ is called a **root** node.
+The condition enforces that the graph is directed and acyclic, and there are no arcs from value nodes to other nodes. Practically, the information set is an edge list to reverse direction in the graph.
 
 We refer to $S$ as the **state space**. Each chance and decision node $j∈C∪D$ is associates with a finite number of **states** $S_j$ that we encode using integers $\{1,...,|S_j|\}$ from one to number of states $|S_j|.$
+
+
+## Root and Leaf Nodes
+In the subdiagram of $G$ which consists of the chance and decision nodes $j∈C∪D,$ we call node $j$ a **root** node if its information set if empty, that is, $I(j)=∅.$
+
+Similarly, we call node $j$ a **leaf** node if it is not in any information set, that is, $j∉I(i)$ for all $i∈C∪D.$ Each leaf node must be in at least one of the information sets of value nodes. That is, for each leaf node $j$ exists a value node $i∈V$ such that $j∈I(i).$ Otherwise, the node is redundant.
+
+
+## Visualization
+To visualize influence diagrams, we define the different node types and how to order the nodes. There are two ways to order directed acyclic graphs, linear and depth-wise. We use [diagrams.net](https://www.diagrams.net/) for drawing influence diagrams.
+
+### Node Types
+![](figures/node-types.svg)
+
+We use a circle to represent chance nodes, square to represent decision nodes and diamond to represent value nodes. The symbol $i$ represents the node's index and symbol $S_i$ the states of the chance or decision node.
+
+### Linear Order
+![](figures/linear-order.svg)
+
+We can order the nodes in increasing linear order based on indices.
+
+### Depth-wise Order
+![](figures/depth-wise-order.svg)
+
+We define the **depth** of a node $j∈N$ as follows. Root nodes have a depth of one
+
+$$\operatorname{depth}(j)=1,\quad I(j)=∅.$$
+
+Other nodes have a depth of one greater than the maximum depth of its predecessors
+
+$$\operatorname{depth}(j)=\max_{i∈I(j)} \operatorname{depth}(i) + 1,\quad I(j)≠∅.$$
+
+We can group the nodes by their depth and then order them by increasing depth and increasing indices order within that depth. Compared to linear order, the depth-wise order is more concise. It displays more information about the influence relationships, because nodes can only be influenced by nodes with smaller depth.
 
 
 ## Paths
@@ -82,7 +113,7 @@ We define the **path probability (upper bound)** as
 
 $$p(𝐬) = ∏_{j∈C} ℙ(𝐬_j∣𝐬_{I(j)}).$$
 
-The path probability $ℙ(𝐬∣Z)$ equals $p(𝐬)$ if the path $𝐬$ is compatible with the decision strategy $Z$. Otherwise, the path cannot occur and the probability is zero.
+The path probability $ℙ(𝐬∣Z)$ equals $p(𝐬)$ if the path $𝐬$ is compatible with the decision strategy $Z$. Otherwise, the path cannot occur, and the probability is zero.
 
 
 ## Consequences
@@ -115,18 +146,18 @@ $$(ℙ(𝐬∣Z), \mathcal{U}(𝐬))$$
 that comprises of path probability function and path utility function over paths $𝐬∈𝐒$ conditional to the decision strategy $Z.$
 
 
-## Attributes
-In this section, we define common attributes for influence diagrams. [^2]
+## Properties
+In this section, we define common properties for influence diagrams. The paper [^2] discusses many of these properties.
 
-**Discrete** influence diagram refers to countable state space. Otherwise, the influence diagram is **continuous**. We can discretize continuous influence diagrams using bins.
+**Discrete** influence diagram refers to countable state space. Otherwise, the influence diagram is **continuous**. We can discretize continuous influence diagrams using discrete bins.
 
 Two nodes are **sequential** if there exists a directed path from one node to the other in the influence diagram. Otherwise, the nodes are **parallel**. Sequential nodes often model time dimension.
 
-**Repeated subdiagram** refers to a recurring pattern within an influence diagram. Often, influence diagrams do no have a unique structure, but they consist of a repeated pattern due to the properties of the underlying problem.
+**Repeated subdiagram** refers to a recurring pattern within an influence diagram. Often, influence diagrams do not have a unique structure, but they consist of a repeated pattern due to the underlying problem's properties.
 
-**Limited-memory** influence diagram refers to an influence diagram where an upper bound limits the size of the information set for decision nodes.
+**Limited-memory** influence diagram refers to an influence diagram where an upper bound limits the size of the information set for decision nodes. It is a desired attribute because it affects the decision model size, as discussed in the [Computational Complexity](@ref) section.
 
-**Isolated subdiagrams** refer to an influence diagram that consists of multiple diagrams that are not connected. Therefore, decisions on one isolated subdiagram do not affect decisions on other isolated subdiagrams.
+**Isolated subdiagrams** refer to an influence diagram that consists of multiple unconnected diagrams, that is, there are no undirected connections between the diagrams. Therefore, one isolated subdiagram's decisions affect decisions on the other isolated subdiagrams only through the utility function.
 
 
 ## References
