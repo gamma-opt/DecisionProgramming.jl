@@ -1,4 +1,4 @@
-using Logging, Test, Random, JuMP, GLPK
+using Logging, Test, Random, JuMP
 using DecisionProgramming
 
 rng = MersenneTwister(4)
@@ -35,13 +35,11 @@ EV = expected_value(model, S, U⁺)
 CVaR = conditional_value_at_risk(model, S, U⁺, α)
 @objective(model, Max, w * EV + (1 - w) * CVaR)
 
-@info "Solving the model."
-optimizer = optimizer_with_attributes(GLPK.Optimizer)
-set_optimizer(model, optimizer)
-optimize!(model)
+@info("Creating random decision strategy")
+Z_j = [LocalDecisionStrategy(rng, d, S) for d in D]
+Z = DecisionStrategy(D, Z_j)
 
 @info "Analyzing results."
-Z = DecisionStrategy(model, D)
 udist = UtilityDistribution(S, P, U, Z)
 sprobs = StateProbabilities(S, P, Z)
 

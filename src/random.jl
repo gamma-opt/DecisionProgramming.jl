@@ -10,40 +10,53 @@ random_diagram(rng, 5, 2, 3, 2)
 ```
 """
 function random_diagram(rng::AbstractRNG, n_C::Int, n_D::Int, n_V::Int, n_I::Int)
-    C = Vector{ChanceNode}()
-    D = Vector{DecisionNode}()
-    V = Vector{ValueNode}()
+    n = n_C + n_D
+    n ≥ 1 || error("")
+    n_V ≥ 1 || error("")
+    n_I ≥ 1 || error("")
 
     # Create nodes
-    n = n_C + n_D
     u = shuffle(rng, 1:n)
     C_j = sort(u[1:n_C])
     D_j = sort(u[n_C+1:end])
     V_j = collect((n+1):(n+n_V))
 
+    C = Vector{ChanceNode}()
+    D = Vector{DecisionNode}()
+    V = Vector{ValueNode}()
+
     for j in C_j
-        if j == 1
-            I_j = Vector{Node}()
-        else
-            m = rand(rng, 0:n_I)
-            I_j = unique(rand(rng, 1:(j-1), m))
-        end
+        m = min(rand(rng, 0:n_I), j-1)
+        I_j = shuffle(rng, 1:(j-1))[1:m]
         push!(C, ChanceNode(j, I_j))
     end
 
     for j in D_j
-        if j == 1
-            I_j = Vector{Node}()
-        else
-            m = rand(rng, 0:n_I)
-            I_j = unique(rand(rng, 1:(j-1), m))
-        end
+        m = min(rand(rng, 0:n_I), j-1)
+        I_j = shuffle(rng, 1:(j-1))[1:m]
         push!(D, DecisionNode(j, I_j))
     end
 
-    # TODO: require node n to be in one of the I_j
+    # Compute leaf nodes
+    leaf_nodes = collect(1:n)
+    for c in C
+        setdiff!(leaf_nodes, c.I_j)
+    end
+    for d in D
+        setdiff!(leaf_nodes, d.I_j)
+    end
+
+    # Select a random value node for each leaf node.
+    d = Dict(j=>Node[] for j in V_j)
+    for i in leaf_nodes
+        k = rand(rng, V_j)
+        push!(d[k], i)
+    end
+
     for j in V_j
-        I_j = unique(rand(rng, 1:n, n_I))
+        l = d[j]
+        m = rand(rng, 1:(n-length(l)))
+        I_j = l ∪ shuffle(rng, setdiff(collect(1:n), l))[1:m]
         push!(V, ValueNode(j, I_j))
     end
 
