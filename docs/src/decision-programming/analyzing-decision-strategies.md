@@ -29,6 +29,24 @@ $$ℙ(X=u)=∑_{𝐬∈𝐒^Z∣\mathcal{U}(𝐬)=u} p(𝐬),\quad ∀u∈\mathc
 From the utility distribution, we can calculate the cumulative distribution, statistics, and risk measures. The relevant statistics are expected value, standard deviation, skewness and kurtosis. Risk measures focus on the conditional value-at-risk (CVaR), also known as, expected shortfall.
 
 
+## Measuring Risk
+![](figures/risk_measures.svg)
+
+We have a discrete probability distribution $f(x)=ℙ(X=x)∈[0, 1]$ over the domain $x∈Ω$ with $∑_{x∈Ω}ℙ(X=x)=1$ and its cumulative distribution function $F(x) = ∑_{x^′∈Ω, x^′≤x}f(x^′).$
+
+We present the concept of conditional value-at-risk, a *risk measure* of the conditional expected value of the tail of a probability distribution for a given threshold of $α∈(0, 1).$
+
+First, we define the **value-at-risk** as
+
+$$\operatorname{VaR}(α) = x_α = \inf\{x∈Ω ∣ F(x) > α\}.$$
+
+Then, we define the **conditional value-at-risk** as
+
+$$\operatorname{CVaR}(α)=\left(∑_{x≤x_α} x ⋅ f(x) - \left(∑_{x≤x_α} f(x) - α\right) x_α \right) / α.$$
+
+In the above figure, we have an example of discrete probability distribution with a positive expected value (*green diamond*) and its cumulative distribution. The *red horizontal line* represents the threshold $α$ and the *yellow diamond* marks the value-at-risk $x_α$, that is, the smallest value $x$ such that the cumulative probability is above $α.$ The *red circles* are the values $x$ below that fall below or equal $x_α$ and the *orange diamond* is the conditional value-at-risk.
+
+
 ## State Probabilities
 We denote **paths with fixed states** where $ϵ$ denotes an empty state using a recursive definition.
 
@@ -53,5 +71,3 @@ We can **generalize the state probabilities** as conditional probabilities using
 $$ℙ(s_j∣ϵ,s_i) = \sum_{𝐬∈𝐒_{ϵ,s_i,s_j}} \frac{p(𝐬)}{ℙ(s_i∣ϵ)}$$
 
 We can then repeat this process by choosing an active state from the new conditional state probabilities $s_k$ that is different from previously chosen states $k≠j.$
-
-A **robust recommendation** is a decision state $s_i$ where $i∈D$ and subpath $c$ such the state probability is one $ℙ(s_i∣c)=1.$
