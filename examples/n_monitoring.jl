@@ -15,7 +15,6 @@ const A_k_states = ["yes", "no"]
 const F_states = ["failure", "success"]
 const c_k = rand(N)
 fortification(k, a) = [c_k[k], 0][a]
-consequence(k, a) = [-c_k[k], 0][a]
 
 @info("Creating the influence diagram.")
 S = States([
@@ -75,9 +74,9 @@ for j in T
     I_j = A_k ∪ F
     Y_j = zeros(S[I_j]...)
     for s in paths(S[A_k])
-        c = sum(consequence(k, a) for (k, a) in enumerate(s))
-        Y_j[s..., 1] = c + 0
-        Y_j[s..., 2] = c + 100
+        cost = sum(-fortification(k, a) for (k, a) in enumerate(s))
+        Y_j[s..., 1] = cost + 0
+        Y_j[s..., 2] = cost + 100
     end
     push!(V, ValueNode(j, I_j))
     push!(Y, Consequences(Y_j))

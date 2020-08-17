@@ -226,7 +226,7 @@ optimize!(model)
 ```
 
 
-## Analysing Results
+## Analyzing Results
 ### Decision Strategy
 ```julia
 Z = DecisionStrategy(model, D)
