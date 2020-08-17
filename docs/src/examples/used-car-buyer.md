@@ -10,13 +10,11 @@ We can easily determine the optimal strategy for this problem. If Joe decides no
 
 We now add two new features to the problem. A stranger approaches Joe and offers to tell Joe whether the car is a lemon or a peach for 25 USD. Additionally, the car dealer offers a guarantee plan which costs 60 USD and covers 50% of the repair costs. Joe notes that this is not a very good deal, and the dealer includes an anti-lemon feature: if the total repair cost exceeds 100 USD, the quarantee will fully cover the repairs.
 
-We present the new influence diagram below. The decision node $T$ denotes the decision to accept or decline the stranger's offer, and $R$ is the outcome of the test. We introduce new value nodes $V_1$ and $V_2$ to represent the testing costs and the base profit from purchasing the car. Additionally, the decision node $A$ now can choose to buy with a guarantee.
-
+## Influence diagram
 ![\label{used-car-buyer-2}](figures/used-car-buyer-2.svg)
 
+We present the new influence diagram above. The decision node $T$ denotes the decision to accept or decline the stranger's offer, and $R$ is the outcome of the test. We introduce new value nodes $V_1$ and $V_2$ to represent the testing costs and the base profit from purchasing the car. Additionally, the decision node $A$ now can choose to buy with a guarantee.
 
-## The model
-### Influence diagram
 ```julia
 using Printf, Random, Logging, Parameters, JuMP, Gurobi
 using DecisionProgramming
@@ -45,18 +43,22 @@ Y = Vector{Consequences}()
 
 We start by defining the influence diagram structure. The decision and chance nodes, as well as their states, are defined in the first block. Next, the influence diagram parameters consisting of the node sets and the state spaces of the nodes are defined.
 
+### Car's State
 ```julia
-# Node O: no predecessors
 I_O = Vector{Node}()
 X_O = [0.2, 0.8]
 push!(C, ChanceNode(O, I_O))
 push!(X, Probabilities(X_O))
+```
 
-# Node T: no predecessors
+### Stranger's Offer Decision
+```julia
 I_T = Vector{Node}()
 push!(D, DecisionNode(T, I_T))
+```
 
-# Node R: dependent on nodes O and T
+### Test's Outcome
+```julia
 I_R = [O, T]
 X_R = zeros(S[O], S[T], S[R])
 X_R[1, 1, :] = [1,0,0]
@@ -65,32 +67,43 @@ X_R[2, 1, :] = [1,0,0]
 X_R[2, 2, :] = [0,0,1]
 push!(C, ChanceNode(R, I_R))
 push!(X, Probabilities(X_R))
+```
 
-# Node A: dependent on node R
+### Purchace Decision
+```julia
 I_A = [R]
 push!(D, DecisionNode(A, I_A))
+```
 
-# Cost of test
+### Testing Cost
+```julia
 I_V1 = [T]
 Y_V1 = [0.0, -25.0]
 push!(V, ValueNode(5, I_V1))
 push!(Y, Consequences(Y_V1))
+```
 
-# Base profit of purchase alternatives
+### Base Profit of Purchase
+```julia
 I_V2 = [A]
 Y_V2 = [100.0, 40.0, 0.0]
 push!(V, ValueNode(6, I_V2))
 push!(Y, Consequences(Y_V2))
+```
 
-# Repair costs
+### Repairing Cost
+```julia
 I_V3 = [O, A]
 Y_V3 = [-200.0 0.0 0.0;
         -40.0 -20.0 0.0]
 push!(V, ValueNode(7, I_V3))
 push!(Y, Consequences(Y_V3))
+```
 
-# Validate influence diagram and sort nodes,
-# probabilities and consequences
+### Validating Influence Diagram
+Validate influence diagram and sort nodes, probabilities and consequences
+
+```julia
 validate_influence_diagram(S, C, D, V)
 s_c = sortperm([c.j for c in C])
 s_d = sortperm([d.j for d in D])
@@ -100,14 +113,17 @@ D = D[s_d]
 V = V[s_v]
 X = X[s_c]
 Y = Y[s_v]
-
-P = DefaultPathProbability(C, X)
-U = DefaultPathUtility(V, Y)
 ```
 
 We continue by defining the probabilities associated with chance nodes and utilities (consequences) associated with value nodes. The rows of the consequence matrix Y_V3 correspond to the state of the car, while the columns correspond to the decision made in node $A$.
 
-### Decision model
+```julia
+P = DefaultPathProbability(C, X)
+U = DefaultPathUtility(V, Y)
+```
+
+
+## Decision Model
 We then construct the decision model using the DecisionProgramming.jl package.
 
 ```julia
@@ -128,14 +144,17 @@ set_optimizer(model, optimizer)
 optimize!(model)
 ```
 
-The model is solved. We get the following decision strategy:
+
+## Analyzing Results
+### Decision Strategy
+Once the model is solved, we obtain the following decision strategy:
 
 ```julia
 Z = DecisionStrategy(model, D)
-print_decision_strategy(S, Z)
 ```
 
-```
+```julia-repl
+julia> print_decision_strategy(S, Z)
 ┌────────┬────┬───┐
 │  Nodes │ () │ 2 │
 ├────────┼────┼───┤
@@ -154,14 +173,13 @@ To start explaining this output, let's take a look at the top table. On the righ
 
 In the bottom table, we have node number 4 (node $A$) and its predecessor, node number 3 (node $R$). The first row, where we obtain no test result, is invalid for this strategy since we tested the car. If the car is a lemon, Joe should buy the car with a guarantee (alternative 2), and if it is a peach, buy the car without guarantee (alternative 1).
 
-### Analyzing the results
-
+### Utility Distribution
 ```julia
 udist = UtilityDistribution(S, P, U, Z)
-print_utility_distribution(udist)
 ```
 
-```
+```julia-repl
+julia> print_utility_distribution(udist)
 ┌───────────┬─────────────┐
 │   Utility │ Probability │
 │   Float64 │     Float64 │
@@ -173,11 +191,8 @@ print_utility_distribution(udist)
 
 From the utility distribution, we can see that Joe's profit with this strategy is 15 USD, with a 20% probability (the car is a lemon) and 35 USD with an 80% probability (the car is a peach).
 
-```julia
-print_statistics(udist)
-```
-
-```
+```julia-repl
+julia> print_statistics(udist)
 ┌──────────┬────────────┐
 │     Name │ Statistics │
 │   String │    Float64 │
