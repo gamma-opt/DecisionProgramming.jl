@@ -3,10 +3,10 @@ using DecisionProgramming
 
 rng = MersenneTwister(111)
 
-C, D, V = random_diagram(rng, 5, 3, 2, 2)
+C, D, V = random_diagram(rng, 5, 3, 2, 3)
 S = States(rng, [2, 3], length(C) + length(D))
 X = [Probabilities(rng, c, S) for c in C]
-Y = [Consequences(rng, v, S) for v in V]
+Y = [Consequences(rng, v, S, low=-1.0, high=1.5) for v in V]
 
 validate_influence_diagram(S, C, D, V)
 s_c = sortperm([c.j for c in C])
@@ -26,7 +26,7 @@ model = DecisionModel(S, D, P; positive_path_utility=true)
 # probability_sum_cut(model, S, P)
 # number_of_paths_cut(model, S, P)
 
-α = 0.2
+α = 0.1
 w = 0.5
 EV = expected_value(model, S, U⁺)
 CVaR = conditional_value_at_risk(model, S, U⁺, α)
@@ -60,5 +60,4 @@ print_utility_distribution(udist)
 print_statistics(udist)
 
 @info("Printing risk measures")
-αs = [0.01, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2]
-print_risk_measures(udist, αs)
+print_risk_measures(udist, [α])

@@ -1,7 +1,6 @@
 using Printf, Random, Logging, Parameters, JuMP, Gurobi
 using DecisionProgramming
 
-
 const O = 1  # Chance node: lemon or peach
 const T = 2  # Decision node: pay stranger for advice
 const R = 3  # Chance node: observation of state of the car
@@ -74,9 +73,8 @@ P = DefaultPathProbability(C, X)
 U = DefaultPathUtility(V, Y)
 
 @info("Creating the decision model.")
-U⁺ = PositivePathUtility(S, U)
-model = DecisionModel(S, D, P; positive_path_utility=true)
-EV = expected_value(model, S, U⁺)
+model = DecisionModel(S, D, P)
+EV = expected_value(model, S, U)
 @objective(model, Max, EV)
 
 @info("Starting the optimization process.")

@@ -53,7 +53,7 @@ const DecisionModel = Model
 model = DecisionModel(S, D, P; positive_path_utility=true)
 ```
 """
-function DecisionModel(S::States, D::Vector{DecisionNode}, P::AbstractPathProbability; positive_path_utility::Bool=true)
+function DecisionModel(S::States, D::Vector{DecisionNode}, P::AbstractPathProbability; positive_path_utility::Bool=false)
     model = DecisionModel()
 
     π = variables(model, S)

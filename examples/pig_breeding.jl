@@ -25,9 +25,24 @@ Y = Vector{Consequences}()
 
 for j in health[[1]]
     I_j = Vector{Node}()
-    X_j = zeros(S[j])
+    X_j = zeros(S[I_j]..., S[j])
     X_j[1] = 0.1
     X_j[2] = 1.0 - X_j[1]
+    push!(C, ChanceNode(j, I_j))
+    push!(X, Probabilities(X_j))
+end
+
+for (i, k, j) in zip(health[1:end-1], treat, health[2:end])
+    I_j = [i, k]
+    X_j = zeros(S[I_j]..., S[j])
+    X_j[2, 2, 1] = 0.2
+    X_j[2, 2, 2] = 1.0 - X_j[2, 2, 1]
+    X_j[2, 1, 1] = 0.1
+    X_j[2, 1, 2] = 1.0 - X_j[2, 1, 1]
+    X_j[1, 2, 1] = 0.9
+    X_j[1, 2, 2] = 1.0 - X_j[1, 2, 1]
+    X_j[1, 1, 1] = 0.5
+    X_j[1, 1, 2] = 1.0 - X_j[1, 1, 1]
     push!(C, ChanceNode(j, I_j))
     push!(X, Probabilities(X_j))
 end
@@ -46,21 +61,6 @@ end
 for (i, j) in zip(test, treat)
     I_j = [i]
     push!(D, DecisionNode(j, I_j))
-end
-
-for (i, k, j) in zip(health[1:end-1], treat, health[2:end])
-    I_j = [i, k]
-    X_j = zeros(S[I_j]..., S[j])
-    X_j[2, 2, 1] = 0.2
-    X_j[2, 2, 2] = 1.0 - X_j[2, 2, 1]
-    X_j[2, 1, 1] = 0.1
-    X_j[2, 1, 2] = 1.0 - X_j[2, 1, 1]
-    X_j[1, 2, 1] = 0.9
-    X_j[1, 2, 2] = 1.0 - X_j[1, 2, 1]
-    X_j[1, 1, 1] = 0.5
-    X_j[1, 1, 2] = 1.0 - X_j[1, 1, 1]
-    push!(C, ChanceNode(j, I_j))
-    push!(X, Probabilities(X_j))
 end
 
 for (i, j) in zip(treat, cost)
@@ -139,7 +139,3 @@ print_utility_distribution(udist)
 
 @info("Printing statistics")
 print_statistics(udist)
-
-@info("Printing risk measures")
-αs = [0.01, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2]
-print_risk_measures(udist, αs)

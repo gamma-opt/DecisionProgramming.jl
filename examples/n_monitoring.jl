@@ -1,7 +1,7 @@
 using Printf, Random, Logging, Parameters, JuMP, Gurobi
 using DecisionProgramming
 
-Random.seed!(11)
+Random.seed!(13)
 
 const N = 4
 const L = [1]
@@ -32,7 +32,7 @@ Y = Vector{Consequences}()
 
 for j in L
     I_j = Vector{Node}()
-    X_j = zeros(S[j])
+    X_j = zeros(S[I_j]..., S[j])
     X_j[1] = rand()
     X_j[2] = 1.0 - X_j[1]
     push!(C, ChanceNode(j, I_j))
@@ -134,7 +134,3 @@ print_utility_distribution(udist)
 
 @info("Printing statistics")
 print_statistics(udist)
-
-@info("Printing risk measures")
-αs = [0.01, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2]
-print_risk_measures(udist, αs)
