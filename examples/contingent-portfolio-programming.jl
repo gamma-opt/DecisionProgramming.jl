@@ -2,10 +2,10 @@ using Printf, Random, Logging, Parameters, JuMP, Gurobi
 using DecisionProgramming
 
 
-const dᴾ = 1    # Decision node:
-const cᵀ = 2    # Chance node:
-const dᴬ = 3    # Decision node:
-const cᴹ = 4    # Chance node:
+const dᴾ = 1    # Decision node: range for number of patents
+const cᵀ = 2    # Chance node:   technical competitiveness
+const dᴬ = 3    # Decision node: range for number of applications
+const cᴹ = 4    # Chance node:   market share
 const DP_states = ["0-3 patents", "3-6 patents", "6-9 patents"]
 const CT_states = ["low", "medium", "high"]
 const DA_states = ["0-5 applications", "5-10 applications", "10-15 applications"]
@@ -75,22 +75,20 @@ model = DecisionModel(S, D, P; positive_path_utility=false)
 
 @info("Creating problem specific constraints and expressions")
 
-n_T = 5
-n_A = 5
-I_t = rand(n_T)*0.5
-O_t = rand(1:3,n_T)
-I_a = rand(n_T)
-O_a = rand(2:4,n_T)
-ε = 0.5*minimum([O_t O_a])
-dl_P = [0, 3, 6]
-du_P = [3, 6, 9]
-dl_A = [0, 5, 10]
-du_A = [5, 10, 15]
-M = 20
+n_T = 5                     # number of technology projects
+n_A = 5                     # number of application projects
+I_t = rand(n_T)*0.5         # costs of technology projects
+O_t = rand(1:3,n_T)         # number of patents for each tech project
+I_a = rand(n_T)             # costs of application projects
+O_a = rand(2:4,n_T)         # number of applications for each appl. project
+ε = 0.5*minimum([O_t O_a])  # a helper variable, allows using ≤ instead of < in constraints (28b) and (29b)
+q_P = [0, 3, 6, 9]          # limits of the technology intervals
+q_A = [0, 5, 10, 15]        # limits of the application intervals
+M = 20                      # a large constant
 
-V_A = rand(S[cᴹ], n_A).+0.5
-V_A[1, :] .+= -0.5  # Low market share: less value
-V_A[3, :] .+= 0.5   # High market share: more value
+V_A = rand(S[cᴹ], n_A).+0.5 # Value of an application
+V_A[1, :] .+= -0.5          # Low market share: less value
+V_A[3, :] .+= 0.5           # High market share: more value
 
 x_T = variables(model, [S[dᴾ]...,n_T]; binary=true)
 x_A = variables(model, [S[dᴾ]...,S[cᵀ]...,S[dᴬ]..., n_A]; binary=true)
@@ -98,20 +96,24 @@ z_dP = model[:z][1]
 z_dA = model[:z][2]
 
 @constraint(model, [i=1:3],
-    sum(x_T[i,t] for t in 1:n_T) <= z_dP[i]*n_T)
+    sum(x_T[i,t] for t in 1:n_T) <= z_dP[i]*n_T)            #(25)
 @constraint(model, [i=1:3, j=1:3, k=1:3],
-    sum(x_A[i,j,k,a] for a in 1:n_A) <= z_dP[i]*n_A)
+    sum(x_A[i,j,k,a] for a in 1:n_A) <= z_dP[i]*n_A)        #(26)
 @constraint(model, [i=1:3, j=1:3, k=1:3],
-    sum(x_A[i,j,k,a] for a in 1:n_A) <= z_dA[i,j,k]*n_A)
+    sum(x_A[i,j,k,a] for a in 1:n_A) <= z_dA[i,j,k]*n_A)    #(27)
 
+#(28a)
 @constraint(model, [i=1:3],
-    dl_P[i] - (1 - z_dP[i])*M <= sum(x_T[i,t]*O_t[t] for t in 1:n_T))
+    q_P[i] - (1 - z_dP[i])*M <= sum(x_T[i,t]*O_t[t] for t in 1:n_T))
+#(28b)
 @constraint(model, [i=1:3],
-    sum(x_T[i,t]*O_t[t] for t in 1:n_T) <= du_P[i] + (1 - z_dP[i])*M - ε)
+    sum(x_T[i,t]*O_t[t] for t in 1:n_T) <= q_P[i+1] + (1 - z_dP[i])*M - ε)
+#(29a)
 @constraint(model, [i=1:3, j=1:3, k=1:3],
-    dl_A[k] - (1 - z_dA[i,j,k])*M <= sum(x_A[i,j,k,a]*O_a[a] for a in 1:n_A))
+    q_A[k] - (1 - z_dA[i,j,k])*M <= sum(x_A[i,j,k,a]*O_a[a] for a in 1:n_A))
+#(29b)
 @constraint(model, [i=1:3, j=1:3, k=1:3],
-    sum(x_A[i,j,k,a]*O_a[a] for a in 1:n_A) <= du_A[k] + (1 - z_dA[i,j,k])*M - ε)
+    sum(x_A[i,j,k,a]*O_a[a] for a in 1:n_A) <= q_A[k+1] + (1 - z_dA[i,j,k])*M - ε)
 
 @info("Creating model objective.")
 struct PathUtility <: AbstractPathUtility
