@@ -3,15 +3,19 @@
 **Decision programming** aims to find a decision strategy $Z$ which optimizes some metric of the path distribution on an influence diagram such as expected value or risk. The **decision model** is a mixed-integer linear programming formulation of this optimization problem. The model that is presented here, is based on [^1], sections 3 and 5. We recommend reading it for motivation, details, and proofs of the formulation.
 
 
-## Formulation
-The mixed-integer linear program maximizes a linear objective function $f$ that acts on the path distribution over all decision strategies as follows.
+## Objective
+The mixed-integer linear program optimizes the objective function $f$, that is a measure of the path distribution, over all decision strategies as follows
 
 $$\underset{Z∈ℤ}{\text{maximize}}\quad
-f(\{(ℙ(𝐬∣Z), \mathcal{U}(𝐬)) ∣ 𝐬∈𝐒\}) \tag{1}$$
+f(\{(ℙ(𝐬∣Z), \mathcal{U}(𝐬)) ∣ 𝐬∈𝐒\}). \tag{1}$$
 
+Common measures include expected value and risk metrics. The main consideration regarding the measures is that we can linearize them, and thus solve the model efficiently.
+
+
+## Variables
 **Decision variables** $z(s_j∣𝐬_{I(j)})$ are equivalent to the decision strategies $Z$ such that $Z_j(𝐬_I(j))=s_j$ if and only if $z(s_j∣𝐬_{I(j)})=1$ and $z(s_{j^′}∣𝐬_{I(j)})=0$ for all $s_{j^′}≠s_j.$ Constraint $(2)$ defines the decisions to be binary variables and the constraint $(3)$ limits decisions to one per information path.
 
-$$z(𝐬_j∣𝐬_{I(j)}) ∈ \{0,1\},\quad ∀j∈D, 𝐬_j∈𝐒_j, 𝐬_{I(j)}∈𝐒_{I(j)} \tag{2}$$
+$$z(s_j∣𝐬_{I(j)}) ∈ \{0,1\},\quad ∀j∈D, s_j∈S_j, 𝐬_{I(j)}∈𝐒_{I(j)} \tag{2}$$
 
 $$∑_{s_j∈S_j} z(s_j∣𝐬_{I(j)})=1,\quad ∀j∈D, 𝐬_{I(j)}∈𝐒_{I(j)} \tag{3}$$
 
@@ -23,21 +27,21 @@ $$π(𝐬) ≤ z(𝐬_j∣𝐬_{I(j)}),\quad ∀j∈D, 𝐬∈𝐒 \tag{5}$$
 
 $$π(𝐬) ≥ p(𝐬) + ∑_{j∈D} z(𝐬_j∣𝐬_{I(j)}) - |D|,\quad ∀𝐬∈𝐒 \tag{6}$$
 
+
+## Positive Path Utility
 We can omit the constraint $(6)$ from the model if we use a **positive path utility** function $\mathcal{U}^+$ which is an affine transformation of path utility function $\mathcal{U}.$ As an example, we can subtract the minimum of the original utility function and then add one as follows.
 
 $$\mathcal{U}^+(𝐬) = \mathcal{U}(𝐬) - \min_{𝐬∈𝐒} \mathcal{U}(𝐬) + 1.$$
-
-Next we discuss lazy constraint and concrete objective functions below.
 
 
 ## Lazy Constraints
 Valid equalities are equalities that can be be derived from the problem structure. They can help in computing the optimal decision strategies, but adding them directly may slow down the overall solution process. By adding valid equalities during the solution process as *lazy constraints*, the MILP solver can prune nodes of the branch-and-bound tree more efficiently. We have the following valid equalities.
 
-We can exploit the fact that the path probabilities sum to one by using the **probability sum cut**
+We can exploit the fact that the path probabilities sum to one by using the **probability sum cut** defined as
 
 $$∑_{𝐬∈𝐒}π(𝐬)=1. \tag{7}$$
 
-For problems where the number of active paths $|𝐒^Z|$ is known, we can exploit it by using the **number of active paths cut**
+For problems where the number of active paths $|𝐒^Z|$ is known, we can exploit it by using the **number of active paths cut** defined as
 
 $$∑_{𝐬∈𝐒} \frac{π(𝐬)}{p(𝐬)}=|𝐒^Z|. \tag{8}$$
 
@@ -51,7 +55,7 @@ However, the expected value objective does not account for risk caused by the va
 
 
 ## Conditional Value-at-Risk
-Given a **probability level** $α∈(0, 1]$ and decision strategy $Z$ we denote **value-at-Risk** $\operatorname{VaR}_α(Z)$ and **conditional Value-at-Risk** $\operatorname{CVaR}_α(Z).$
+Given a **probability level** $α∈(0, 1]$ and decision strategy $Z$ we denote **value-at-risk** $\operatorname{VaR}_α(Z)$ and **conditional value-at-risk** $\operatorname{CVaR}_α(Z).$
 
 Pre-computed parameters
 

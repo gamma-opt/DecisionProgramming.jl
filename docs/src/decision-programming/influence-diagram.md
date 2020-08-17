@@ -24,7 +24,7 @@ We refer to $S$ as the **state space**. Each chance and decision node $j∈C∪D
 ## Root and Leaf Nodes
 In the subdiagram of $G$ which consists of the chance and decision nodes $j∈C∪D,$ we call node $j$ a **root** node if its information set if empty, that is, $I(j)=∅.$
 
-Similarly, we call node $j$ a **leaf** node if it is not in any information set, that is, $j∉I(i)$ for all $i∈C∪D.$ Each leaf node must be in at least one of the information sets of value nodes. That is, for each leaf node $j$ exists a value node $i∈V$ such that $j∈I(i).$ Otherwise, the node is redundant.
+Similarly, we call node $j$ a **leaf** node if it is not in any information set, that is, $j∉I(i)$ for all $i∈C∪D.$ Each leaf node must be in at least one of the information sets of value nodes. That is, for each leaf node $j$ exists a value node $i∈V$ such that $j∈I(i).$ Otherwise, the node $j$ is **redundant**.
 
 
 ## Visualization
