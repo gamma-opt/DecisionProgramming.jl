@@ -39,12 +39,8 @@ function random_diagram(rng::AbstractRNG, n_C::Int, n_D::Int, n_V::Int, n_I::Int
 
     # Compute leaf nodes
     leaf_nodes = collect(1:n)
-    for c in C
-        setdiff!(leaf_nodes, c.I_j)
-    end
-    for d in D
-        setdiff!(leaf_nodes, d.I_j)
-    end
+    setdiff!(leaf_nodes, (c.I_j for c in C)...)
+    setdiff!(leaf_nodes, (d.I_j for d in D)...)
 
     # Select a random value node for each leaf node.
     d = Dict(j=>Node[] for j in V_j)
