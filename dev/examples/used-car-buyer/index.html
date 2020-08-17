@@ -1,95 +1,92 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Used Car Buyer · DecisionProgramming.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="DecisionProgramming.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit">DecisionProgramming.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Decision Programming</span><ul><li><a class="tocitem" href="../../decision-programming/influence-diagram/">Influence Diagram</a></li><li><a class="tocitem" href="../../decision-programming/decision-model/">Decision Model</a></li><li><a class="tocitem" href="../../decision-programming/analyzing-decision-strategies/">Analyzing Decision Strategies</a></li><li><a class="tocitem" href="../../decision-programming/computational-complexity/">Computational Complexity</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li class="is-active"><a class="tocitem" href>Used Car Buyer</a><ul class="internal"><li><a class="tocitem" href="#Description"><span>Description</span></a></li><li><a class="tocitem" href="#The-model"><span>The model</span></a></li><li><a class="tocitem" href="#References"><span>References</span></a></li></ul></li><li><a class="tocitem" href="../pig-breeding/">Pig Breeding</a></li><li><a class="tocitem" href="../n-monitoring/">N-Monitoring</a></li><li><a class="tocitem" href="../contingent-portfolio-programming/">Contingent Portfolio Programming</a></li><li><a class="tocitem" href="../multi-period-investment/">Multi-period Investment</a></li></ul></li><li><a class="tocitem" href="../../api/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Used Car Buyer</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Used Car Buyer</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/gamma-opt/DecisionProgramming.jl/blob/master/docs/src/examples/used-car-buyer.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Used-Car-Buyer"><a class="docs-heading-anchor" href="#Used-Car-Buyer">Used Car Buyer</a><a id="Used-Car-Buyer-1"></a><a class="docs-heading-anchor-permalink" href="#Used-Car-Buyer" title="Permalink"></a></h1><h2 id="Description"><a class="docs-heading-anchor" href="#Description">Description</a><a id="Description-1"></a><a class="docs-heading-anchor-permalink" href="#Description" title="Permalink"></a></h2><p>To illustrate the basic functionality of Decision Programming, we implement a version of the used car buyer problem in <sup class="footnote-reference"><a id="citeref-1" href="#footnote-1">[1]</a></sup>. In this problem, Joe is buying a used car. The price of the car is 1000 USD (US dollars) and its value is 1100 USD. Joe&#39;s base profit on the car is thus 100 USD. However, Joe knows that the car is a &quot;lemon&quot;, meaning that it has defects in 6 major systems, with a 20% probability. With the remaining 80% probability, the car is a &quot;peach&quot;, and it has a defect in only one of the systems.</p><p>The repair costs for a peach are only 40 USD, decreasing Joe&#39;s profit to 60  USD. However, the costs for a lemon are 200 USD, resulting in a total loss of 100 USD. We can now formulate an influence diagram of Joe&#39;s initial problem. The influence diagram is presented in the figure below. In an influence diagram, circle nodes such as <span>$O$</span> are called <strong>chance nodes</strong>, representing uncertainty. Node <span>$O$</span> is a chance node representing the state of the car, lemon or peach. Square nodes such as <span>$A$</span> are <strong>decision nodes</strong>, representing decisions. Node <span>$A$</span> represents the decision to buy or not to buy the car. The diamond-shaped <strong>value node</strong> <span>$V$</span> denotes the utility calculation in the problem. For Joe, the utility function is the expected monetary value. The arrows or <strong>arcs</strong> show connections between nodes. The two arcs in this diagram point to the value node, meaning that the monetary value depends on state of the car and the purchase decision.</p><p><img src="../figures/used-car-buyer-1.svg" alt="\\label{used-car-buyer-1}"/></p><p>The optimal strategy for this problem can easily be determined. If Joe decides not to buy the car, his profit is certainly 0. If he buys the car, there is a 20% probability of a loss of 100 USD and an 80% probability of a profit of 60 USD. The expected profit for buying the car is thus 28 USD, which is clearly higher than the zero profit of not buying. Thus, Joe should buy the car.</p><p>We now add two new features to the problem. A stranger approaches Joe, offering to tell Joe whether the car is a lemon or a peach, for a price of 25 USD. Additionally, the car dealer offers a guarantee plan which costs 60 USD and covers 50% of the repair costs. Joe notes that this is not a very good deal and the dealer includes an anti-lemon feature: if the total repair cost exceeds 100 USD, the repairs are fully covered by the guarantee. The new influence diagram is presented below. The decision node <span>$T$</span> denotes the decision to accept or decline the stranger&#39;s offer, and <span>$R$</span> is the outcome of the test. New value nodes <span>$V_1$</span> and <span>$V_2$</span> are introduced to represent costs of testing and the base profit from purchasing the car. Additionally, the decision node <span>$A$</span> now also has the possibility of choosing to buy with a guarantee.</p><p><img src="../figures/used-car-buyer-2.svg" alt="\\label{used-car-buyer-2}"/></p><h2 id="The-model"><a class="docs-heading-anchor" href="#The-model">The model</a><a id="The-model-1"></a><a class="docs-heading-anchor-permalink" href="#The-model" title="Permalink"></a></h2><h3 id="Influence-diagram"><a class="docs-heading-anchor" href="#Influence-diagram">Influence diagram</a><a id="Influence-diagram-1"></a><a class="docs-heading-anchor-permalink" href="#Influence-diagram" title="Permalink"></a></h3><pre><code class="language-julia">using Printf, Random, Logging, Parameters, JuMP, Gurobi
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Used Car Buyer · DecisionProgramming.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="DecisionProgramming.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit">DecisionProgramming.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Decision Programming</span><ul><li><a class="tocitem" href="../../decision-programming/influence-diagram/">Influence Diagram</a></li><li><a class="tocitem" href="../../decision-programming/decision-model/">Decision Model</a></li><li><a class="tocitem" href="../../decision-programming/analyzing-decision-strategies/">Analyzing Decision Strategies</a></li><li><a class="tocitem" href="../../decision-programming/computational-complexity/">Computational Complexity</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li class="is-active"><a class="tocitem" href>Used Car Buyer</a><ul class="internal"><li><a class="tocitem" href="#Description"><span>Description</span></a></li><li><a class="tocitem" href="#The-model"><span>The model</span></a></li><li><a class="tocitem" href="#References"><span>References</span></a></li></ul></li><li><a class="tocitem" href="../pig-breeding/">Pig Breeding</a></li><li><a class="tocitem" href="../n-monitoring/">N-Monitoring</a></li><li><a class="tocitem" href="../contingent-portfolio-programming/">Contingent Portfolio Programming</a></li><li><a class="tocitem" href="../multi-period-investment/">Multi-period Investment</a></li></ul></li><li><a class="tocitem" href="../../api/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Used Car Buyer</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Used Car Buyer</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/gamma-opt/DecisionProgramming.jl/blob/master/docs/src/examples/used-car-buyer.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Used-Car-Buyer"><a class="docs-heading-anchor" href="#Used-Car-Buyer">Used Car Buyer</a><a id="Used-Car-Buyer-1"></a><a class="docs-heading-anchor-permalink" href="#Used-Car-Buyer" title="Permalink"></a></h1><h2 id="Description"><a class="docs-heading-anchor" href="#Description">Description</a><a id="Description-1"></a><a class="docs-heading-anchor-permalink" href="#Description" title="Permalink"></a></h2><p>To illustrate the basic functionality of Decision Programming, we implement a version of the used car buyer problem in <sup class="footnote-reference"><a id="citeref-1" href="#footnote-1">[1]</a></sup>. In this problem, Joe is buying a used car. The car&#39;s price is 1000 USD (US dollars), and its value is 1100 USD. Joe&#39;s base profit on the car is thus 100 USD. However, Joe knows that the car is a &quot;lemon&quot;, meaning that it has defects in 6 major systems, with a 20% probability. With the remaining 80% probability, the car is a &quot;peach&quot;, and it has a defect in only one of the systems.</p><p>The repair costs for a peach are only 40 USD, decreasing Joe&#39;s profit to 60  USD. However, the costs for a lemon are 200 USD, resulting in a total loss of 100 USD. We can now formulate an influence diagram of Joe&#39;s initial problem. We present the influence diagram in the figure below. In an influence diagram, circle nodes such as <span>$O$</span> are called <strong>chance nodes</strong>, representing uncertainty. Node <span>$O$</span> is a chance node representing the state of the car, lemon or peach. Square nodes such as <span>$A$</span> are <strong>decision nodes</strong>, representing decisions. Node <span>$A$</span> represents the decision to buy or not to buy the car. The diamond-shaped <strong>value node</strong> <span>$V$</span> denotes the utility calculation in the problem. For Joe, the utility function is the expected monetary value. The arrows or <strong>arcs</strong> show connections between nodes. The two arcs in this diagram point to the value node, meaning that the monetary value depends on the state of the car and the purchase decision.</p><p><img src="../figures/used-car-buyer-1.svg" alt="\\label{used-car-buyer-1}"/></p><p>We can easily determine the optimal strategy for this problem. If Joe decides not to buy the car, his profit is zero. If he buys the car, with 20% probability he loses 100 USD and with an 80% probability he profits 60 USD. Therefore, the expected profit for buying the car is 28 USD, which is higher than the zero profit of not buying. Thus, Joe should buy the car.</p><p>We now add two new features to the problem. A stranger approaches Joe and offers to tell Joe whether the car is a lemon or a peach for 25 USD. Additionally, the car dealer offers a guarantee plan which costs 60 USD and covers 50% of the repair costs. Joe notes that this is not a very good deal, and the dealer includes an anti-lemon feature: if the total repair cost exceeds 100 USD, the quarantee will fully cover the repairs.</p><p>We present the new influence diagram below. The decision node <span>$T$</span> denotes the decision to accept or decline the stranger&#39;s offer, and <span>$R$</span> is the outcome of the test. We introduce new value nodes <span>$V_1$</span> and <span>$V_2$</span> to represent the testing costs and the base profit from purchasing the car. Additionally, the decision node <span>$A$</span> now can choose to buy with a guarantee.</p><p><img src="../figures/used-car-buyer-2.svg" alt="\\label{used-car-buyer-2}"/></p><h2 id="The-model"><a class="docs-heading-anchor" href="#The-model">The model</a><a id="The-model-1"></a><a class="docs-heading-anchor-permalink" href="#The-model" title="Permalink"></a></h2><h3 id="Influence-diagram"><a class="docs-heading-anchor" href="#Influence-diagram">Influence diagram</a><a id="Influence-diagram-1"></a><a class="docs-heading-anchor-permalink" href="#Influence-diagram" title="Permalink"></a></h3><pre><code class="language-julia">using Printf, Random, Logging, Parameters, JuMP, Gurobi
 using DecisionProgramming
 
-
-const O = 1     # Chance node: lemon or peach
-const T = 2     # Decision node: pay stranger for advice
-const R = 3     # Chance node: observation of state of the car
-const A = 4     # Decision node: purchase alternative
+const O = 1  # Chance node: lemon or peach
+const T = 2  # Decision node: pay stranger for advice
+const R = 3  # Chance node: observation of state of the car
+const A = 4  # Decision node: purchase alternative
 const O_states = [&quot;lemon&quot;, &quot;peach&quot;]
 const T_states = [&quot;no test&quot;, &quot;test&quot;]
 const R_states = [&quot;no test&quot;, &quot;lemon&quot;, &quot;peach&quot;]
 const A_states = [&quot;buy without guarantee&quot;, &quot;buy with guarantee&quot;, &quot;don&#39;t buy&quot;]
 
+S = States([
+    (length(O_states), [O]),
+    (length(T_states), [T]),
+    (length(R_states), [R]),
+    (length(A_states), [A]),
+])
 C = Vector{ChanceNode}()
 D = Vector{DecisionNode}()
 V = Vector{ValueNode}()
-S_j = Vector{State}(undef, 4)
-S_j[O] = length(O_states)
-S_j[T] = length(T_states)
-S_j[R] = length(R_states)
-S_j[A] = length(A_states)</code></pre><p>We start by defining the influence diagram structure. The decision and chance nodes, as well as their states are defined in the first block. Next, the influence diagram parameters consisting of the node sets and the state spaces of the nodes are defined.</p><pre><code class="language-julia"># Node O: no predecessors
+X = Vector{Probabilities}()
+Y = Vector{Consequences}()</code></pre><p>We start by defining the influence diagram structure. The decision and chance nodes, as well as their states, are defined in the first block. Next, the influence diagram parameters consisting of the node sets and the state spaces of the nodes are defined.</p><pre><code class="language-julia"># Node O: no predecessors
 I_O = Vector{Node}()
-X_O = [0.2,0.8]
-push!(C, ChanceNode(O, I_O, S_j[O], X_O))
+X_O = [0.2, 0.8]
+push!(C, ChanceNode(O, I_O))
+push!(X, Probabilities(X_O))
 
 # Node T: no predecessors
 I_T = Vector{Node}()
-push!(D, DecisionNode(T, I_T, S_j[T]))
+push!(D, DecisionNode(T, I_T))
 
 # Node R: dependent on nodes O and T
-I_R = [O,T]
-X_R = zeros(S_j[O], S_j[T], S_j[R])
+I_R = [O, T]
+X_R = zeros(S[O], S[T], S[R])
 X_R[1, 1, :] = [1,0,0]
 X_R[1, 2, :] = [0,1,0]
 X_R[2, 1, :] = [1,0,0]
 X_R[2, 2, :] = [0,0,1]
-push!(C, ChanceNode(R, I_R, S_j[R], X_R))
+push!(C, ChanceNode(R, I_R))
+push!(X, Probabilities(X_R))
 
 # Node A: dependent on node R
 I_A = [R]
-push!(D, DecisionNode(A, I_A, S_j[A]))
+push!(D, DecisionNode(A, I_A))
 
 # Cost of test
 I_V1 = [T]
-Y_V1 = [0, -25]
-push!(V, ValueNode(5, I_V1, Y_V1))
+Y_V1 = [0.0, -25.0]
+push!(V, ValueNode(5, I_V1))
+push!(Y, Consequences(Y_V1))
 
 # Base profit of purchase alternatives
 I_V2 = [A]
-Y_V2 = [100, 40, 0]
-push!(V, ValueNode(6, I_V2, Y_V2))
+Y_V2 = [100.0, 40.0, 0.0]
+push!(V, ValueNode(6, I_V2))
+push!(Y, Consequences(Y_V2))
 
 # Repair costs
-I_V3 = [O,A]
-Y_V3 = [-200 0 0; -40 -20 0]
-push!(V, ValueNode(7, I_V3, Y_V3))
-</code></pre><p>We continue by defining the probabilities associated with chance nodes and utilities (consequences) associated with value nodes. The rows of the consequence matrix Y_V3 correspond to the state of the car, while the columns correspond to the decision made in node <span>$A$</span>.</p><h3 id="Decision-model"><a class="docs-heading-anchor" href="#Decision-model">Decision model</a><a id="Decision-model-1"></a><a class="docs-heading-anchor-permalink" href="#Decision-model" title="Permalink"></a></h3><pre><code class="language-julia">@info(&quot;Defining InfluenceDiagram&quot;)
-G = InfluenceDiagram(C, D, V)
+I_V3 = [O, A]
+Y_V3 = [-200.0 0.0 0.0;
+        -40.0 -20.0 0.0]
+push!(V, ValueNode(7, I_V3))
+push!(Y, Consequences(Y_V3))
 
-@info(&quot;Creating probabilities.&quot;)
-X = Probabilities(G, C)
+# Validate influence diagram and sort nodes,
+# probabilities and consequences
+validate_influence_diagram(S, C, D, V)
+s_c = sortperm([c.j for c in C])
+s_d = sortperm([d.j for d in D])
+s_v = sortperm([v.j for v in V])
+C = C[s_c]
+D = D[s_d]
+V = V[s_v]
+X = X[s_c]
+Y = Y[s_v]
 
-@info(&quot;Creating consequences.&quot;)
-Y = Consequences(G, V)
-
-@info(&quot;Creating path probability.&quot;)
-P = PathProbability(G, X)
-
-@info(&quot;Creating path utility.&quot;)
-U = PathUtility(G, Y)
-
-@info(&quot;Defining DecisionModel&quot;)
-@time model = DecisionModel(G, P)
-
-@info(&quot;Creating model objective.&quot;)
-@time E = expected_value(model, G, U)
-@objective(model, Max, E)</code></pre><p>We then construct the decision model using the DecisionProgramming.jl package.</p><pre><code class="language-julia">@info(&quot;Starting the optimization process.&quot;)
-optimizer = optimizer_with_attributes(
+P = DefaultPathProbability(C, X)
+U = DefaultPathUtility(V, Y)</code></pre><p>We continue by defining the probabilities associated with chance nodes and utilities (consequences) associated with value nodes. The rows of the consequence matrix Y_V3 correspond to the state of the car, while the columns correspond to the decision made in node <span>$A$</span>.</p><h3 id="Decision-model"><a class="docs-heading-anchor" href="#Decision-model">Decision model</a><a id="Decision-model-1"></a><a class="docs-heading-anchor-permalink" href="#Decision-model" title="Permalink"></a></h3><p>We then construct the decision model using the DecisionProgramming.jl package.</p><pre><code class="language-julia">model = DecisionModel(S, D, P)
+EV = expected_value(model, S, U)
+@objective(model, Max, EV)</code></pre><p>We can perform the optimization using an optimizer such as Gurobi.</p><pre><code class="language-julia">optimizer = optimizer_with_attributes(
     Gurobi.Optimizer,
     &quot;IntFeasTol&quot;      =&gt; 1e-9,
     &quot;LazyConstraints&quot; =&gt; 1,
 )
 set_optimizer(model, optimizer)
-optimize!(model)
-
-@info(&quot;Extracting results.&quot;)
-Z = DecisionStrategy(model)
-
-@info(&quot;Printing decision strategy:&quot;)
-print_decision_strategy(G, Z)
-println()</code></pre><p>The model is solved. We get the following decision strategy:</p><pre><code class="language-none">┌────────┬────┬───┐
+optimize!(model)</code></pre><p>The model is solved. We get the following decision strategy:</p><pre><code class="language-julia">Z = DecisionStrategy(model, D)
+print_decision_strategy(S, Z)</code></pre><pre><code class="language-none">┌────────┬────┬───┐
 │  Nodes │ () │ 2 │
 ├────────┼────┼───┤
 │ States │ () │ 2 │
@@ -100,12 +97,19 @@ println()</code></pre><p>The model is solved. We get the following decision stra
 │ States │ (1,) │ 3 │
 │ States │ (2,) │ 2 │
 │ States │ (3,) │ 1 │
-└────────┴──────┴───┘</code></pre><p>To start explaining this output, let&#39;s take a look at the top table. On the right, we have the decision node 2. We defined earlier that the node <span>$T$</span> is node number 2. On the left, we have the information set of that decision node, which is empty. The strategy in the first decision node is to choose alternative 2, which we defined to be testing the car.</p><p>In the bottom table, we have node number 4 (node <span>$A$</span>) and its predecessor, node number 3 (node <span>$R$</span>). The first row, where no test result is obtained, is invalid for this strategy since the car was tested. If the car is a lemon, Joe should buy the car with guarantee (alternative 2), and if it is a peach, buy the car without guarantee (alternative 1).</p><h3 id="Analyzing-the-results"><a class="docs-heading-anchor" href="#Analyzing-the-results">Analyzing the results</a><a id="Analyzing-the-results-1"></a><a class="docs-heading-anchor-permalink" href="#Analyzing-the-results" title="Permalink"></a></h3><pre><code class="language-julia">@info(&quot;Computing utility distribution.&quot;)
-@time udist = UtilityDistribution(G, P, U, Z)
-
-@info(&quot;Printing utility distribution.&quot;)
-print_utility_distribution(udist)
-
-@info(&quot;Printing expected utility.&quot;)
-@unpack u, p = udist
-@printf(&quot;Expected utility: %.1f&quot;, sum(u[i]*p[i] for i in 1:length(u)))</code></pre><p>From the utility distribution, we can see that Joe&#39;s profit with this strategy is 15 USD with a 20% probability (the car is a lemon) and 35 USD with a 80% probability (the car is a peach). The expected profit is thus 31 USD.</p><h2 id="References"><a class="docs-heading-anchor" href="#References">References</a><a id="References-1"></a><a class="docs-heading-anchor-permalink" href="#References" title="Permalink"></a></h2><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>Howard, R. A. (1977). The used car buyer. Reading in Decision Analysis, 2nd Ed. Stanford Research Institute, Menlo Park, CA.</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../decision-programming/computational-complexity/">« Computational Complexity</a><a class="docs-footer-nextpage" href="../pig-breeding/">Pig Breeding »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 17 August 2020 09:58">Monday 17 August 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+└────────┴──────┴───┘</code></pre><p>To start explaining this output, let&#39;s take a look at the top table. On the right, we have the decision node 2. We defined earlier that the node <span>$T$</span> is node number 2. On the left, we have the information set of that decision node, which is empty. The strategy in the first decision node is to choose alternative 2, which we defined to be testing the car.</p><p>In the bottom table, we have node number 4 (node <span>$A$</span>) and its predecessor, node number 3 (node <span>$R$</span>). The first row, where we obtain no test result, is invalid for this strategy since we tested the car. If the car is a lemon, Joe should buy the car with a guarantee (alternative 2), and if it is a peach, buy the car without guarantee (alternative 1).</p><h3 id="Analyzing-the-results"><a class="docs-heading-anchor" href="#Analyzing-the-results">Analyzing the results</a><a id="Analyzing-the-results-1"></a><a class="docs-heading-anchor-permalink" href="#Analyzing-the-results" title="Permalink"></a></h3><pre><code class="language-julia">udist = UtilityDistribution(S, P, U, Z)
+print_utility_distribution(udist)</code></pre><pre><code class="language-none">┌───────────┬─────────────┐
+│   Utility │ Probability │
+│   Float64 │     Float64 │
+├───────────┼─────────────┤
+│ 15.000000 │    0.200000 │
+│ 35.000000 │    0.800000 │
+└───────────┴─────────────┘</code></pre><p>From the utility distribution, we can see that Joe&#39;s profit with this strategy is 15 USD, with a 20% probability (the car is a lemon) and 35 USD with an 80% probability (the car is a peach).</p><pre><code class="language-julia">print_statistics(udist)</code></pre><pre><code class="language-none">┌──────────┬────────────┐
+│     Name │ Statistics │
+│   String │    Float64 │
+├──────────┼────────────┤
+│     Mean │  31.000000 │
+│      Std │   8.000000 │
+│ Skewness │  -1.500000 │
+│ Kurtosis │   0.250000 │
+└──────────┴────────────┘</code></pre><p>The expected profit is thus 31 USD.</p><h2 id="References"><a class="docs-heading-anchor" href="#References">References</a><a id="References-1"></a><a class="docs-heading-anchor-permalink" href="#References" title="Permalink"></a></h2><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>Howard, R. A. (1977). The used car buyer. Reading in Decision Analysis, 2nd Ed. Stanford Research Institute, Menlo Park, CA.</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../decision-programming/computational-complexity/">« Computational Complexity</a><a class="docs-footer-nextpage" href="../pig-breeding/">Pig Breeding »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 17 August 2020 10:34">Monday 17 August 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
