@@ -47,9 +47,9 @@ Y = Vector{Consequences}()
 ```
 
 ### Load State Probability
-The probability that the load is high. We draw $x∼U(0,1)$ from uniform distribution.
+The probability that the load is high. We draw $ℙ(L=high)$ from uniform distribution.
 
-$$ℙ(L=high)=x$$
+$$ℙ(L=high)∼U(0,1)$$
 
 ```julia
 for j in L
@@ -92,11 +92,11 @@ end
 ```
 
 ### Probability of Failure
-The probabilities of failure which are decresead by fortifications. We draw the values $z∼U(0,1)$ and $w∼U(0,1)$ from uniform distribution.
+The probabilities of failure which are decresead by fortifications. We draw the values $x∼U(0,1)$ and $y∼U(0,1)$ from uniform distribution.
 
-$$ℙ(F=failure∣A_N,...,A_1,L=high)=\frac{\max{\{z, 1-z\}}}{\exp(∑_{k=1,...,N} f(A_k))}$$
+$$ℙ(F=failure∣A_N,...,A_1,L=high)=\frac{\max{\{x, 1-x\}}}{\exp(∑_{k=1,...,N} f(A_k))}$$
 
-$$ℙ(F=failure∣A_N,...,A_1,L=low)=\frac{\min{\{w, 1-w\}}}{\exp(∑_{k=1,...,N} f(A_k))}$$
+$$ℙ(F=failure∣A_N,...,A_1,L=low)=\frac{\min{\{y, 1-y\}}}{\exp(∑_{k=1,...,N} f(A_k))}$$
 
 ```julia
 for j in F
