@@ -91,6 +91,8 @@ with
 
 $$∑_{s_j∈S_j} ℙ(s_j∣𝐬_{I(j)}) = 1.$$
 
+We refer to a chance state $s_j∈S_j$ given information path $𝐬_{I(j)}$ as **inactive** if its probability is zero $ℙ(s_j∣𝐬_{I(j)})=0.$
+
 Implementation wise, we can think probabilities as functions of information paths concatenated with state $X_j : 𝐒_{I(j)};S_j → [0, 1]$ where $∑_{s_j∈S_j} X_j(𝐬_{I(j)};s_j)=1.$
 
 
@@ -102,10 +104,6 @@ $$Z_j:𝐒_{I(j)}↦S_j.$$
 **Decision strategy** $Z$ contains one local decision strategy for each decision node. Set of **all decision strategies** is denoted $ℤ.$
 
 A decision stategy $Z∈ℤ$ is **compatible** with the path $𝐬∈𝐒$ if and only if $Z_j(𝐬_{I(j)})=s_j$ forall $Z_j∈Z$ and $j∈D.$
-
-An **active path** is path $𝐬∈𝐒$ that is compatible with decision strategy $Z.$ We denote the set of **all active paths** using $𝐒^Z.$ Since each decision strategy $Z_j$ chooses only one state out of all of its states, the **number of active paths** is
-
-$$|𝐒^Z|=|𝐒|/\prod_{j∈D}|S_j|=\prod_{j∈C}|S_j|.$$
 
 
 ## Path Probability
@@ -146,10 +144,26 @@ $$(ℙ(𝐬∣Z), \mathcal{U}(𝐬))$$
 that comprises of path probability function and path utility function over paths $𝐬∈𝐒$ conditional to the decision strategy $Z.$
 
 
+## Active Paths
+An **active path** is a path $𝐬∈𝐒$ that has positive path probability $ℙ(𝐬∣Z)>0.$ We denote the set of **all active paths** given a decision strategy $Z$ as
+
+$$𝐒(Z)=\{𝐬∈𝐒 ∣ ℙ(𝐬∣Z)>0\}.$$
+
+Since each decision strategy $Z_j$ chooses only one of its states the **number of active paths** is bounded by
+
+$$|𝐒(Z)|≤|𝐒|/\prod_{j∈D}|S_j|=\prod_{j∈C}|S_j|.$$
+
+If an influece diagram has **zero inactive chance states** the number of active paths is equal to the upper bound
+
+$$|𝐒(Z)|=\prod_{j∈C}|S_j|.$$
+
+
 ## Properties
 In this section, we define common properties for influence diagrams. The paper [^2] discusses many of these properties.
 
 **Discrete** influence diagram refers to countable state space. Otherwise, the influence diagram is **continuous**. We can discretize continuous influence diagrams using discrete bins.
+
+Influence diagram is **symmetric** if there is zero inactive chance states. Otherwise, it is **assymetric**.
 
 Two nodes are **sequential** if there exists a directed path from one node to the other in the influence diagram. Otherwise, the nodes are **parallel**. Sequential nodes often model time dimension.
 

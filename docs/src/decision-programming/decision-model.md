@@ -13,7 +13,7 @@ Common measures include expected value and risk metrics. The main consideration 
 
 
 ## Variables
-**Decision variables** $z(s_j∣𝐬_{I(j)})$ are equivalent to the decision strategies $Z$ such that $Z_j(𝐬_I(j))=s_j$ if and only if $z(s_j∣𝐬_{I(j)})=1$ and $z(s_{j^′}∣𝐬_{I(j)})=0$ for all $s_{j^′}≠s_j.$ Constraint $(2)$ defines the decisions to be binary variables and the constraint $(3)$ limits decisions to one per information path.
+**Decision variables** $z(s_j∣𝐬_{I(j)})$ are equivalent to the decision strategies $Z$ such that $Z_j(𝐬_I(j))=s_j$ if and only if $z(s_j∣𝐬_{I(j)})=1$ and $z(s_{j}^′∣𝐬_{I(j)})=0$ for all $s_{j}^′∈S_j∖s_j.$ Constraint $(2)$ defines the decisions to be binary variables and the constraint $(3)$ limits decisions to one per information path.
 
 $$z(s_j∣𝐬_{I(j)}) ∈ \{0,1\},\quad ∀j∈D, s_j∈S_j, 𝐬_{I(j)}∈𝐒_{I(j)} \tag{2}$$
 
@@ -41,9 +41,9 @@ We can exploit the fact that the path probabilities sum to one by using the **pr
 
 $$∑_{𝐬∈𝐒}π(𝐬)=1. \tag{7}$$
 
-For problems where the number of active paths $|𝐒^Z|$ is known, we can exploit it by using the **number of active paths cut** defined as
+For problems where the number of active paths is known, we can exploit it by using the **number of active paths cut** defined as
 
-$$∑_{𝐬∈𝐒} \frac{π(𝐬)}{p(𝐬)}=|𝐒^Z|. \tag{8}$$
+$$∑_{𝐬∈𝐒} \frac{π(𝐬)}{p(𝐬)}=|𝐒(Z)|. \tag{8}$$
 
 
 ## Expected Value
