@@ -14,15 +14,15 @@ There are $n_T$ technology development projects and $n_A$ application developmen
 
 Decision states to develop patents
 
-$$d_i^P∈D_i^P=\{[q_1^P, q_2^P], [q_2^P, q_3^P], ..., [q_{|D^P|}^P, q_{|D^P|+1}^P]\}$$
+$$d_i^P∈D_i^P=\{[q_1^P, q_2^P), [q_2^P, q_3^P), ..., [q_{|D^P|}^P, q_{|D^P|+1}^P)\}$$
 
-Chance states of technical competitiveness $c_i^T∈C_i^T$
+Chance states of technical competitiveness $c_j^T∈C_j^T$
 
 Decision states to develop applications
 
-$$d_k^A∈D^A=\{[q_1^A, q_2^A], [q_2^A, q_3^A], ..., [q_{|D^A|}^A, q_{|D^A|+1}^A]\}$$
+$$d_k^A∈D^A=\{[q_1^A, q_2^A), [q_2^A, q_3^A), ..., [q_{|D^A|}^A, q_{|D^A|+1}^A)\}$$
 
-Chance states of market size $c_k^M∈C_k^M$
+Chance states of market size $c_l^M∈C_l^M$
 
 Probability of technical competitiveness $c_j^T$ given the range $d_i^P$: $ℙ(c_j^T∣d_i^P)∈[0,1]$
 
