@@ -6,9 +6,9 @@
 
 ## Formulation
 ### Projects
-![](figures/multi-period-investment.svg)
+![](figures/contingent-portfolio-programming.svg)
 
-The influence diagram of the contingent portfolio programming (CPP) problem. NOTE: the ID needs to be edited so that there's no $i$ and $k$. Basically, the decision nodes represent decisions on which $i$ and $k$ to pick.
+The influence diagram of the contingent portfolio programming (CPP) problem.
 
 There are $n_T$ technology development projects and $n_A$ application development projects.
 
