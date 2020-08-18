@@ -73,9 +73,9 @@ model = DecisionModel(S, D, P; positive_path_utility=false)
 
 n_T = 5                     # number of technology projects
 n_A = 5                     # number of application projects
-I_t = rand(n_T)*0.5         # costs of technology projects
+I_t = rand(n_T)*0.1         # costs of technology projects
 O_t = rand(1:3,n_T)         # number of patents for each tech project
-I_a = rand(n_T)             # costs of application projects
+I_a = rand(n_T)*2           # costs of application projects
 O_a = rand(2:4,n_T)         # number of applications for each appl. project
 
 V_A = rand(S[cᴹ], n_A).+0.5 # Value of an application
@@ -112,6 +112,10 @@ z_dA = model[:z][2]
 #(29b)
 @constraint(model, [i=1:3, j=1:3, k=1:3],
     sum(x_A[i,j,k,a]*O_a[a] for a in 1:n_A) <= q_A[k+1] + (1 - z_dA[i,j,k])*M - ε)
+
+@constraint(model, [i=1:3, j=1:3, k=1:3], x_A[i,j,k,1] <= x_T[i,1])
+@constraint(model, [i=1:3, j=1:3, k=1:3], x_A[i,j,k,2] <= x_T[i,1])
+@constraint(model, [i=1:3, j=1:3, k=1:3], x_A[i,j,k,2] <= x_T[i,2])
 
 @info("Creating model objective.")
 struct PathUtility <: AbstractPathUtility

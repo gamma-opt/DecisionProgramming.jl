@@ -132,10 +132,10 @@ Application project $a$ costs $I_a∈ℝ^+$ and generates $O_a∈ℕ$ applicatio
 ```julia
 n_T = 5                     # number of technology projects
 n_A = 5                     # number of application projects
-I_t = rand(n_T)*0.5         # costs of technology projects
+I_t = rand(n_T)*0.1         # costs of technology projects
 O_t = rand(1:3,n_T)         # number of patents for each tech project
-I_a = rand(n_T)             # costs of application projects
-O_a = rand(2:4,n_T)         # number of applications for each application project
+I_a = rand(n_T)*2           # costs of application projects
+O_a = rand(2:4,n_T)         # number of applications for each appl. project
 
 V_A = rand(S[cᴹ], n_A).+0.5 # Value of an application
 V_A[1, :] .+= -0.5          # Low market share: less value
@@ -151,9 +151,10 @@ x_T = variables(model, [S[dᴾ]...,n_T]; binary=true)
 x_A = variables(model, [S[dᴾ]...,S[cᵀ]...,S[dᴬ]..., n_A]; binary=true)
 ```
 
-<!-- Number of patents $x^T(t) = ∑_i x_i^T(t) z(d_i^P)$
+Number of patents $x^T(t) = ∑_i x_i^T(t) z(d_i^P)$
 
-Number of applications $x^A(a∣d_i^P,c_j^T) = ∑_k x_k^A(a∣d_i^P,c_j^T) z(d_k^A|d_i^P,c_j^T)$ -->
+Number of applications $x^A(a∣d_i^P,c_j^T) = ∑_k x_k^A(a∣d_i^P,c_j^T) z(d_k^A|d_i^P,c_j^T)$
+
 Helpful variables:
 
 Large constant $M$ (e.g. $\frac{3}{2}\text{max}\{\sum_t O_t,\sum_a O_a\}$)
@@ -217,6 +218,18 @@ $$q_k^A - (1-z(d_k^A|d_i^P,c_j^T))M \le \sum_a x_k^A(a∣d_i^P,c_j^T)O_a \le q_{
     sum(x_A[i,j,k,a]*O_a[a] for a in 1:n_A) <= q_A[k+1] + (1 - z_dA[i,j,k])*M - ε)
 ```
 
+We can also model dependencies between the technology and application projects, e.g. application project $a$ can be completed only if technology project $t$ has been completed. This is done by adding constraints
+
+$$x_k^A(a∣d_i^P,c_j^T) \le x_i^T(t), \quad \forall i,j,k$$
+
+As an example, we state that application projects 1 and 2 require technology project 1, and application project 2 also requires technology project 2.
+
+```julia
+@constraint(model, [i=1:3, j=1:3, k=1:3], x_A[i,j,k,1] <= x_T[i,1])
+@constraint(model, [i=1:3, j=1:3, k=1:3], x_A[i,j,k,2] <= x_T[i,1])
+@constraint(model, [i=1:3, j=1:3, k=1:3], x_A[i,j,k,2] <= x_T[i,2])
+```
+
 $$x_i^T(t)∈\{0, 1\}, \quad \forall i$$
 
 $$x_k^A(a∣d_i^P,c_j^T)∈\{0, 1\}, \quad \forall i,j,k$$
@@ -261,18 +274,18 @@ julia> print_decision_strategy(S, Z)
 ┌────────┬────┬───┐
 │  Nodes │ () │ 1 │
 ├────────┼────┼───┤
-│ States │ () │ 1 │
+│ States │ () │ 3 │
 └────────┴────┴───┘
 ┌────────┬────────┬───┐
 │  Nodes │ (1, 2) │ 3 │
 ├────────┼────────┼───┤
-│ States │ (1, 1) │ 3 │
+│ States │ (1, 1) │ 1 │
 │ States │ (2, 1) │ 1 │
-│ States │ (3, 1) │ 1 │
-│ States │ (1, 2) │ 3 │
+│ States │ (3, 1) │ 2 │
+│ States │ (1, 2) │ 1 │
 │ States │ (2, 2) │ 1 │
-│ States │ (3, 2) │ 1 │
-│ States │ (1, 3) │ 3 │
+│ States │ (3, 2) │ 3 │
+│ States │ (1, 3) │ 1 │
 │   ⋮    │   ⋮    │ ⋮ │
 └────────┴────────┴───┘
 ```
@@ -283,14 +296,18 @@ udist = UtilityDistribution(S, P, U, Z)
 
 ```julia-repl
 julia> print_utility_distribution(udist)
-┌──────────┬─────────────┐
-│  Utility │ Probability │
-│  Float64 │     Float64 │
-├──────────┼─────────────┤
-│ 0.030873 │    0.236111 │
-│ 2.202538 │    0.319444 │
-│ 3.235381 │    0.444444 │
-└──────────┴─────────────┘
+┌───────────┬─────────────┐
+│   Utility │ Probability │
+│   Float64 │     Float64 │
+├───────────┼─────────────┤
+│ -2.164246 │    0.097222 │
+│ -0.759404 │    0.083333 │
+│ -0.077398 │    0.236111 │
+│  0.258058 │    0.055556 │
+│  0.505004 │    0.027778 │
+│  1.342020 │    0.500000 │
+│     ⋮     │      ⋮      │
+└───────────┴─────────────┘
 ```
 
 ```julia-repl
@@ -299,10 +316,10 @@ julia> print_statistics(udist)
 │     Name │ Statistics │
 │   String │    Float64 │
 ├──────────┼────────────┤
-│     Mean │   2.148825 │
-│      Std │   1.258874 │
-│ Skewness │  -0.838591 │
-│ Kurtosis │  -0.861640 │
+│     Mean │   0.407403 │
+│      Std │   1.118111 │
+│ Skewness │  -1.004935 │
+│ Kurtosis │   0.071940 │
 └──────────┴────────────┘
 ```
 
