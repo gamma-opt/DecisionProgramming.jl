@@ -1,6 +1,7 @@
 using Printf, Random, Logging, Parameters, JuMP, Gurobi
 using DecisionProgramming
 
+Random.seed!(42)
 
 const dᴾ = 1    # Decision node: range for number of patents
 const cᵀ = 2    # Chance node:   technical competitiveness
@@ -51,11 +52,6 @@ X_CM[3, 3, :] = [1/12, 1/4, 2/3]
 push!(C, ChanceNode(cᴹ, I_CM))
 push!(X, Probabilities(X_CM))
 
-I_V = [cᴹ]
-Y_V = [0.0, 0.0, 0.0]
-push!(V, ValueNode(5, I_V))
-push!(Y, Consequences(Y_V))
-
 @info("Validate influence diagram.")
 validate_influence_diagram(S, C, D, V)
 s_c = sortperm([c.j for c in C])
@@ -81,10 +77,6 @@ I_t = rand(n_T)*0.5         # costs of technology projects
 O_t = rand(1:3,n_T)         # number of patents for each tech project
 I_a = rand(n_T)             # costs of application projects
 O_a = rand(2:4,n_T)         # number of applications for each appl. project
-ε = 0.5*minimum([O_t O_a])  # a helper variable, allows using ≤ instead of < in constraints (28b) and (29b)
-q_P = [0, 3, 6, 9]          # limits of the technology intervals
-q_A = [0, 5, 10, 15]        # limits of the application intervals
-M = 20                      # a large constant
 
 V_A = rand(S[cᴹ], n_A).+0.5 # Value of an application
 V_A[1, :] .+= -0.5          # Low market share: less value
@@ -92,6 +84,12 @@ V_A[3, :] .+= 0.5           # High market share: more value
 
 x_T = variables(model, [S[dᴾ]...,n_T]; binary=true)
 x_A = variables(model, [S[dᴾ]...,S[cᵀ]...,S[dᴬ]..., n_A]; binary=true)
+
+M = 20                      # a large constant
+ε = 0.5*minimum([O_t O_a])  # a helper variable, allows using ≤ instead of < in constraints (28b) and (29b)
+
+q_P = [0, 3, 6, 9]          # limits of the technology intervals
+q_A = [0, 5, 10, 15]        # limits of the application intervals
 z_dP = model[:z][1]
 z_dA = model[:z][2]
 
