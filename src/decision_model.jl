@@ -92,14 +92,14 @@ end
 
 # Examples
 ```julia
-probability_sum_cut(model, S, P)
+probability_cut(model, S, P)
 ```
 """
-function probability_sum_cut(model::DecisionModel, S::States, P::AbstractPathProbability)
+function probability_cut(model::DecisionModel, S::States, P::AbstractPathProbability)
     # Add the constraints only once
     ϵ = minimum(P(s) for s in paths(S))
     flag = false
-    function probability_sum_cut(cb_data)
+    function probability_cut(cb_data)
         flag && return
         π = model[:π]
         πsum = sum(callback_value(cb_data, π[s]) for s in eachindex(π))
@@ -109,7 +109,7 @@ function probability_sum_cut(model::DecisionModel, S::States, P::AbstractPathPro
             flag = true
         end
     end
-    MOI.set(model, MOI.LazyConstraintCallback(), probability_sum_cut)
+    MOI.set(model, MOI.LazyConstraintCallback(), probability_cut)
 end
 
 """Adds a number of paths cut to the model as a lazy constraint.
@@ -117,15 +117,15 @@ end
 # Examples
 ```julia
 atol = 0.9  # Tolerance to trigger the creation of the lazy cut
-number_of_paths_cut(model, S, P; atol=atol)
+active_paths_cut(model, S, P; atol=atol)
 ```
 """
-function number_of_paths_cut(model::DecisionModel, S::States, P::AbstractPathProbability; atol::Float64 = 0.9)
+function active_paths_cut(model::DecisionModel, S::States, P::AbstractPathProbability; atol::Float64 = 0.9)
     ϵ = minimum(P(s) for s in paths(S))
     num_active_paths = prod(S[c.j] for c in P.C)
     # Add the constraints only once
     flag = false
-    function number_of_paths_cut(cb_data)
+    function active_paths_cut(cb_data)
         flag && return
         π = model[:π]
         πnum = sum(callback_value(cb_data, π[s]) ≥ ϵ for s in eachindex(π))
@@ -135,7 +135,7 @@ function number_of_paths_cut(model::DecisionModel, S::States, P::AbstractPathPro
             flag = true
         end
     end
-    MOI.set(model, MOI.LazyConstraintCallback(), number_of_paths_cut)
+    MOI.set(model, MOI.LazyConstraintCallback(), active_paths_cut)
 end
 
 

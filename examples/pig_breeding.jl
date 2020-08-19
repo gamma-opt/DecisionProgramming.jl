@@ -97,7 +97,7 @@ U = DefaultPathUtility(V, Y)
 @info("Creating the decision model.")
 U⁺ = PositivePathUtility(S, U)
 model = DecisionModel(S, D, P; positive_path_utility=true)
-number_of_paths_cut(model, S, P)
+active_paths_cut(model, S, P)
 EV = expected_value(model, S, U⁺)
 @objective(model, Max, EV)
 

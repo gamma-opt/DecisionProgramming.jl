@@ -23,8 +23,6 @@ U = DefaultPathUtility(V, Y)
 
 U⁺ = PositivePathUtility(S, U)
 model = DecisionModel(S, D, P; positive_path_utility=true)
-# probability_sum_cut(model, S, P)
-# number_of_paths_cut(model, S, P)
 
 α = 0.1
 w = 0.5

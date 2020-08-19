@@ -25,8 +25,8 @@ U = DefaultPathUtility(V, Y)
 @info "Creating decision model."
 U⁺ = PositivePathUtility(S, U)
 model = DecisionModel(S, D, P; positive_path_utility=true)
-probability_sum_cut(model, S, P)
-number_of_paths_cut(model, S, P)
+probability_cut(model, S, P)
+active_paths_cut(model, S, P)
 
 @info "Adding objectives to the model."
 α = 0.2

@@ -37,11 +37,11 @@ $$\mathcal{U}^+(𝐬) = \mathcal{U}(𝐬) - \min_{𝐬∈𝐒} \mathcal{U}(𝐬)
 ## Lazy Constraints
 Valid equalities are equalities that can be be derived from the problem structure. They can help in computing the optimal decision strategies, but adding them directly may slow down the overall solution process. By adding valid equalities during the solution process as *lazy constraints*, the MILP solver can prune nodes of the branch-and-bound tree more efficiently. We have the following valid equalities.
 
-We can exploit the fact that the path probabilities sum to one by using the **probability sum cut** defined as
+We can exploit the fact that the path probabilities sum to one by using the **probability cut** defined as
 
 $$∑_{𝐬∈𝐒}π(𝐬)=1. \tag{7}$$
 
-For problems where the number of active paths is known, we can exploit it by using the **number of active paths cut** defined as
+For problems where the number of active paths is known, we can exploit it by using the **active paths cut** defined as
 
 $$∑_{𝐬∈𝐒} \frac{π(𝐬)}{p(𝐬)}=|𝐒(Z)|. \tag{8}$$
 

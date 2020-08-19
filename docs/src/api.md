@@ -55,8 +55,8 @@ PositivePathUtility(::Path)
 variables
 DecisionModel
 DecisionModel(::States, ::Vector{DecisionNode}, ::AbstractPathProbability; ::Bool)
-probability_sum_cut(::DecisionModel, ::States, ::AbstractPathProbability)
-number_of_paths_cut(::DecisionModel, ::States, ::AbstractPathProbability; ::Float64)
+probability_cut(::DecisionModel, ::States, ::AbstractPathProbability)
+active_paths_cut(::DecisionModel, ::States, ::AbstractPathProbability; ::Float64)
 ```
 
 ### Objective Functions
