@@ -34,9 +34,7 @@ From the utility distribution, we can calculate the cumulative distribution, sta
 
 We have a discrete probability distribution $f(x)=ℙ(X=x)∈[0, 1]$ over the domain $x∈Ω$ with $∑_{x∈Ω}ℙ(X=x)=1$ and its cumulative distribution function $F(x) = ∑_{x^′∈Ω, x^′≤x}f(x^′).$
 
-We present the concept of conditional value-at-risk, a *risk measure* of the conditional expected value of the tail of a probability distribution for a given threshold of $α∈(0, 1).$
-
-First, we define the **value-at-risk** as
+We present the concept of conditional value-at-risk, a *risk measure* of the conditional expected value of the tail of a probability distribution for a given threshold of $α∈(0, 1).$ First, we define the **value-at-risk** as
 
 $$\operatorname{VaR}(α) = x_α = \inf\{x∈Ω ∣ F(x) > α\}.$$
 
