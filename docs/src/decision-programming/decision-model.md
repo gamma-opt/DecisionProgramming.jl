@@ -43,7 +43,7 @@ $$∑_{𝐬∈𝐒}π(𝐬)=1. \tag{7}$$
 
 For problems where the number of active paths is known, we can exploit it by using the **active paths cut** defined as
 
-$$∑_{𝐬∈𝐒} \frac{π(𝐬)}{p(𝐬)}=|𝐒(Z)|. \tag{8}$$
+$$∑_{𝐬∈𝐒} \frac{π(𝐬)}{p(𝐬)}=|𝐒^+(Z)|. \tag{8}$$
 
 
 ## Expected Value

@@ -121,16 +121,19 @@ active_paths_cut(model, S, P; atol=atol)
 ```
 """
 function active_paths_cut(model::DecisionModel, S::States, P::AbstractPathProbability; atol::Float64 = 0.9)
+    all_active_states = all(all((!).(iszero.(x))) for x in P.X)
+    all_active_states || error("Cannot use active paths cut if all states are not active.")
     ϵ = minimum(P(s) for s in paths(S))
-    num_active_paths = prod(S[c.j] for c in P.C)
+    num_compatible_paths = prod(S[c.j] for c in P.C)
     # Add the constraints only once
     flag = false
     function active_paths_cut(cb_data)
         flag && return
         π = model[:π]
         πnum = sum(callback_value(cb_data, π[s]) ≥ ϵ for s in eachindex(π))
-        if !isapprox(πnum, num_active_paths, atol = atol)
-            con = @build_constraint(sum(π[s...] / P(s) for s in paths(S)) == num_active_paths)
+        if !isapprox(πnum, num_compatible_paths, atol = atol)
+            num_active_paths = @expression(model, sum(π[s...] / P(s) for s in paths(S) if !iszero(P(s))))
+            con = @build_constraint(num_active_paths == num_compatible_paths)
             MOI.submit(model, MOI.LazyConstraint(cb_data), con)
             flag = true
         end

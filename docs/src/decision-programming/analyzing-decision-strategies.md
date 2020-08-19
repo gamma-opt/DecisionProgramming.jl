@@ -1,30 +1,24 @@
 # Analyzing Decision Strategies
 ## Introduction
-We can analyze fixed decision strategies $Z$ on an influence diagram $G$, such as ones resulting from the optimization, by generating the active paths $𝐒^Z.$
+This section focuses on how we can analyze fixed decision strategies $Z$ on an influence diagram $G$, such as ones resulting from the optimization. We can rule out all incompatible paths from the analysis because their path probability is zero, by only generating the compatible paths $𝐬∈𝐒(Z).$ However, compatible paths may still contain inactive paths if the influence diagram contains inactive chance states. The other property of compatible paths is that their path probability is equal to the upper bound $p(𝐬).$
 
 
-## Active Paths
-We can generate active paths $𝐬∈𝐒^Z$ as follows.
+## Generating Compatible Paths
+We can generate compatible paths $𝐬∈𝐒(Z)$ as follows.
 
 1) Initialize path $𝐬$ of length $n$ with undefined values.
 2) Fill path with chance states $𝐬_j∈S_j$ for all $j∈C.$
 3) In increasing order of decision nodes $j∈D$, fill decision states by computing decision strategy $𝐬_j=Z_j(𝐬_{I(j)}).$
 
-The path probability for all active paths is equal to the upper bound
-
-$$ℙ(𝐬∣Z)=p(𝐬), \quad ∀𝐬∈𝐒^Z.$$
-
-We exclude inactive paths from the analysis because their path probabilities are zero.
-
 
 ## Utility Distribution
 We define unique path utility values as
 
-$$\mathcal{U}^∗=\{\mathcal{U}(𝐬)∣𝐬∈𝐒^Z\}.$$
+$$\mathcal{U}^∗=\{\mathcal{U}(𝐬)∣𝐬∈𝐒(Z)\}.$$
 
 The probability mass function of the **utility distribution** associates each unique path utility to a probability as follows
 
-$$ℙ(X=u)=∑_{𝐬∈𝐒^Z∣\mathcal{U}(𝐬)=u} p(𝐬),\quad ∀u∈\mathcal{U}^∗.$$
+$$ℙ(X=u)=∑_{𝐬∈𝐒(Z)∣\mathcal{U}(𝐬)=u} p(𝐬),\quad ∀u∈\mathcal{U}^∗.$$
 
 From the utility distribution, we can calculate the cumulative distribution, statistics, and risk measures. The relevant statistics are expected value, standard deviation, skewness and kurtosis. Risk measures focus on the conditional value-at-risk (CVaR), also known as, expected shortfall.
 
@@ -32,7 +26,7 @@ From the utility distribution, we can calculate the cumulative distribution, sta
 ## Measuring Risk
 ![](figures/risk_measures.svg)
 
-We have a discrete probability distribution $f(x)=ℙ(X=x)∈[0, 1]$ over the domain $x∈Ω$ with $∑_{x∈Ω}ℙ(X=x)=1$ and its cumulative distribution function $F(x) = ∑_{x^′∈Ω, x^′≤x}f(x^′).$
+We have a discrete probability distribution $f(x)=ℙ(X=x)∈[0, 1]$ over the domain $x∈Ω$ with $∑_{x∈Ω}ℙ(X=x)=1$ and its cumulative distribution function $F(x) = ∑_{x^′∈Ω∣x^′≤x}f(x^′).$
 
 We present the concept of conditional value-at-risk, a *risk measure* of the conditional expected value of the tail of a probability distribution for a given threshold of $α∈(0, 1).$ First, we define the **value-at-risk** as
 
@@ -49,7 +43,7 @@ In the above figure, we have an example of discrete probability distribution wit
 We denote **paths with fixed states** where $ϵ$ denotes an empty state using a recursive definition.
 
 $$\begin{aligned}
-𝐒_{ϵ} &= 𝐒^Z \\
+𝐒_{ϵ} &= 𝐒(Z) \\
 𝐒_{ϵ,s_i} &= \{𝐬∈𝐒_{ϵ} ∣ 𝐬_i=s_i\} \\
 𝐒_{ϵ,s_i,s_j} &= \{𝐬∈𝐒_{ϵ,s_i} ∣ 𝐬_j=s_j\},\quad j≠i
 \end{aligned}$$

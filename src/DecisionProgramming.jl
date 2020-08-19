@@ -35,7 +35,7 @@ export DecisionModel,
 
 export random_diagram
 
-export ActivePaths,
+export CompatiblePaths,
     UtilityDistribution,
     StateProbabilities
 

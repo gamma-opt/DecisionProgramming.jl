@@ -1,8 +1,6 @@
 # Influence Diagram
 ## Introduction
-Based on [^1], sections 3.
-
-The paper [^2] explains details about influence diagrams.
+Decision programming uses influence diagrams to model decision making problems under uncertainty. This section defines influence diagrams and discusses about their properties. It is based on the definitions in [^1] and [^2].
 
 
 ## Definition
@@ -105,13 +103,45 @@ $$Z_j:𝐒_{I(j)}↦S_j.$$
 
 A decision stategy $Z∈ℤ$ is **compatible** with the path $𝐬∈𝐒$ if and only if $Z_j(𝐬_{I(j)})=s_j$ forall $Z_j∈Z$ and $j∈D.$
 
+We denote the set of **compatible paths** as
+
+$$𝐒(Z)=\{𝐬∈𝐒 ∣ Z \text{ is compatible with } 𝐬\}.$$
+
+Since each decision strategy $Z_j$ chooses only one of its states, the **number of compatible paths** is a constant
+
+$$|𝐒(Z)|=|𝐒|/\prod_{j∈D}|S_j|=\prod_{j∈C}|S_j|.$$
+
 
 ## Path Probability
-We define the **path probability (upper bound)** as
+We define the **upper bound of path probability** as
 
 $$p(𝐬) = ∏_{j∈C} ℙ(𝐬_j∣𝐬_{I(j)}).$$
 
-The path probability $ℙ(𝐬∣Z)$ equals $p(𝐬)$ if the path $𝐬$ is compatible with the decision strategy $Z$. Otherwise, the path cannot occur, and the probability is zero.
+Note that the upper bound is larger than zero $p(𝐬)>0$ if there are zero inactive chance states on the path $𝐬$ and equal to zero $p(𝐬)=0$ otherwise.
+
+The **path probability** equals $p(𝐬)$ if the path $𝐬$ is compatible with the decision strategy $Z$. Otherwise, the path cannot occur, and the probability is zero.
+
+$$ℙ(𝐬∣Z)=
+\begin{cases}
+p(𝐬), & Z \text{ is compatible with } 𝐬 \\
+0, & \text{otherwise}
+\end{cases}.$$
+
+An **active path** is a path $𝐬∈𝐒$ that has positive path probability $ℙ(𝐬∣Z)>0.$ We refer to a path with path probability of zero as **inactive path**.
+
+We denote the set of **active paths** given a decision strategy $Z$ as
+
+$$𝐒^+(Z)=\{𝐬∈𝐒 ∣ ℙ(𝐬∣Z)>0\}⊆𝐒(Z).$$
+
+By definition, the active paths is subset of compatible paths. Therefore, the **number of active paths** is bounded by the number of compatible paths
+
+$$|𝐒^+(Z)|≤|𝐒(Z)|.$$
+
+If an influece diagram has **zero inactive chance states** the number of active paths is equal to the number of compatible paths
+
+$$|𝐒^+(Z)|=|𝐒(Z)|.$$
+
+Otherwise, the number of active paths is less than the number of compatible paths.
 
 
 ## Consequences
@@ -144,22 +174,8 @@ $$(ℙ(𝐬∣Z), \mathcal{U}(𝐬))$$
 that comprises of path probability function and path utility function over paths $𝐬∈𝐒$ conditional to the decision strategy $Z.$
 
 
-## Active Paths
-An **active path** is a path $𝐬∈𝐒$ that has positive path probability $ℙ(𝐬∣Z)>0.$ We denote the set of **all active paths** given a decision strategy $Z$ as
-
-$$𝐒(Z)=\{𝐬∈𝐒 ∣ ℙ(𝐬∣Z)>0\}.$$
-
-Since each decision strategy $Z_j$ chooses only one of its states the **number of active paths** is bounded by
-
-$$|𝐒(Z)|≤|𝐒|/\prod_{j∈D}|S_j|=\prod_{j∈C}|S_j|.$$
-
-If an influece diagram has **zero inactive chance states** the number of active paths is equal to the upper bound
-
-$$|𝐒(Z)|=\prod_{j∈C}|S_j|.$$
-
-
 ## Properties
-In this section, we define common properties for influence diagrams. The paper [^2] discusses many of these properties.
+In this section, we define common properties for influence diagrams.
 
 **Discrete** influence diagram refers to countable state space. Otherwise, the influence diagram is **continuous**. We can discretize continuous influence diagrams using discrete bins.
 

@@ -168,7 +168,7 @@ struct Probabilities{N} <: AbstractArray{Float64, N}
     data::Array{Float64, N}
     function Probabilities(data::Array{Float64, N}) where N
         all(x > 0 for x in data) || @warn(
-            "The influence diagram contains inactive chance states. For now, do not use the number of paths cut.")
+            "The influence diagram contains inactive chance states. Do not use active paths cut.")
         for i in CartesianIndices(size(data)[1:end-1])
             sum(data[i, :]) ≈ 1 || error("Probabilities should sum to one.")
         end

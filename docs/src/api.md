@@ -76,7 +76,7 @@ DecisionStrategy(::DecisionModel, ::Vector{DecisionNode})
 
 ## `analysis.jl`
 ```@docs
-ActivePaths
+CompatiblePaths
 UtilityDistribution
 UtilityDistribution(::States, ::AbstractPathProbability, ::AbstractPathUtility, ::DecisionStrategy)
 StateProbabilities

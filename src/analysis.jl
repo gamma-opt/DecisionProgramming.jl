@@ -8,28 +8,28 @@ using Parameters
 
 # Examples
 ```julia
-for s in ActivePaths(S, C, Z)
+for s in CompatiblePaths(S, C, Z)
     ...
 end
 ```
 """
-struct ActivePaths
+struct CompatiblePaths
     S::States
     C::Vector{ChanceNode}
     Z::DecisionStrategy
     fixed::Dict{Node, State}
-    function ActivePaths(S, C, Z, fixed)
+    function CompatiblePaths(S, C, Z, fixed)
         C_j = Set([c.j for c in C])
         !all(k∈C_j for k in keys(fixed)) && error("You can only fix chance states.")
         new(S, C, Z, fixed)
     end
 end
 
-function ActivePaths(S::States, C::Vector{ChanceNode}, Z::DecisionStrategy)
-    ActivePaths(S, C, Z, Dict{Node, State}())
+function CompatiblePaths(S::States, C::Vector{ChanceNode}, Z::DecisionStrategy)
+    CompatiblePaths(S, C, Z, Dict{Node, State}())
 end
 
-function active_path(S::States, C::Vector{ChanceNode}, Z::DecisionStrategy, s_C::Path)
+function compatible_path(S::States, C::Vector{ChanceNode}, Z::DecisionStrategy, s_C::Path)
     s = Array{Int}(undef, length(S))
     for (c, s_C_j) in zip(C, s_C)
         s[c.j] = s_C_j
@@ -40,7 +40,7 @@ function active_path(S::States, C::Vector{ChanceNode}, Z::DecisionStrategy, s_C:
     return (s...,)
 end
 
-function Base.iterate(a::ActivePaths)
+function Base.iterate(a::CompatiblePaths)
     @unpack S, C, Z = a
     C_j = [c.j for c in C]
     if isempty(a.fixed)
@@ -53,22 +53,22 @@ function Base.iterate(a::ActivePaths)
     next = iterate(iter)
     if next !== nothing
         s_C, state = next
-        return (active_path(S, C, Z, s_C), (iter, state))
+        return (compatible_path(S, C, Z, s_C), (iter, state))
     end
 end
 
-function Base.iterate(a::ActivePaths, gen)
+function Base.iterate(a::CompatiblePaths, gen)
     @unpack S, C, Z = a
     iter, state = gen
     next = iterate(iter, state)
     if next !== nothing
         s_C, state = next
-        return (active_path(S, C, Z, s_C), (iter, state))
+        return (compatible_path(S, C, Z, s_C), (iter, state))
     end
 end
 
-Base.eltype(::Type{ActivePaths}) = Path
-Base.length(a::ActivePaths) = prod(a.S[c.j] for c in a.C)
+Base.eltype(::Type{CompatiblePaths}) = Path
+Base.length(a::CompatiblePaths) = prod(a.S[c.j] for c in a.C)
 
 """UtilityDistribution type."""
 struct UtilityDistribution
@@ -85,7 +85,7 @@ UtilityDistribution(S, P, U, Z)
 """
 function UtilityDistribution(S::States, P::AbstractPathProbability, U::AbstractPathUtility, Z::DecisionStrategy)
     # Extract utilities and probabilities of active paths
-    S_Z = ActivePaths(S, P.C, Z)
+    S_Z = CompatiblePaths(S, P.C, Z)
     utilities = Vector{Float64}(undef, length(S_Z))
     probabilities = Vector{Float64}(undef, length(S_Z))
     for (i, s) in enumerate(S_Z)
@@ -139,7 +139,7 @@ function StateProbabilities(S::States, P::AbstractPathProbability, Z::DecisionSt
     fixed = prev.fixed
     push!(fixed, node => state)
     probs = Dict(i => zeros(S[i]) for i in 1:length(S))
-    for s in ActivePaths(S, P.C, Z, fixed), i in 1:length(S)
+    for s in CompatiblePaths(S, P.C, Z, fixed), i in 1:length(S)
         probs[i][s[i]] += P(s) / prior
     end
     StateProbabilities(probs, fixed)
@@ -154,7 +154,7 @@ StateProbabilities(S, P, Z)
 """
 function StateProbabilities(S::States, P::AbstractPathProbability, Z::DecisionStrategy)
     probs = Dict(i => zeros(S[i]) for i in 1:length(S))
-    for s in ActivePaths(S, P.C, Z), i in 1:length(S)
+    for s in CompatiblePaths(S, P.C, Z), i in 1:length(S)
         probs[i][s[i]] += P(s)
     end
     StateProbabilities(probs, Dict{Node, State}())
