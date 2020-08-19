@@ -14,6 +14,7 @@ const R_k_states = ["high", "low"]
 const A_k_states = ["yes", "no"]
 const F_states = ["failure", "success"]
 const c_k = rand(N)
+const b = 0.03
 fortification(k, a) = [c_k[k], 0][a]
 
 @info("Creating the influence diagram.")
@@ -60,7 +61,7 @@ for j in F
     x, y = rand(2)
     X_j = zeros(S[I_j]..., S[j])
     for s in paths(S[A_k])
-        d = exp(sum(fortification(k, a) for (k, a) in enumerate(s)))
+        d = exp(b * sum(fortification(k, a) for (k, a) in enumerate(s)))
         X_j[1, s..., 1] = max(x, 1-x) / d
         X_j[1, s..., 2] = 1.0 - X_j[1, s..., 1]
         X_j[2, s..., 1] = min(y, 1-y) / d
