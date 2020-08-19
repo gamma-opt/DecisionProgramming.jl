@@ -162,14 +162,20 @@ end
 
 """Value-at-risk."""
 function value_at_risk(u::Vector{Float64}, p::Vector{Float64}, α::Float64)
-    cs = cumsum(p[sortperm(u)])
-    index = findfirst(x -> x>α, cs)
-    return if isnothing(index) 0.0 else u[index] end
+    @assert 0 ≤ α ≤ 1 "We should have 0 ≤ α ≤ 1."
+    i = sortperm(u)
+    u, p = u[i], p[i]
+    index = findfirst(x -> x≥α, cumsum(p))
+    return u[index]
 end
 
 """Conditional value-at-risk."""
 function conditional_value_at_risk(u::Vector{Float64}, p::Vector{Float64}, α::Float64)
     x_α = value_at_risk(u, p, α)
-    tail = u .≤ x_α
-    return (sum(u[tail] .* p[tail]) - (sum(p[tail]) - α) * x_α) / α
+    if iszero(α)
+        return x_α
+    else
+        tail = u .≤ x_α
+        return (sum(u[tail] .* p[tail]) - (sum(p[tail]) - α) * x_α) / α
+    end
 end

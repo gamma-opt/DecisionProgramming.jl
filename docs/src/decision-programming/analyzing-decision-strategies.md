@@ -30,13 +30,25 @@ We have a discrete probability distribution $f(x)=ℙ(X=x)∈[0, 1]$ over the do
 
 We present the concept of conditional value-at-risk, a *risk measure* of the conditional expected value of the tail of a probability distribution for a given threshold of $α∈(0, 1).$ First, we define the **value-at-risk** as
 
-$$\operatorname{VaR}(α) = x_α = \inf\{x∈Ω ∣ F(x) > α\}.$$
+$$\operatorname{VaR}(α) = x_α = \min\{x∈Ω ∣ F(x) ≥ α\}.$$
 
 Then, we define the **conditional value-at-risk** as
 
 $$\operatorname{CVaR}(α)=\left(∑_{x≤x_α} x ⋅ f(x) - \left(∑_{x≤x_α} f(x) - α\right) x_α \right) / α.$$
 
 In the above figure, we have an example of discrete probability distribution with a positive expected value (*green diamond*) and its cumulative distribution. The *red horizontal line* represents the threshold $α$ and the *yellow diamond* marks the value-at-risk $x_α$, that is, the smallest value $x$ such that the cumulative probability is above $α.$ The *red circles* are the values $x$ below that fall below or equal $x_α$ and the *orange diamond* is the conditional value-at-risk.
+
+Value-at-risk and conditional value-at-risk are monotonically increasing functions. Therefore, the lower bound is the value at $α=0$ and upper bound is the value at $α=1.$ For value-at risk, we have
+
+$$\operatorname{VaR}(0) = \min \{x∈Ω\},$$
+
+$$\operatorname{VaR}(1) = \max \{x∈Ω\}.$$
+
+For conditional value-at-risk, we have
+
+$$\lim_{α→0} \operatorname{CVaR}(α) = \operatorname{VaR}(0),$$
+
+$$\operatorname{CVaR}(1) = E(X).$$
 
 
 ## State Probabilities
