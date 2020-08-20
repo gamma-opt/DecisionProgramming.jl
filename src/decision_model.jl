@@ -38,7 +38,6 @@ v2 = variables(model, [2, 3, 2]; binary=true)
 function variables(model::Model, dims::AbstractVector{Int}; binary::Bool=false, varname::String = "π", z_stage::Int = 0)
     v = Array{VariableRef}(undef, dims...)
     for (i, j) in zip(eachindex(v), Base.product((1:dims[i] for i in 1:length(dims))...))
-        # v[i] = @variable(model, binary=binary)
         if isequal(varname, "π")
             v[i] = @variable(model, base_name = string(varname, "$j"), binary=binary)
         else
@@ -63,12 +62,10 @@ model = DecisionModel(S, D, P; positive_path_utility=true)
 function DecisionModel(S::States, D::Vector{DecisionNode}, P::AbstractPathProbability; positive_path_utility::Bool=false)
     model = DecisionModel()
 
-    ## REVIEW: These are for identifying the correct decision stage. π variables also have proper names now.
-    ##         Reason: to be able to println(model) at any time, which helps tremendeously when building new models.
-    z_stages  = [d.j for d in D]
-
     π = variables(model, S)
-    z = [variables(model, S[[d.I_j; d.j]]; binary=true, varname = "z", z_stage = z_stages[i]) for (i, d) in enumerate(D)]
+    ## REVIEW: Parameter z-stage is for identifying the correct decision stage. π variables also have proper names now.
+    ##         Reason: to be able to println(model) at any time, which helps tremendeously when building new models.
+    z = [variables(model, S[[d.I_j; d.j]]; binary=true, varname = "z", z_stage = d.j) for d in D]
 
     for (d, z_j) in zip(D, z)
         for s_I in paths(S[d.I_j])
