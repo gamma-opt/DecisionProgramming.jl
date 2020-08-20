@@ -26,29 +26,33 @@ From the utility distribution, we can calculate the cumulative distribution, sta
 ## Measuring Risk
 ![](figures/risk_measures.svg)
 
-We have a discrete probability distribution $f(x)=ℙ(X=x)∈[0, 1]$ over the domain $x∈Ω$ with $∑_{x∈Ω}ℙ(X=x)=1$ and its cumulative distribution function $F(x) = ∑_{x^′∈Ω∣x^′≤x}f(x^′).$
+We have a discrete probability distribution $f(x)=ℙ(X=x)∈[0, 1]$ over the domain $x∈Ω$ with $∑_{x∈Ω}ℙ(X=x)=1$ and its cumulative distribution function $F(x) = ∑_{x^′∈Ω∣x^′≤x}f(x^′).$ We define the expected value as
 
-We present the concept of conditional value-at-risk, a *risk measure* of the conditional expected value of the tail of a probability distribution for a given threshold of $α∈(0, 1).$ First, we define the **value-at-risk** as
+$$E(X)=∑_{x∈Ω} x ⋅ f(x).$$
 
-$$\operatorname{VaR}(α) = x_α = \min\{x∈Ω ∣ F(x) ≥ α\}.$$
+We present the concept of conditional value-at-risk, a *risk measure* of the conditional expected value of the tail of a probability distribution for a given **probability level** of $α∈[0, 1].$ First, we define the **value-at-risk** as
 
-Then, we define the **conditional value-at-risk** as
+$$\operatorname{VaR}(X, α) = x_α = \min\{x∈Ω ∣ F(x) ≥ α\}.$$
 
-$$\operatorname{CVaR}(α)=\left(∑_{x≤x_α} x ⋅ f(x) - \left(∑_{x≤x_α} f(x) - α\right) x_α \right) / α.$$
+It is the smallest value $x$ such that the cumulative probability is equal or above $α.$ Then, we define the **conditional value-at-risk** as
 
-In the above figure, we have an example of discrete probability distribution with a positive expected value (*green diamond*) and its cumulative distribution. The *red horizontal line* represents the threshold $α$ and the *yellow diamond* marks the value-at-risk $x_α$, that is, the smallest value $x$ such that the cumulative probability is above $α.$ The *red circles* are the values $x$ below that fall below or equal $x_α$ and the *orange diamond* is the conditional value-at-risk.
+$$\operatorname{CVaR}(X, α)=\textcolor{darkorange}{\frac{1}{α}} \left(\textcolor{darkred}{∑_{x≤x_α} x ⋅ f(x)} \textcolor{darkblue}{- \left(∑_{x≤x_α} f(x) - α\right) x_α }\right).$$
 
-Value-at-risk and conditional value-at-risk are monotonically increasing functions. Therefore, the lower bound is the value at $α=0$ and upper bound is the value at $α=1.$ For value-at risk, we have
+The red part measures the conditional expected value of the tail distribution. The blue part corrects the expected value by subtracting the amount of expected value that is between probability level $α$ and $F(x_α)$ and orange part divides by the total probability.
 
-$$\operatorname{VaR}(0) = \min \{x∈Ω\},$$
+Value-at-risk and conditional value-at-risk are monotonically increasing functions. Therefore, the lower bound is the value at $α=0$ and the upper bound is the value at $α=1.$ For value-at-risk, we have
 
-$$\operatorname{VaR}(1) = \max \{x∈Ω\}.$$
+$$\operatorname{VaR}(X, 0) = \min \{x∈Ω\},$$
+
+$$\operatorname{VaR}(X, 1) = \max \{x∈Ω\}.$$
 
 For conditional value-at-risk, we have
 
-$$\lim_{α→0} \operatorname{CVaR}(α) = \operatorname{VaR}(0),$$
+$$\lim_{α→0} \operatorname{CVaR}(X, α) = \operatorname{VaR}(X, 0),$$
 
-$$\operatorname{CVaR}(1) = E(X).$$
+$$\operatorname{CVaR}(X, 1) = E(X).$$
+
+The above figure demonstrates these values on a discrete probability distribution.
 
 
 ## State Probabilities

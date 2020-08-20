@@ -19,14 +19,16 @@ end
 hair(plt, x, y) = plot!(plt, [x, x], [0, y], linewidth=3, color=:grey, alpha=0.5, label=false)
 
 function plot_distribution(x, y, x_α; plt=plot())
-    tail = x .≤ x_α
-    head = x .> x_α
-    plot!(plt, ylims = (0, 1.15 * maximum(y)))
-    plot!(plt, x[tail], y[tail], linewidth=0, markershape=:circle, markercolor=:red)
-    plot!(plt, x[head], y[head], linewidth=0, markershape=:circle, markercolor=:blue)
     for (x2, y2) in zip(x, y)
         hair(plt, x2, y2)
     end
+    tail = x .≤ x_α
+    head = x .> x_α
+    plot!(plt, ylims = (0, 1.15 * maximum(y)))
+    plot!(plt, x[tail], y[tail], linewidth=0, markershape=:circle, markercolor=:darkred,
+          label="Tail")
+    plot!(plt, x[head], y[head], linewidth=0, markershape=:circle, markercolor=:lightblue,
+          label="Head")
     return plt
 end
 
@@ -44,23 +46,31 @@ function plot_risk_measures(u, p, α)
     plot_distribution(u, p, VaR; plt=plt1)
     plot!(plt1, [mean], [0],
         linewidth=0, markershape=:diamond,
-        markersize=6, markercolor=:green)
+        markersize=6, markercolor=:green,
+        label="E")
     plot!(plt1, [VaR], [0],
         linewidth=0, markershape=:diamond,
-        markersize=6, markercolor=:yellow)
+        markersize=6, markercolor=:darkblue,
+        label="VaR")
     plot!(plt1, [CVaR], [0],
         linewidth=0, markershape=:diamond,
-        markersize=6, markercolor=:orange)
+        markersize=6, markercolor=:darkorange,
+        label="CVaR")
 
     plt2 = plot(
         title="Cumulative distribution",
         xlabel="x",
         ylabel="F(x)"
     )
-    plot!(plt2, u, [α for _ in u], legend=false, linewidth=2)
     plot_distribution(u, cumsum(p), VaR; plt=plt2)
+    plot!(plt2, u, [α for _ in u],
+          legend=false, linewidth=2, label="α", linecolor=:darkorange)
+    plot!(plt2, [VaR], [0],
+        linewidth=0, markershape=:diamond,
+        markersize=6, markercolor=:darkblue,
+        label="VaR")
 
-    plt = plot(plt1, plt2, layout=(2, 1))
+    plt = plot(plt1, plt2, layout=(2, 1), legend=:outerright, size=(720, 400))
 end
 
 # rng = MersenneTwister(1)
