@@ -1,6 +1,6 @@
 # Computational Complexity
 ## Introduction
-Decision programming relies on mixed-integer linear programming, which is known to be an NP-complete problem. In this section, we analyze how the influence diagram affects the size of the mixed-integer linear model, determining whether it is tractable.
+Decision programming relies on mixed-integer linear programming, which is known to be an NP-hard problem. In this section, we analyze how the influence diagram affects the size of the mixed-integer linear model, determining whether it is tractable.
 
 We use the following inequalities for sum and product of non-negative elements $A$ to derive the lower and upper bounds for the number of paths and the number of decision stages. Sum inequality:
 
