@@ -93,10 +93,15 @@ function UtilityDistribution(S::States, P::AbstractPathProbability, U::AbstractP
         probabilities[i] = P(s)
     end
 
+    # Filter zero probabilities
+    nonzero = @. (!)(iszero(probabilities))
+    utilities = utilities[nonzero]
+    probabilities = probabilities[nonzero]
+
     # Sort by utilities
-    i = sortperm(utilities)
-    u = utilities[i]
-    p = probabilities[i]
+    perm = sortperm(utilities)
+    u = utilities[perm]
+    p = probabilities[perm]
 
     # Compute the probability mass function
     u2 = unique(u)

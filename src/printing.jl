@@ -29,7 +29,6 @@ print_utility_distribution(udist)
 function print_utility_distribution(udist::UtilityDistribution; util_fmt="%f", prob_fmt="%f")
     @unpack u, p = udist
     df = DataFrame(Utility = u, Probability = p)
-    filter!(row -> row[:Probability] > 0, df)
     formatters = (
         ft_printf(util_fmt, [1]),
         ft_printf(prob_fmt, [2]))
