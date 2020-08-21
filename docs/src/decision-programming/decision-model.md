@@ -1,15 +1,10 @@
 # Decision Model
 ## Introduction
-**Decision programming** aims to find a decision strategy $Z$ which optimizes some metric of the path distribution on an influence diagram such as expected value or risk. The **decision model** is a mixed-integer linear programming formulation of this optimization problem. The model that is presented here, is based on [^1], sections 3 and 5. We recommend reading it for motivation, details, and proofs of the formulation.
+**Decision programming** aims to find an optimal decision strategy $Z$ from all decision strategies $ℤ$ by maximizing an objective function $f$ on the path distribution of an influence diagram
 
+$$\underset{Z∈ℤ}{\text{maximize}}\quad f(\{(ℙ(𝐬∣Z), \mathcal{U}(𝐬)) ∣ 𝐬∈𝐒\}). \tag{1}$$
 
-## Objective
-The mixed-integer linear program optimizes the objective function $f$, that is a measure of the path distribution, over all decision strategies as follows
-
-$$\underset{Z∈ℤ}{\text{maximize}}\quad
-f(\{(ℙ(𝐬∣Z), \mathcal{U}(𝐬)) ∣ 𝐬∈𝐒\}). \tag{1}$$
-
-Common measures include expected value and risk metrics. The main consideration regarding the measures is that we can linearize them, and thus solve the model efficiently.
+**Decision model** refers to the mixed-integer linear programming formulation of this optimization problem. This page explains how to express decision strategy, path probability, path utility, and the objective in the mixed-integer linear form. We also present standard objective functions, including expected value and risk measures.  We based the decision model on [^1], sections 3 and 5. We recommend reading the references for motivation, details, and proofs of the formulation.
 
 
 ## Variables
@@ -37,41 +32,65 @@ $$\mathcal{U}^+(𝐬) = \mathcal{U}(𝐬) - \min_{𝐬∈𝐒} \mathcal{U}(𝐬)
 ## Lazy Constraints
 Valid equalities are equalities that can be be derived from the problem structure. They can help in computing the optimal decision strategies, but adding them directly may slow down the overall solution process. By adding valid equalities during the solution process as *lazy constraints*, the MILP solver can prune nodes of the branch-and-bound tree more efficiently. We have the following valid equalities.
 
+### Probability Cut
 We can exploit the fact that the path probabilities sum to one by using the **probability cut** defined as
 
 $$∑_{𝐬∈𝐒}π(𝐬)=1. \tag{7}$$
 
+### Active Paths Cut
 For problems where the number of active paths is known, we can exploit it by using the **active paths cut** defined as
 
 $$∑_{𝐬∈𝐒} \frac{π(𝐬)}{p(𝐬)}=|𝐒^+(Z)|. \tag{8}$$
 
 
 ## Expected Value
-We define the **expected value** as
+We define the **expected value** objective as
 
 $$\operatorname{E}(Z) = ∑_{𝐬∈𝐒} π(𝐬) \mathcal{U}(𝐬). \tag{?}$$
 
-However, the expected value objective does not account for risk caused by the variablity in the path distribution.
-
 
 ## Conditional Value-at-Risk
-Given a **probability level** $α∈(0, 1]$ and decision strategy $Z$ we denote **value-at-risk** $\operatorname{VaR}_α(Z)$ and **conditional value-at-risk** $\operatorname{CVaR}_α(Z).$
+The section [Measuring Risk](@ref) explains and visualizes the relationships between the formulation of expected value, value-at-risk and conditional value-at-risk for discrete probability distribution.
 
-Pre-computed parameters
+Given decision strategy $Z,$ we define the cumulative distribution of path probability variables as
 
-$$u^+=\max\{\mathcal{U}(𝐬)∣𝐬∈𝐒\}$$
+$$F_Z(t) = ∑_{𝐬∈𝐒∣\mathcal{U}(𝐬)≤t} π(𝐬).$$
 
-$$u^-=\min\{\mathcal{U}(𝐬)∣𝐬∈𝐒\}$$
+Given a **probability level** $α∈(0, 1],$ we define the **value-at-risk** as
 
-$$M=u^+-u^-$$
+$$\operatorname{VaR}_α(Z)=u_α=\sup \{\mathcal{U}(𝐬)∣𝐬∈𝐒, F_Z(\mathcal{U}(𝐬))<α\}.$$
 
-$$ϵ=\frac{1}{2} \min\{|\mathcal{U}(𝐬)-\mathcal{U}(𝐬^′)| ∣ |\mathcal{U}(𝐬)-\mathcal{U}(𝐬^′)| > 0, 𝐬, 𝐬^′∈𝐒\}$$
+Then, we have the paths that have path utility less than and equal to the value-at-risk as
 
-Objective
+$$𝐒_{α}^{<}=\{𝐬∈𝐒∣\mathcal{U}(𝐬)<u_α\},$$
+
+$$𝐒_{α}^{=}=\{𝐬∈𝐒∣\mathcal{U}(𝐬)=u_α\}.$$
+
+We define **conditional value-at-risk** as
+
+$$\operatorname{CVaR}_α(Z)=\frac{1}{α}\left(∑_{𝐬∈𝐒_α^{<}} π(𝐬) \mathcal{U}(𝐬) + ∑_{𝐬∈𝐒_α^{=}} \left(α - ∑_{𝐬∈𝐒_α^{<}} π(𝐬) \right) \mathcal{U}(𝐬) \right).$$
+
+We can form the conditional value-at-risk as an optimization problem. We have the following pre-computed parameters.
+
+Lower and upper bound of the value-at-risk
+
+$$\operatorname{VaR}_0(Z)=u^-=\min\{\mathcal{U}(𝐬)∣𝐬∈𝐒\},$$
+
+$$\operatorname{VaR}_1(Z)=u^+=\max\{\mathcal{U}(𝐬)∣𝐬∈𝐒\}.$$
+
+Largest difference between path utilities
+
+$$M=u^+-u^-.$$
+
+Half of the smallest positive difference between path utilities
+
+$$ϵ=\frac{1}{2} \min\{|\mathcal{U}(𝐬)-\mathcal{U}(𝐬^′)| ∣ |\mathcal{U}(𝐬)-\mathcal{U}(𝐬^′)| > 0, 𝐬, 𝐬^′∈𝐒\}.$$
+
+The objective is to minimize the variable $η$ whose optimal value is equal to the value-at-risk, that is, $\operatorname{VaR}_α(Z)=η^∗.$
 
 $$\min η$$
 
-Constraints
+We define the constraints as follows:
 
 $$η-\mathcal{U}(𝐬)≤M λ(𝐬),\quad ∀𝐬∈𝐒 \tag{?}$$
 
@@ -95,19 +114,21 @@ $$\bar{ρ}(𝐬),ρ(𝐬)∈[0, 1],\quad ∀𝐬∈𝐒 \tag{?}$$
 
 $$η∈[u^-, u^+] \tag{?}$$
 
-Solution
+We can express the conditional value-at-risk objective as
 
-$$\operatorname{VaR}_α(Z)=η \tag{?}$$
+$$\operatorname{CVaR}_α(Z)=\frac{1}{α}∑_{𝐬∈𝐒}\bar{ρ}(𝐬) \mathcal{U}(𝐬)\tag{?}.$$
 
-$$\operatorname{CVaR}_α(Z)=\frac{1}{α}∑_{𝐬∈𝐒}\bar{ρ}(𝐬) \mathcal{U}(𝐬)\tag{?}$$
+The values of conditional value-at-risk are limited to the interval between the lower bound of value-at-risk and the expected value
+
+$$\operatorname{VaR}_0(Z)<\operatorname{CVaR}_α(Z)≤E(Z).$$
 
 
 ## Mixed Objective
-We can formulate
+We can combine expected value and conditional value-at-risk using a convex combination at a fixed probability level $α$ as follows
 
-$$w \operatorname{E}(Z) + (1-w) \operatorname{CVaR}_α(Z) \tag{?}$$
+$$w \operatorname{E}(Z) + (1-w) \operatorname{CVaR}_α(Z), \tag{?}$$
 
-where $w∈(0, 1)$ is the **trade-off** between maximization of
+where the parameter $w∈(0, 1)$ expresses the decision maker's risk tolerance.
 
 
 ## References

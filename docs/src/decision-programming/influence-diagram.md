@@ -157,6 +157,8 @@ The **utility function** is a function that maps consequences to real-valued uti
 
 $$U:ℂ^{|V|}↦ℝ.$$
 
+Simple utility functions return numerical values, which work "out of the box" with the default objetives. However, we can also form utility function that contain variables.  They may require additional reformulation of the objectives described in the [Decision Model](@ref) page depending on the capabilities of the solver.
+
 The **path utility** is defined as the utility function acting on the consequences of value nodes given their information paths
 
 $$\mathcal{U}(𝐬) = U(\{Y_j(𝐬_{I(j)}) ∣ j∈V\}).$$
@@ -164,6 +166,8 @@ $$\mathcal{U}(𝐬) = U(\{Y_j(𝐬_{I(j)}) ∣ j∈V\}).$$
 The **default path utility** is the sum of consequences
 
 $$\mathcal{U}(𝐬) = ∑_{j∈V} Y_j(𝐬_{I(j)}).$$
+
+The utility function in this case corresponds to the sum of the elements.
 
 
 ## Path Distribution
