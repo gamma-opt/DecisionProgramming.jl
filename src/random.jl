@@ -11,9 +11,11 @@ random_diagram(rng, 5, 2, 3, 2)
 """
 function random_diagram(rng::AbstractRNG, n_C::Int, n_D::Int, n_V::Int, n_I::Int)
     n = n_C + n_D
-    n ≥ 1 || error("")
-    n_V ≥ 1 || error("")
-    n_I ≥ 1 || error("")
+    n_C ≥ 0 || throw(DomainError("There should be ≥ 0 chance nodes."))
+    n_D ≥ 0 || throw(DomainError("There should be ≥ 0 decision nodes"))
+    n ≥ 1 || throw(DomainError("There should be at least one chance and decision node."))
+    n_V ≥ 1 || throw(DomainError("There should be ≥ 1 value nodes."))
+    n_I ≥ 1 || throw(DomainError("Information set should be size ≥ 1."))
 
     # Create nodes
     u = shuffle(rng, 1:n)
@@ -108,7 +110,9 @@ Consequences(rng, v, S; low=-1.0, high=1.0)
 ```
 """
 function Consequences(rng::AbstractRNG, v::ValueNode, S::States; low::Float64=-1.0, high::Float64=1.0)
-    high > low || error("")
+    if !(high > low)
+        throw(DomainError("high should be greater than low"))
+    end
     Y = rand(rng, S[v.I_j]...)
     Y = scale.(Y, low, high)
     Consequences(Y)

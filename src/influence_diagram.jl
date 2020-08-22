@@ -9,7 +9,9 @@ const Node = Int
 
 function validate_node(j::Node, I_j::Vector{Node})
     I_j = sort(unique(I_j))
-    all(i < j for i in I_j) || error("All nodes in the information set must be less than node j.")
+    if !all(i < j for i in I_j)
+        throw(DomainError("All nodes in the information set must be less than node j."))
+    end
     return j, I_j
 end
 
@@ -73,7 +75,12 @@ S = States([2, 3, 2, 4])
 """
 struct States <: AbstractArray{State, 1}
     vals::Vector{State}
-    States(vals::Vector{State}) = all(vals .≥ 1) ? new(vals) : error("All states must be ≥ 1.")
+    function States(vals::Vector{State})
+        if !all(vals .≥ 1)
+            throw(DomainError("All states must be ≥ 1."))
+        end
+        new(vals)
+    end
 end
 
 Base.size(S::States) = size(S.vals)
@@ -101,12 +108,15 @@ end
 """Validate influence diagram."""
 function validate_influence_diagram(S::States, C::Vector{ChanceNode}, D::Vector{DecisionNode}, V::Vector{ValueNode})
     n = length(C) + length(D)
-    length(S) == n || error(
-        "Each change and decision node should have states.")
-    Set(c.j for c in C) ∪ Set(d.j for d in D) == Set(1:n) || error(
-        "Union of change and decision nodes should be {1,...,n}.")
-    Set(v.j for v in V) == Set((n+1):(n+length(V))) || error(
-        "Values nodes should be {n+1,...,n+|V|}.")
+    if length(S) != n
+        throw(DomainError("Each change and decision node should have states."))
+    end
+    if Set(c.j for c in C) ∪ Set(d.j for d in D) != Set(1:n)
+        throw(DomainError("Union of change and decision nodes should be {1,...,n}."))
+    end
+    if Set(v.j for v in V) != Set((n+1):(n+length(V)))
+        throw(DomainError("Values nodes should be {n+1,...,n+|V|}."))
+    end
     # Check for redundant nodes.
     leaf_nodes = collect(1:n)
     setdiff!(leaf_nodes, (c.I_j for c in C)...)
@@ -167,10 +177,13 @@ X = Probabilities(data)
 struct Probabilities{N} <: AbstractArray{Float64, N}
     data::Array{Float64, N}
     function Probabilities(data::Array{Float64, N}) where N
-        all(x > 0 for x in data) || @warn(
-            "The influence diagram contains inactive chance states. Do not use active paths cut.")
+        if !all(x > 0 for x in data)
+            @warn("The influence diagram contains inactive chance states. Do not use active paths cut.")
+        end
         for i in CartesianIndices(size(data)[1:end-1])
-            sum(data[i, :]) ≈ 1 || error("Probabilities should sum to one.")
+            if !(sum(data[i, :]) ≈ 1)
+                throw(DomainError("Probabilities should sum to one."))
+            end
         end
         new{N}(data)
     end

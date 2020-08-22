@@ -20,7 +20,9 @@ struct CompatiblePaths
     fixed::Dict{Node, State}
     function CompatiblePaths(S, C, Z, fixed)
         C_j = Set([c.j for c in C])
-        !all(k∈C_j for k in keys(fixed)) && error("You can only fix chance states.")
+        if !all(k∈C_j for k in keys(fixed))
+            throw(DomainError("You can only fix chance states."))
+        end
         new(S, C, Z, fixed)
     end
 end

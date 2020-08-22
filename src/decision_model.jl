@@ -130,7 +130,9 @@ active_paths_cut(model, S, P; atol=atol)
 """
 function active_paths_cut(model::DecisionModel, S::States, P::AbstractPathProbability; atol::Float64 = 0.9)
     all_active_states = all(all((!).(iszero.(x))) for x in P.X)
-    all_active_states || error("Cannot use active paths cut if all states are not active.")
+    if !all_active_states
+        throw(DomainError("Cannot use active paths cut if all states are not active."))
+    end
     ϵ = minimum(P(s) for s in paths(S))
     num_compatible_paths = prod(S[c.j] for c in P.C)
     # Add the constraints only once
@@ -172,7 +174,9 @@ CVaR = conditional_value_at_risk(model, S, U, α)
 ```
 """
 function conditional_value_at_risk(model::DecisionModel, S::States, U::AbstractPathUtility, α::Float64)
-    0 ≤ α ≤ 1 || error("α should be 0 ≤ α ≤ 1")
+    if !(0 ≤ α ≤ 1)
+        throw(DomainError("α should be 0 ≤ α ≤ 1"))
+    end
 
     # Pre-computer parameters
     u = collect(Iterators.flatten(U(s) for s in paths(S)))
@@ -226,9 +230,13 @@ end
 struct LocalDecisionStrategy{N} <: AbstractArray{Int, N}
     data::Array{Int, N}
     function LocalDecisionStrategy(data::Array{Int, N}) where N
-        all(0 ≤ x ≤ 1 for x in data) || error("All values x must be 0 ≤ x ≤ 1.")
+        if !all(0 ≤ x ≤ 1 for x in data)
+            throw(DomainError("All values x must be 0 ≤ x ≤ 1."))
+        end
         for s_I in CartesianIndices(size(data)[1:end-1])
-            sum(data[s_I, :]) == 1 || error("")
+            if !(sum(data[s_I, :]) == 1)
+                throw(DomainError("Values should add to one."))
+            end
         end
         new{N}(data)
     end
