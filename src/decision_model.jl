@@ -61,26 +61,36 @@ function DecisionModel(S::States, D::Vector{DecisionNode}, P::AbstractPathProbab
     z_names(z, dims) = if names; ["z_$z$s" for s in paths(dims)] else nothing end
     z = [variables(model, S[[d.I_j; d.j]]; binary=true, names=z_names(d.j, S[[d.I_j; d.j]])) for d in D]
 
+    # Constraints to one decision per decision strategy.
     for (d, z_j) in zip(D, z)
         for s_I in paths(S[d.I_j])
             @constraint(model, sum(z_j[s_I..., s_j] for s_j in 1:S[d.j]) == 1)
         end
     end
 
-    for s in paths(S)
-        @constraint(model, 0 ≤ π[s...] ≤ P(s))
-    end
+    # --- Path probability variables ---
+    π_names = if names; ["π$s" for s in paths(S)] else nothing end
+    π = variables(model, S; names=π_names)
 
     for s in paths(S)
-        for (d, z_j) in zip(D, z)
-            @constraint(model, π[s...] ≤ z_j[s[[d.I_j; d.j]]...])
-        end
-    end
+        if iszero(P(s))
+            # If the upper bound is zero, we fix the value to zero.
+            fix(π[s...], 0)
+        else
+            # Strict upper bound and non-strict lower bound.
+            @constraint(model, 0 ≤ π[s...] ≤ P(s))
 
-    if !positive_path_utility
-        for s in paths(S)
-            @constraint(model,
-                π[s...] ≥ P(s) + sum(z_j[s[[d.I_j; d.j]]...] for (d, z_j) in zip(D, z)) - length(D))
+            # Constraints the path probability to zero if the path is
+            # incompatible with the decision strategy.
+            for (d, z_j) in zip(D, z)
+                @constraint(model, π[s...] ≤ z_j[s[[d.I_j; d.j]]...])
+            end
+
+            # Strict lower bound.
+            if !positive_path_utility
+                @constraint(model,
+                    π[s...] ≥ P(s) + sum(z_j[s[[d.I_j; d.j]]...] for (d, z_j) in zip(D, z)) - length(D))
+            end
         end
     end
 

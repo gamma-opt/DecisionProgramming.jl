@@ -131,7 +131,9 @@ An **active path** is a path $𝐬∈𝐒$ that has positive path probability $�
 
 We denote the set of **active paths** given a decision strategy $Z$ as
 
-$$𝐒^+(Z)=\{𝐬∈𝐒 ∣ ℙ(𝐬∣Z)>0\}⊆𝐒(Z).$$
+$$𝐒^+(Z)=\{𝐬∈𝐒 ∣ ℙ(𝐬∣Z)>0\}.$$
+
+$$=\{𝐬∈𝐒(Z) ∣ p(𝐬)>0\}$$
 
 By definition, the active paths is subset of compatible paths. Therefore, the **number of active paths** is bounded by the number of compatible paths
 
