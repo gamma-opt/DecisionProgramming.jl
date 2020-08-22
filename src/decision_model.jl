@@ -35,16 +35,11 @@ v1 = variables(model, [2, 3, 2])
 v2 = variables(model, [2, 3, 2]; binary=true)
 ```
 """
-function variables(model::Model, dims::AbstractVector{Int}; binary::Bool=false, varname::String = "π", z_stage::Int = 0)
+function variables(model::Model, dims::AbstractVector{Int}; binary::Bool=false, names::Union{Nothing, Array{String}}=nothing)
     v = Array{VariableRef}(undef, dims...)
-    for (i, j) in zip(eachindex(v), Base.product((1:dims[i] for i in 1:length(dims))...))
-        if isequal(varname, "π")
-            v[i] = @variable(model, base_name = string(varname, "$j"), binary=binary)
-        else
-            ## REVIEW: Add decision stage numbers to the z variables to identify them
-            ## One messy but straightforward solution:
-            v[i] = @variable(model, base_name = string(varname, "[$z_stage]", "$j"), binary=binary)
-        end
+    for i in eachindex(v)
+        name = if isnothing(names) "" else names[i] end
+        v[i] = @variable(model, binary=binary, base_name = name)
     end
     return v
 end
@@ -59,13 +54,12 @@ const DecisionModel = Model
 model = DecisionModel(S, D, P; positive_path_utility=true)
 ```
 """
-function DecisionModel(S::States, D::Vector{DecisionNode}, P::AbstractPathProbability; positive_path_utility::Bool=false)
+function DecisionModel(S::States, D::Vector{DecisionNode}, P::AbstractPathProbability; positive_path_utility::Bool=false, names::Bool=false)
     model = DecisionModel()
 
-    π = variables(model, S)
-    ## REVIEW: Parameter z-stage is for identifying the correct decision stage. π variables also have proper names now.
-    ##         Reason: to be able to println(model) at any time, which helps tremendeously when building new models.
-    z = [variables(model, S[[d.I_j; d.j]]; binary=true, varname = "z", z_stage = d.j) for d in D]
+    # --- Decision variables ---
+    z_names(z, dims) = if names; ["z_$z$s" for s in paths(dims)] else nothing end
+    z = [variables(model, S[[d.I_j; d.j]]; binary=true, names=z_names(d.j, S[[d.I_j; d.j]])) for d in D]
 
     for (d, z_j) in zip(D, z)
         for s_I in paths(S[d.I_j])
