@@ -173,7 +173,7 @@ function value_at_risk(u::Vector{Float64}, p::Vector{Float64}, α::Float64)
     i = sortperm(u)
     u, p = u[i], p[i]
     index = findfirst(x -> x≥α, cumsum(p))
-    return u[index]
+    return if isnothing(index) u[end] else u[index] end
 end
 
 """Conditional value-at-risk."""
