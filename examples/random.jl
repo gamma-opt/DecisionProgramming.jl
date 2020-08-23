@@ -5,7 +5,7 @@ rng = MersenneTwister(111)
 
 C, D, V = random_diagram(rng, 5, 3, 2, 3)
 S = States(rng, [2, 3], length(C) + length(D))
-X = [Probabilities(rng, c, S) for c in C]
+X = [Probabilities(rng, c, S; n_inactive=0) for c in C]
 Y = [Consequences(rng, v, S, low=-1.0, high=1.5) for v in V]
 
 validate_influence_diagram(S, C, D, V)
@@ -23,6 +23,7 @@ U = DefaultPathUtility(V, Y)
 
 U⁺ = PositivePathUtility(S, U)
 model = DecisionModel(S, D, P; positive_path_utility=true)
+# probability_cut(model, S, P)
 
 α = 0.1
 w = 0.5

@@ -4,10 +4,10 @@ using DecisionProgramming
 rng = MersenneTwister(4)
 
 @info "Creating the influence diagram."
-C, D, V = random_diagram(rng, 4, 2, 3, 2)
+C, D, V = random_diagram(rng, 5, 3, 3, 3)
 S = States(rng, [2, 3], length(C) + length(D))
-X = [Probabilities(rng, c, S) for c in C]
-Y = [Consequences(rng, v, S) for v in V]
+X = [Probabilities(rng, c, S; n_inactive=rand(rng, 0:1)) for c in C]
+Y = [Consequences(rng, v, S; low=-1.0, high=1.0) for v in V]
 
 validate_influence_diagram(S, C, D, V)
 s_c = sortperm([c.j for c in C])
@@ -26,7 +26,7 @@ U = DefaultPathUtility(V, Y)
 U⁺ = PositivePathUtility(S, U)
 model = DecisionModel(S, D, P; positive_path_utility=true)
 probability_cut(model, S, P)
-active_paths_cut(model, S, P)
+# active_paths_cut(model, S, P)
 
 @info "Adding objectives to the model."
 α = 0.2

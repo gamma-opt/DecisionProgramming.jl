@@ -83,17 +83,39 @@ S = States([2, 2])
 Probabilities(rng, c, S)
 ```
 """
-function Probabilities(rng::AbstractRNG, c::ChanceNode, S::States)
+function Probabilities(rng::AbstractRNG, c::ChanceNode, S::States; n_inactive::Int=0)
     states = S[c.I_j]
     state = S[c.j]
-    X = zeros(states..., state)
-    for s in paths(states)
-        x = rand(rng, state)
-        x = x / sum(x)
-        for s_j in 1:state
-            X[s..., s_j] = x[s_j]
+    if !(0 ≤ n_inactive ≤ prod([states...; (state - 1)]))
+        throw(DomainError("Number of inactive states must be < prod([S[I_j]...;, S[j]-1])"))
+    end
+
+    # Create the random probabilities
+    X = rand(rng, states..., state)
+
+    # Create inactive chance states
+    if n_inactive > 0
+        # Count of inactive states per chance stage.
+        c = zeros(Int, states...)
+        # There can be maximum of (state - 1) inactive chance states per stage.
+        b = repeat(CartesianIndices(c)[:], state - 1)
+        # Uniform random sample of n_inactive states.
+        r = shuffle(rng, b)[1:n_inactive]
+        for s in r
+            c[s] += 1
+        end
+        for s in CartesianIndices(c)
+            indices = CartesianIndices(X[s, :])
+            i = shuffle(rng, indices)[1:c[s]]
+            X[s, i] .= 0.0
         end
     end
+
+    # Normalize the probabilities
+    for s in CartesianIndices((states...,))
+        X[s, :] /= sum(X[s, :])
+    end
+
     Probabilities(X)
 end
 
@@ -131,10 +153,10 @@ DecisionStrategy(rng, d, S)
 function LocalDecisionStrategy(rng::AbstractRNG, d::DecisionNode, S::States)
     states = S[d.I_j]
     state = S[d.j]
-    Z = zeros(Int, [states; state]...)
-    for s in paths(states)
+    Z = zeros(Int, states..., state)
+    for s in CartesianIndices((states...,))
         s_j = rand(rng, 1:state)
-        Z[s..., s_j] = 1
+        Z[s, s_j] = 1
     end
     LocalDecisionStrategy(Z)
 end
