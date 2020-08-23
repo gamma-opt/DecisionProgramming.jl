@@ -4,7 +4,7 @@ using DecisionProgramming
 makedocs(
     sitename = "DecisionProgramming.jl",
     format = Documenter.HTML(
-        # assets = ["assets/favicon.ico"]
+        assets = ["assets/favicon.ico"]
     ),
     modules = [DecisionProgramming],
     authors = "Jaan Tollander de Balsch",
