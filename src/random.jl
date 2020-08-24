@@ -1,5 +1,18 @@
 using Random, Parameters
 
+"""Generates random information sets for chance and decision nodes."""
+function information_set(rng::AbstractRNG, j::Int, n_I::Int)
+    m = min(rand(rng, 0:n_I), j-1)
+    return shuffle(rng, 1:(j-1))[1:m]
+end
+
+"""Generates random information sets for value nodes."""
+function information_set(rng::AbstractRNG, leaf_nodes::Vector{Node}, n::Int)
+    non_leaf_nodes = shuffle(rng, setdiff(1:n, leaf_nodes))
+    m = rand(rng, 1:length(non_leaf_nodes))
+    return [leaf_nodes; non_leaf_nodes[1:m]]
+end
+
 """Generate random decision diagram with `n_C` chance nodes, `n_D` decision nodes, and `n_V` value nodes.
 Parameter `n_I` is the upper bound on the size of the information set.
 
@@ -17,46 +30,26 @@ function random_diagram(rng::AbstractRNG, n_C::Int, n_D::Int, n_V::Int, n_I::Int
     n_V ≥ 1 || throw(DomainError("There should be ≥ 1 value nodes."))
     n_I ≥ 1 || throw(DomainError("Information set should be size ≥ 1."))
 
-    # Create nodes
-    u = shuffle(rng, 1:n)
-    C_j = sort(u[1:n_C])
-    D_j = sort(u[n_C+1:end])
+    # Create node indices
+    U = shuffle(rng, 1:n)
+    C_j = sort(U[1:n_C])
+    D_j = sort(U[(n_C+1):n])
     V_j = collect((n+1):(n+n_V))
 
-    C = Vector{ChanceNode}()
-    D = Vector{DecisionNode}()
-    V = Vector{ValueNode}()
+    # Create chance and decision nodes
+    C = [ChanceNode(j, information_set(rng, j, n_I)) for j in C_j]
+    D = [DecisionNode(j, information_set(rng, j, n_I)) for j in D_j]
 
-    for j in C_j
-        m = min(rand(rng, 0:n_I), j-1)
-        I_j = shuffle(rng, 1:(j-1))[1:m]
-        push!(C, ChanceNode(j, I_j))
-    end
-
-    for j in D_j
-        m = min(rand(rng, 0:n_I), j-1)
-        I_j = shuffle(rng, 1:(j-1))[1:m]
-        push!(D, DecisionNode(j, I_j))
-    end
-
-    # Compute leaf nodes
-    leaf_nodes = collect(1:n)
-    setdiff!(leaf_nodes, (c.I_j for c in C)...)
-    setdiff!(leaf_nodes, (d.I_j for d in D)...)
-
-    # Select a random value node for each leaf node.
-    d = Dict(j=>Node[] for j in V_j)
+    # Assign each leaf node to a random value node
+    leaf_nodes = setdiff(1:n, (c.I_j for c in C)..., (d.I_j for d in D)...)
+    leaf_nodes_j = Dict(j=>Node[] for j in V_j)
     for i in leaf_nodes
         k = rand(rng, V_j)
-        push!(d[k], i)
+        push!(leaf_nodes_j[k], i)
     end
 
-    for j in V_j
-        l = d[j]
-        m = rand(rng, 1:(n-length(l)))
-        I_j = l ∪ shuffle(rng, setdiff(collect(1:n), l))[1:m]
-        push!(V, ValueNode(j, I_j))
-    end
+    # Create values nodes
+    V = [ValueNode(j, information_set(rng, leaf_nodes_j[j], n)) for j in V_j]
 
     return C, D, V
 end
@@ -98,7 +91,7 @@ function Probabilities(rng::AbstractRNG, c::ChanceNode, S::States; n_inactive::I
         # Count of inactive states per chance stage.
         c = zeros(Int, states...)
         # There can be maximum of (state - 1) inactive chance states per stage.
-        b = repeat(CartesianIndices(c)[:], state - 1)
+        b = repeat(vec(CartesianIndices(c)), state - 1)
         # Uniform random sample of n_inactive states.
         r = shuffle(rng, b)[1:n_inactive]
         for s in r
