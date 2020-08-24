@@ -44,6 +44,9 @@ Y = Vector{Consequences}()
 We start by defining the influence diagram structure. The decision and chance nodes, as well as their states, are defined in the first block. Next, the influence diagram parameters consisting of the node sets and the state spaces of the nodes are defined.
 
 ### Car's State
+
+The chance node $O$ is defined by its information set $I(O)$ and probability distribution $X_O$. As seen in the influence diagram, the information set is empty and the node is a root node. The probability distribution is thus simply defined over the two states of $O$.
+
 ```julia
 I_O = Vector{Node}()
 X_O = [0.2, 0.8]
@@ -52,12 +55,18 @@ push!(X, Probabilities(X_O))
 ```
 
 ### Stranger's Offer Decision
+
+A decision node is simply defined by its information state.
+
 ```julia
 I_T = Vector{Node}()
 push!(D, DecisionNode(T, I_T))
 ```
 
 ### Test's Outcome
+
+The second chance node, $R$, has nodes $O$ and $T$ in its information set, and the probabilities $ℙ(s_j∣𝐬_{I(j)})$ must thus be defined for all combinations of states in $O$, $T$ and $R$.
+
 ```julia
 I_R = [O, T]
 X_R = zeros(S[O], S[T], S[R])
@@ -76,6 +85,9 @@ push!(D, DecisionNode(A, I_A))
 ```
 
 ### Testing Cost
+
+The value nodes are defined similarly as the chance nodes, except that instead of probabilities, we define consequences $Y_j(𝐬_{I(j)})$.
+
 ```julia
 I_V1 = [T]
 Y_V1 = [0.0, -25.0]
