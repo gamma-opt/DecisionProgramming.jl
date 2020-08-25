@@ -78,7 +78,8 @@ function DecisionModel(S::States, D::Vector{DecisionNode}, P::AbstractPathProbab
             fix(π[s...], 0)
         else
             # Strict upper bound and non-strict lower bound.
-            @constraint(model, 0 ≤ π[s...] ≤ P(s))
+            @constraint(model, π[s...] ≥ 0)
+            @constraint(model, π[s...] ≤ P(s))
 
             # Constraints the path probability to zero if the path is
             # incompatible with the decision strategy.
