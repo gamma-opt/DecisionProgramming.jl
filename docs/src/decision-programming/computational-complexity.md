@@ -22,7 +22,7 @@ From the definition of the influence diagram, we have the path length of $n=|C�
 
 $$\left(\min_{i∈C∪D} |S_i|\right)^n ≤ |𝐒| ≤ \left(\max_{i∈C∪D} |S_i|\right)^n.$$
 
-We assume non-trivial influence diagram such that $|S_i|≥2$ for all $i∈C∪D$. That is, each decision or chance node has at least two states. Therefore, the number of paths is always exponential to the path length of $n.$
+We assume that all nodes $i∈C∪D$ are non-trivial. That is, each decision or chance node has at least two states $|S_i|≥2.$ Then, the number of paths is exponential to the path length of $n.$
 
 
 ## Number of Decision Stages

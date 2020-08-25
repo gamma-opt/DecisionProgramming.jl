@@ -14,9 +14,9 @@ We define the **information set** $I$ of node $j∈N$ as
 
 $$I(j)⊆\{i∈C∪D∣i<j\}$$
 
-The condition enforces that the graph is directed and acyclic, and there are no arcs from value nodes to other nodes. Practically, the information set is an edge list to reverse direction in the graph.
+Practically, the information set is an edge list to reverse direction in the graph. The conditions enforce that the graph is acyclic, and there are no arcs from value nodes to other nodes.
 
-We refer to $S$ as the **state space**. Each chance and decision node $j∈C∪D$ is associates with a finite number of **states** $S_j$ that we encode using integers $\{1,...,|S_j|\}$ from one to number of states $|S_j|.$
+We refer to $S$ as the **state space**. Each chance and decision node $j∈C∪D$ is associates with a finite number of **states** $S_j$ that we encode using integers $\{1,...,|S_j|\}$ from one to number of states $|S_j|≥1.$ We refer to a node $j$ as **trivial** if is has only one state, that is, $|S_j|=1.$
 
 
 ## Root and Leaf Nodes
@@ -159,7 +159,7 @@ The **utility function** is a function that maps consequences to real-valued uti
 
 $$U:ℂ^{|V|}↦ℝ.$$
 
-Simple utility functions return numerical values, which work "out of the box" with the default objetives. However, we can also form utility function that contain variables.  They may require additional reformulation of the objectives described in the [Decision Model](@ref) page depending on the capabilities of the solver.
+Simple utility functions return numerical values, which work "out of the box" with the default objetives. However, we can also form utility function that contain variables. They may require additional reformulation of the objectives described in the [Decision Model](@ref) page depending on the capabilities of the solver.
 
 The **path utility** is defined as the utility function acting on the consequences of value nodes given their information paths
 
@@ -191,7 +191,7 @@ Two nodes are **sequential** if there exists a directed path from one node to th
 
 **Repeated subdiagram** refers to a recurring pattern within an influence diagram. Often, influence diagrams do not have a unique structure, but they consist of a repeated pattern due to the underlying problem's properties.
 
-**Limited-memory** influence diagram refers to an influence diagram where an upper bound limits the size of the information set for decision nodes. It is a desired attribute because it affects the decision model size, as discussed in the [Computational Complexity](@ref) section.
+**Limited-memory** influence diagram refers to an influence diagram where an upper bound limits the size of the information set for decision nodes. That is, $I(j)≤m$ for all $j∈D$ where the limit $m$ is less than $|C∪D|.$ Smaller limits of $m$ are desirable because they reduce the decision model size, as discussed in the [Computational Complexity](@ref) section.
 
 **Isolated subdiagrams** refer to an influence diagram that consists of multiple unconnected diagrams, that is, there are no undirected connections between the diagrams. Therefore, one isolated subdiagram's decisions affect decisions on the other isolated subdiagrams only through the utility function.
 
