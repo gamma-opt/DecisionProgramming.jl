@@ -52,6 +52,10 @@ X_CM[3, 3, :] = [1/12, 1/4, 2/3]
 push!(C, ChanceNode(cᴹ, I_CM))
 push!(X, Probabilities(X_CM))
 
+# Dummy value node
+push!(V, ValueNode(5,[cᴹ]))
+push!(Y,Consequences(zeros(S[cᴹ])))
+
 @info("Validate influence diagram.")
 validate_influence_diagram(S, C, D, V)
 s_c = sortperm([c.j for c in C])
