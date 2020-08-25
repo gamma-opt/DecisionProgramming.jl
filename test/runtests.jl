@@ -1,5 +1,6 @@
 using Test
 
 @testset "model.jl" begin
-    include("model.jl")
+    include("influence_diagram.jl")
+    include("decision_model.jl")
 end

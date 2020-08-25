@@ -149,7 +149,7 @@ end
 # Examples
 ```julia-repl
 julia> states = States([2, 3])
-julia> vec(collect(paths(states, fixed=Dict(1=>2))))
+julia> vec(collect(paths(states, Dict(1=>2))))
 [(2, 1), (2, 2), (2, 3)]
 ```
 """
