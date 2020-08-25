@@ -97,7 +97,7 @@ print_risk_measures
 
 ## `random.jl`
 ```@docs
-random_diagram(::AbstractRNG, ::Int, ::Int, ::Int, ::Int)
+random_diagram(::AbstractRNG, ::Int, ::Int, ::Int, ::Int, ::Int)
 States(::AbstractRNG, ::Vector{State}, ::Int)
 Probabilities(::AbstractRNG, ::ChanceNode, ::States)
 Consequences(::AbstractRNG, ::ValueNode, ::States; ::Float64, ::Float64)
