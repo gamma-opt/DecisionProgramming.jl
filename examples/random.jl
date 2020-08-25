@@ -3,7 +3,7 @@ using DecisionProgramming
 
 rng = MersenneTwister(111)
 
-C, D, V = random_diagram(rng, 5, 3, 2, 3)
+C, D, V = random_diagram(rng, 5, 3, 2, 3, 3)
 S = States(rng, [2, 3], length(C) + length(D))
 X = [Probabilities(rng, c, S; n_inactive=0) for c in C]
 Y = [Consequences(rng, v, S, low=-1.0, high=1.5) for v in V]

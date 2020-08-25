@@ -4,7 +4,7 @@ using DecisionProgramming
 rng = MersenneTwister(4)
 
 @info "Creating the influence diagram."
-C, D, V = random_diagram(rng, 5, 3, 3, 3)
+C, D, V = random_diagram(rng, 5, 3, 3, 3, 3)
 S = States(rng, [2, 3], length(C) + length(D))
 X = [Probabilities(rng, c, S; n_inactive=rand(rng, 0:1)) for c in C]
 Y = [Consequences(rng, v, S; low=-1.0, high=1.0) for v in V]

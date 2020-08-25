@@ -14,7 +14,7 @@ function information_set(rng::AbstractRNG, leaf_nodes::Vector{Node}, n::Int)
 end
 
 """Generate random decision diagram with `n_C` chance nodes, `n_D` decision nodes, and `n_V` value nodes.
-Parameter `n_I` is the upper bound on the size of the information set.
+Parameter `m_C` and `m_D` are the upper bounds for the size of the information set.
 
 # Examples
 ```julia
@@ -22,13 +22,14 @@ rng = MersenneTwister(3)
 random_diagram(rng, 5, 2, 3, 2)
 ```
 """
-function random_diagram(rng::AbstractRNG, n_C::Int, n_D::Int, n_V::Int, n_I::Int)
+function random_diagram(rng::AbstractRNG, n_C::Int, n_D::Int, n_V::Int, m_C::Int, m_D::Int)
     n = n_C + n_D
-    n_C ≥ 0 || throw(DomainError("There should be ≥ 0 chance nodes."))
-    n_D ≥ 0 || throw(DomainError("There should be ≥ 0 decision nodes"))
-    n ≥ 1 || throw(DomainError("There should be at least one chance and decision node."))
-    n_V ≥ 1 || throw(DomainError("There should be ≥ 1 value nodes."))
-    n_I ≥ 1 || throw(DomainError("Information set should be size ≥ 1."))
+    n_C ≥ 0 || throw(DomainError("There should be `n_C ≥ 0` chance nodes."))
+    n_D ≥ 0 || throw(DomainError("There should be `n_D ≥ 0` decision nodes"))
+    n ≥ 1 || throw(DomainError("There should be at least one chance or decision node `n_C+n_D≥1`."))
+    n_V ≥ 1 || throw(DomainError("There should be `n_V ≥ 1` value nodes."))
+    m_C ≥ 1 || throw(DomainError("Maximum size of information set should be `m_C ≥ 1`."))
+    m_D ≥ 1 || throw(DomainError("Maximum size of information set should be `m_D ≥ 1`."))
 
     # Create node indices
     U = shuffle(rng, 1:n)
@@ -37,8 +38,8 @@ function random_diagram(rng::AbstractRNG, n_C::Int, n_D::Int, n_V::Int, n_I::Int
     V_j = collect((n+1):(n+n_V))
 
     # Create chance and decision nodes
-    C = [ChanceNode(j, information_set(rng, j, n_I)) for j in C_j]
-    D = [DecisionNode(j, information_set(rng, j, n_I)) for j in D_j]
+    C = [ChanceNode(j, information_set(rng, j, m_C)) for j in C_j]
+    D = [DecisionNode(j, information_set(rng, j, m_D)) for j in D_j]
 
     # Assign each leaf node to a random value node
     leaf_nodes = setdiff(1:n, (c.I_j for c in C)..., (d.I_j for d in D)...)
