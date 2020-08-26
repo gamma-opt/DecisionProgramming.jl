@@ -8,8 +8,14 @@ end
 
 """Generates random information sets for value nodes."""
 function information_set(rng::AbstractRNG, leaf_nodes::Vector{Node}, n::Int)
+    @assert n ≥ 1
     non_leaf_nodes = shuffle(rng, setdiff(1:n, leaf_nodes))
-    m = rand(rng, 1:length(non_leaf_nodes))
+    l = length(non_leaf_nodes)
+    if isempty(leaf_nodes)
+        m = rand(rng, 1:l)
+    else
+        m = rand(rng, 0:l)
+    end
     return [leaf_nodes; non_leaf_nodes[1:m]]
 end
 

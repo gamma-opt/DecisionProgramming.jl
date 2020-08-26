@@ -117,11 +117,21 @@ function validate_influence_diagram(S::States, C::Vector{ChanceNode}, D::Vector{
     if Set(v.j for v in V) != Set((n+1):(n+length(V)))
         throw(DomainError("Values nodes should be {n+1,...,n+|V|}."))
     end
+    I_V = union((v.I_j for v in V)...)
+    if !(I_V ⊆ Set(1:n))
+        throw(DomainError("Each information set I(v) for value node v should be a subset of C∪D."))
+    end
     # Check for redundant nodes.
     leaf_nodes = setdiff(1:n, (c.I_j for c in C)..., (d.I_j for d in D)...)
-    I_V = union((v.I_j for v in V)...)
     for i in leaf_nodes
-        i∈I_V || @warn("Node $i is redundant.")
+        if !(i∈I_V)
+            @warn("Chance or decision node $i is redundant.")
+        end
+    end
+    for v in V
+        if isempty(v.I_j)
+            @warn("Value node $(v.j) is redundant.")
+        end
     end
 end
 
