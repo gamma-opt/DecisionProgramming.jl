@@ -15,6 +15,7 @@ const R_k_states = [&quot;high&quot;, &quot;low&quot;]
 const A_k_states = [&quot;yes&quot;, &quot;no&quot;]
 const F_states = [&quot;failure&quot;, &quot;success&quot;]
 const c_k = rand(N)
+const b = 0.03
 fortification(k, a) = [c_k[k], 0][a]
 
 S = States([
@@ -47,12 +48,12 @@ end</code></pre><h3 id="Reporting-Probability"><a class="docs-heading-anchor" hr
 end</code></pre><h3 id="Decision-to-Fortify"><a class="docs-heading-anchor" href="#Decision-to-Fortify">Decision to Fortify</a><a id="Decision-to-Fortify-1"></a><a class="docs-heading-anchor-permalink" href="#Decision-to-Fortify" title="Permalink"></a></h3><pre><code class="language-julia">for (i, j) in zip(R_k, A_k)
     I_j = [i]
     push!(D, DecisionNode(j, I_j))
-end</code></pre><h3 id="Probability-of-Failure"><a class="docs-heading-anchor" href="#Probability-of-Failure">Probability of Failure</a><a id="Probability-of-Failure-1"></a><a class="docs-heading-anchor-permalink" href="#Probability-of-Failure" title="Permalink"></a></h3><p>The probabilities of failure which are decresead by fortifications. We draw the values <span>$x∼U(0,1)$</span> and <span>$y∼U(0,1)$</span> from uniform distribution.</p><div>\[ℙ(F=failure∣A_N,...,A_1,L=high)=\frac{\max{\{x, 1-x\}}}{\exp(∑_{k=1,...,N} f(A_k))}\]</div><div>\[ℙ(F=failure∣A_N,...,A_1,L=low)=\frac{\min{\{y, 1-y\}}}{\exp(∑_{k=1,...,N} f(A_k))}\]</div><pre><code class="language-julia">for j in F
+end</code></pre><h3 id="Probability-of-Failure"><a class="docs-heading-anchor" href="#Probability-of-Failure">Probability of Failure</a><a id="Probability-of-Failure-1"></a><a class="docs-heading-anchor-permalink" href="#Probability-of-Failure" title="Permalink"></a></h3><p>The probabilities of failure which are decresead by fortifications. We draw the values <span>$x∼U(0,1)$</span> and <span>$y∼U(0,1)$</span> from uniform distribution.</p><div>\[ℙ(F=failure∣A_N,...,A_1,L=high)=\frac{\max{\{x, 1-x\}}}{e^{b(∑_{k=1,...,N} f(A_k))}}\]</div><div>\[ℙ(F=failure∣A_N,...,A_1,L=low)=\frac{\min{\{y, 1-y\}}}{e^{b(∑_{k=1,...,N} f(A_k))}}\]</div><pre><code class="language-julia">for j in F
     I_j = L ∪ A_k
     x, y = rand(2)
     X_j = zeros(S[I_j]..., S[j])
     for s in paths(S[A_k])
-        d = exp(sum(fortification(k, a) for (k, a) in enumerate(s)))
+        d = exp(b * sum(fortification(k, a) for (k, a) in enumerate(s)))
         X_j[1, s..., 1] = max(x, 1-x) / d
         X_j[1, s..., 2] = 1.0 - X_j[1, s..., 1]
         X_j[2, s..., 1] = min(y, 1-y) / d
@@ -80,10 +81,10 @@ V = V[s_v]
 X = X[s_c]
 Y = Y[s_v]</code></pre><pre><code class="language-julia">P = DefaultPathProbability(C, X)
 U = DefaultPathUtility(V, Y)</code></pre><h2 id="Decision-Model"><a class="docs-heading-anchor" href="#Decision-Model">Decision Model</a><a id="Decision-Model-1"></a><a class="docs-heading-anchor-permalink" href="#Decision-Model" title="Permalink"></a></h2><pre><code class="language-julia">U⁺ = PositivePathUtility(S, U)
-model = DecisionModel(S, D, P; positive_path_utility=true)</code></pre><pre><code class="language-julia">probability_sum_cut(model, S, P)
-number_of_paths_cut(model, S, P)</code></pre><pre><code class="language-julia">EV = expected_value(model, S, U⁺)
+model = DecisionModel(S, D, P; positive_path_utility=true)</code></pre><pre><code class="language-julia">probability_cut(model, S, P)
+active_paths_cut(model, S, P)</code></pre><pre><code class="language-julia">EV = expected_value(model, S, U⁺)
 @objective(model, Max, EV)</code></pre><pre><code class="language-julia">optimizer = optimizer_with_attributes(
-    Gurobi.Optimizer,
+    () -&gt; Gurobi.Optimizer(Gurobi.Env()),
     &quot;IntFeasTol&quot;      =&gt; 1e-9,
     &quot;LazyConstraints&quot; =&gt; 1,
 )
@@ -161,4 +162,4 @@ julia&gt; print_state_probabilities(sprobs, F)
 │      Std │  19.287197 │
 │ Skewness │  -4.783515 │
 │ Kurtosis │  20.882012 │
-└──────────┴────────────┘</code></pre><h2 id="References"><a class="docs-heading-anchor" href="#References">References</a><a id="References-1"></a><a class="docs-heading-anchor-permalink" href="#References" title="Permalink"></a></h2><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>Salo, A., Andelmin, J., &amp; Oliveira, F. (2019). Decision Programming for Multi-Stage Optimization under Uncertainty, 1–35. Retrieved from <a href="http://arxiv.org/abs/1910.09196">http://arxiv.org/abs/1910.09196</a></li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../pig-breeding/">« Pig Breeding</a><a class="docs-footer-nextpage" href="../contingent-portfolio-programming/">Contingent Portfolio Programming »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 25 August 2020 13:27">Tuesday 25 August 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+└──────────┴────────────┘</code></pre><h2 id="References"><a class="docs-heading-anchor" href="#References">References</a><a id="References-1"></a><a class="docs-heading-anchor-permalink" href="#References" title="Permalink"></a></h2><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>Salo, A., Andelmin, J., &amp; Oliveira, F. (2019). Decision Programming for Multi-Stage Optimization under Uncertainty, 1–35. Retrieved from <a href="http://arxiv.org/abs/1910.09196">http://arxiv.org/abs/1910.09196</a></li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../pig-breeding/">« Pig Breeding</a><a class="docs-footer-nextpage" href="../contingent-portfolio-programming/">Contingent Portfolio Programming »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Wednesday 26 August 2020 07:23">Wednesday 26 August 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
