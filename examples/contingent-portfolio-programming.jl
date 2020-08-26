@@ -135,7 +135,7 @@ EV = @expression(model, sum(model[:π][s...] * U.expr[s] for s in paths(S)))
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
-    Gurobi.Optimizer,
+    () -> Gurobi.Optimizer(Gurobi.Env()),
     "IntFeasTol"      => 1e-9,
     "LazyConstraints" => 1,
 )

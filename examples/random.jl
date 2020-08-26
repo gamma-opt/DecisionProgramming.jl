@@ -32,7 +32,7 @@ CVaR = conditional_value_at_risk(model, S, U⁺, α)
 @objective(model, Max, w * EV + (1 - w) * CVaR)
 
 optimizer = optimizer_with_attributes(
-    Gurobi.Optimizer,
+    () -> Gurobi.Optimizer(Gurobi.Env()),
     "IntFeasTol"      => 1e-9,
     "LazyConstraints" => 1,
 )

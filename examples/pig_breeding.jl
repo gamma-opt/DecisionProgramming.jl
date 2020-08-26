@@ -103,7 +103,7 @@ EV = expected_value(model, S, U⁺)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
-    Gurobi.Optimizer,
+    () -> Gurobi.Optimizer(Gurobi.Env()),
     "IntFeasTol"      => 1e-9,
     "LazyConstraints" => 1,
 )
