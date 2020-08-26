@@ -99,6 +99,12 @@ push!(C, ChanceNode(cᴹ, I_CM))
 push!(X, Probabilities(X_CM))
 ```
 
+We add a dummy value node to avoid problems with the influence diagram validation. Without this, the final chance node would be seen as redundant.
+
+```julia
+push!(V, ValueNode(5,[cᴹ]))
+push!(Y,Consequences(zeros(S[cᴹ])))
+```
 ### Validating the Influence Diagram
 
 ```julia
@@ -255,7 +261,7 @@ EV = @expression(model, sum(model[:π][s...] * U.expr[s] for s in paths(S)))
 
 ```julia
 optimizer = optimizer_with_attributes(
-    Gurobi.Optimizer,
+    () -> Gurobi.Optimizer(Gurobi.Env()),
     "IntFeasTol"      => 1e-9,
     "LazyConstraints" => 1,
 )

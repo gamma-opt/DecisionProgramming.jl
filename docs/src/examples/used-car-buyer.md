@@ -148,7 +148,7 @@ We can perform the optimization using an optimizer such as Gurobi.
 
 ```julia
 optimizer = optimizer_with_attributes(
-    Gurobi.Optimizer,
+    () -> Gurobi.Optimizer(Gurobi.Env()),
     "IntFeasTol"      => 1e-9,
     "LazyConstraints" => 1,
 )

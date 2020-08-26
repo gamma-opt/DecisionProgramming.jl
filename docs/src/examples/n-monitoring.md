@@ -31,6 +31,7 @@ const R_k_states = ["high", "low"]
 const A_k_states = ["yes", "no"]
 const F_states = ["failure", "success"]
 const c_k = rand(N)
+const b = 0.03
 fortification(k, a) = [c_k[k], 0][a]
 
 S = States([
@@ -94,9 +95,9 @@ end
 ### Probability of Failure
 The probabilities of failure which are decresead by fortifications. We draw the values $x∼U(0,1)$ and $y∼U(0,1)$ from uniform distribution.
 
-$$ℙ(F=failure∣A_N,...,A_1,L=high)=\frac{\max{\{x, 1-x\}}}{\exp(∑_{k=1,...,N} f(A_k))}$$
+$$ℙ(F=failure∣A_N,...,A_1,L=high)=\frac{\max{\{x, 1-x\}}}{e^{b(∑_{k=1,...,N} f(A_k))}}$$
 
-$$ℙ(F=failure∣A_N,...,A_1,L=low)=\frac{\min{\{y, 1-y\}}}{\exp(∑_{k=1,...,N} f(A_k))}$$
+$$ℙ(F=failure∣A_N,...,A_1,L=low)=\frac{\min{\{y, 1-y\}}}{e^{b(∑_{k=1,...,N} f(A_k))}}$$
 
 ```julia
 for j in F
@@ -104,7 +105,7 @@ for j in F
     x, y = rand(2)
     X_j = zeros(S[I_j]..., S[j])
     for s in paths(S[A_k])
-        d = exp(sum(fortification(k, a) for (k, a) in enumerate(s)))
+        d = exp(b * sum(fortification(k, a) for (k, a) in enumerate(s)))
         X_j[1, s..., 1] = max(x, 1-x) / d
         X_j[1, s..., 2] = 1.0 - X_j[1, s..., 1]
         X_j[2, s..., 1] = min(y, 1-y) / d
@@ -168,8 +169,8 @@ model = DecisionModel(S, D, P; positive_path_utility=true)
 ```
 
 ```julia
-probability_sum_cut(model, S, P)
-number_of_paths_cut(model, S, P)
+probability_cut(model, S, P)
+active_paths_cut(model, S, P)
 ```
 
 ```julia
@@ -179,7 +180,7 @@ EV = expected_value(model, S, U⁺)
 
 ```julia
 optimizer = optimizer_with_attributes(
-    Gurobi.Optimizer,
+    () -> Gurobi.Optimizer(Gurobi.Env()),
     "IntFeasTol"      => 1e-9,
     "LazyConstraints" => 1,
 )

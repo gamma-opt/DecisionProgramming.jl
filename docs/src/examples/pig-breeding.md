@@ -207,7 +207,7 @@ model = DecisionModel(S, D, P; positive_path_utility=true)
 ```
 
 ```julia
-number_of_paths_cut(model, S, P)
+active_paths_cut(model, S, P)
 ```
 
 ```julia
@@ -217,7 +217,7 @@ EV = expected_value(model, S, U⁺)
 
 ```julia
 optimizer = optimizer_with_attributes(
-    Gurobi.Optimizer,
+    () -> Gurobi.Optimizer(Gurobi.Env()),
     "IntFeasTol"      => 1e-9,
     "LazyConstraints" => 1,
 )
