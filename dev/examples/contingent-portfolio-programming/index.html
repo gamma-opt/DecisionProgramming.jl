@@ -87,6 +87,7 @@ end
 U = PathUtility(@expression(model, [s = paths(S)],
     sum(x_A[s[1:3]..., a]*(V_A[s[4],a] - I_a[a]) for a in 1:n_A) -
     sum(x_T[s[1],t]*I_t[t] for t in 1:n_T)))
+
 EV = @expression(model, sum(model[:π][s...] * U.expr[s] for s in paths(S)))
 @objective(model, Max, EV)</code></pre><h3 id="Solving-the-Model"><a class="docs-heading-anchor" href="#Solving-the-Model">Solving the Model</a><a id="Solving-the-Model-1"></a><a class="docs-heading-anchor-permalink" href="#Solving-the-Model" title="Permalink"></a></h3><pre><code class="language-julia">optimizer = optimizer_with_attributes(
     () -&gt; Gurobi.Optimizer(Gurobi.Env()),
@@ -94,7 +95,7 @@ EV = @expression(model, sum(model[:π][s...] * U.expr[s] for s in paths(S)))
     &quot;LazyConstraints&quot; =&gt; 1,
 )
 set_optimizer(model, optimizer)
-optimize!(model)</code></pre><h2 id="Analyzing-results"><a class="docs-heading-anchor" href="#Analyzing-results">Analyzing results</a><a id="Analyzing-results-1"></a><a class="docs-heading-anchor-permalink" href="#Analyzing-results" title="Permalink"></a></h2><pre><code class="language-julia">Z = DecisionStrategy(model, D)</code></pre><pre><code class="language-julia-repl">julia&gt; print_decision_strategy(S, Z)
+optimize!(model)</code></pre><h2 id="Analyzing-results"><a class="docs-heading-anchor" href="#Analyzing-results">Analyzing results</a><a id="Analyzing-results-1"></a><a class="docs-heading-anchor-permalink" href="#Analyzing-results" title="Permalink"></a></h2><p>The optimal decision strategy and the utility distribution are printed. The strategy is to make 6-9 patents (state 3 in node 1) and 5-10 applications if the competitiveness is low, 10-15 otherwise. The expected utility for this strategy is 0.41.</p><pre><code class="language-julia">Z = DecisionStrategy(model, D)</code></pre><pre><code class="language-julia-repl">julia&gt; print_decision_strategy(S, Z)
 ┌────────┬────┬───┐
 │  Nodes │ () │ 1 │
 ├────────┼────┼───┤
@@ -110,6 +111,8 @@ optimize!(model)</code></pre><h2 id="Analyzing-results"><a class="docs-heading-a
 │ States │ (2, 2) │ 1 │
 │ States │ (3, 2) │ 3 │
 │ States │ (1, 3) │ 1 │
+│ States │ (2, 3) │ 1 │
+│ States │ (3, 3) │ 3 │
 │   ⋮    │   ⋮    │ ⋮ │
 └────────┴────────┴───┘</code></pre><pre><code class="language-julia">udist = UtilityDistribution(S, P, U, Z)</code></pre><pre><code class="language-julia-repl">julia&gt; print_utility_distribution(udist)
 ┌───────────┬─────────────┐
@@ -122,7 +125,6 @@ optimize!(model)</code></pre><h2 id="Analyzing-results"><a class="docs-heading-a
 │  0.258058 │    0.055556 │
 │  0.505004 │    0.027778 │
 │  1.342020 │    0.500000 │
-│     ⋮     │      ⋮      │
 └───────────┴─────────────┘</code></pre><pre><code class="language-julia-repl">julia&gt; print_statistics(udist)
 ┌──────────┬────────────┐
 │     Name │ Statistics │
@@ -132,4 +134,4 @@ optimize!(model)</code></pre><h2 id="Analyzing-results"><a class="docs-heading-a
 │      Std │   1.118111 │
 │ Skewness │  -1.004935 │
 │ Kurtosis │   0.071940 │
-└──────────┴────────────┘</code></pre><h2 id="References"><a class="docs-heading-anchor" href="#References">References</a><a id="References-1"></a><a class="docs-heading-anchor-permalink" href="#References" title="Permalink"></a></h2><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>Salo, A., Andelmin, J., &amp; Oliveira, F. (2019). Decision Programming for Multi-Stage Optimization under Uncertainty, 1–35. Retrieved from <a href="http://arxiv.org/abs/1910.09196">http://arxiv.org/abs/1910.09196</a></li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../n-monitoring/">« N-Monitoring</a><a class="docs-footer-nextpage" href="../../api/">API Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 27 August 2020 11:29">Thursday 27 August 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+└──────────┴────────────┘</code></pre><h2 id="References"><a class="docs-heading-anchor" href="#References">References</a><a id="References-1"></a><a class="docs-heading-anchor-permalink" href="#References" title="Permalink"></a></h2><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>Salo, A., Andelmin, J., &amp; Oliveira, F. (2019). Decision Programming for Multi-Stage Optimization under Uncertainty, 1–35. Retrieved from <a href="http://arxiv.org/abs/1910.09196">http://arxiv.org/abs/1910.09196</a></li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../n-monitoring/">« N-Monitoring</a><a class="docs-footer-nextpage" href="../../api/">API Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 27 August 2020 12:41">Thursday 27 August 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
