@@ -48,6 +48,9 @@ Next, we define the nodes with their information sets and corresponding probabil
 
 
 ### Health at First Month
+
+As seen in the influence diagram, the node $h_1$ has no arcs into it, making it a root node. Therefore, the information set $I(h_1)$ is empty.
+
 The probability that pig is ill in the first month is
 
 $$ℙ(h_1 = ill)=0.1.$$
@@ -70,7 +73,7 @@ end
 ```
 
 ### Health at Subsequent Months
-The probability that the pig is ill in the subsequent months $k=2,...,N$ given the treatment decision in and state of health in the previous month, we have
+The probability that the pig is ill in the subsequent months $k=2,...,N$ depends on the treatment decision and state of health in the previous month $k-1$. The nodes $h_{k-1}$ and $d_{k-1}$ are thus in the information set $I(h_k)$, meaning that the probability distribution of $h_k$ is conditional on these nodes:
 
 $$ℙ(h_k = ill ∣ d_{k-1} = pass, h_{k-1} = healthy)=0.2,$$
 
@@ -102,7 +105,7 @@ end
 Note that the order of states indexing the probabilities is reversed compared to the mathematical definition.
 
 ### Health Test
-The probabilities that test indicates pig's health correctly at month $k=1,...,N-1$, we have
+For the probabilities that the test indicates a pig's health correctly at month $k=1,...,N-1$, we have
 
 $$ℙ(t_k = positive ∣ h_k = ill) = 0.8,$$
 
@@ -132,6 +135,8 @@ for (i, j) in zip(test, treat)
     push!(D, DecisionNode(j, I_j))
 end
 ```
+
+The no-forgetting assumption does not hold, and the information set $I(d_k)$ only comprises the previous test result.
 
 ### Cost of Treatment
 The cost of treatment decision for the pig at month $k=1,...,N-1$ is defined
@@ -201,19 +206,27 @@ U = DefaultPathUtility(V, Y)
 
 ## Decision Model
 
+We apply an affine transformation to the utility function, making all path utilities positive. The purpose of this is discussed in the [theoretical section](../decision-programming/decision-model#Positive-Path-Utility) of this documentation.
+
 ```julia
 U⁺ = PositivePathUtility(S, U)
 model = DecisionModel(S, D, P; positive_path_utility=true)
 ```
 
+We also demonstrate one of the lazy constraints defined in the same section.
+
 ```julia
 active_paths_cut(model, S, P)
 ```
+
+We create the objective function
 
 ```julia
 EV = expected_value(model, S, U⁺)
 @objective(model, Max, EV)
 ```
+
+and set up the solver and solve the problem.
 
 ```julia
 optimizer = optimizer_with_attributes(
@@ -228,6 +241,9 @@ optimize!(model)
 
 ## Analyzing Results
 ### Decision Strategy
+
+We obtain the optimal decision strategy:
+
 ```julia
 Z = DecisionStrategy(model, D)
 ```
@@ -254,7 +270,12 @@ julia> print_decision_strategy(S, Z)
 └────────┴──────┴───┘
 ```
 
+The optimal strategy is as follows. In the first period, state 2 (no treatment) is chosen in node 3 ($d_1$) regardless of the state of node 2 ($t_1$). In other words, the pig is not treated in the first month. In the two subsequent months, state 1 (treat) is chosen if the corresponding test result is 1 (positive).
+
 ### State Probabilities
+
+The state probabilities for the strategy $Z$ can also be obtained. These tell the probability of each state in each node, given the strategy $Z$.
+
 ```julia
 sprobs = StateProbabilities(S, P, Z)
 ```
@@ -291,6 +312,9 @@ julia> print_state_probabilities(sprobs, treat)
 ```
 
 ### Utility Distribution
+
+We can also print the utility distribution for the optimal strategy. The selling prices for a healthy and an ill pig are 1000DKK and 300DKK, respectively, while the cost of treatment is 100DKK. We can see that the probability of the pig being ill in the end is the sum of three first probabilities, approximately 30.5%. This matches the probability of state 1 in node 10 in the state probabilities shown above.
+
 ```julia
 udist = UtilityDistribution(S, P, U, Z)
 ```
@@ -309,6 +333,8 @@ julia> print_utility_distribution(udist)
 │ 1000.000000 │    0.385920 │
 └─────────────┴─────────────┘
 ```
+
+Finally, we print some statistics for the utility distribution. The expected value of the utility is 727DKK, the same as in [^1].
 
 ```julia-repl
 julia> print_statistics(udist)

@@ -41,7 +41,7 @@ X = Vector{Probabilities}()
 Y = Vector{Consequences}()
 ```
 
-We start by defining the influence diagram structure. The decision and chance nodes, as well as their states, are defined in the first block. Next, the influence diagram parameters consisting of the node sets and the state spaces of the nodes are defined.
+We start by defining the influence diagram structure. The decision and chance nodes, as well as their states, are defined in the first block. Next, the influence diagram parameters consisting of the node sets, probabilities, consequences and the state spaces of the nodes are defined.
 
 ### Car's State
 
@@ -86,7 +86,7 @@ push!(D, DecisionNode(A, I_A))
 
 ### Testing Cost
 
-The value nodes are defined similarly as the chance nodes, except that instead of probabilities, we define consequences $Y_j(𝐬_{I(j)})$.
+We continue by defining the utilities (consequences) associated with value nodes. The value nodes are defined similarly as the chance nodes, except that instead of probabilities, we define consequences $Y_j(𝐬_{I(j)})$. Value nodes can be named just like the other nodes, e.g. $V1 = 5$, but considering that the index of value nodes is not needed elsewhere (value nodes can't be in information sets), we choose to simply use the index number when creating the node.
 
 ```julia
 I_V1 = [T]
@@ -104,6 +104,9 @@ push!(Y, Consequences(Y_V2))
 ```
 
 ### Repairing Cost
+
+The rows of the consequence matrix Y_V3 correspond to the state of the car, while the columns correspond to the decision made in node $A$.
+
 ```julia
 I_V3 = [O, A]
 Y_V3 = [-200.0 0.0 0.0;
@@ -127,7 +130,7 @@ X = X[s_c]
 Y = Y[s_v]
 ```
 
-We continue by defining the probabilities associated with chance nodes and utilities (consequences) associated with value nodes. The rows of the consequence matrix Y_V3 correspond to the state of the car, while the columns correspond to the decision made in node $A$.
+Default path probabilities and utilities are defined as the joint probability of all chance events in the diagram and the sum of utilities in value nodes, respectively. In the [Contingent Portfolio Programming](contingent-portfolio-programming.md) example, we show how to use a user-defined custom path utility function.
 
 ```julia
 P = DefaultPathProbability(C, X)
@@ -136,7 +139,7 @@ U = DefaultPathUtility(V, Y)
 
 
 ## Decision Model
-We then construct the decision model using the DecisionProgramming.jl package.
+We then construct the decision model using the DecisionProgramming.jl package, using the expected value as the objective.
 
 ```julia
 model = DecisionModel(S, D, P)
