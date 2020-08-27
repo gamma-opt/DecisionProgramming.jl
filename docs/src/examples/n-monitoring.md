@@ -185,20 +185,22 @@ An affine transformation is applied to the path utility, making all utilities po
 
 ```julia
 U⁺ = PositivePathUtility(S, U)
-model = DecisionModel(S, D, P; positive_path_utility=true)
+model = Model()
+z = decision_variables(model, S, D)
+π_s = path_probability_variables(model, z, S, D, P; hard_lower_bound=false)
 ```
 
 Two [lazy constraints](../decision-programming/decision-model.md) are also used to speed up the solution process.
 
 ```julia
-probability_cut(model, S, P)
-active_paths_cut(model, S, P)
+probability_cut(model, π_s, S, P)
+active_paths_cut(model, π_s, S, P)
 ```
 
 The expected utility is used as the objective and the problem is solved using Gurobi.
 
 ```julia
-EV = expected_value(model, S, U⁺)
+EV = expected_value(model, π_s, S, U⁺)
 @objective(model, Max, EV)
 
 optimizer = optimizer_with_attributes(
@@ -216,7 +218,7 @@ optimize!(model)
 The decision strategy shows us that the optimal strategy is to make all four fortifications regardless of the reports (state 1 in fortification nodes corresponds to the option "yes").
 
 ```julia
-Z = DecisionStrategy(model, D)
+Z = DecisionStrategy(z, D)
 ```
 
 ```julia-repl

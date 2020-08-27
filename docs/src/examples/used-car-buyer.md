@@ -142,8 +142,10 @@ U = DefaultPathUtility(V, Y)
 We then construct the decision model using the DecisionProgramming.jl package, using the expected value as the objective.
 
 ```julia
-model = DecisionModel(S, D, P)
-EV = expected_value(model, S, U)
+model = Model()
+z = decision_variables(model, S, D)
+π_s = path_probability_variables(model, z, S, D, P)
+EV = expected_value(model, π_s, S, U)
 @objective(model, Max, EV)
 ```
 
@@ -165,7 +167,7 @@ optimize!(model)
 Once the model is solved, we obtain the following decision strategy:
 
 ```julia
-Z = DecisionStrategy(model, D)
+Z = DecisionStrategy(z, D)
 ```
 
 ```julia-repl
