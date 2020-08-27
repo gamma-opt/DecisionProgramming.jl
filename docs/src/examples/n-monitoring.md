@@ -181,14 +181,14 @@ U = DefaultPathUtility(V, Y)
 
 ## Decision Model
 
-An affine transformation is applied to the path utility, making all utilities positive. See [section](../decision-programming/decision-model#Positive-Path-Utility) on positive path utilities for details.
+An affine transformation is applied to the path utility, making all utilities positive. See [section](../decision-programming/decision-model.md) on positive path utilities for details.
 
 ```julia
 U⁺ = PositivePathUtility(S, U)
 model = DecisionModel(S, D, P; positive_path_utility=true)
 ```
 
-Two [lazy constraints](../decision-programming/decision-model#Lazy-Constraints) are also used to speed up the solution process.
+Two [lazy constraints](../decision-programming/decision-model.md) are also used to speed up the solution process.
 
 ```julia
 probability_cut(model, S, P)
