@@ -22,13 +22,16 @@ P = DefaultPathProbability(C, X)
 U = DefaultPathUtility(V, Y)
 
 U⁺ = PositivePathUtility(S, U)
-model = DecisionModel(S, D, P; positive_path_utility=true)
-# probability_cut(model, S, P)
+model = Model()
+z = decision_variables(model, S, D)
+π_s = path_probability_variables(model, z, S, D, P; hard_lower_bound=false)
+probability_cut(model, π_s, S, P)
+# active_paths_cut(model, π_s, S, P)
 
 α = 0.1
 w = 0.5
-EV = expected_value(model, S, U⁺)
-CVaR = conditional_value_at_risk(model, S, U⁺, α)
+EV = expected_value(model, π_s, S, U⁺)
+CVaR = conditional_value_at_risk(model, π_s, S, U⁺, α)
 @objective(model, Max, w * EV + (1 - w) * CVaR)
 
 optimizer = optimizer_with_attributes(
@@ -39,7 +42,7 @@ optimizer = optimizer_with_attributes(
 set_optimizer(model, optimizer)
 optimize!(model)
 
-Z = DecisionStrategy(model, D)
+Z = DecisionStrategy(z, D)
 
 @info("Printing decision strategy:")
 print_decision_strategy(S, Z)

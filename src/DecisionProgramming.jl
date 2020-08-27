@@ -22,16 +22,17 @@ export Node,
     DefaultPathUtility,
     validate_influence_diagram
 
-export DecisionModel,
-    LocalDecisionStrategy,
-    DecisionStrategy,
+export PositivePathUtility,
     variables,
+    decision_variables,
+    path_probability_variables,
     probability_cut,
     active_paths_cut,
-    PositivePathUtility,
     expected_value,
     value_at_risk,
-    conditional_value_at_risk
+    conditional_value_at_risk,
+    LocalDecisionStrategy,
+    DecisionStrategy
 
 export random_diagram
 
@@ -46,6 +47,6 @@ export print_decision_strategy,
     print_risk_measures
 
 # For API docs
-export AbstractRNG, VariableRef
+export AbstractRNG, Model, VariableRef
 
 end # module

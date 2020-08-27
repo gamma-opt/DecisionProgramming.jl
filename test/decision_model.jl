@@ -1,54 +1,84 @@
 using Logging, Test, Random, JuMP
 using DecisionProgramming
 
+
+function influence_diagram(rng::AbstractRNG, n_C::Int, n_D::Int, n_V::Int, m_C::Int, m_D::Int, states::Vector{Int}, n_inactive::Int)
+    C, D, V = random_diagram(rng, n_C, n_D, n_V, m_C, m_D)
+    S = States(rng, states, length(C) + length(D))
+    X = [Probabilities(rng, c, S; n_inactive=n_inactive) for c in C]
+    Y = [Consequences(rng, v, S; low=-1.0, high=1.0) for v in V]
+
+    validate_influence_diagram(S, C, D, V)
+
+    s_c = sortperm([c.j for c in C])
+    s_d = sortperm([d.j for d in D])
+    s_v = sortperm([v.j for v in V])
+    C, D, V = C[s_c], D[s_d], V[s_v]
+    X, Y = X[s_c], Y[s_v]
+    P = DefaultPathProbability(C, X)
+    U = DefaultPathUtility(V, Y)
+
+    return D, S, P, U
+end
+
+function test_decision_model(D, S, P, U, n_inactive, hard_lower_bound)
+    model = Model()
+
+    @info "Testing decision_variables"
+    z = decision_variables(model, S, D)
+
+    @info "Testing path_probability_variables"
+    π_s = path_probability_variables(model, z, S, D, P; hard_lower_bound = hard_lower_bound)
+
+    @info "Testing PositivePathUtility"
+    U′ = if hard_lower_bound U else PositivePathUtility(S, U) end
+
+    @info "Testing probability_cut"
+    probability_cut(model, π_s, S, P)
+
+    @info "Testing active_paths_cut"
+    if iszero(n_inactive)
+        active_paths_cut(model, π_s, S, P)
+    else
+        @test_throws DomainError active_paths_cut(model, π_s, S, P)
+    end
+
+    @info "Testing expected_value"
+    EV = expected_value(model, π_s, S, U′)
+
+    @info "Testing conditional_value_at_risk"
+    CVaR = conditional_value_at_risk(model, π_s, S, U′, 0.2)
+
+    @test true
+end
+
+function test_analysis_and_printing(D, S, P, U)
+    @info("Creating random decision strategy")
+    Z_j = [LocalDecisionStrategy(rng, d, S) for d in D]
+    Z = DecisionStrategy(D, Z_j)
+
+    @info "Analyzing results."
+    udist = UtilityDistribution(S, P, U, Z)
+    sprobs = StateProbabilities(S, P, Z)
+
+    @info "Printing results"
+    print_decision_strategy(S, Z)
+    print_utility_distribution(udist)
+    print_state_probabilities(sprobs, [c.j for c in P.C])
+    print_state_probabilities(sprobs, [d.j for d in D])
+    print_statistics(udist)
+    print_risk_measures(udist, [0.0, 0.05, 0.1, 0.2, 1.0])
+end
+
+@info "Testing model construction"
 rng = MersenneTwister(4)
-
-@info "Creating the influence diagram."
-C, D, V = random_diagram(rng, 5, 3, 3, 3, 3)
-S = States(rng, [2, 3], length(C) + length(D))
-X = [Probabilities(rng, c, S; n_inactive=rand(rng, 0:1)) for c in C]
-Y = [Consequences(rng, v, S; low=-1.0, high=1.0) for v in V]
-
-validate_influence_diagram(S, C, D, V)
-s_c = sortperm([c.j for c in C])
-s_d = sortperm([d.j for d in D])
-s_v = sortperm([v.j for v in V])
-C = C[s_c]
-D = D[s_d]
-V = V[s_v]
-X = X[s_c]
-Y = Y[s_v]
-
-P = DefaultPathProbability(C, X)
-U = DefaultPathUtility(V, Y)
-
-@info "Creating decision model."
-U⁺ = PositivePathUtility(S, U)
-model = DecisionModel(S, D, P; positive_path_utility=true)
-probability_cut(model, S, P)
-# active_paths_cut(model, S, P)
-
-@info "Adding objectives to the model."
-α = 0.2
-w = 0.5
-EV = expected_value(model, S, U⁺)
-CVaR = conditional_value_at_risk(model, S, U⁺, α)
-@objective(model, Max, w * EV + (1 - w) * CVaR)
-
-@info("Creating random decision strategy")
-Z_j = [LocalDecisionStrategy(rng, d, S) for d in D]
-Z = DecisionStrategy(D, Z_j)
-
-@info "Analyzing results."
-udist = UtilityDistribution(S, P, U, Z)
-sprobs = StateProbabilities(S, P, Z)
-
-@info "Printing results"
-print_decision_strategy(S, Z)
-print_utility_distribution(udist)
-print_state_probabilities(sprobs, [c.j for c in C])
-print_state_probabilities(sprobs, [d.j for d in D])
-print_statistics(udist)
-print_risk_measures(udist, [0.0, 0.05, 0.1, 0.2, 1.0])
-
-@test true
+for (n_C, n_D, states, n_inactive, hard_lower_bound) in [
+        (3, 2, [1, 2, 3], 0, true),
+        (3, 2, [3], 1, true),
+        (3, 2, [1, 2, 3], 0, false),
+        (3, 2, [3], 1, false)
+    ]
+    D, S, P, U = influence_diagram(rng, n_C, n_D, 2, 2, 2, states, n_inactive)
+    test_decision_model(D, S, P, U, n_inactive, hard_lower_bound)
+    test_analysis_and_printing(D, S, P, U)
+end

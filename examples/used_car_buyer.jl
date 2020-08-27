@@ -73,8 +73,10 @@ P = DefaultPathProbability(C, X)
 U = DefaultPathUtility(V, Y)
 
 @info("Creating the decision model.")
-model = DecisionModel(S, D, P)
-EV = expected_value(model, S, U)
+model = Model()
+z = decision_variables(model, S, D)
+π_s = path_probability_variables(model, z, S, D, P)
+EV = expected_value(model, π_s, S, U)
 @objective(model, Max, EV)
 
 @info("Starting the optimization process.")
@@ -87,7 +89,7 @@ set_optimizer(model, optimizer)
 optimize!(model)
 
 @info("Extracting results.")
-Z = DecisionStrategy(model, D)
+Z = DecisionStrategy(z, D)
 
 @info("Printing decision strategy:")
 print_decision_strategy(S, Z)

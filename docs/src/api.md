@@ -53,16 +53,16 @@ DefaultPathUtility(::Path)
 PositivePathUtility
 PositivePathUtility(::Path)
 variables
-DecisionModel
-DecisionModel(::States, ::Vector{DecisionNode}, ::AbstractPathProbability; ::Bool)
-probability_cut(::DecisionModel, ::States, ::AbstractPathProbability)
-active_paths_cut(::DecisionModel, ::States, ::AbstractPathProbability; ::Float64)
+decision_variables
+path_probability_variables
+probability_cut(::Model, ::Array{VariableRef}, ::States, ::AbstractPathProbability)
+active_paths_cut(::Model, ::Array{VariableRef}, ::States, ::AbstractPathProbability; ::Float64)
 ```
 
 ### Objective Functions
 ```@docs
-expected_value(::DecisionModel, ::States, ::AbstractPathUtility)
-conditional_value_at_risk(::DecisionModel, ::States, ::AbstractPathUtility, ::Float64)
+expected_value(::Model, ::Array{VariableRef}, ::States, ::AbstractPathUtility)
+conditional_value_at_risk(::Model, ::Array{VariableRef}, ::States, ::AbstractPathUtility, ::Float64)
 ```
 
 ### Decision Strategy
@@ -71,7 +71,7 @@ LocalDecisionStrategy
 LocalDecisionStrategy(::Vector{VariableRef})
 LocalDecisionStrategy(::Path)
 DecisionStrategy
-DecisionStrategy(::DecisionModel, ::Vector{DecisionNode})
+DecisionStrategy(::Vector{<:Array{VariableRef}}, ::Vector{DecisionNode})
 ```
 
 ## `analysis.jl`

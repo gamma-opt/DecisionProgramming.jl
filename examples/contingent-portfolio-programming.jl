@@ -71,7 +71,9 @@ Y = Y[s_v]
 P = DefaultPathProbability(C, X)
 
 @info("Defining DecisionModel")
-model = DecisionModel(S, D, P; positive_path_utility=false)
+model = Model()
+z = decision_variables(model, S, D)
+π_s = path_probability_variables(model, z, S, D, P)
 
 @info("Creating problem specific constraints and expressions")
 
@@ -94,8 +96,8 @@ M = 20                      # a large constant
 
 q_P = [0, 3, 6, 9]          # limits of the technology intervals
 q_A = [0, 5, 10, 15]        # limits of the application intervals
-z_dP = model[:z][1]
-z_dA = model[:z][2]
+z_dP = z[1]
+z_dA = z[2]
 
 @constraint(model, [i=1:3],
     sum(x_T[i,t] for t in 1:n_T) <= z_dP[i]*n_T)            #(25)
@@ -130,7 +132,7 @@ end
 U = PathUtility(@expression(model, [s = paths(S)],
     sum(x_A[s[1:3]..., a]*(V_A[s[4],a] - I_a[a]) for a in 1:n_A) -
     sum(x_T[s[1],t]*I_t[t] for t in 1:n_T)))
-EV = @expression(model, sum(model[:π][s...] * U.expr[s] for s in paths(S)))
+EV = @expression(model, sum(π_s[s...] * U.expr[s] for s in paths(S)))
 @objective(model, Max, EV)
 
 @info("Starting the optimization process.")
@@ -143,7 +145,7 @@ set_optimizer(model, optimizer)
 optimize!(model)
 
 @info("Extracting results.")
-Z = DecisionStrategy(model, D)
+Z = DecisionStrategy(z, D)
 
 @info("Printing decision strategy:")
 print_decision_strategy(S, Z)

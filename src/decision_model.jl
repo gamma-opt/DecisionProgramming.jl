@@ -44,82 +44,88 @@ function variables(model::Model, dims::AbstractVector{Int}; binary::Bool=false, 
     return v
 end
 
-"""DecisionModel type. Alias for `JuMP.Model`."""
-const DecisionModel = Model
-
-"""Construct a DecisionModel from states, decision nodes and path probability.
+"""Create decision variables and constraints.
 
 # Examples
 ```julia
-model = DecisionModel(S, D, P; positive_path_utility=true)
+z = decision_variables(model, S, D)
 ```
 """
-function DecisionModel(S::States, D::Vector{DecisionNode}, P::AbstractPathProbability; positive_path_utility::Bool=false, names::Bool=false)
-    model = DecisionModel()
+function decision_variables(model::Model, S::States, D::Vector{DecisionNode}; names::Bool=false, base_name::String="z")
+    z = Vector{Array{VariableRef}}()
+    for d in D
+        # Create decision variables.
+        dims = S[[d.I_j; d.j]]
+        z_names = if names; ["$(base_name)_$(d.j)$(s)" for s in paths(dims)] else nothing end
+        z_j = variables(model, dims; binary=true, names=z_names)
 
-    # --- Decision variables ---
-    z_names(z, dims) = if names; ["z_$z$s" for s in paths(dims)] else nothing end
-    z = [variables(model, S[[d.I_j; d.j]]; binary=true, names=z_names(d.j, S[[d.I_j; d.j]])) for d in D]
-
-    # Constraints to one decision per decision strategy.
-    for (d, z_j) in zip(D, z)
+        # Constraints to one decision per decision strategy.
         for s_I in paths(S[d.I_j])
             @constraint(model, sum(z_j[s_I..., s_j] for s_j in 1:S[d.j]) == 1)
         end
+
+        push!(z, z_j)
     end
+    return z
+end
 
-    # --- Path probability variables ---
-    π_names = if names; ["π$s" for s in paths(S)] else nothing end
-    π = variables(model, S; names=π_names)
+"""Create path probability variables and constraints.
 
+# Examples
+```julia
+π_s = path_probability_variables(model, z, S, D, P)
+π_s = path_probability_variables(model, z, S, D, P; hard_lower_bound=false))
+```
+"""
+function path_probability_variables(model::Model, z::Vector{<:Array{VariableRef}}, S::States, D::Vector{DecisionNode}, P::AbstractPathProbability; hard_lower_bound::Bool=true, names::Bool=false, base_name::String="π_s")
+    # Create path probability variables.
+    π_names = if names; ["$(base_name)$(s)" for s in paths(S)] else nothing end
+    π_s = variables(model, S; names=π_names)
+
+    # Create constraints for each variable.
     for s in paths(S)
         if iszero(P(s))
             # If the upper bound is zero, we fix the value to zero.
-            fix(π[s...], 0)
+            fix(π_s[s...], 0)
         else
-            # Non-strict lower bound.
-            @constraint(model, π[s...] ≥ 0)
+            # Soft constraint on the lower bound.
+            @constraint(model, π_s[s...] ≥ 0)
 
-            # Strict upper bound.
-            @constraint(model, π[s...] ≤ P(s))
+            # Hard constraint on the upper bound.
+            @constraint(model, π_s[s...] ≤ P(s))
 
             # Constraints the path probability to zero if the path is
             # incompatible with the decision strategy.
             for (d, z_j) in zip(D, z)
-                @constraint(model, π[s...] ≤ z_j[s[[d.I_j; d.j]]...])
+                @constraint(model, π_s[s...] ≤ z_j[s[[d.I_j; d.j]]...])
             end
 
-            # Strict lower bound.
-            if !positive_path_utility
+            # Hard constraint on the lower bound.
+            if hard_lower_bound
                 @constraint(model,
-                    π[s...] ≥ P(s) + sum(z_j[s[[d.I_j; d.j]]...] for (d, z_j) in zip(D, z)) - length(D))
+                    π_s[s...] ≥ P(s) + sum(z_j[s[[d.I_j; d.j]]...] for (d, z_j) in zip(D, z)) - length(D))
             end
         end
     end
-
-    model[:π] = π
-    model[:z] = z
-
-    return model
+    return π_s
 end
 
-"""Adds a probability sum cut to the model as a lazy constraint.
+"""Adds a probability cut to the model as a lazy constraint.
 
 # Examples
 ```julia
-probability_cut(model, S, P)
+probability_cut(model, π_s, S, P)
 ```
 """
-function probability_cut(model::DecisionModel, S::States, P::AbstractPathProbability)
+function probability_cut(model::Model, π_s::Array{VariableRef}, S::States, P::AbstractPathProbability)
     # Add the constraints only once
     ϵ = minimum(P(s) for s in paths(S))
     flag = false
     function probability_cut(cb_data)
         flag && return
-        π = model[:π]
-        πsum = sum(callback_value(cb_data, π[s]) for s in eachindex(π))
+        πsum = sum(callback_value(cb_data, π_s[s]) for s in eachindex(π_s))
         if !isapprox(πsum, 1.0, atol=ϵ)
-            con = @build_constraint(sum(π) == 1.0)
+            con = @build_constraint(sum(π_s) == 1.0)
             MOI.submit(model, MOI.LazyConstraint(cb_data), con)
             flag = true
         end
@@ -127,15 +133,15 @@ function probability_cut(model::DecisionModel, S::States, P::AbstractPathProbabi
     MOI.set(model, MOI.LazyConstraintCallback(), probability_cut)
 end
 
-"""Adds a number of paths cut to the model as a lazy constraint.
+"""Adds a active paths cut to the model as a lazy constraint.
 
 # Examples
 ```julia
 atol = 0.9  # Tolerance to trigger the creation of the lazy cut
-active_paths_cut(model, S, P; atol=atol)
+active_paths_cut(model, π_s, S, P; atol=atol)
 ```
 """
-function active_paths_cut(model::DecisionModel, S::States, P::AbstractPathProbability; atol::Float64 = 0.9)
+function active_paths_cut(model::Model, π_s::Array{VariableRef}, S::States, P::AbstractPathProbability; atol::Float64 = 0.9)
     all_active_states = all(all((!).(iszero.(x))) for x in P.X)
     if !all_active_states
         throw(DomainError("Cannot use active paths cut if all states are not active."))
@@ -146,10 +152,9 @@ function active_paths_cut(model::DecisionModel, S::States, P::AbstractPathProbab
     flag = false
     function active_paths_cut(cb_data)
         flag && return
-        π = model[:π]
-        πnum = sum(callback_value(cb_data, π[s]) ≥ ϵ for s in eachindex(π))
+        πnum = sum(callback_value(cb_data, π_s[s]) ≥ ϵ for s in eachindex(π_s))
         if !isapprox(πnum, num_compatible_paths, atol = atol)
-            num_active_paths = @expression(model, sum(π[s...] / P(s) for s in paths(S) if !iszero(P(s))))
+            num_active_paths = @expression(model, sum(π_s[s...] / P(s) for s in paths(S) if !iszero(P(s))))
             con = @build_constraint(num_active_paths == num_compatible_paths)
             MOI.submit(model, MOI.LazyConstraint(cb_data), con)
             flag = true
@@ -165,11 +170,11 @@ end
 
 # Examples
 ```julia
-EV = expected_value(model, S, U)
+EV = expected_value(model, π_s, S, U)
 ```
 """
-function expected_value(model::DecisionModel, S::States, U::AbstractPathUtility)
-    @expression(model, sum(model[:π][s...] * U(s) for s in paths(S)))
+function expected_value(model::Model, π_s::Array{VariableRef}, S::States, U::AbstractPathUtility)
+    @expression(model, sum(π_s[s...] * U(s) for s in paths(S)))
 end
 
 """Create a conditional value-at-risk (CVaR) objective.
@@ -177,21 +182,22 @@ end
 # Examples
 ```julia
 α = 0.05  # Parameter such that 0 ≤ α ≤ 1
-CVaR = conditional_value_at_risk(model, S, U, α)
+CVaR = conditional_value_at_risk(model, π_s, S, U, α)
 ```
 """
-function conditional_value_at_risk(model::DecisionModel, S::States, U::AbstractPathUtility, α::Float64)
-    if !(0 ≤ α ≤ 1)
-        throw(DomainError("α should be 0 ≤ α ≤ 1"))
+function conditional_value_at_risk(model::Model, π_s::Array{VariableRef}, S::States, U::AbstractPathUtility, α::Float64)
+    if !(0 < α ≤ 1)
+        throw(DomainError("α should be 0 < α ≤ 1"))
     end
 
-    # Pre-computer parameters
+    # Pre-computed parameters
     u = collect(Iterators.flatten(U(s) for s in paths(S)))
     u_sorted = sort(u)
     u_min = u_sorted[1]
     u_max = u_sorted[end]
     M = u_max - u_min
-    ϵ = minimum(filter(!iszero, abs.(diff(u_sorted)))) / 2
+    u_diff = diff(u_sorted)
+    ϵ = if isempty(u_diff) 0.0 else minimum(filter(!iszero, abs.(u_diff))) / 2 end
 
     # Variables
     η = @variable(model)
@@ -201,7 +207,6 @@ function conditional_value_at_risk(model::DecisionModel, S::States, U::AbstractP
     ρ_bar = variables(model, S)
 
     # Constraints
-    π = model[:π]
     @constraint(model, u_min ≤ η ≤ u_max)
     for s in paths(S)
         u_s = U(s)
@@ -214,15 +219,15 @@ function conditional_value_at_risk(model::DecisionModel, S::States, U::AbstractP
         @constraint(model, ρ[s...] ≤ λ[s...])
         @constraint(model, ρ_bar[s...] ≤ λ_bar[s...])
         @constraint(model, ρ[s...] ≤ ρ_bar[s...])
-        @constraint(model, ρ_bar[s...] ≤ π[s...])
-        @constraint(model, π[s...] - (1 - λ[s...]) ≤ ρ[s...])
+        @constraint(model, ρ_bar[s...] ≤ π_s[s...])
+        @constraint(model, π_s[s...] - (1 - λ[s...]) ≤ ρ[s...])
     end
     @constraint(model, sum(ρ_bar[s...] for s in paths(S)) == α)
 
     # Add variables to the model
-    model[:η] = η
-    model[:ρ] = ρ
-    model[:ρ_bar] = ρ_bar
+    # model[:η] = η
+    # model[:ρ] = ρ
+    # model[:ρ_bar] = ρ_bar
 
     # Return CVaR as an expression
     CVaR = @expression(model, sum(ρ_bar[s...] * U(s) for s in paths(S)) / α)
@@ -273,9 +278,9 @@ end
 
 # Examples
 ```julia
-Z = GlobalDecisionStrategy(model, D)
+Z = DecisionStrategy(z, D)
 ```
 """
-function DecisionStrategy(model::DecisionModel, D::Vector{DecisionNode})
-    DecisionStrategy(D, [LocalDecisionStrategy(v) for v in model[:z]])
+function DecisionStrategy(z::Vector{<:Array{VariableRef}}, D::Vector{DecisionNode})
+    DecisionStrategy(D, [LocalDecisionStrategy(v) for v in z])
 end
