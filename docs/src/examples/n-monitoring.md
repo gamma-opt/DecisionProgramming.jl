@@ -6,9 +6,9 @@ The $N$-monitoring problem is described in [^1], sections 4.1 and 6.1.
 ## Influence Diagram
 ![](figures/n-monitoring.svg)
 
-The incluence diagram of generalized $N$-monitoring problem where $N≥1$ and indices $k=1,...,N.$ The nodes are associated with states as follows. **Load state** $L=\{high, low\}$ denotes the load, **report states** $R_k=\{high, low\}$ report the load state to the **action states** $A_k=\{yes, no\}$ which decide whether to fortificate **failure state** $F=\{failure, success\}.$ Finally, the utility at target $T$ depends on the whether $F$ fails and the fortification costs.
+The influence diagram of generalized $N$-monitoring problem where $N≥1$ and indices $k=1,...,N.$ The nodes are associated with states as follows. **Load state** $L=\{high, low\}$ denotes the load on a structure, **report states** $R_k=\{high, low\}$ report the load state to the **action states** $A_k=\{yes, no\}$ which represent different decisions to fortify the structure. The **failure state** $F=\{failure, success\}$ represents whether or not the (fortified) structure fails under the load $L$. Finally, the utility at target $T$ depends on the whether $F$ fails and the fortification costs.
 
-We draw the magnitude and cost of fortification $c_k∼U(0,1)$ from a uniform distribution. Fortification is defined
+We draw the cost of fortification $c_k∼U(0,1)$ from a uniform distribution, and the magnitude of fortification is directly proportional to the cost. Fortification is defined as
 
 $$f(A_k=yes) = c_k$$
 
@@ -48,7 +48,7 @@ Y = Vector{Consequences}()
 ```
 
 ### Load State Probability
-The probability that the load is high. We draw $ℙ(L=high)$ from uniform distribution.
+The probability that the load is high, $ℙ(L=high)$, is drawn from a uniform distribution.
 
 $$ℙ(L=high)∼U(0,1)$$
 
@@ -70,6 +70,8 @@ $$ℙ(R_k=high∣L=high)=\max\{x,x-1\}$$
 
 $$ℙ(R_k=low∣L=low)=\max\{y,y-1\}$$
 
+The probability of a correct report is thus in the range [0.5,1]. (This reflects the fact that a probability under 50% would not even make sense, since we would notice that if the test suggests a high load, the load is more likely to be low, resulting in that a low report "turns into" a high report and vice versa.)
+
 ```julia
 for j in R_k
     I_j = L
@@ -85,6 +87,9 @@ end
 ```
 
 ### Decision to Fortify
+
+Only the corresponding load report is known when making the fortification decision, thus $I(A_k)=R_k$.
+
 ```julia
 for (i, j) in zip(R_k, A_k)
     I_j = [i]
@@ -123,7 +128,11 @@ $$g(F=failure) = 0$$
 
 $$g(F=success) = 100$$
 
-Utility from consequences at target $T$ from action states $A_k$ is $$-f(A_k)$$
+Utility from consequences at target $T$ from action states $A_k$ is
+
+$$f(A_k=yes) = c_k$$
+
+$$f(A_k=no) = 0$$
 
 Total cost
 
@@ -144,6 +153,9 @@ end
 ```
 
 ### Validating Influence Diagram
+
+Finally, we need to validate the influence diagram and sort the nodes, probabilities and consequences in increasing order by the node indices.
+
 ```julia
 validate_influence_diagram(S, C, D, V)
 s_c = sortperm([c.j for c in C])
@@ -156,29 +168,39 @@ X = X[s_c]
 Y = Y[s_v]
 ```
 
+We define the path probability.
 ```julia
 P = DefaultPathProbability(C, X)
+```
+
+As the path utility, we use the default, which is the sum of the consequences given the path.
+```julia
 U = DefaultPathUtility(V, Y)
 ```
 
 
 ## Decision Model
+
+An affine transformation is applied to the path utility, making all utilities positive. See [section](../decision-programming/decision-model#Positive-Path-Utility) on positive path utilities for details.
+
 ```julia
 U⁺ = PositivePathUtility(S, U)
 model = DecisionModel(S, D, P; positive_path_utility=true)
 ```
+
+Two [lazy constraints](../decision-programming/decision-model#Lazy-Constraints) are also used to speed up the solution process.
 
 ```julia
 probability_cut(model, S, P)
 active_paths_cut(model, S, P)
 ```
 
+The expected utility is used as the objective and the problem is solved using Gurobi.
+
 ```julia
 EV = expected_value(model, S, U⁺)
 @objective(model, Max, EV)
-```
 
-```julia
 optimizer = optimizer_with_attributes(
     () -> Gurobi.Optimizer(Gurobi.Env()),
     "IntFeasTol"      => 1e-9,
@@ -190,6 +212,9 @@ optimize!(model)
 
 
 ## Analyzing Results
+
+The decision strategy shows us that the optimal strategy is to make all four fortifications regardless of the reports (state 1 in fortification nodes corresponds to the option "yes").
+
 ```julia
 Z = DecisionStrategy(model, D)
 ```
@@ -221,6 +246,10 @@ julia> print_decision_strategy(S, Z)
 │ States │ (2,) │ 1 │
 └────────┴──────┴───┘
 ```
+
+
+The state probabilities for the strategy $Z$ can also be obtained. These tell the probability of each state in each node, given the strategy $Z$.
+
 
 ```julia
 sprobs = StateProbabilities(S, P, Z)
@@ -262,6 +291,8 @@ julia> print_state_probabilities(sprobs, F)
 │    10 │ 0.038697 │ 0.961303 │             │
 └───────┴──────────┴──────────┴─────────────┘
 ```
+
+We can also print the utility distribution for the optimal strategy and some basic statistics for the distribution.
 
 ```julia
 udist = UtilityDistribution(S, P, U, Z)

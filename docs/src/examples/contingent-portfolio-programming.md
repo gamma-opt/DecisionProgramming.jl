@@ -253,6 +253,7 @@ end
 U = PathUtility(@expression(model, [s = paths(S)],
     sum(x_A[s[1:3]..., a]*(V_A[s[4],a] - I_a[a]) for a in 1:n_A) -
     sum(x_T[s[1],t]*I_t[t] for t in 1:n_T)))
+
 EV = @expression(model, sum(model[:π][s...] * U.expr[s] for s in paths(S)))
 @objective(model, Max, EV)
 ```
@@ -270,6 +271,8 @@ optimize!(model)
 ```
 
 ## Analyzing results
+
+The optimal decision strategy and the utility distribution are printed. The strategy is to make 6-9 patents (state 3 in node 1) and 5-10 applications if the competitiveness is low, 10-15 otherwise. The expected utility for this strategy is 0.41.
 
 ```julia
 Z = DecisionStrategy(model, D)
@@ -292,6 +295,8 @@ julia> print_decision_strategy(S, Z)
 │ States │ (2, 2) │ 1 │
 │ States │ (3, 2) │ 3 │
 │ States │ (1, 3) │ 1 │
+│ States │ (2, 3) │ 1 │
+│ States │ (3, 3) │ 3 │
 │   ⋮    │   ⋮    │ ⋮ │
 └────────┴────────┴───┘
 ```
@@ -312,7 +317,6 @@ julia> print_utility_distribution(udist)
 │  0.258058 │    0.055556 │
 │  0.505004 │    0.027778 │
 │  1.342020 │    0.500000 │
-│     ⋮     │      ⋮      │
 └───────────┴─────────────┘
 ```
 
