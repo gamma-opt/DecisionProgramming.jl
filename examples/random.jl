@@ -1,4 +1,5 @@
-using Random, Parameters, Printf, JuMP, Gurobi
+using Logging, Random
+using JuMP, Gurobi
 using DecisionProgramming
 
 rng = MersenneTwister(111)

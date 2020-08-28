@@ -1,5 +1,3 @@
-using Parameters
-
 """Interface for iterating over active paths given influence diagram and decision strategy.
 
 1) Initialize path `s` of length `n`
@@ -43,29 +41,27 @@ function compatible_path(S::States, C::Vector{ChanceNode}, Z::DecisionStrategy, 
 end
 
 function Base.iterate(a::CompatiblePaths)
-    @unpack S, C, Z = a
-    C_j = [c.j for c in C]
+    C_j = [c.j for c in a.C]
     if isempty(a.fixed)
-        iter = paths(S[C_j])
+        iter = paths(a.S[C_j])
     else
         ks = sort(collect(keys(a.fixed)))
         fixed = Dict{Int, Int}(i => a.fixed[k] for (i, k) in enumerate(ks))
-        iter = paths(S[C_j], fixed)
+        iter = paths(a.S[C_j], fixed)
     end
     next = iterate(iter)
     if next !== nothing
         s_C, state = next
-        return (compatible_path(S, C, Z, s_C), (iter, state))
+        return (compatible_path(a.S, a.C, a.Z, s_C), (iter, state))
     end
 end
 
 function Base.iterate(a::CompatiblePaths, gen)
-    @unpack S, C, Z = a
     iter, state = gen
     next = iterate(iter, state)
     if next !== nothing
         s_C, state = next
-        return (compatible_path(S, C, Z, s_C), (iter, state))
+        return (compatible_path(a.S, a.C, a.Z, s_C), (iter, state))
     end
 end
 

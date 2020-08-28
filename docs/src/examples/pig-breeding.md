@@ -19,7 +19,7 @@ The influence diagram for the the generalized $N$-month pig breeding. The nodes 
 In decision programming, we start by defining the node indices and states, as follows:
 
 ```julia
-using Printf, Parameters, JuMP, Gurobi
+using JuMP, Gurobi
 using DecisionProgramming
 
 const N = 4

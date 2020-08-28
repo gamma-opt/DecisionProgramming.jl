@@ -1,4 +1,5 @@
-using Printf, Random, Logging, Parameters, JuMP, Gurobi
+using Logging
+using JuMP, Gurobi
 using DecisionProgramming
 
 const O = 1  # Chance node: lemon or peach

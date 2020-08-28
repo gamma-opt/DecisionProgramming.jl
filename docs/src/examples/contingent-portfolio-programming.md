@@ -24,7 +24,8 @@ $$d_k^A∈D^A=\{[q_1^A, q_2^A), [q_2^A, q_3^A), ..., [q_{|D^A|}^A, q_{|D^A|+1}^A
 Chance states of market size $c_l^M∈C_l^M$
 
 ```julia
-using Printf, Random, Logging, Parameters, JuMP, Gurobi
+using Logging, Random
+using JuMP, Gurobi
 using DecisionProgramming
 
 Random.seed!(42)

@@ -1,4 +1,4 @@
-using Logging, Test, Random
+using Test, Logging, Random
 using DecisionProgramming
 
 rng = MersenneTwister(4)

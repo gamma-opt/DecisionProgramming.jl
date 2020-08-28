@@ -1,4 +1,4 @@
-using Printf, Parameters, DataFrames, PrettyTables
+using DataFrames, PrettyTables
 using StatsBase, StatsBase.Statistics
 
 """Print decision strategy.
@@ -27,8 +27,7 @@ print_utility_distribution(udist)
 ```
 """
 function print_utility_distribution(udist::UtilityDistribution; util_fmt="%f", prob_fmt="%f")
-    @unpack u, p = udist
-    df = DataFrame(Utility = u, Probability = p)
+    df = DataFrame(Utility = udist.u, Probability = udist.p)
     formatters = (
         ft_printf(util_fmt, [1]),
         ft_printf(prob_fmt, [2]))
@@ -65,8 +64,8 @@ end
 
 """Print statistics."""
 function print_statistics(udist::UtilityDistribution; fmt = "%f")
-    @unpack u, p = udist
-    w = ProbabilityWeights(p)
+    u = udist.u
+    w = ProbabilityWeights(udist.p)
     names = ["Mean", "Std", "Skewness", "Kurtosis"]
     statistics = [mean(u, w), std(u, w, corrected=false), skewness(u, w), kurtosis(u, w)]
     df = DataFrame(Name = names, Statistics = statistics)
@@ -75,7 +74,7 @@ end
 
 """Print risk measures."""
 function print_risk_measures(udist::UtilityDistribution, αs::Vector{Float64}; fmt = "%f")
-    @unpack u, p = udist
+    u, p = udist.u, udist.p
     VaR = [value_at_risk(u, p, α) for α in αs]
     CVaR = [conditional_value_at_risk(u, p, α) for α in αs]
     df = DataFrame(α = αs, VaR = VaR, CVaR = CVaR)

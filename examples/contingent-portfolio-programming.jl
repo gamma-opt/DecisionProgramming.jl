@@ -1,4 +1,5 @@
-using Printf, Random, Logging, Parameters, JuMP, Gurobi
+using Logging, Random
+using JuMP, Gurobi
 using DecisionProgramming
 
 Random.seed!(42)

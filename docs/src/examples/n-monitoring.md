@@ -15,7 +15,8 @@ $$f(A_k=yes) = c_k$$
 $$f(A_k=no) = 0$$
 
 ```julia
-using Printf, Random, Logging, Parameters, JuMP, Gurobi
+using Logging, Random
+using JuMP, Gurobi
 using DecisionProgramming
 
 Random.seed!(13)

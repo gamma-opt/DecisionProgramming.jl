@@ -1,4 +1,5 @@
-using Printf, Parameters, JuMP, Gurobi
+using Logging
+using JuMP, Gurobi
 using DecisionProgramming
 
 const N = 4

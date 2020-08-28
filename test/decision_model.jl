@@ -1,4 +1,4 @@
-using Logging, Test, Random, JuMP
+using Test, Logging, Random, JuMP
 using DecisionProgramming
 
 

@@ -1,4 +1,4 @@
-using Parameters, JuMP
+using JuMP
 
 """Positive affine transformation of path utility.
 

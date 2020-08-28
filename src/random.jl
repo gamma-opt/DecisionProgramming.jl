@@ -1,4 +1,4 @@
-using Random, Parameters
+using Random
 
 """Generates random information sets for chance and decision nodes."""
 function information_set(rng::AbstractRNG, j::Int, n_I::Int)
