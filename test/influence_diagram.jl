@@ -50,12 +50,12 @@ using DecisionProgramming
     [ValueNode(3, [2]), ValueNode(4, [3])]
 )
 # Test redundancy
-@test isnothing(validate_influence_diagram(
+@test validate_influence_diagram(
     States([1, 1]),
     [ChanceNode(1, Node[])],
     [DecisionNode(2, Node[])],
     [ValueNode(3, Node[])]
-))
+) === nothing
 
 @info "Testing paths"
 @test vec(collect(paths(States([2, 3])))) == [(1, 1), (2, 1), (1, 2), (2, 2), (1, 3), (2, 3)]

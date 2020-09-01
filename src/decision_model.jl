@@ -38,7 +38,7 @@ v2 = variables(model, [2, 3, 2]; binary=true)
 function variables(model::Model, dims::AbstractVector{Int}; binary::Bool=false, names::Union{Nothing, Array{String}}=nothing)
     v = Array{VariableRef}(undef, dims...)
     for i in eachindex(v)
-        name = if isnothing(names) "" else names[i] end
+        name = if names === nothing; "" else names[i] end
         v[i] = @variable(model, binary=binary, base_name = name)
     end
     return v
