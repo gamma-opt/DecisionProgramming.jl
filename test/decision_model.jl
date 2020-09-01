@@ -57,17 +57,32 @@ function test_analysis_and_printing(D, S, P, U)
     Z_j = [LocalDecisionStrategy(rng, d, S) for d in D]
     Z = DecisionStrategy(D, Z_j)
 
-    @info "Analyzing results."
+    @info "Testing CompatiblePaths"
+    @test all(true for s in CompatiblePaths(S, P.C, Z))
+    @test_throws DomainError CompatiblePaths(S, P.C, Z, Dict(D[1].j => 1))
+    node, state = (P.C[1].j, 1)
+    @test all(s[node] == state for s in CompatiblePaths(S, P.C, Z, Dict(node => state)))
+
+    @info "Testing UtilityDistribution"
     udist = UtilityDistribution(S, P, U, Z)
+
+    @info "Testing StateProbabilities"
     sprobs = StateProbabilities(S, P, Z)
 
-    @info "Printing results"
+    @info "Testing conditional StateProbabilities"
+    sprobs2 = StateProbabilities(S, P, Z, node, state, sprobs)
+
+    @info "Testing "
     print_decision_strategy(S, Z)
     print_utility_distribution(udist)
     print_state_probabilities(sprobs, [c.j for c in P.C])
     print_state_probabilities(sprobs, [d.j for d in D])
+    print_state_probabilities(sprobs2, [c.j for c in P.C])
+    print_state_probabilities(sprobs2, [d.j for d in D])
     print_statistics(udist)
     print_risk_measures(udist, [0.0, 0.05, 0.1, 0.2, 1.0])
+
+    @test true
 end
 
 @info "Testing model construction"
