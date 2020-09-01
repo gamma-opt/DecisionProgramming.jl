@@ -12,13 +12,29 @@
 We can create an influence diagram as follows:
 
 ```julia
-# TODO
+using DecisionProgramming
+S = States([2, 2, 2, 2])
+C = [ChanceNode(2, [1]), ChanceNode(3, [1])]
+D = [DecisionNode(1, Node[]), DecisionNode(4, [2, 3])]
+V = [ValueNode(5, [4])]
+
+validate_influence_diagram(S, C, D, V)
+
+X = [Probabilities([0.4, 0.6]), Probabilities([0.7, 0.3])]
+Y = [Consequences([1.5, 1.7])]
+P = DefaultPathProbability(C, X)
+U = DefaultPathUtility(V, Y)
 ```
 
 Using the influence diagram, we create decision models as follow:
 
 ```julia
-# TODO
+using JuMP
+model = Model()
+z = decision_variables(model, S, D)
+π_s = path_probability_variables(model, z, S, D, P)
+EV = expected_value(model, π_s, S, U)
+@objective(model, Max, EV)
 ```
 
 See the documentation for more detailed examples.
@@ -28,10 +44,22 @@ See the documentation for more detailed examples.
 Currently `DecisionProgramming.jl` is unregistered. You can add it using directly from GitHub using the command:
 
 ```julia-repl
-pkg> add https://github.com/gamma-opt/DecisionProgramming.jl.git
+pkg> add https://github.com/gamma-opt/DecisionProgramming.jl
 ```
 
-To solve the decision model, users have to install a solver capable of solving mixed-integer linear programs (MILP). JuMP documentation contains a list of available solvers.
+To run examples and develop and solve decision models, you have to install JuMP and a solver capable of solving mixed-integer linear programs (MILP). JuMP documentation contains a list of available solvers.
+
+```julia-repl
+pkg> add JuMP
+```
+
+We recommend using the [Gurobi](https://www.gurobi.com/) solver, which is an efficient commercial solver. Academics use Gurobi for free with an academic license. You also need to install the Julia Gurobi package.
+
+```julia-repl
+pkg> add Gurobi
+```
+
+Now you are ready to use decision programming.
 
 
 ## Development
