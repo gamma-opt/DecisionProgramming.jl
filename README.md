@@ -37,6 +37,20 @@ EV = expected_value(model, π_s, S, U)
 @objective(model, Max, EV)
 ```
 
+Finally, we can optimize the model using MILP solver and extract the decision strategy from the decision variables.
+
+```julia
+optimizer = optimizer_with_attributes(
+    () -> Gurobi.Optimizer(Gurobi.Env()),
+    "IntFeasTol"      => 1e-9,
+    "LazyConstraints" => 1,
+)
+set_optimizer(model, optimizer)
+optimize!(model)
+
+Z = DecisionStrategy(z, D)
+```
+
 See the documentation for more detailed examples.
 
 
