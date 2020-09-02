@@ -1,4 +1,4 @@
-# Computational Complexity
+# [Computational Complexity](@id computational-complexity)
 ## Introduction
 Decision programming relies on mixed-integer linear programming, which is known to be an NP-hard problem. In this section, we analyze how the influence diagram affects the size of the mixed-integer linear model, determining whether it is tractable.
 

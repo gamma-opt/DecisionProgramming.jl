@@ -23,27 +23,29 @@ paths
 ### Probabilities
 ```@docs
 Probabilities
-Probabilities(::Path)
 ```
 
 ### Path Probability
 ```@docs
 AbstractPathProbability
 DefaultPathProbability
-DefaultPathProbability(::Path)
 ```
 
 ### Consequences
 ```@docs
 Consequences
-Consequences(::Path)
 ```
 
 ### Path Utility
 ```@docs
 AbstractPathUtility
 DefaultPathUtility
-DefaultPathUtility(::Path)
+```
+
+### Decision Strategy
+```@docs
+LocalDecisionStrategy
+DecisionStrategy
 ```
 
 
@@ -65,12 +67,9 @@ expected_value(::Model, ::Array{VariableRef}, ::States, ::AbstractPathUtility)
 conditional_value_at_risk(::Model, ::Array{VariableRef}, ::States, ::AbstractPathUtility, ::Float64)
 ```
 
-### Decision Strategy
+### Decision Strategy from Variables
 ```@docs
-LocalDecisionStrategy
 LocalDecisionStrategy(::Vector{VariableRef})
-LocalDecisionStrategy(::Path)
-DecisionStrategy
 DecisionStrategy(::Vector{<:Array{VariableRef}}, ::Vector{DecisionNode})
 ```
 

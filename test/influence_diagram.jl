@@ -85,3 +85,7 @@ U = DefaultPathUtility(
 )
 @test isa(U, DefaultPathUtility)
 @test U((2, 1)) == 1.0 + 0.6
+
+@info "Testing LocalDecisionStrategy"
+@test_throws DomainError LocalDecisionStrategy([0, 0, 2])
+@test_throws DomainError LocalDecisionStrategy([0, 1, 1])

@@ -1,4 +1,4 @@
-# Analyzing Decision Strategies
+# [Analyzing Decision Strategies](@id analyzing-decision-strategies)
 ## Introduction
 This section focuses on how we can analyze fixed decision strategies $Z$ on an influence diagram $G$, such as ones resulting from the optimization. We can rule out all incompatible paths from the analysis because their path probability is zero, by only generating the compatible paths $𝐬∈𝐒(Z).$ However, compatible paths may still contain inactive paths if the influence diagram contains inactive chance states. The other property of compatible paths is that their path probability is equal to the upper bound $p(𝐬).$
 

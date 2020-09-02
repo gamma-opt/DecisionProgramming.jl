@@ -1,6 +1,6 @@
-# Influence Diagram
+# [Influence Diagram](@id influence-diagram)
 ## Introduction
-Decision programming uses influence diagrams to model decision making problems under uncertainty. This section defines influence diagrams and discusses about their properties. It is based on the definitions in [^1], [^2] and [^3].
+Decision programming uses influence diagrams to model decision making problems under uncertainty. This section defines influence diagrams and discusses about their properties. It is based on the definitions in [^1], [^2], [^3], and [^4].
 
 
 ## Definition
@@ -159,7 +159,7 @@ The **utility function** is a function that maps consequences to real-valued uti
 
 $$U:ℂ^{|V|}↦ℝ.$$
 
-Simple utility functions return numerical values, which work "out of the box" with the default objetives. However, we can also form utility function that contain variables. They may require additional reformulation of the objectives described in the [Decision Model](@ref) page depending on the capabilities of the solver.
+Simple utility functions return numerical values, which work "out of the box" with the default objetives. However, we can also form utility function that contain variables. They may require additional reformulation of the objectives described in the [Decision Model](@ref decision-model) page depending on the capabilities of the solver.
 
 The **path utility** is defined as the utility function acting on the consequences of value nodes given their information paths
 
@@ -191,7 +191,7 @@ Two nodes are **sequential** if there exists a directed path from one node to th
 
 **Repeated subdiagram** refers to a recurring pattern within an influence diagram. Often, influence diagrams do not have a unique structure, but they consist of a repeated pattern due to the underlying problem's properties.
 
-**Limited-memory** influence diagram refers to an influence diagram where an upper bound limits the size of the information set for decision nodes. That is, $I(j)≤m$ for all $j∈D$ where the limit $m$ is less than $|C∪D|.$ Smaller limits of $m$ are desirable because they reduce the decision model size, as discussed in the [Computational Complexity](@ref) section.
+**Limited-memory** influence diagram refers to an influence diagram where an upper bound limits the size of the information set for decision nodes. That is, $I(j)≤m$ for all $j∈D$ where the limit $m$ is less than $|C∪D|.$ Smaller limits of $m$ are desirable because they reduce the decision model size, as discussed in the [Computational Complexity](@ref computational-complexity) page.
 
 **Isolated subdiagrams** refer to an influence diagram that consists of multiple unconnected diagrams, that is, there are no undirected connections between the diagrams. Therefore, one isolated subdiagram's decisions affect decisions on the other isolated subdiagrams only through the utility function.
 

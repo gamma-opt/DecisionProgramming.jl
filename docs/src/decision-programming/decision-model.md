@@ -1,4 +1,4 @@
-# Decision Model
+# [Decision Model](@id decision-model)
 ## Introduction
 **Decision programming** aims to find an optimal decision strategy $Z$ from all decision strategies $ℤ$ by maximizing an objective function $f$ on the path distribution of an influence diagram
 

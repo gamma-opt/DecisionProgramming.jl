@@ -224,11 +224,6 @@ function conditional_value_at_risk(model::Model, π_s::Array{VariableRef}, S::St
     end
     @constraint(model, sum(ρ_bar[s...] for s in paths(S)) == α)
 
-    # Add variables to the model
-    # model[:η] = η
-    # model[:ρ] = ρ
-    # model[:ρ_bar] = ρ_bar
-
     # Return CVaR as an expression
     CVaR = @expression(model, sum(ρ_bar[s...] * U(s) for s in paths(S)) / α)
 
@@ -236,42 +231,11 @@ function conditional_value_at_risk(model::Model, π_s::Array{VariableRef}, S::St
 end
 
 
-# --- Decision Strategy ---
-
-"""Decision strategy type."""
-struct LocalDecisionStrategy{N} <: AbstractArray{Int, N}
-    data::Array{Int, N}
-    function LocalDecisionStrategy(data::Array{Int, N}) where N
-        if !all(0 ≤ x ≤ 1 for x in data)
-            throw(DomainError("All values x must be 0 ≤ x ≤ 1."))
-        end
-        for s_I in CartesianIndices(size(data)[1:end-1])
-            if !(sum(data[s_I, :]) == 1)
-                throw(DomainError("Values should add to one."))
-            end
-        end
-        new{N}(data)
-    end
-end
-
-Base.size(Z::LocalDecisionStrategy) = size(Z.data)
-Base.IndexStyle(::Type{<:LocalDecisionStrategy}) = IndexLinear()
-Base.getindex(Z::LocalDecisionStrategy, i::Int) = getindex(Z.data, i)
-Base.getindex(Z::LocalDecisionStrategy, I::Vararg{Int,N}) where N = getindex(Z.data, I...)
+# --- Construct decision strategy from JuMP variables ---
 
 """Construct decision strategy from variable refs."""
 function LocalDecisionStrategy(z::Array{VariableRef})
     LocalDecisionStrategy(@. Int(round(value(z))))
-end
-
-"""Evalute decision strategy."""
-(Z::LocalDecisionStrategy)(s_I::Path)::State = findmax(Z[s_I..., :])[2]
-
-
-"""Global decision strategy type."""
-struct DecisionStrategy
-    D::Vector{DecisionNode}
-    Z_j::Vector{LocalDecisionStrategy}
 end
 
 """Extract values for decision variables from solved decision model.

@@ -176,9 +176,12 @@ end
 """Construct and validate stage probabilities.
 
 # Examples
-```julia
-data = [0.5 0.5 ; 0.2 0.8]
-X = Probabilities(data)
+```julia-repl
+julia> data = [0.5 0.5 ; 0.2 0.8]
+julia> X = Probabilities(data)
+julia> s = (1, 2)
+julia> X(s)
+0.5
 ```
 """
 struct Probabilities{N} <: AbstractArray{Float64, N}
@@ -201,15 +204,6 @@ Base.IndexStyle(::Type{<:Probabilities}) = IndexLinear()
 Base.getindex(P::Probabilities, i::Int) = getindex(P.data, i)
 Base.getindex(P::Probabilities, I::Vararg{Int,N}) where N = getindex(P.data, I...)
 
-"""Return probabilities of information path `s`.
-
-# Examples
-```julia-repl
-julia> s = (1, 2)
-julia> X(s)
-0.5
-```
-"""
 (X::Probabilities)(s::Path) = X[s...]
 
 
@@ -234,6 +228,8 @@ abstract type AbstractPathProbability end
 # Examples
 ```julia
 P = DefaultPathProbability(C, X)
+s = (1, 2)
+P(s)
 ```
 """
 struct DefaultPathProbability <: AbstractPathProbability
@@ -241,7 +237,6 @@ struct DefaultPathProbability <: AbstractPathProbability
     X::Vector{Probabilities}
 end
 
-"""Evalute path probability."""
 function (P::DefaultPathProbability)(s::Path)
     prod(X(s[[c.I_j; c.j]]) for (c, X) in zip(P.C, P.X))
 end
@@ -252,9 +247,12 @@ end
 """State utilities.
 
 # Examples
-```julia
-vals = [1.0 -2.0; 3.0 4.0]
-Y = Consequences(vals)
+```julia-repl
+julia> vals = [1.0 -2.0; 3.0 4.0]
+julia> Y = Consequences(vals)
+julia> s = (1, 2)
+julia> Y(s)
+-2.0
 ```
 """
 struct Consequences{N} <: AbstractArray{Float64, N}
@@ -266,15 +264,6 @@ Base.IndexStyle(::Type{<:Consequences}) = IndexLinear()
 Base.getindex(Y::Consequences, i::Int) = getindex(Y.data, i)
 Base.getindex(Y::Consequences, I::Vararg{Int,N}) where N = getindex(Y.data, I...)
 
-"""Return consequences of information path `s`.
-
-# Examples
-```julia-repl
-julia> s = (1, 2)
-julia> Y(s)
--2.0
-```
-"""
 (Y::Consequences)(s::Path) = Y[s...]
 
 
@@ -294,13 +283,64 @@ end
 """
 abstract type AbstractPathUtility end
 
-"""Default path utility."""
+"""Default path utility.
+
+# Examples
+```julia
+U = DefaultPathUtility(V, Y)
+s = (1, 2)
+U(s)
+```
+"""
 struct DefaultPathUtility <: AbstractPathUtility
     V::Vector{ValueNode}
     Y::Vector{Consequences}
 end
 
-"""Evaluate default path utility."""
 function (U::DefaultPathUtility)(s::Path)
     sum(Y(s[v.I_j]) for (v, Y) in zip(U.V, U.Y))
+end
+
+
+# --- Local Decision Strategy ---
+
+"""Local decision strategy type.
+
+# Examples
+```julia
+Z = LocalDecisionStrategy(data)
+Z(s_I)
+```
+"""
+struct LocalDecisionStrategy{N} <: AbstractArray{Int, N}
+    data::Array{Int, N}
+    function LocalDecisionStrategy(data::Array{Int, N}) where N
+        if !all(0 ≤ x ≤ 1 for x in data)
+            throw(DomainError("All values x must be 0 ≤ x ≤ 1."))
+        end
+        for s_I in CartesianIndices(size(data)[1:end-1])
+            if !(sum(data[s_I, :]) == 1)
+                throw(DomainError("Values should add to one."))
+            end
+        end
+        new{N}(data)
+    end
+end
+
+Base.size(Z::LocalDecisionStrategy) = size(Z.data)
+Base.IndexStyle(::Type{<:LocalDecisionStrategy}) = IndexLinear()
+Base.getindex(Z::LocalDecisionStrategy, i::Int) = getindex(Z.data, i)
+Base.getindex(Z::LocalDecisionStrategy, I::Vararg{Int,N}) where N = getindex(Z.data, I...)
+
+function (Z::LocalDecisionStrategy)(s_I::Path)::State
+    findmax(Z[s_I..., :])[2]
+end
+
+
+# --- Decision Strategy ---
+
+"""Decision strategy type."""
+struct DecisionStrategy
+    D::Vector{DecisionNode}
+    Z_j::Vector{LocalDecisionStrategy}
 end

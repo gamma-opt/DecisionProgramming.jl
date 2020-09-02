@@ -20,6 +20,8 @@ export Node,
     DefaultPathProbability,
     AbstractPathUtility,
     DefaultPathUtility,
+    LocalDecisionStrategy,
+    DecisionStrategy,
     validate_influence_diagram
 
 export PositivePathUtility,
@@ -30,9 +32,7 @@ export PositivePathUtility,
     active_paths_cut,
     expected_value,
     value_at_risk,
-    conditional_value_at_risk,
-    LocalDecisionStrategy,
-    DecisionStrategy
+    conditional_value_at_risk
 
 export random_diagram
 
