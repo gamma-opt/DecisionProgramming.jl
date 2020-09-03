@@ -69,7 +69,7 @@ conditional_value_at_risk(::Model, ::Array{VariableRef}, ::States, ::AbstractPat
 
 ### Decision Strategy from Variables
 ```@docs
-LocalDecisionStrategy(::Vector{VariableRef})
+LocalDecisionStrategy(::Node, ::Vector{VariableRef})
 DecisionStrategy(::Vector{<:Array{VariableRef}}, ::Vector{DecisionNode})
 ```
 

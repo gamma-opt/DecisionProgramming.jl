@@ -10,14 +10,7 @@ X = [Probabilities(rng, c, S; n_inactive=0) for c in C]
 Y = [Consequences(rng, v, S, low=-1.0, high=1.5) for v in V]
 
 validate_influence_diagram(S, C, D, V)
-s_c = sortperm([c.j for c in C])
-s_d = sortperm([d.j for d in D])
-s_v = sortperm([v.j for v in V])
-C = C[s_c]
-D = D[s_d]
-V = V[s_v]
-X = X[s_c]
-Y = Y[s_v]
+sort!.((C, D, V, X, Y), by = x -> x.j)
 
 P = DefaultPathProbability(C, X)
 U = DefaultPathUtility(V, Y)

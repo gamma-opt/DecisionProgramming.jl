@@ -34,7 +34,7 @@ X_CT[1, :] = [1/2, 1/3, 1/6]
 X_CT[2, :] = [1/3, 1/3, 1/3]
 X_CT[3, :] = [1/6, 1/3, 1/2]
 push!(C, ChanceNode(cᵀ, I_CT))
-push!(X, Probabilities(X_CT))
+push!(X, Probabilities(cᵀ, X_CT))
 
 I_DA = [dᴾ, cᵀ]
 push!(D, DecisionNode(dᴬ, I_DA))
@@ -51,22 +51,15 @@ X_CM[3, 1, :] = [1/3, 1/3, 1/3]
 X_CM[3, 2, :] = [1/6, 1/3, 1/2]
 X_CM[3, 3, :] = [1/12, 1/4, 2/3]
 push!(C, ChanceNode(cᴹ, I_CM))
-push!(X, Probabilities(X_CM))
+push!(X, Probabilities(cᴹ, X_CM))
 
 # Dummy value node
-push!(V, ValueNode(5,[cᴹ]))
-push!(Y,Consequences(zeros(S[cᴹ])))
+push!(V, ValueNode(5, [cᴹ]))
+push!(Y, Consequences(5, zeros(S[cᴹ])))
 
 @info("Validate influence diagram.")
 validate_influence_diagram(S, C, D, V)
-s_c = sortperm([c.j for c in C])
-s_d = sortperm([d.j for d in D])
-s_v = sortperm([v.j for v in V])
-C = C[s_c]
-D = D[s_d]
-V = V[s_v]
-X = X[s_c]
-Y = Y[s_v]
+sort!.((C, D, V, X, Y), by = x -> x.j)
 
 @info("Creating path probability.")
 P = DefaultPathProbability(C, X)

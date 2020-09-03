@@ -17,11 +17,12 @@ S = States([2, 2, 2, 2])
 C = [ChanceNode(2, [1]), ChanceNode(3, [1])]
 D = [DecisionNode(1, Node[]), DecisionNode(4, [2, 3])]
 V = [ValueNode(5, [4])]
+X = [Probabilities(2, [0.4, 0.6]), Probabilities(3, [0.7, 0.3])]
+Y = [Consequences(5, [1.5, 1.7])]
 
 validate_influence_diagram(S, C, D, V)
+sort!.((C, D, V, X, Y), by = x -> x.j)
 
-X = [Probabilities([0.4, 0.6]), Probabilities([0.7, 0.3])]
-Y = [Consequences([1.5, 1.7])]
 P = DefaultPathProbability(C, X)
 U = DefaultPathUtility(V, Y)
 ```

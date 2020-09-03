@@ -234,8 +234,8 @@ end
 # --- Construct decision strategy from JuMP variables ---
 
 """Construct decision strategy from variable refs."""
-function LocalDecisionStrategy(z::Array{VariableRef})
-    LocalDecisionStrategy(@. Int(round(value(z))))
+function LocalDecisionStrategy(j::Node, z::Array{VariableRef})
+    LocalDecisionStrategy(j, @. Int(round(value(z))))
 end
 
 """Extract values for decision variables from solved decision model.
@@ -246,5 +246,5 @@ Z = DecisionStrategy(z, D)
 ```
 """
 function DecisionStrategy(z::Vector{<:Array{VariableRef}}, D::Vector{DecisionNode})
-    DecisionStrategy(D, [LocalDecisionStrategy(v) for v in z])
+    DecisionStrategy(D, [LocalDecisionStrategy(d.j, v) for (d, v) in zip(D, z)])
 end

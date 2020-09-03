@@ -178,15 +178,16 @@ end
 # Examples
 ```julia-repl
 julia> data = [0.5 0.5 ; 0.2 0.8]
-julia> X = Probabilities(data)
+julia> X = Probabilities(2, data)
 julia> s = (1, 2)
 julia> X(s)
 0.5
 ```
 """
 struct Probabilities{N} <: AbstractArray{Float64, N}
+    j::Node
     data::Array{Float64, N}
-    function Probabilities(data::Array{Float64, N}) where N
+    function Probabilities(j::Node, data::Array{Float64, N}) where N
         if !all(x > 0 for x in data)
             @warn("The influence diagram contains inactive chance states. Do not use active paths cut.")
         end
@@ -195,7 +196,7 @@ struct Probabilities{N} <: AbstractArray{Float64, N}
                 throw(DomainError("Probabilities should sum to one."))
             end
         end
-        new{N}(data)
+        new{N}(j, data)
     end
 end
 
@@ -249,13 +250,14 @@ end
 # Examples
 ```julia-repl
 julia> vals = [1.0 -2.0; 3.0 4.0]
-julia> Y = Consequences(vals)
+julia> Y = Consequences(3, vals)
 julia> s = (1, 2)
 julia> Y(s)
 -2.0
 ```
 """
 struct Consequences{N} <: AbstractArray{Float64, N}
+    j::Node
     data::Array{Float64, N}
 end
 
@@ -308,13 +310,14 @@ end
 
 # Examples
 ```julia
-Z = LocalDecisionStrategy(data)
+Z = LocalDecisionStrategy(1, data)
 Z(s_I)
 ```
 """
 struct LocalDecisionStrategy{N} <: AbstractArray{Int, N}
+    j::Node
     data::Array{Int, N}
-    function LocalDecisionStrategy(data::Array{Int, N}) where N
+    function LocalDecisionStrategy(j::Node, data::Array{Int, N}) where N
         if !all(0 ≤ x ≤ 1 for x in data)
             throw(DomainError("All values x must be 0 ≤ x ≤ 1."))
         end
@@ -323,7 +326,7 @@ struct LocalDecisionStrategy{N} <: AbstractArray{Int, N}
                 throw(DomainError("Values should add to one."))
             end
         end
-        new{N}(data)
+        new{N}(j, data)
     end
 end
 

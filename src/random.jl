@@ -91,32 +91,32 @@ function Probabilities(rng::AbstractRNG, c::ChanceNode, S::States; n_inactive::I
     end
 
     # Create the random probabilities
-    X = rand(rng, states..., state)
+    data = rand(rng, states..., state)
 
     # Create inactive chance states
     if n_inactive > 0
         # Count of inactive states per chance stage.
-        c = zeros(Int, states...)
+        a = zeros(Int, states...)
         # There can be maximum of (state - 1) inactive chance states per stage.
-        b = repeat(vec(CartesianIndices(c)), state - 1)
+        b = repeat(vec(CartesianIndices(a)), state - 1)
         # Uniform random sample of n_inactive states.
         r = shuffle(rng, b)[1:n_inactive]
         for s in r
-            c[s] += 1
+            a[s] += 1
         end
-        for s in CartesianIndices(c)
-            indices = CartesianIndices(X[s, :])
-            i = shuffle(rng, indices)[1:c[s]]
-            X[s, i] .= 0.0
+        for s in CartesianIndices(a)
+            indices = CartesianIndices(data[s, :])
+            i = shuffle(rng, indices)[1:a[s]]
+            data[s, i] .= 0.0
         end
     end
 
     # Normalize the probabilities
     for s in CartesianIndices((states...,))
-        X[s, :] /= sum(X[s, :])
+        data[s, :] /= sum(data[s, :])
     end
 
-    Probabilities(X)
+    Probabilities(c.j, data)
 end
 
 scale(x::Float64, low::Float64, high::Float64) = x * (high - low) + low
@@ -135,9 +135,9 @@ function Consequences(rng::AbstractRNG, v::ValueNode, S::States; low::Float64=-1
     if !(high > low)
         throw(DomainError("high should be greater than low"))
     end
-    Y = rand(rng, S[v.I_j]...)
-    Y = scale.(Y, low, high)
-    Consequences(Y)
+    data = rand(rng, S[v.I_j]...)
+    data = scale.(data, low, high)
+    Consequences(v.j, data)
 end
 
 """Generate random decision strategy for decision node `d` with `S` states.
@@ -153,10 +153,10 @@ DecisionStrategy(rng, d, S)
 function LocalDecisionStrategy(rng::AbstractRNG, d::DecisionNode, S::States)
     states = S[d.I_j]
     state = S[d.j]
-    Z = zeros(Int, states..., state)
+    data = zeros(Int, states..., state)
     for s in CartesianIndices((states...,))
         s_j = rand(rng, 1:state)
-        Z[s, s_j] = 1
+        data[s, s_j] = 1
     end
-    LocalDecisionStrategy(Z)
+    LocalDecisionStrategy(d.j, data)
 end

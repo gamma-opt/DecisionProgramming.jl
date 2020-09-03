@@ -51,7 +51,7 @@ The chance node $O$ is defined by its information set $I(O)$ and probability dis
 I_O = Vector{Node}()
 X_O = [0.2, 0.8]
 push!(C, ChanceNode(O, I_O))
-push!(X, Probabilities(X_O))
+push!(X, Probabilities(O, X_O))
 ```
 
 ### Stranger's Offer Decision
@@ -75,7 +75,7 @@ X_R[1, 2, :] = [0,1,0]
 X_R[2, 1, :] = [1,0,0]
 X_R[2, 2, :] = [0,0,1]
 push!(C, ChanceNode(R, I_R))
-push!(X, Probabilities(X_R))
+push!(X, Probabilities(R, X_R))
 ```
 
 ### Purchace Decision
@@ -92,7 +92,7 @@ We continue by defining the utilities (consequences) associated with value nodes
 I_V1 = [T]
 Y_V1 = [0.0, -25.0]
 push!(V, ValueNode(5, I_V1))
-push!(Y, Consequences(Y_V1))
+push!(Y, Consequences(5, Y_V1))
 ```
 
 ### Base Profit of Purchase
@@ -100,7 +100,7 @@ push!(Y, Consequences(Y_V1))
 I_V2 = [A]
 Y_V2 = [100.0, 40.0, 0.0]
 push!(V, ValueNode(6, I_V2))
-push!(Y, Consequences(Y_V2))
+push!(Y, Consequences(6, Y_V2))
 ```
 
 ### Repairing Cost
@@ -112,7 +112,7 @@ I_V3 = [O, A]
 Y_V3 = [-200.0 0.0 0.0;
         -40.0 -20.0 0.0]
 push!(V, ValueNode(7, I_V3))
-push!(Y, Consequences(Y_V3))
+push!(Y, Consequences(7, Y_V3))
 ```
 
 ### Validating Influence Diagram
@@ -120,14 +120,7 @@ Validate influence diagram and sort nodes, probabilities and consequences
 
 ```julia
 validate_influence_diagram(S, C, D, V)
-s_c = sortperm([c.j for c in C])
-s_d = sortperm([d.j for d in D])
-s_v = sortperm([v.j for v in V])
-C = C[s_c]
-D = D[s_d]
-V = V[s_v]
-X = X[s_c]
-Y = Y[s_v]
+sort!.((C, D, V, X, Y), by = x -> x.j)
 ```
 
 Default path probabilities and utilities are defined as the joint probability of all chance events in the diagram and the sum of utilities in value nodes, respectively. In the [Contingent Portfolio Programming](contingent-portfolio-programming.md) example, we show how to use a user-defined custom path utility function.

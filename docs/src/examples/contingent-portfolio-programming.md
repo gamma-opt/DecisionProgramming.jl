@@ -70,7 +70,7 @@ X_CT[1, :] = [1/2, 1/3, 1/6]
 X_CT[2, :] = [1/3, 1/3, 1/3]
 X_CT[3, :] = [1/6, 1/3, 1/2]
 push!(C, ChanceNode(cᵀ, I_CT))
-push!(X, Probabilities(X_CT))
+push!(X, Probabilities(cᵀ, X_CT))
 ```
 
 ### Decision on range of number of applications
@@ -97,28 +97,24 @@ X_CM[3, 1, :] = [1/3, 1/3, 1/3]
 X_CM[3, 2, :] = [1/6, 1/3, 1/2]
 X_CM[3, 3, :] = [1/12, 1/4, 2/3]
 push!(C, ChanceNode(cᴹ, I_CM))
-push!(X, Probabilities(X_CM))
+push!(X, Probabilities(cᴹ, X_CM))
 ```
 
 We add a dummy value node to avoid problems with the influence diagram validation. Without this, the final chance node would be seen as redundant.
 
 ```julia
-push!(V, ValueNode(5,[cᴹ]))
-push!(Y,Consequences(zeros(S[cᴹ])))
+push!(V, ValueNode(5, [cᴹ]))
+push!(Y,Consequences(5, zeros(S[cᴹ])))
 ```
+
 ### Validating the Influence Diagram
 
 ```julia
 validate_influence_diagram(S, C, D, V)
-s_c = sortperm([c.j for c in C])
-s_d = sortperm([d.j for d in D])
-s_v = sortperm([v.j for v in V])
-C = C[s_c]
-D = D[s_d]
-V = V[s_v]
-X = X[s_c]
-Y = Y[s_v]
+sort!.((C, D, V, X, Y), by = x -> x.j)
+```
 
+```julia
 P = DefaultPathProbability(C, X)
 ```
 

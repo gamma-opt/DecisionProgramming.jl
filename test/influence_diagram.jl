@@ -62,30 +62,30 @@ using DecisionProgramming
 @test vec(collect(paths(States([2, 3]), Dict(1=>2)))) == [(2, 1), (2, 2), (2, 3)]
 
 @info "Testing Probabilities"
-@test isa(Probabilities([0.4 0.6; 0.3 0.7]), Probabilities)
-@test isa(Probabilities([0.0, 0.4, 0.6]), Probabilities)
-@test_throws DomainError Probabilities([1.1, 0.1])
+@test isa(Probabilities(1, [0.4 0.6; 0.3 0.7]), Probabilities)
+@test isa(Probabilities(1, [0.0, 0.4, 0.6]), Probabilities)
+@test_throws DomainError Probabilities(1, [1.1, 0.1])
 
 @info "Testing DefaultPathProbability"
 P = DefaultPathProbability(
     [ChanceNode(1, Node[]), ChanceNode(2, [1])],
-    [Probabilities([0.4, 0.6]), Probabilities([0.3 0.7; 0.9 0.1])]
+    [Probabilities(1, [0.4, 0.6]), Probabilities(2, [0.3 0.7; 0.9 0.1])]
 )
 @test isa(P, DefaultPathProbability)
 @test P((1, 2)) == 0.4 * 0.7
 
 @info "Testing Consequences"
-@test isa(Consequences([-1.1, 0.0, 2.7]), Consequences)
-@test isa(Consequences([-1.1 0.0; 2.7 7.0]), Consequences)
+@test isa(Consequences(1, [-1.1, 0.0, 2.7]), Consequences)
+@test isa(Consequences(1, [-1.1 0.0; 2.7 7.0]), Consequences)
 
 @info "Testing DefaultPathUtility"
 U = DefaultPathUtility(
     [ValueNode(3, [2]), ValueNode(4, [1, 2])],
-    [Consequences([1.0, 1.4]), Consequences([1.0 1.5; 0.6 3.4])]
+    [Consequences(3, [1.0, 1.4]), Consequences(4, [1.0 1.5; 0.6 3.4])]
 )
 @test isa(U, DefaultPathUtility)
 @test U((2, 1)) == 1.0 + 0.6
 
 @info "Testing LocalDecisionStrategy"
-@test_throws DomainError LocalDecisionStrategy([0, 0, 2])
-@test_throws DomainError LocalDecisionStrategy([0, 1, 1])
+@test_throws DomainError LocalDecisionStrategy(1, [0, 0, 2])
+@test_throws DomainError LocalDecisionStrategy(1, [0, 1, 1])

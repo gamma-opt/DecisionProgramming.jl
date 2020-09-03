@@ -68,7 +68,7 @@ for j in health[[1]]
     X_j[1] = 0.1
     X_j[2] = 1.0 - X_j[1]
     push!(C, ChanceNode(j, I_j))
-    push!(X, Probabilities(X_j))
+    push!(X, Probabilities(j, X_j))
 end
 ```
 
@@ -98,7 +98,7 @@ for (i, k, j) in zip(health[1:end-1], treat, health[2:end])
     X_j[1, 1, 1] = 0.5
     X_j[1, 1, 2] = 1.0 - X_j[1, 1, 1]
     push!(C, ChanceNode(j, I_j))
-    push!(X, Probabilities(X_j))
+    push!(X, Probabilities(j, X_j))
 end
 ```
 
@@ -122,7 +122,7 @@ for (i, j) in zip(health, test)
     X_j[2, 2] = 0.9
     X_j[2, 1] = 1.0 - X_j[2, 2]
     push!(C, ChanceNode(j, I_j))
-    push!(X, Probabilities(X_j))
+    push!(X, Probabilities(j, X_j))
 end
 ```
 
@@ -154,7 +154,7 @@ for (i, j) in zip(treat, cost)
     Y_j[1] = -100
     Y_j[2] = 0
     push!(V, ValueNode(j, I_j))
-    push!(Y, Consequences(Y_j))
+    push!(Y, Consequences(j, Y_j))
 end
 ```
 
@@ -174,7 +174,7 @@ for (i, j) in zip(health[end], price)
     Y_j[1] = 300
     Y_j[2] = 1000
     push!(V, ValueNode(j, I_j))
-    push!(Y, Consequences(Y_j))
+    push!(Y, Consequences(j, Y_j))
 end
 ```
 
@@ -183,14 +183,7 @@ Finally, we need to validate the influence diagram and sort the nodes, probabili
 
 ```julia
 validate_influence_diagram(S, C, D, V)
-s_c = sortperm([c.j for c in C])
-s_d = sortperm([d.j for d in D])
-s_v = sortperm([v.j for v in V])
-C = C[s_c]
-D = D[s_d]
-V = V[s_v]
-X = X[s_c]
-Y = Y[s_v]
+sort!.((C, D, V, X, Y), by = x -> x.j)
 ```
 
 We define the path probability.
