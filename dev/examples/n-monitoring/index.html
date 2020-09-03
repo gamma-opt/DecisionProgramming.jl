@@ -35,7 +35,7 @@ Y = Vector{Consequences}()</code></pre><h3 id="Load-State-Probability"><a class=
     X_j[1] = rand()
     X_j[2] = 1.0 - X_j[1]
     push!(C, ChanceNode(j, I_j))
-    push!(X, Probabilities(X_j))
+    push!(X, Probabilities(j, X_j))
 end</code></pre><h3 id="Reporting-Probability"><a class="docs-heading-anchor" href="#Reporting-Probability">Reporting Probability</a><a id="Reporting-Probability-1"></a><a class="docs-heading-anchor-permalink" href="#Reporting-Probability" title="Permalink"></a></h3><p>The probabilities of the report states correspond to the load state. We draw the values <span>$x∼U(0,1)$</span> and <span>$y∼U(0,1)$</span> from uniform distribution.</p><div>\[ℙ(R_k=high∣L=high)=\max\{x,x-1\}\]</div><div>\[ℙ(R_k=low∣L=low)=\max\{y,y-1\}\]</div><p>The probability of a correct report is thus in the range [0.5,1]. (This reflects the fact that a probability under 50% would not even make sense, since we would notice that if the test suggests a high load, the load is more likely to be low, resulting in that a low report &quot;turns into&quot; a high report and vice versa.)</p><pre><code class="language-julia">for j in R_k
     I_j = L
     x, y = rand(2)
@@ -45,7 +45,7 @@ end</code></pre><h3 id="Reporting-Probability"><a class="docs-heading-anchor" hr
     X_j[2, 2] = max(y, 1-y)
     X_j[2, 1] = 1.0 - X_j[2, 2]
     push!(C, ChanceNode(j, I_j))
-    push!(X, Probabilities(X_j))
+    push!(X, Probabilities(j, X_j))
 end</code></pre><h3 id="Decision-to-Fortify"><a class="docs-heading-anchor" href="#Decision-to-Fortify">Decision to Fortify</a><a id="Decision-to-Fortify-1"></a><a class="docs-heading-anchor-permalink" href="#Decision-to-Fortify" title="Permalink"></a></h3><p>Only the corresponding load report is known when making the fortification decision, thus <span>$I(A_k)=R_k$</span>.</p><pre><code class="language-julia">for (i, j) in zip(R_k, A_k)
     I_j = [i]
     push!(D, DecisionNode(j, I_j))
@@ -61,7 +61,7 @@ end</code></pre><h3 id="Probability-of-Failure"><a class="docs-heading-anchor" h
         X_j[2, s..., 2] = 1.0 - X_j[2, s..., 1]
     end
     push!(C, ChanceNode(j, I_j))
-    push!(X, Probabilities(X_j))
+    push!(X, Probabilities(j, X_j))
 end</code></pre><h3 id="Consequences"><a class="docs-heading-anchor" href="#Consequences">Consequences</a><a id="Consequences-1"></a><a class="docs-heading-anchor-permalink" href="#Consequences" title="Permalink"></a></h3><p>Utility from consequences at target <span>$T$</span> from failure state <span>$F$</span></p><div>\[g(F=failure) = 0\]</div><div>\[g(F=success) = 100\]</div><p>Utility from consequences at target <span>$T$</span> from action states <span>$A_k$</span> is</p><div>\[f(A_k=yes) = c_k\]</div><div>\[f(A_k=no) = 0\]</div><p>Total cost</p><div>\[Y(F, A_N, ..., A_1) = g(F) + (-f(A_N)) + ... + (-f(A_1))\]</div><pre><code class="language-julia">for j in T
     I_j = A_k ∪ F
     Y_j = zeros(S[I_j]...)
@@ -71,16 +71,9 @@ end</code></pre><h3 id="Consequences"><a class="docs-heading-anchor" href="#Cons
         Y_j[s..., 2] = cost + 100
     end
     push!(V, ValueNode(j, I_j))
-    push!(Y, Consequences(Y_j))
+    push!(Y, Consequences(j, Y_j))
 end</code></pre><h3 id="Validating-Influence-Diagram"><a class="docs-heading-anchor" href="#Validating-Influence-Diagram">Validating Influence Diagram</a><a id="Validating-Influence-Diagram-1"></a><a class="docs-heading-anchor-permalink" href="#Validating-Influence-Diagram" title="Permalink"></a></h3><p>Finally, we need to validate the influence diagram and sort the nodes, probabilities and consequences in increasing order by the node indices.</p><pre><code class="language-julia">validate_influence_diagram(S, C, D, V)
-s_c = sortperm([c.j for c in C])
-s_d = sortperm([d.j for d in D])
-s_v = sortperm([v.j for v in V])
-C = C[s_c]
-D = D[s_d]
-V = V[s_v]
-X = X[s_c]
-Y = Y[s_v]</code></pre><p>We define the path probability.</p><pre><code class="language-julia">P = DefaultPathProbability(C, X)</code></pre><p>As the path utility, we use the default, which is the sum of the consequences given the path.</p><pre><code class="language-julia">U = DefaultPathUtility(V, Y)</code></pre><h2 id="Decision-Model"><a class="docs-heading-anchor" href="#Decision-Model">Decision Model</a><a id="Decision-Model-1"></a><a class="docs-heading-anchor-permalink" href="#Decision-Model" title="Permalink"></a></h2><p>An affine transformation is applied to the path utility, making all utilities positive. See <a href="../../decision-programming/decision-model/">section</a> on positive path utilities for details.</p><pre><code class="language-julia">U⁺ = PositivePathUtility(S, U)
+sort!.((C, D, V, X, Y), by = x -&gt; x.j)</code></pre><p>We define the path probability.</p><pre><code class="language-julia">P = DefaultPathProbability(C, X)</code></pre><p>As the path utility, we use the default, which is the sum of the consequences given the path.</p><pre><code class="language-julia">U = DefaultPathUtility(V, Y)</code></pre><h2 id="Decision-Model"><a class="docs-heading-anchor" href="#Decision-Model">Decision Model</a><a id="Decision-Model-1"></a><a class="docs-heading-anchor-permalink" href="#Decision-Model" title="Permalink"></a></h2><p>An affine transformation is applied to the path utility, making all utilities positive. See <a href="../../decision-programming/decision-model/">section</a> on positive path utilities for details.</p><pre><code class="language-julia">U⁺ = PositivePathUtility(S, U)
 model = Model()
 z = decision_variables(model, S, D)
 π_s = path_probability_variables(model, z, S, D, P; hard_lower_bound=false)</code></pre><p>Two <a href="../../decision-programming/decision-model/">lazy constraints</a> are also used to speed up the solution process.</p><pre><code class="language-julia">probability_cut(model, π_s, S, P)
@@ -166,4 +159,4 @@ julia&gt; print_state_probabilities(sprobs, F)
 │      Std │  19.287197 │
 │ Skewness │  -4.783515 │
 │ Kurtosis │  20.882012 │
-└──────────┴────────────┘</code></pre><h2 id="References"><a class="docs-heading-anchor" href="#References">References</a><a id="References-1"></a><a class="docs-heading-anchor-permalink" href="#References" title="Permalink"></a></h2><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>Salo, A., Andelmin, J., &amp; Oliveira, F. (2019). Decision Programming for Multi-Stage Optimization under Uncertainty, 1–35. Retrieved from <a href="http://arxiv.org/abs/1910.09196">http://arxiv.org/abs/1910.09196</a></li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../pig-breeding/">« Pig Breeding</a><a class="docs-footer-nextpage" href="../contingent-portfolio-programming/">Contingent Portfolio Programming »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Wednesday 2 September 2020 07:25">Wednesday 2 September 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+└──────────┴────────────┘</code></pre><h2 id="References"><a class="docs-heading-anchor" href="#References">References</a><a id="References-1"></a><a class="docs-heading-anchor-permalink" href="#References" title="Permalink"></a></h2><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>Salo, A., Andelmin, J., &amp; Oliveira, F. (2019). Decision Programming for Multi-Stage Optimization under Uncertainty, 1–35. Retrieved from <a href="http://arxiv.org/abs/1910.09196">http://arxiv.org/abs/1910.09196</a></li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../pig-breeding/">« Pig Breeding</a><a class="docs-footer-nextpage" href="../contingent-portfolio-programming/">Contingent Portfolio Programming »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 3 September 2020 08:30">Thursday 3 September 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

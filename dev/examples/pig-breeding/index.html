@@ -27,7 +27,7 @@ Y = Vector{Consequences}()</code></pre><p>Next, we define the nodes with their i
     X_j[1] = 0.1
     X_j[2] = 1.0 - X_j[1]
     push!(C, ChanceNode(j, I_j))
-    push!(X, Probabilities(X_j))
+    push!(X, Probabilities(j, X_j))
 end</code></pre><h3 id="Health-at-Subsequent-Months"><a class="docs-heading-anchor" href="#Health-at-Subsequent-Months">Health at Subsequent Months</a><a id="Health-at-Subsequent-Months-1"></a><a class="docs-heading-anchor-permalink" href="#Health-at-Subsequent-Months" title="Permalink"></a></h3><p>The probability that the pig is ill in the subsequent months <span>$k=2,...,N$</span> depends on the treatment decision and state of health in the previous month <span>$k-1$</span>. The nodes <span>$h_{k-1}$</span> and <span>$d_{k-1}$</span> are thus in the information set <span>$I(h_k)$</span>, meaning that the probability distribution of <span>$h_k$</span> is conditional on these nodes:</p><div>\[ℙ(h_k = ill ∣ d_{k-1} = pass, h_{k-1} = healthy)=0.2,\]</div><div>\[ℙ(h_k = ill ∣ d_{k-1} = treat, h_{k-1} = healthy)=0.1,\]</div><div>\[ℙ(h_k = ill ∣ d_{k-1} = pass, h_{k-1} = ill)=0.9,\]</div><div>\[ℙ(h_k = ill ∣ d_{k-1} = treat, h_{k-1} = ill)=0.5.\]</div><p>In decision programming:</p><pre><code class="language-julia">for (i, k, j) in zip(health[1:end-1], treat, health[2:end])
     I_j = [i, k]
     X_j = zeros(S[I_j]..., S[j])
@@ -40,7 +40,7 @@ end</code></pre><h3 id="Health-at-Subsequent-Months"><a class="docs-heading-anch
     X_j[1, 1, 1] = 0.5
     X_j[1, 1, 2] = 1.0 - X_j[1, 1, 1]
     push!(C, ChanceNode(j, I_j))
-    push!(X, Probabilities(X_j))
+    push!(X, Probabilities(j, X_j))
 end</code></pre><p>Note that the order of states indexing the probabilities is reversed compared to the mathematical definition.</p><h3 id="Health-Test"><a class="docs-heading-anchor" href="#Health-Test">Health Test</a><a id="Health-Test-1"></a><a class="docs-heading-anchor-permalink" href="#Health-Test" title="Permalink"></a></h3><p>For the probabilities that the test indicates a pig&#39;s health correctly at month <span>$k=1,...,N-1$</span>, we have</p><div>\[ℙ(t_k = positive ∣ h_k = ill) = 0.8,\]</div><div>\[ℙ(t_k = negative ∣ h_k = healthy) = 0.9.\]</div><p>In decision programming:</p><pre><code class="language-julia">for (i, j) in zip(health, test)
     I_j = [i]
     X_j = zeros(S[I_j]..., S[j])
@@ -49,7 +49,7 @@ end</code></pre><p>Note that the order of states indexing the probabilities is r
     X_j[2, 2] = 0.9
     X_j[2, 1] = 1.0 - X_j[2, 2]
     push!(C, ChanceNode(j, I_j))
-    push!(X, Probabilities(X_j))
+    push!(X, Probabilities(j, X_j))
 end</code></pre><h3 id="Decision-to-Treat"><a class="docs-heading-anchor" href="#Decision-to-Treat">Decision to Treat</a><a id="Decision-to-Treat-1"></a><a class="docs-heading-anchor-permalink" href="#Decision-to-Treat" title="Permalink"></a></h3><p>In decision programing, we add the decision nodes for decision to treat the pig as follows:</p><pre><code class="language-julia">for (i, j) in zip(test, treat)
     I_j = [i]
     push!(D, DecisionNode(j, I_j))
@@ -59,23 +59,16 @@ end</code></pre><p>The no-forgetting assumption does not hold, and the informati
     Y_j[1] = -100
     Y_j[2] = 0
     push!(V, ValueNode(j, I_j))
-    push!(Y, Consequences(Y_j))
+    push!(Y, Consequences(j, Y_j))
 end</code></pre><h3 id="Selling-Price"><a class="docs-heading-anchor" href="#Selling-Price">Selling Price</a><a id="Selling-Price-1"></a><a class="docs-heading-anchor-permalink" href="#Selling-Price" title="Permalink"></a></h3><p>The price of given the pig health at month <span>$N$</span> is defined</p><div>\[Y(h_N=ill) = 300,\]</div><div>\[Y(h_N=healthy) = 1000.\]</div><p>In decision programming:</p><pre><code class="language-julia">for (i, j) in zip(health[end], price)
     I_j = [i]
     Y_j = zeros(S[I_j]...)
     Y_j[1] = 300
     Y_j[2] = 1000
     push!(V, ValueNode(j, I_j))
-    push!(Y, Consequences(Y_j))
+    push!(Y, Consequences(j, Y_j))
 end</code></pre><h3 id="Validating-Influence-Diagram"><a class="docs-heading-anchor" href="#Validating-Influence-Diagram">Validating Influence Diagram</a><a id="Validating-Influence-Diagram-1"></a><a class="docs-heading-anchor-permalink" href="#Validating-Influence-Diagram" title="Permalink"></a></h3><p>Finally, we need to validate the influence diagram and sort the nodes, probabilities and consequences in increasing order by the node indices.</p><pre><code class="language-julia">validate_influence_diagram(S, C, D, V)
-s_c = sortperm([c.j for c in C])
-s_d = sortperm([d.j for d in D])
-s_v = sortperm([v.j for v in V])
-C = C[s_c]
-D = D[s_d]
-V = V[s_v]
-X = X[s_c]
-Y = Y[s_v]</code></pre><p>We define the path probability.</p><pre><code class="language-julia">P = DefaultPathProbability(C, X)</code></pre><p>As the path utility, we use the default, which is the sum of the consequences given the path.</p><pre><code class="language-julia">U = DefaultPathUtility(V, Y)</code></pre><h2 id="Decision-Model"><a class="docs-heading-anchor" href="#Decision-Model">Decision Model</a><a id="Decision-Model-1"></a><a class="docs-heading-anchor-permalink" href="#Decision-Model" title="Permalink"></a></h2><p>We apply an affine transformation to the utility function, making all path utilities positive. The purpose of this is discussed in the <a href="../../decision-programming/decision-model/">theoretical section</a> of this documentation.</p><pre><code class="language-julia">U⁺ = PositivePathUtility(S, U)
+sort!.((C, D, V, X, Y), by = x -&gt; x.j)</code></pre><p>We define the path probability.</p><pre><code class="language-julia">P = DefaultPathProbability(C, X)</code></pre><p>As the path utility, we use the default, which is the sum of the consequences given the path.</p><pre><code class="language-julia">U = DefaultPathUtility(V, Y)</code></pre><h2 id="Decision-Model"><a class="docs-heading-anchor" href="#Decision-Model">Decision Model</a><a id="Decision-Model-1"></a><a class="docs-heading-anchor-permalink" href="#Decision-Model" title="Permalink"></a></h2><p>We apply an affine transformation to the utility function, making all path utilities positive. The purpose of this is discussed in the <a href="../../decision-programming/decision-model/">theoretical section</a> of this documentation.</p><pre><code class="language-julia">U⁺ = PositivePathUtility(S, U)
 model = Model()
 z = decision_variables(model, S, D)
 π_s = path_probability_variables(model, z, S, D, P; hard_lower_bound=false)</code></pre><p>We also demonstrate one of the lazy constraints defined in the same section.</p><pre><code class="language-julia">active_paths_cut(model, π_s, S, P)</code></pre><p>We create the objective function</p><pre><code class="language-julia">EV = expected_value(model, π_s, S, U⁺)
@@ -150,4 +143,4 @@ julia&gt; print_state_probabilities(sprobs, treat)
 │      Std │ 338.460723 │
 │ Skewness │  -0.811628 │
 │ Kurtosis │  -1.173465 │
-└──────────┴────────────┘</code></pre><h2 id="References"><a class="docs-heading-anchor" href="#References">References</a><a id="References-1"></a><a class="docs-heading-anchor-permalink" href="#References" title="Permalink"></a></h2><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>Lauritzen, S. L., &amp; Nilsson, D. (2001). Representing and solving decision problems with limited information. Management Science, 47(9), 1235–1251. https://doi.org/10.1287/mnsc.47.9.1235.9779</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../used-car-buyer/">« Used Car Buyer</a><a class="docs-footer-nextpage" href="../n-monitoring/">N-Monitoring »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Wednesday 2 September 2020 07:25">Wednesday 2 September 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+└──────────┴────────────┘</code></pre><h2 id="References"><a class="docs-heading-anchor" href="#References">References</a><a id="References-1"></a><a class="docs-heading-anchor-permalink" href="#References" title="Permalink"></a></h2><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>Lauritzen, S. L., &amp; Nilsson, D. (2001). Representing and solving decision problems with limited information. Management Science, 47(9), 1235–1251. https://doi.org/10.1287/mnsc.47.9.1235.9779</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../used-car-buyer/">« Used Car Buyer</a><a class="docs-footer-nextpage" href="../n-monitoring/">N-Monitoring »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 3 September 2020 08:30">Thursday 3 September 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
