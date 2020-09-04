@@ -130,7 +130,7 @@ We can combine expected value and conditional value-at-risk using a convex combi
 
 $$w \operatorname{E}(Z) + (1-w) \operatorname{CVaR}_α(Z), \tag{?}$$
 
-where the parameter $w∈(0, 1)$ expresses the decision maker's risk tolerance.
+where the parameter $w∈(0, 1)$ expresses the decision maker's **risk tolerance**.
 
 
 ## References

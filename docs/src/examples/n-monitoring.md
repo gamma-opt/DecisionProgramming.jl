@@ -67,9 +67,9 @@ end
 ### Reporting Probability
 The probabilities of the report states correspond to the load state. We draw the values $x∼U(0,1)$ and $y∼U(0,1)$ from uniform distribution.
 
-$$ℙ(R_k=high∣L=high)=\max\{x,x-1\}$$
+$$ℙ(R_k=high∣L=high)=\max\{x,1-x\}$$
 
-$$ℙ(R_k=low∣L=low)=\max\{y,y-1\}$$
+$$ℙ(R_k=low∣L=low)=\max\{y,1-y\}$$
 
 The probability of a correct report is thus in the range [0.5,1]. (This reflects the fact that a probability under 50% would not even make sense, since we would notice that if the test suggests a high load, the load is more likely to be low, resulting in that a low report "turns into" a high report and vice versa.)
 
@@ -101,9 +101,9 @@ end
 ### Probability of Failure
 The probabilities of failure which are decresead by fortifications. We draw the values $x∼U(0,1)$ and $y∼U(0,1)$ from uniform distribution.
 
-$$ℙ(F=failure∣A_N,...,A_1,L=high)=\frac{\max{\{x, 1-x\}}}{e^{b(∑_{k=1,...,N} f(A_k))}}$$
+$$ℙ(F=failure∣A_N,...,A_1,L=high)=\frac{\max{\{x, 1-x\}}}{\exp{(b ∑_{k=1,...,N} f(A_k))}}$$
 
-$$ℙ(F=failure∣A_N,...,A_1,L=low)=\frac{\min{\{y, 1-y\}}}{e^{b(∑_{k=1,...,N} f(A_k))}}$$
+$$ℙ(F=failure∣A_N,...,A_1,L=low)=\frac{\min{\{y, 1-y\}}}{\exp{(b ∑_{k=1,...,N} f(A_k))}}$$
 
 ```julia
 for j in F

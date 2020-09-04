@@ -1,6 +1,6 @@
 # [Influence Diagram](@id influence-diagram)
 ## Introduction
-Decision programming uses influence diagrams to model decision making problems under uncertainty. This section defines influence diagrams and discusses about their properties. It is based on the definitions in [^1], [^2], [^3], and [^4].
+Decision programming uses influence diagrams to model decision making problems under uncertainty. This section defines influence diagrams and discusses about their properties. It is based on the definitions in [^1], [^2], and [^3].
 
 
 ## Definition
@@ -202,5 +202,3 @@ Two nodes are **sequential** if there exists a directed path from one node to th
 [^2]: Howard, R. A., & Matheson, J. E. (2005). Influence diagrams. Decision Analysis, 2(3), 127-143. https://doi.org/10.1287/deca.1050.0020
 
 [^3]: Shachter, R. D. (1986). Evaluating influence diagrams. Operations research, 34(6), 871-882. https://doi.org/10.1287/opre.34.6.871
-
-[^4]: Bielza, C., Gómez, M., & Shenoy, P. P. (2011). A review of representation issues and modeling challenges with influence diagrams. Omega, 39(3), 227–241. https://doi.org/10.1016/j.omega.2010.07.003
