@@ -207,7 +207,8 @@ function conditional_value_at_risk(model::Model, π_s::Array{VariableRef}, S::St
     ρ_bar = variables(model, S)
 
     # Constraints
-    @constraint(model, u_min ≤ η ≤ u_max)
+    @constraint(model, η ≥ u_min)
+    @constraint(model, η ≤ u_max)
     for s in paths(S)
         u_s = U(s)
         @constraint(model, η - u_s ≤ M * λ[s...])
