@@ -28,7 +28,7 @@ $$π(𝐬) ≥ p(𝐬) + ∑_{j∈D} z(𝐬_j∣𝐬_{I(j)}) - |D|,\quad ∀𝐬
 ## Positive Path Utility
 We can omit the constraint $(6)$ from the model if we use a **positive path utility** function $\mathcal{U}^+$ which is an affine transformation of path utility function $\mathcal{U}.$ As an example, we can subtract the minimum of the original utility function and then add one as follows.
 
-$$\mathcal{U}^+(𝐬) = \mathcal{U}(𝐬) - \min_{𝐬∈𝐒} \mathcal{U}(𝐬) + 1.$$
+$$\mathcal{U}^+(𝐬) = \mathcal{U}(𝐬) - \min_{𝐬∈𝐒} \mathcal{U}(𝐬) + 1. \tag{7}$$
 
 
 ## Lazy Constraints
@@ -37,18 +37,18 @@ Valid equalities are equalities that can be be derived from the problem structur
 ### Probability Cut
 We can exploit the fact that the path probabilities sum to one by using the **probability cut** defined as
 
-$$∑_{𝐬∈𝐒}π(𝐬)=1. \tag{7}$$
+$$∑_{𝐬∈𝐒}π(𝐬)=1. \tag{8}$$
 
 ### Active Paths Cut
-For problems where the number of active paths is known, we can exploit it by using the **active paths cut** defined as
+For problems where the number of active paths is constant, we can exploit it by using the **active paths cut** defined as
 
-$$∑_{𝐬∈𝐒} \frac{π(𝐬)}{p(𝐬)}=|𝐒^+(Z)|. \tag{8}$$
+$$∑_{𝐬∈𝐒} \frac{π(𝐬)}{p(𝐬)}=|𝐒^+(Z)|. \tag{9}$$
 
 
 ## Expected Value
 We define the **expected value** objective as
 
-$$\operatorname{E}(Z) = ∑_{𝐬∈𝐒} π(𝐬) \mathcal{U}(𝐬). \tag{?}$$
+$$\operatorname{E}(Z) = ∑_{𝐬∈𝐒} π(𝐬) \mathcal{U}(𝐬). \tag{10}$$
 
 
 ## Conditional Value-at-Risk
@@ -76,49 +76,47 @@ We can form the conditional value-at-risk as an optimization problem. We have th
 
 Lower and upper bound of the value-at-risk
 
-$$\operatorname{VaR}_0(Z)=u^-=\min\{\mathcal{U}(𝐬)∣𝐬∈𝐒\},$$
+$$\operatorname{VaR}_0(Z)=u^-=\min\{\mathcal{U}(𝐬)∣𝐬∈𝐒\}, \tag{11}$$
 
-$$\operatorname{VaR}_1(Z)=u^+=\max\{\mathcal{U}(𝐬)∣𝐬∈𝐒\}.$$
+$$\operatorname{VaR}_1(Z)=u^+=\max\{\mathcal{U}(𝐬)∣𝐬∈𝐒\}. \tag{12}$$
 
 Largest difference between path utilities
 
-$$M=u^+-u^-.$$
+$$M=u^+-u^-. \tag{13}$$
 
 Half of the smallest positive difference between path utilities
 
-$$ϵ=\frac{1}{2} \min\{|\mathcal{U}(𝐬)-\mathcal{U}(𝐬^′)| ∣ |\mathcal{U}(𝐬)-\mathcal{U}(𝐬^′)| > 0, 𝐬, 𝐬^′∈𝐒\}.$$
+$$ϵ=\frac{1}{2} \min\{|\mathcal{U}(𝐬)-\mathcal{U}(𝐬^′)| ∣ |\mathcal{U}(𝐬)-\mathcal{U}(𝐬^′)| > 0, 𝐬, 𝐬^′∈𝐒\}. \tag{14}$$
 
-The objective is to minimize the variable $η$ whose optimal value is equal to the value-at-risk, that is, $\operatorname{VaR}_α(Z)=η^∗.$
-
-$$\min η$$
+The objective is to minimize the variable $η$ whose optimal value is equal to the value-at-risk, that is, $\operatorname{VaR}_α(Z)=\min η.$
 
 We define the constraints as follows:
 
-$$η-\mathcal{U}(𝐬)≤M λ(𝐬),\quad ∀𝐬∈𝐒 \tag{?}$$
+$$η-\mathcal{U}(𝐬)≤M λ(𝐬),\quad ∀𝐬∈𝐒 \tag{14}$$
 
-$$η-\mathcal{U}(𝐬)≥(M+ϵ) λ(𝐬) - M,\quad ∀𝐬∈𝐒 \tag{?}$$
+$$η-\mathcal{U}(𝐬)≥(M+ϵ) λ(𝐬) - M,\quad ∀𝐬∈𝐒 \tag{15}$$
 
-$$η-\mathcal{U}(𝐬)≤(M+ϵ) \bar{λ}(𝐬) - ϵ,\quad ∀𝐬∈𝐒 \tag{?}$$
+$$η-\mathcal{U}(𝐬)≤(M+ϵ) \bar{λ}(𝐬) - ϵ,\quad ∀𝐬∈𝐒 \tag{16}$$
 
-$$η-\mathcal{U}(𝐬)≥M (\bar{λ}(𝐬) - 1),\quad ∀𝐬∈𝐒 \tag{?}$$
+$$η-\mathcal{U}(𝐬)≥M (\bar{λ}(𝐬) - 1),\quad ∀𝐬∈𝐒 \tag{17}$$
 
-$$\bar{ρ}(𝐬) ≤ \bar{λ}(𝐬),\quad ∀𝐬∈𝐒 \tag{?}$$
+$$\bar{ρ}(𝐬) ≤ \bar{λ}(𝐬),\quad ∀𝐬∈𝐒 \tag{18}$$
 
-$$π(𝐬) - (1 - λ(𝐬)) ≤ ρ(𝐬) ≤ λ(𝐬),\quad ∀𝐬∈𝐒 \tag{?}$$
+$$π(𝐬) - (1 - λ(𝐬)) ≤ ρ(𝐬) ≤ λ(𝐬),\quad ∀𝐬∈𝐒 \tag{19}$$
 
-$$ρ(𝐬) ≤ \bar{ρ}(𝐬) ≤ π(𝐬),\quad ∀𝐬∈𝐒 \tag{?}$$
+$$ρ(𝐬) ≤ \bar{ρ}(𝐬) ≤ π(𝐬),\quad ∀𝐬∈𝐒 \tag{20}$$
 
-$$∑_{𝐬∈𝐒}\bar{ρ}(𝐬) = α \tag{?}$$
+$$∑_{𝐬∈𝐒}\bar{ρ}(𝐬) = α \tag{21}$$
 
-$$\bar{λ}(𝐬), λ(𝐬)∈\{0, 1\},\quad ∀𝐬∈𝐒 \tag{?}$$
+$$\bar{λ}(𝐬), λ(𝐬)∈\{0, 1\},\quad ∀𝐬∈𝐒 \tag{22}$$
 
-$$\bar{ρ}(𝐬),ρ(𝐬)∈[0, 1],\quad ∀𝐬∈𝐒 \tag{?}$$
+$$\bar{ρ}(𝐬),ρ(𝐬)∈[0, 1],\quad ∀𝐬∈𝐒 \tag{23}$$
 
-$$η∈[u^-, u^+] \tag{?}$$
+$$η∈[u^-, u^+] \tag{24}$$
 
 We can express the conditional value-at-risk objective as
 
-$$\operatorname{CVaR}_α(Z)=\frac{1}{α}∑_{𝐬∈𝐒}\bar{ρ}(𝐬) \mathcal{U}(𝐬)\tag{?}.$$
+$$\operatorname{CVaR}_α(Z)=\frac{1}{α}∑_{𝐬∈𝐒}\bar{ρ}(𝐬) \mathcal{U}(𝐬)\tag{25}.$$
 
 The values of conditional value-at-risk are limited to the interval between the lower bound of value-at-risk and the expected value
 
@@ -126,11 +124,11 @@ $$\operatorname{VaR}_0(Z)<\operatorname{CVaR}_α(Z)≤E(Z).$$
 
 
 ## Mixed Objective
-We can combine expected value and conditional value-at-risk using a convex combination at a fixed probability level $α$ as follows
+We can combine expected value and conditional value-at-risk using a convex combination at a fixed probability level $α∈(0, 1]$ as follows
 
-$$w \operatorname{E}(Z) + (1-w) \operatorname{CVaR}_α(Z), \tag{?}$$
+$$w \operatorname{E}(Z) + (1-w) \operatorname{CVaR}_α(Z), \tag{26}$$
 
-where the parameter $w∈(0, 1)$ expresses the decision maker's **risk tolerance**.
+where the parameter $w∈[0, 1]$ expresses the decision maker's **risk tolerance**.
 
 
 ## References
