@@ -1,10 +1,12 @@
 using JuMP
 
-"""Positive affine transformation of path utility.
+"""Positive affine transformation of path utility. Always evaluates positive values.
 
 # Examples
-```julia
-U⁺ = PositivePathUtility(S, U)
+```julia-repl
+julia> U⁺ = PositivePathUtility(S, U)
+julia> all(U⁺(s) > 0 for s in paths(S))
+true
 ```
 """
 struct PositivePathUtility <: AbstractPathUtility
@@ -16,14 +18,6 @@ struct PositivePathUtility <: AbstractPathUtility
     end
 end
 
-"""Evaluate positive affine transformation of the path utility.
-
-# Examples
-```julia-repl
-julia> all(U⁺(s) ≥ 1 for s in paths(S))
-true
-```
-"""
 (U::PositivePathUtility)(s::Path) = U.U(s) - U.min + 1
 
 """Create a multidimensional array of JuMP variables.
@@ -102,8 +96,8 @@ function path_probability_variables(model::Model, z::Vector{<:Array{VariableRef}
 
             # Hard constraint on the lower bound.
             if hard_lower_bound
-                @constraint(model,
-                    π_s[s...] ≥ P(s) + sum(z_j[s[[d.I_j; d.j]]...] for (d, z_j) in zip(D, z)) - length(D))
+                n_z = @expression(model, sum(z_j[s[[d.I_j; d.j]]...] for (d, z_j) in zip(D, z)))
+                @constraint(model, π_s[s...] ≥ P(s) + n_z - length(D))
             end
         end
     end

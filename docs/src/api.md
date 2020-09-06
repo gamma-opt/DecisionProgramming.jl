@@ -53,7 +53,6 @@ DecisionStrategy
 ### Decision Model
 ```@docs
 PositivePathUtility
-PositivePathUtility(::Path)
 variables
 decision_variables
 path_probability_variables

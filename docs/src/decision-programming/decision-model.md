@@ -123,7 +123,7 @@ The values of conditional value-at-risk are limited to the interval between the 
 $$\operatorname{VaR}_0(Z)<\operatorname{CVaR}_α(Z)≤E(Z).$$
 
 
-## Mixed Objective
+## Convex Combination
 We can combine expected value and conditional value-at-risk using a convex combination at a fixed probability level $α∈(0, 1]$ as follows
 
 $$w \operatorname{E}(Z) + (1-w) \operatorname{CVaR}_α(Z), \tag{26}$$
