@@ -71,14 +71,20 @@ end
 π_s = path_probability_variables(model, z, S, D, P; hard_lower_bound=false))
 ```
 """
-function path_probability_variables(model::Model, z::Vector{<:Array{VariableRef}}, S::States, D::Vector{DecisionNode}, P::AbstractPathProbability; hard_lower_bound::Bool=true, names::Bool=false, base_name::String="π_s")
+function path_probability_variables(model::Model, z::Vector{<:Array{VariableRef}}, S::States, D::Vector{DecisionNode}, P::AbstractPathProbability; hard_lower_bound::Bool=true, names::Bool=false, base_name::String="π_s", nocomb::Dict{}=Dict())
     # Create path probability variables.
     π_names = if names; ["$(base_name)$(s)" for s in paths(S)] else nothing end
     π_s = variables(model, S; names=π_names)
 
     # Create constraints for each variable.
     for s in paths(S)
-        if iszero(P(s))
+        keeprow = true
+        for k in keys(nocomb)
+            if collect(s[k]) in nocomb[k]
+                keeprow = false
+            end
+        end
+        if iszero(P(s)) || !keeprow
             # If the upper bound is zero, we fix the value to zero.
             fix(π_s[s...], 0)
         else
