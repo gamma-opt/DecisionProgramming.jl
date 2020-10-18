@@ -1,25 +1,5 @@
 using JuMP
 
-"""Positive affine transformation of path utility. Always evaluates positive values.
-
-# Examples
-```julia-repl
-julia> U⁺ = PositivePathUtility(S, U)
-julia> all(U⁺(s) > 0 for s in paths(S))
-true
-```
-"""
-struct PositivePathUtility <: AbstractPathUtility
-    U::AbstractPathUtility
-    min::Float64
-    function PositivePathUtility(S::States, U::AbstractPathUtility)
-        u_min = minimum(U(s) for s in paths(S))
-        new(U, u_min)
-    end
-end
-
-(U::PositivePathUtility)(s::Path) = U.U(s) - U.min + 1
-
 """Create a multidimensional array of JuMP variables.
 
 # Examples
@@ -159,6 +139,26 @@ end
 
 
 # --- Objective Functions ---
+
+"""Positive affine transformation of path utility. Always evaluates positive values.
+
+# Examples
+```julia-repl
+julia> U⁺ = PositivePathUtility(S, U)
+julia> all(U⁺(s) > 0 for s in paths(S))
+true
+```
+"""
+struct PositivePathUtility <: AbstractPathUtility
+    U::AbstractPathUtility
+    min::Float64
+    function PositivePathUtility(S::States, U::AbstractPathUtility)
+        u_min = minimum(U(s) for s in paths(S))
+        new(U, u_min)
+    end
+end
+
+(U::PositivePathUtility)(s::Path) = U.U(s) - U.min + 1
 
 """Create an expected value objective.
 
