@@ -52,24 +52,25 @@ DecisionStrategy
 ## `decision_model.jl`
 ### Decision Model
 ```@docs
-PositivePathUtility
-variables
+DecisionVariables
 decision_variables
+PathProbabilityVariables
 path_probability_variables
-probability_cut(::Model, ::Array{VariableRef}, ::States, ::AbstractPathProbability)
-active_paths_cut(::Model, ::Array{VariableRef}, ::States, ::AbstractPathProbability; ::Float64)
+probability_cut(::Model, ::PathProbabilityVariables, ::States, ::AbstractPathProbability)
+active_paths_cut(::Model, ::PathProbabilityVariables, ::States, ::AbstractPathProbability; ::Float64)
 ```
 
 ### Objective Functions
 ```@docs
-expected_value(::Model, ::Array{VariableRef}, ::States, ::AbstractPathUtility)
-conditional_value_at_risk(::Model, ::Array{VariableRef}, ::States, ::AbstractPathUtility, ::Float64)
+PositivePathUtility
+expected_value(::Model, ::PathProbabilityVariables, ::States, ::AbstractPathUtility)
+conditional_value_at_risk(::Model, ::PathProbabilityVariables, ::States, ::AbstractPathUtility, ::Float64)
 ```
 
 ### Decision Strategy from Variables
 ```@docs
 LocalDecisionStrategy(::Node, ::Vector{VariableRef})
-DecisionStrategy(::Vector{<:Array{VariableRef}}, ::Vector{DecisionNode})
+DecisionStrategy(::DecisionVariables, ::Vector{DecisionNode})
 ```
 
 ## `analysis.jl`
