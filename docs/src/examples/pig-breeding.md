@@ -217,7 +217,7 @@ active_paths_cut(model, π_s, S, P)
 We create the objective function
 
 ```julia
-EV = expected_value(model, π_s, S, U⁺)
+EV = expected_value(model, π_s, U⁺)
 @objective(model, Max, EV)
 ```
 
