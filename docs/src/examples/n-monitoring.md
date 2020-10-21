@@ -187,14 +187,14 @@ z = decision_variables(model, S, D)
 Two [lazy constraints](../decision-programming/decision-model.md) are also used to speed up the solution process.
 
 ```julia
-probability_cut(model, π_s, S, P)
+probability_cut(model, π_s, P)
 active_paths_cut(model, π_s, S, P)
 ```
 
 The expected utility is used as the objective and the problem is solved using Gurobi.
 
 ```julia
-EV = expected_value(model, π_s, S, U⁺)
+EV = expected_value(model, π_s, U⁺)
 @objective(model, Max, EV)
 
 optimizer = optimizer_with_attributes(

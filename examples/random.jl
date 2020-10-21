@@ -19,13 +19,13 @@ U⁺ = PositivePathUtility(S, U)
 model = Model()
 z = decision_variables(model, S, D)
 π_s = path_probability_variables(model, z, S, D, P; hard_lower_bound=false)
-probability_cut(model, π_s, S, P)
+probability_cut(model, π_s, P)
 # active_paths_cut(model, π_s, S, P)
 
 α = 0.1
 w = 0.5
-EV = expected_value(model, π_s, S, U⁺)
-CVaR = conditional_value_at_risk(model, π_s, S, U⁺, α)
+EV = expected_value(model, π_s, U⁺)
+CVaR = conditional_value_at_risk(model, π_s, U⁺, α)
 @objective(model, Max, w * EV + (1 - w) * CVaR)
 
 optimizer = optimizer_with_attributes(

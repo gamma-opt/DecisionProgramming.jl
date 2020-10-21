@@ -34,7 +34,7 @@ function test_decision_model(D, S, P, U, n_inactive, hard_lower_bound)
     U′ = if hard_lower_bound U else PositivePathUtility(S, U) end
 
     @info "Testing probability_cut"
-    probability_cut(model, π_s, S, P)
+    probability_cut(model, π_s, P)
 
     @info "Testing active_paths_cut"
     if iszero(n_inactive)
@@ -44,10 +44,10 @@ function test_decision_model(D, S, P, U, n_inactive, hard_lower_bound)
     end
 
     @info "Testing expected_value"
-    EV = expected_value(model, π_s, S, U′)
+    EV = expected_value(model, π_s, U′)
 
     @info "Testing conditional_value_at_risk"
-    CVaR = conditional_value_at_risk(model, π_s, S, U′, 0.2)
+    CVaR = conditional_value_at_risk(model, π_s, U′, 0.2)
 
     @test true
 end

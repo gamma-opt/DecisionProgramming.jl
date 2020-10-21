@@ -138,7 +138,7 @@ We then construct the decision model using the DecisionProgramming.jl package, u
 model = Model()
 z = decision_variables(model, S, D)
 π_s = path_probability_variables(model, z, S, D, P)
-EV = expected_value(model, π_s, S, U)
+EV = expected_value(model, π_s, U)
 @objective(model, Max, EV)
 ```
 
