@@ -10,22 +10,19 @@ const DecisionVariables = Vector{<:Array{VariableRef}}
 z = decision_variables(model, S, D)
 ```
 """
-function decision_variables(model::Model, S::States, D::Vector{DecisionNode}; names::Bool=false, base_name::String="z")
+function decision_variables(model::Model, S::States, D::Vector{DecisionNode}; names::Bool=false, name::String="z")
     z = Vector{Array{VariableRef}}()
     for d in D
         # Create decision variables.
         dims = S[[d.I_j; d.j]]
         z_j = Array{VariableRef}(undef, dims...)
         for s in paths(dims)
-            base_name = if names; "$(base_name)_$(d.j)$(s)" else "" end
-            z_j[s...] = @variable(model, binary=true, base_name = base_name)
+            z_j[s...] = @variable(model, binary=true, base_name=(names ? "$(name)_$(d.j)$(s)" : ""))
         end
-
         # Constraints to one decision per decision strategy.
         for s_I in paths(S[d.I_j])
             @constraint(model, sum(z_j[s_I..., s_j] for s_j in 1:S[d.j]) == 1)
         end
-
         push!(z, z_j)
     end
     return z
@@ -42,18 +39,18 @@ const PathProbabilityVariables{N} = Dict{NTuple{N, Int}, VariableRef} where N
 π_s = path_probability_variables(model, z, S, D, P; hard_lower_bound=false))
 ```
 """
-function path_probability_variables(model::Model, z::DecisionVariables, S::States, D::Vector{DecisionNode}, P::AbstractPathProbability; hard_lower_bound::Bool=true, names::Bool=false, base_name::String="π_s")
+function path_probability_variables(model::Model, z::DecisionVariables, S::States, D::Vector{DecisionNode}, P::AbstractPathProbability; hard_lower_bound::Bool=true, names::Bool=false, name::String="π_s")
     N = length(S)
     π_s = Dict{NTuple{N, Int}, VariableRef}()
 
+    # Iterate over all paths. Skip paths with path probability of zero.
     for s in paths(S)
         if iszero(P(s))
             continue
         end
 
         # Create a path probability variable
-        base_name = if names; "$(base_name)$(s)" else "" end
-        π = @variable(model, base_name = base_name)
+        π = @variable(model, base_name=(names ? "$(name)$(s)" : ""))
         π_s[s] = π
 
         # Soft constraint on the lower bound.
@@ -81,10 +78,10 @@ end
 
 # Examples
 ```julia
-probability_cut(model, π_s, S, P)
+probability_cut(model, π_s, P)
 ```
 """
-function probability_cut(model::Model, π_s::PathProbabilityVariables, S::States, P::AbstractPathProbability)
+function probability_cut(model::Model, π_s::PathProbabilityVariables, P::AbstractPathProbability)
     # Add the constraints only once
     ϵ = minimum(P(s) for s in keys(π_s))
     flag = false
@@ -146,7 +143,6 @@ struct PositivePathUtility <: AbstractPathUtility
     U::AbstractPathUtility
     min::Float64
     function PositivePathUtility(S::States, U::AbstractPathUtility)
-        # TODO: only active paths?
         u_min = minimum(U(s) for s in paths(S))
         new(U, u_min)
     end
@@ -158,10 +154,10 @@ end
 
 # Examples
 ```julia
-EV = expected_value(model, π_s, S, U)
+EV = expected_value(model, π_s, U)
 ```
 """
-function expected_value(model::Model, π_s::PathProbabilityVariables, S::States, U::AbstractPathUtility)
+function expected_value(model::Model, π_s::PathProbabilityVariables, U::AbstractPathUtility)
     @expression(model, sum(π * U(s) for (s, π) in π_s))
 end
 
@@ -170,10 +166,10 @@ end
 # Examples
 ```julia
 α = 0.05  # Parameter such that 0 ≤ α ≤ 1
-CVaR = conditional_value_at_risk(model, π_s, S, U, α)
+CVaR = conditional_value_at_risk(model, π_s, U, α)
 ```
 """
-function conditional_value_at_risk(model::Model, π_s::PathProbabilityVariables{N}, S::States, U::AbstractPathUtility, α::Float64) where N
+function conditional_value_at_risk(model::Model, π_s::PathProbabilityVariables{N}, U::AbstractPathUtility, α::Float64) where N
     if !(0 < α ≤ 1)
         throw(DomainError("α should be 0 < α ≤ 1"))
     end

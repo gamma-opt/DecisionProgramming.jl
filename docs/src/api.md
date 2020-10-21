@@ -56,15 +56,15 @@ DecisionVariables
 decision_variables
 PathProbabilityVariables
 path_probability_variables
-probability_cut(::Model, ::PathProbabilityVariables, ::States, ::AbstractPathProbability)
+probability_cut(::Model, ::PathProbabilityVariables, ::AbstractPathProbability)
 active_paths_cut(::Model, ::PathProbabilityVariables, ::States, ::AbstractPathProbability; ::Float64)
 ```
 
 ### Objective Functions
 ```@docs
 PositivePathUtility
-expected_value(::Model, ::PathProbabilityVariables, ::States, ::AbstractPathUtility)
-conditional_value_at_risk(::Model, ::PathProbabilityVariables, ::States, ::AbstractPathUtility, ::Float64)
+expected_value(::Model, ::PathProbabilityVariables, ::AbstractPathUtility)
+conditional_value_at_risk(::Model, ::PathProbabilityVariables, ::AbstractPathUtility, ::Float64)
 ```
 
 ### Decision Strategy from Variables
