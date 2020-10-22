@@ -1,6 +1,6 @@
 # [Influence Diagram](@id influence-diagram)
 ## Introduction
-Decision programming uses influence diagrams to model decision making problems under uncertainty. This section defines influence diagrams and discusses about their properties. It is based on the definitions in [^1], [^2], and [^3].
+Decision programming uses influence diagrams to model multi-stage decision problems under uncertainty. This section defines influence diagrams and discusses about their properties. It is based on the definitions in [^1], [^2], and [^3].
 
 
 ## Definition
@@ -91,7 +91,7 @@ $$∑_{s_j∈S_j} ℙ(s_j∣𝐬_{I(j)}) = 1.$$
 
 We refer to a chance state $s_j∈S_j$ given information path $𝐬_{I(j)}$ as **inactive** if its probability is zero $ℙ(s_j∣𝐬_{I(j)})=0.$
 
-Implementation wise, we can think probabilities as functions of information paths concatenated with state $X_j : 𝐒_{I(j)};S_j → [0, 1]$ where $∑_{s_j∈S_j} X_j(𝐬_{I(j)};s_j)=1.$
+Implementation wise, we can think probabilities as functions of information paths concatenated with state $X_j : 𝐒_{I(j)}∣S_j → [0, 1]$ where $∑_{s_j∈S_j} X_j(𝐬_{I(j)}∣s_j)=1.$
 
 
 ## Decision Strategy
@@ -185,12 +185,34 @@ $$(ℙ(𝐬∣Z), \mathcal{U}(𝐬))$$
 that comprises of path probability function and path utility function over paths $𝐬∈𝐒$ conditional to the decision strategy $Z.$
 
 
+## Paths and Symmetry
+An influence diagram is **symmetric** if the number of active paths is independent of the decision strategy, that is, a constant. Otherwise, it is **asymmetric**. With the figures below, we demonstrate both of these properties.
+
+![](figures/id1.svg)
+
+Consider the influence diagram with two nodes. The first is a decision node with two states, and the second is a chance node with three states.
+
+![](figures/paths1.svg)
+
+If there are no inactive chance states, all paths are possible. That is, for all $s∈S,$ we have $p(s)>0.$ In this case, the influence diagram is symmetric.
+
+![](figures/paths2.svg)
+
+However, if there are inactive chance states, such as $ℙ(s_2=2∣s_1=2)=0$, we can remove $(2,2)$ from the paths, visualized by a dashed shape. Therefore, there is a varying number of possible paths depending on whether the decision-maker chooses state $s_1=1$ or $s_1=2$ in the first node, and the influence diagram is asymmetric.
+
+![](figures/id2.svg)
+
+Let's add one chance node with two states to the influence diagram.
+
+![](figures/paths3.svg)
+
+Now, given inactive chance states such that we remove the dashed paths, we have a symmetric influence diagram. Both decisions will have an equal number of possible paths. However, there are only eight possible paths instead of twelve if there were no inactive chance states.
+
+
 ## Properties
-In this section, we define common properties for influence diagrams.
+In this section, we define more properties for influence diagrams.
 
 **Discrete** influence diagram refers to countable state space. Otherwise, the influence diagram is **continuous**. We can discretize continuous influence diagrams using discrete bins.
-
-Influence diagram is **symmetric** if there is zero inactive chance states. Otherwise, it is **assymetric**.
 
 Two nodes are **sequential** if there exists a directed path from one node to the other in the influence diagram. Otherwise, the nodes are **parallel**. Sequential nodes often model time dimension.
 
