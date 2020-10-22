@@ -24,12 +24,13 @@ export Node,
     DecisionStrategy,
     validate_influence_diagram
 
-export PositivePathUtility,
-    variables,
+export DecisionVariables,
+    PathProbabilityVariables,
     decision_variables,
     path_probability_variables,
     probability_cut,
     active_paths_cut,
+    PositivePathUtility,
     expected_value,
     value_at_risk,
     conditional_value_at_risk

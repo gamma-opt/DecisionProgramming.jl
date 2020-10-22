@@ -71,6 +71,14 @@ z = decision_variables(model, S, D)
 
 @info("Creating problem specific constraints and expressions")
 
+function variables(model::Model, dims::AbstractVector{Int}; binary::Bool=false)
+    v = Array{VariableRef}(undef, dims...)
+    for i in eachindex(v)
+        v[i] = @variable(model, binary=binary)
+    end
+    return v
+end
+
 n_T = 5                     # number of technology projects
 n_A = 5                     # number of application projects
 I_t = rand(n_T)*0.1         # costs of technology projects
@@ -119,14 +127,18 @@ z_dA = z[2]
 
 @info("Creating model objective.")
 struct PathUtility <: AbstractPathUtility
-    expr
+    data::Array{AffExpr}
 end
-(U::PathUtility)(s::Path) = value.(U.expr[s])
+Base.getindex(U::PathUtility, i::Int) = getindex(U.data, i)
+Base.getindex(U::PathUtility, I::Vararg{Int,N}) where N = getindex(U.data, I...)
+(U::PathUtility)(s::Path) = value.(U[s...])
 
-U = PathUtility(@expression(model, [s = paths(S)],
-    sum(x_A[s[1:3]..., a]*(V_A[s[4],a] - I_a[a]) for a in 1:n_A) -
-    sum(x_T[s[1],t]*I_t[t] for t in 1:n_T)))
-EV = @expression(model, sum(π_s[s...] * U.expr[s] for s in paths(S)))
+path_utility = [@expression(model,
+    sum(x_A[s[1:3]..., a] * (V_A[s[4], a] - I_a[a]) for a in 1:n_A) -
+    sum(x_T[s[1], t] * I_t[t] for t in 1:n_T)) for s in paths(S)]
+U = PathUtility(path_utility)
+# EV = @expression(model, sum(π_s[s...] * U[s...] for s in paths(S)))
+EV = @expression(model, sum(π_s[s] * U[s...] for s in paths(S)))
 @objective(model, Max, EV)
 
 @info("Starting the optimization process.")
