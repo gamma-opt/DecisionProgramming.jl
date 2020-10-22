@@ -39,16 +39,22 @@ const PathProbabilityVariables{N} = Dict{NTuple{N, Int}, VariableRef} where N
 π_s = path_probability_variables(model, z, S, D, P; hard_lower_bound=false))
 ```
 """
-function path_probability_variables(model::Model, z::DecisionVariables, S::States, D::Vector{DecisionNode}, P::AbstractPathProbability; hard_lower_bound::Bool=true, names::Bool=false, name::String="π_s")
+function path_probability_variables(model::Model, z::DecisionVariables, S::States, D::Vector{DecisionNode}, P::AbstractPathProbability; hard_lower_bound::Bool=true, names::Bool=false, name::String="π_s", nocomb::Dict{}=Dict())
     N = length(S)
     π_s = Dict{NTuple{N, Int}, VariableRef}()
 
     # Iterate over all paths. Skip paths with path probability of zero.
     for s in paths(S)
-        if iszero(P(s))
+        keep_s = true
+        for k in keys(nocomb)
+            if collect(s[k]) in nocomb[k]
+                keep_s = false
+            end
+        end
+        if iszero(P(s)) || !keep_s
             continue
         end
-
+        
         # Create a path probability variable
         π = @variable(model, base_name=(names ? "$(name)$(s)" : ""))
         π_s[s] = π
