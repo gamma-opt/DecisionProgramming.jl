@@ -5,6 +5,8 @@
 
 
 ## Description
+![](docs/src/decision-programming/figures/depth-wise-order.svg)
+
 `DecisionProgramming.jl` is a [Julia](https://julialang.org/) package for solving multi-stage decision problems under uncertainty, modeled using influence diagrams. Internally, it relies on mathematical optimization. Decision models can be embedded within other optimization models. We designed the package as [JuMP](https://jump.dev/) extension.
 
 
