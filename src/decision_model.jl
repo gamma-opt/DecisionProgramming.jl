@@ -28,7 +28,16 @@ function decision_variables(model::Model, S::States, D::Vector{DecisionNode}; na
     return z
 end
 
-"""ForbiddenPath type."""
+"""ForbiddenPath type.
+
+# Examples
+```julia
+ForbiddenPath[
+    ([1, 2], Set([(1, 2)])),
+    ([3, 4, 5], Set([(1, 2, 3), (3, 4, 5)]))
+]
+```
+"""
 const ForbiddenPath = Tuple{Vector{Node}, Set{NTuple{N, State} where N}}
 
 """PathProbabilityVariables type."""
