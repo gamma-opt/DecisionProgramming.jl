@@ -28,6 +28,9 @@ function decision_variables(model::Model, S::States, D::Vector{DecisionNode}; na
     return z
 end
 
+"""ForbiddenPath type."""
+const ForbiddenPath = Tuple{Vector{Node}, Set{NTuple{N, State} where N}}
+
 """PathProbabilityVariables type."""
 const PathProbabilityVariables{N} = Dict{NTuple{N, Int}, VariableRef} where N
 
@@ -39,22 +42,22 @@ const PathProbabilityVariables{N} = Dict{NTuple{N, Int}, VariableRef} where N
 π_s = path_probability_variables(model, z, S, D, P; hard_lower_bound=false))
 ```
 """
-function path_probability_variables(model::Model, z::DecisionVariables, S::States, D::Vector{DecisionNode}, P::AbstractPathProbability; hard_lower_bound::Bool=true, names::Bool=false, name::String="π_s", nocomb::Dict{}=Dict())
+function path_probability_variables(model::Model, z::DecisionVariables, S::States, D::Vector{DecisionNode}, P::AbstractPathProbability; hard_lower_bound::Bool=true, names::Bool=false, name::String="π_s", forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[])
+    if !isempty(forbidden_paths)
+        @warn("Forbidden paths is still an experimental feature.")
+    end
+
     N = length(S)
     π_s = Dict{NTuple{N, Int}, VariableRef}()
 
-    # Iterate over all paths. Skip paths with path probability of zero.
+    # Iterate over all paths.
     for s in paths(S)
-        keep_s = true
-        for k in keys(nocomb)
-            if collect(s[k]) in nocomb[k]
-                keep_s = false
-            end
-        end
-        if iszero(P(s)) || !keep_s
-            continue
-        end
-        
+        # Skip paths with path probability of zero.
+        iszero(P(s)) && continue
+
+        # Skip forbidden paths
+        !all(s[k]∉v for (k, v) in forbidden_paths) && continue
+
         # Create a path probability variable
         π = @variable(model, base_name=(names ? "$(name)$(s)" : ""))
         π_s[s] = π
