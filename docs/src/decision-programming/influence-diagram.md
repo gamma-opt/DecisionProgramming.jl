@@ -26,19 +26,26 @@ Similarly, we call node $j$ a **leaf** node if it is not in any information set,
 
 
 ## Visualization
-To visualize influence diagrams, we define the different node types and how to order the nodes. There are two ways to order directed acyclic graphs, linear and depth-wise. We use [diagrams.net](https://www.diagrams.net/) for drawing influence diagrams.
-
-### Node Types
+### Nodes and Edges
 ![](figures/node-types.svg)
 
-We use a circle to represent chance nodes, square to represent decision nodes and diamond to represent value nodes. The symbol $i$ represents the node's index and symbol $S_i$ the states of the chance or decision node.
+This section defines how to draw nodes, edges, and directed acyclic graphs to visualize influence diagrams. We recommend [diagrams.net](https://www.diagrams.net/) for drawing graphs.
 
-### Linear Order
+We use a circle to represent chance nodes, a square to represent decision nodes, and a diamond to represent value nodes. The symbol $i$ represents the node's index and symbol $S_i$ the states of the chance or decision node. We use the following colors and styling:
+
+- Chance nodes: Fill color `F5F5F5` and line color `666666`.
+- Decision nodes: Fill color `D5E8D4` and line color `82B366`
+- Value nodes: Fill color `FFE6CC` and line color `D79B00`
+- Linewidth `2pt` and perimeter `2pt` (padding around the node).
+
+We represent directed edges using arrows from a source node to a target node, colored with the target node's line color. Next, we show the two ways of drawing directed acyclic graphs, linear and layered method.
+
+### Linear Graph
 ![](figures/linear-order.svg)
 
 We can order the nodes in increasing linear order based on indices.
 
-### Depth-wise Order
+### Layered Graph
 ![](figures/depth-wise-order.svg)
 
 We define the **depth** of a node $j∈N$ as follows. Root nodes have a depth of one
@@ -49,7 +56,7 @@ Other nodes have a depth of one greater than the maximum depth of its predecesso
 
 $$\operatorname{depth}(j)=\max_{i∈I(j)} \operatorname{depth}(i) + 1,\quad I(j)≠∅.$$
 
-We can group the nodes by their depth and then order them by increasing depth and increasing indices order within that depth. Compared to linear order, the depth-wise order is more concise. It displays more information about the influence relationships, because nodes can only be influenced by nodes with smaller depth.
+We can group the nodes by their depth and then order them by increasing depth and increasing indices order within that depth. Compared to linear order, the layered order is more concise. It displays more information about the influence relationships, because nodes can only be influenced by nodes with smaller depth.
 
 
 ## Paths
