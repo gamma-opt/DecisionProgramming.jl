@@ -1,35 +1,34 @@
 # [Influence Diagram](@id influence-diagram)
 ## Introduction
-Decision programming uses influence diagrams to model multi-stage decision problems under uncertainty. This section defines influence diagrams and discusses about their properties. It is based on the definitions in [^1], [^2], and [^3].
+Decision programming uses influence diagrams, a generalization of Bayesian networks, to model multi-stage decision problems under uncertainty. This section defines the influence diagrams and discusses their properties. It is based on the definitions in [^1], [^2], and [^3].
 
 
 ## Definition
-We define the **influence diagram** as a directed, acyclic graph
+![](figures/linear-order.svg)
 
-$$G=(C,D,V,I,S).$$
+We define the **influence diagram** as a directed, acyclic graph $G=(C,D,V,I,S).$ We describe the nodes $N=C∪D∪V$ with $C∪D=\{1,...,n\}$ and $n=|C|+|D|$ as follows:
 
-The nodes $N=C∪D∪V$ consists of **chance nodes** $C,$ **decision nodes** $D,$ and **value nodes** $V$. We index the chance and decision nodes such that $C∪D=\{1,...,n\}$ and values nodes such that $V=\{n+1,...,n+|V|\}$ where $n=|C|+|D|.$
+1) **Chance nodes** $C⊆\{1,...,n\}$ (circles) represent uncertain events associated with random variables.
+2) **Decision nodes** $D⊆\{1,...,n\}$ (squares) correspond to decisions among discrete alternatives.
+3) **Value nodes** $V=\{n+1,...,n+|V|\}$ (diamonds) represent consequences that result from the realizations of random variables at chance nodes and the decisions made at decision nodes.
 
 We define the **information set** $I$ of node $j∈N$ as
 
 $$I(j)⊆\{i∈C∪D∣i<j\}$$
 
-Practically, the information set is an edge list to reverse direction in the graph. The conditions enforce that the graph is acyclic, and there are no arcs from value nodes to other nodes.
+Practically, the information set is a collection of arcs to reverse direction in the graph. The conditions enforce that the graph is acyclic, and there are no arcs from value nodes to other nodes.
 
-We refer to $S$ as the **state space**. Each chance and decision node $j∈C∪D$ is associates with a finite number of **states** $S_j$ that we encode using integers $\{1,...,|S_j|\}$ from one to number of states $|S_j|≥1.$ We refer to a node $j$ as **trivial** if is has only one state, that is, $|S_j|=1.$
+In an influence diagram, each chance and decision node $j∈C∪D$ is associates with a finite number of **states** $S_j$ that we encode using integers $S_j=\{1,...,|S_j|\}$ from one to number of states $|S_j|≥1.$ A node $j$ is **trivial** if it has only one state, $|S_j|=1.$ We refer to the collection of all states $S=\{S_1,...,S_n\}$ as the **state space**.
 
 
 ## Root and Leaf Nodes
-In the subdiagram of $G$ which consists of the chance and decision nodes $j∈C∪D,$ we call node $j$ a **root** node if its information set if empty, that is, $I(j)=∅.$
+Chance or decision node is a root node if it is not affected by other chance or decision nodes. Formally, node $j∈C∪D$ is a **root** node if $I(j)=∅.$
 
-Similarly, we call node $j$ a **leaf** node if it is not in any information set, that is, $j∉I(i)$ for all $i∈C∪D.$ Each leaf node must be in at least one of the information sets of value nodes. That is, for each leaf node $j$ exists a value node $i∈V$ such that $j∈I(i).$ Otherwise, the node $j$ is **redundant**.
+Chance or decision node is a leaf node if it does not affect other chance or decision nodes. Formally, node $j∈C∪D$ is a **leaf** node if $j∉I(i)$ for all $i∈C∪D.$
 
 
-## Visualization
-### Nodes and Edges
+## Drawing Nodes and Arcs
 ![](figures/node-types.svg)
-
-This section defines how to draw nodes, edges, and directed acyclic graphs to visualize influence diagrams. We recommend [diagrams.net](https://www.diagrams.net/) for drawing graphs.
 
 We use a circle to represent chance nodes, a square to represent decision nodes, and a diamond to represent value nodes. The symbol $i$ represents the node's index and symbol $S_i$ the states of the chance or decision node. We use the following colors and styling:
 
@@ -38,15 +37,13 @@ We use a circle to represent chance nodes, a square to represent decision nodes,
 - Value nodes: Fill color `FFE6CC` and line color `D79B00`
 - Linewidth `2pt` and perimeter `2pt` (padding around the node).
 
-We represent directed edges using arrows from a source node to a target node, colored with the target node's line color. Next, we show the two ways of drawing directed acyclic graphs, linear and layered method.
+We represent directed arcs using arrows from a source node to a target node, colored with the target node's line color. We recommend [diagrams.net](https://www.diagrams.net/) for drawing graphs.
 
-### Linear Graph
-![](figures/linear-order.svg)
 
-We can order the nodes in increasing linear order based on indices.
-
-### Layered Graph
+## Drawing Layered Graph
 ![](figures/depth-wise-order.svg)
+
+We showed the influence diagram as a linear graph in the [Definition](@ref) section. We can also draw a more concise layered graph, which is better at displaying the influence relationship structure — only nodes at smaller depth influence nodes at greater depth. Also, root and leaf nodes are visible from the layered form.
 
 We define the **depth** of a node $j∈N$ as follows. Root nodes have a depth of one
 
@@ -56,7 +53,7 @@ Other nodes have a depth of one greater than the maximum depth of its predecesso
 
 $$\operatorname{depth}(j)=\max_{i∈I(j)} \operatorname{depth}(i) + 1,\quad I(j)≠∅.$$
 
-We can group the nodes by their depth and then order them by increasing depth and increasing indices order within that depth. Compared to linear order, the layered order is more concise. It displays more information about the influence relationships, because nodes can only be influenced by nodes with smaller depth.
+We can then draw the layered graph by grouping the nodes by their depth, ordering the groups by increasing depth and increasing indices order within each group.
 
 
 ## Paths
@@ -98,7 +95,7 @@ $$∑_{s_j∈S_j} ℙ(s_j∣𝐬_{I(j)}) = 1.$$
 
 We refer to a chance state $s_j∈S_j$ given information path $𝐬_{I(j)}$ as **inactive** if its probability is zero $ℙ(s_j∣𝐬_{I(j)})=0.$
 
-Implementation wise, we can think probabilities as functions of information paths concatenated with state $X_j : 𝐒_{I(j)}∣S_j → [0, 1]$ where $∑_{s_j∈S_j} X_j(𝐬_{I(j)}∣s_j)=1.$
+Implementation wise, we can think probabilities as functions of information paths concatenated with state $X_j : (𝐒_{I(j)}∣S_j) → [0, 1]$ where $∑_{s_j∈S_j} X_j(𝐬_{I(j)}∣s_j)=1.$
 
 
 ## Decision Strategy
@@ -134,7 +131,7 @@ p(𝐬), & Z \text{ is compatible with } 𝐬 \\
 0, & \text{otherwise}
 \end{cases}.$$
 
-An **active path** is a path $𝐬∈𝐒$ that has positive path probability $ℙ(𝐬∣Z)>0.$ We refer to a path with path probability of zero as **inactive path**.
+An **active path** is a path $𝐬∈𝐒$ with a positive path probability $ℙ(𝐬∣Z)>0.$ We refer to a path with path probability of zero as **inactive path**.
 
 We denote the set of **active paths** given a decision strategy $Z$ as
 
@@ -142,11 +139,11 @@ $$𝐒^+(Z)=\{𝐬∈𝐒 ∣ ℙ(𝐬∣Z)>0\}.$$
 
 $$=\{𝐬∈𝐒(Z) ∣ p(𝐬)>0\}$$
 
-By definition, the active paths is subset of compatible paths. Therefore, the **number of active paths** is bounded by the number of compatible paths
+By definition, the active paths is a subset of compatible paths. Therefore, the **number of active paths** is bounded by the number of compatible paths
 
 $$|𝐒^+(Z)|≤|𝐒(Z)|.$$
 
-If an influece diagram has **zero inactive chance states** the number of active paths is equal to the number of compatible paths
+If an influence diagram has **zero inactive chance states** the number of active paths is equal to the number of compatible paths
 
 $$|𝐒^+(Z)|=|𝐒(Z)|.$$
 
@@ -174,12 +171,12 @@ The **default path utility** is the sum of consequences
 
 $$\mathcal{U}(𝐬) = ∑_{j∈V} Y_j(𝐬_{I(j)}).$$
 
-The utility function in this case corresponds to the sum of the elements.
+The utility function, in this case, corresponds to the sum of the elements.
 
 The utility function affects the objectives discussed [Decision Model](@ref decision-model) page. We can choose the utility function such that the path utility function either returns:
 
 * a numerical value, which leads to a mixed-integer linear programming (MILP) formulation or
-* a linear function with real and integer-valued variables, which leads to a mixed-integer quadratic programming (MIQP) formulation.
+* a linear function with real and integer-valued variables leads to a mixed-integer quadratic programming (MIQP) formulation.
 
 Different formulations require a solver capable of solving them.
 
@@ -209,7 +206,7 @@ However, if there are inactive chance states, such as $ℙ(s_2=2∣s_1=2)=0$, we
 
 ![](figures/id2.svg)
 
-Let's add one chance node with two states to the influence diagram.
+Let us add one chance node with two states to the influence diagram.
 
 ![](figures/paths3.svg)
 
@@ -227,7 +224,9 @@ Two nodes are **sequential** if there exists a directed path from one node to th
 
 **Limited-memory** influence diagram refers to an influence diagram where an upper bound limits the size of the information set for decision nodes. That is, $I(j)≤m$ for all $j∈D$ where the limit $m$ is less than $|C∪D|.$ Smaller limits of $m$ are desirable because they reduce the decision model size, as discussed in the [Computational Complexity](@ref computational-complexity) page.
 
-**Isolated subdiagrams** refer to an influence diagram that consists of multiple unconnected diagrams, that is, there are no undirected connections between the diagrams. Therefore, one isolated subdiagram's decisions affect decisions on the other isolated subdiagrams only through the utility function.
+**Isolated subdiagrams** refer to an influence diagram that consists of multiple unconnected diagrams. That is, there are no undirected connections between the diagrams. Therefore, one isolated subdiagram's decisions affect decisions on the other isolated subdiagrams only through the utility function.
+
+Chance or decision node is **redundant** if it is a leaf node and not in any value node's information set. Formally, if $j∈C∪D$ is a leaf node and there does not exist a value node $i∈V$ such that $j∈I(i).$
 
 
 ## References
