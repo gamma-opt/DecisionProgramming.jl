@@ -4,7 +4,7 @@ Decision programming uses influence diagrams, a generalization of Bayesian netwo
 
 
 ## Definition
-![](figures/linear-order.svg)
+![](figures/linear-graph.svg)
 
 We define the **influence diagram** as a directed, acyclic graph $G=(C,D,V,I,S).$ We describe the nodes $N=C∪D∪V$ with $C∪D=\{1,...,n\}$ and $n=|C|+|D|$ as follows:
 
@@ -30,7 +30,7 @@ Chance or decision node is a leaf node if it does not affect other chance or dec
 ## Drawing Nodes and Arcs
 ![](figures/node-types.svg)
 
-We use a circle to represent chance nodes, a square to represent decision nodes, and a diamond to represent value nodes. The symbol $i$ represents the node's index and symbol $S_i$ the states of the chance or decision node. We use the following colors and styling:
+We use a **circle** to represent chance nodes, a **square** to represent decision nodes, and a **diamond** to represent value nodes. The symbol $i$ represents the node's index and symbol $S_i$ the states of the chance or decision node. We use the following colors and styling:
 
 - Chance nodes: Fill color `F5F5F5` and line color `666666`.
 - Decision nodes: Fill color `D5E8D4` and line color `82B366`
@@ -41,7 +41,7 @@ We represent directed arcs using arrows from a source node to a target node, col
 
 
 ## Drawing Layered Graph
-![](figures/depth-wise-order.svg)
+![](figures/layered-graph.svg)
 
 We showed the influence diagram as a linear graph in the [Definition](@ref) section. We can also draw a more concise layered graph, which is better at displaying the influence relationship structure — only nodes at smaller depth influence nodes at greater depth. Also, root and leaf nodes are visible from the layered form.
 
@@ -57,31 +57,39 @@ We can then draw the layered graph by grouping the nodes by their depth, orderin
 
 
 ## Paths
-Paths in influence diagrams represent realizations of states for chance and decision nodes. Formally, a **path** is a sequence of states
+![](figures/paths.svg)
 
-$$𝐬=(s_1, s_2, ...,s_n),$$
+In influence diagrams, paths represent realizations of states for chance and decision nodes. For example, the above tree represents generating all paths with states $S_1=\{1,2\}$ and $S_2=\{1,2,3\}.$
 
-where each state $s_i∈S_i$ for all chance and decision nodes $i∈C∪D.$
+Formally, a **path** is a sequence of states
 
-We define a **subpath** of $𝐬$ is a subsequence
+$$𝐬=(s_1, s_2, ...,s_n)∈𝐒,$$
 
-$$(𝐬_{i_1}, 𝐬_{i_2}, ..., 𝐬_{i_{k}}),$$
+where each state $s_i∈S_i$ for all chance and decision nodes $i∈C∪D.$ We denote the set of **paths** as
 
-where $1≤i_1<i_2<...<i_k≤n$ and $k≤n.$
+$$𝐒=∏_{j∈C∪D} S_j=S_1×S_2×...×S_n.$$
 
-The **information path** of node $j∈N$ on path $𝐬$ is a subpath defined as
+We define a **subpath** of $𝐬_A$ with $A⊆C∪D$ is a subsequence
 
-$$𝐬_{I(j)}=(𝐬_i ∣ i∈I(j)).$$
+$$𝐬_A=(𝐬_{i}∣i∈A)∈𝐒_A.$$
 
-We define the set of **all paths** as a product set of all states
+We denote the set of **subpaths** as
 
-$$𝐒=∏_{j∈C∪D} S_j.$$
+$$𝐒_A=∏_{i∈A} S_i.$$
 
-The set of **information paths** of node $j∈N$ is the product set of the states in its information set
+We refer to subpath $𝐬_{I(j)}$ as an **information path** and subpaths $𝐒_{I(j)}$ as **information paths** where $j∈N$ is a node.
 
-$$𝐒_{I(j)}=∏_{i∈I(j)} S_i.$$
 
-We denote elements of the sets using notation $s_j∈S_j$, $𝐬∈𝐒$, and $𝐬_{I(j)}∈𝐒_{I(j)}.$
+## Effective Paths
+![](figures/paths_eff.svg)
+
+It is possible for some combinations of chance or decision states to be unrealizable. We refer to such subpaths as ineffective. For example, the above tree represents the generation of paths where subpaths $𝐒_{\{1,2\}}=\{(2,2)\}$, $𝐒_{\{1,2,3\}}=\{(1,1,2), (1,2,1)\}$ are ineffective.
+
+Formally, the path $𝐬$ is **ineffective** if and only if $𝐬_A∈𝐒_A^′$ given ineffective subpaths $𝐒_A^′⊆𝐒_A$ for nodes $A⊆C∪D.$ Then, **effective paths** is a subset of all paths without ineffective paths
+
+$$𝐒^∗=\{𝐬∈𝐒∣𝐬_{A}∉𝐒_{A}^′\}⊆𝐒.$$
+
+If effective paths is empty, the influence diagram has no solutions.
 
 
 ## Probabilities
@@ -189,7 +197,7 @@ $$(ℙ(𝐬∣Z), \mathcal{U}(𝐬))$$
 that comprises of path probability function and path utility function over paths $𝐬∈𝐒$ conditional to the decision strategy $Z.$
 
 
-## Paths and Symmetry
+## Symmetry
 An influence diagram is **symmetric** if the number of active paths is independent of the decision strategy, that is, a constant. Otherwise, it is **asymmetric**. With the figures below, we demonstrate both of these properties.
 
 ![](figures/id1.svg)
