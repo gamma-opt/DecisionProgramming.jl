@@ -17,8 +17,8 @@ U = DefaultPathUtility(V, Y)
 
 U⁺ = PositivePathUtility(S, U)
 model = Model()
-z = decision_variables(model, S, D)
-π_s = path_probability_variables(model, z, S, D, P; hard_lower_bound=false)
+z = DecisionVariables(model, S, D)
+π_s = PathProbabilityVariables(model, z, S, P; hard_lower_bound=false)
 probability_cut(model, π_s, P)
 # active_paths_cut(model, π_s, S, P)
 
@@ -36,7 +36,7 @@ optimizer = optimizer_with_attributes(
 set_optimizer(model, optimizer)
 optimize!(model)
 
-Z = DecisionStrategy(z, D)
+Z = DecisionStrategy(z)
 
 @info("Printing decision strategy:")
 print_decision_strategy(S, Z)

@@ -180,8 +180,8 @@ An affine transformation is applied to the path utility, making all utilities po
 ```julia
 U⁺ = PositivePathUtility(S, U)
 model = Model()
-z = decision_variables(model, S, D)
-π_s = path_probability_variables(model, z, S, D, P; hard_lower_bound=false)
+z = DecisionVariables(model, S, D)
+π_s = PathProbabilityVariables(model, z, S, P; hard_lower_bound=false)
 ```
 
 Two [lazy constraints](../decision-programming/decision-model.md) are also used to speed up the solution process.
@@ -212,7 +212,7 @@ optimize!(model)
 The decision strategy shows us that the optimal strategy is to make all four fortifications regardless of the reports (state 1 in fortification nodes corresponds to the option "yes").
 
 ```julia
-Z = DecisionStrategy(z, D)
+Z = DecisionStrategy(z)
 ```
 
 ```julia-repl

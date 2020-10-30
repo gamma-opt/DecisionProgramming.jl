@@ -32,8 +32,8 @@ Using the influence diagram, we create the decision model as follow:
 ```julia
 using JuMP
 model = Model()
-z = decision_variables(model, S, D)
-π_s = path_probability_variables(model, z, S, D, P)
+z = DecisionVariables(model, S, D)
+π_s = PathProbabilityVariables(model, z, S, P)
 EV = expected_value(model, π_s, U)
 @objective(model, Max, EV)
 ```
@@ -53,7 +53,7 @@ optimize!(model)
 Finally, we extract the decision strategy from the decision variables.
 
 ```julia
-Z = DecisionStrategy(z, D)
+Z = DecisionStrategy(z)
 ```
 
 See the [documentation](https://gamma-opt.github.io/DecisionProgramming.jl/dev/) for more detailed examples.

@@ -136,8 +136,8 @@ We then construct the decision model using the DecisionProgramming.jl package, u
 
 ```julia
 model = Model()
-z = decision_variables(model, S, D)
-π_s = path_probability_variables(model, z, S, D, P)
+z = DecisionVariables(model, S, D)
+π_s = PathProbabilityVariables(model, z, S, P)
 EV = expected_value(model, π_s, U)
 @objective(model, Max, EV)
 ```
@@ -160,7 +160,7 @@ optimize!(model)
 Once the model is solved, we obtain the following decision strategy:
 
 ```julia
-Z = DecisionStrategy(z, D)
+Z = DecisionStrategy(z)
 ```
 
 ```julia-repl

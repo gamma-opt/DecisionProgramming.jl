@@ -66,8 +66,8 @@ P = DefaultPathProbability(C, X)
 
 @info("Defining DecisionModel")
 model = Model()
-z = decision_variables(model, S, D)
-π_s = path_probability_variables(model, z, S, D, P)
+z = DecisionVariables(model, S, D)
+π_s = PathProbabilityVariables(model, z, S, P)
 
 @info("Creating problem specific constraints and expressions")
 
@@ -98,8 +98,8 @@ M = 20                      # a large constant
 
 q_P = [0, 3, 6, 9]          # limits of the technology intervals
 q_A = [0, 5, 10, 15]        # limits of the application intervals
-z_dP = z[1]
-z_dA = z[2]
+z_dP = z.z[1]
+z_dA = z.z[2]
 
 @constraint(model, [i=1:3],
     sum(x_T[i,t] for t in 1:n_T) <= z_dP[i]*n_T)            #(25)
@@ -151,7 +151,7 @@ set_optimizer(model, optimizer)
 optimize!(model)
 
 @info("Extracting results.")
-Z = DecisionStrategy(z, D)
+Z = DecisionStrategy(z)
 
 @info("Printing decision strategy:")
 print_decision_strategy(S, Z)

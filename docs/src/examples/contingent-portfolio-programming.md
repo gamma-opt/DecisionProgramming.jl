@@ -121,8 +121,8 @@ P = DefaultPathProbability(C, X)
 ## Decision Model: Portfolio Selection
 ```julia
 model = Model()
-z = decision_variables(model, S, D)
-π_s = path_probability_variables(model, z, S, D, P)
+z = DecisionVariables(model, S, D)
+π_s = PathProbabilityVariables(model, z, S, P)
 ```
 
 ### Creating problem specific variables
@@ -274,7 +274,7 @@ optimize!(model)
 The optimal decision strategy and the utility distribution are printed. The strategy is to make 6-9 patents (state 3 in node 1) and 5-10 applications if the competitiveness is low, 10-15 otherwise. The expected utility for this strategy is 0.41.
 
 ```julia
-Z = DecisionStrategy(z, D)
+Z = DecisionStrategy(z)
 ```
 
 ```julia-repl

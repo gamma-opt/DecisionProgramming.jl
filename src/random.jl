@@ -147,7 +147,7 @@ end
 rng = MersenneTwister(3)
 d = DecisionNode(2, [1])
 S = States([2, 2])
-DecisionStrategy(rng, d, S)
+LocalDecisionStrategy(rng, d, S)
 ```
 """
 function LocalDecisionStrategy(rng::AbstractRNG, d::DecisionNode, S::States)

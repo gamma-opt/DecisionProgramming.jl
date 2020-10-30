@@ -53,9 +53,7 @@ DecisionStrategy
 ### Decision Model
 ```@docs
 DecisionVariables
-decision_variables
 PathProbabilityVariables
-path_probability_variables
 probability_cut(::Model, ::PathProbabilityVariables, ::AbstractPathProbability)
 active_paths_cut(::Model, ::PathProbabilityVariables, ::States, ::AbstractPathProbability; ::Float64)
 ```
@@ -70,7 +68,7 @@ conditional_value_at_risk(::Model, ::PathProbabilityVariables, ::AbstractPathUti
 ### Decision Strategy from Variables
 ```@docs
 LocalDecisionStrategy(::Node, ::Vector{VariableRef})
-DecisionStrategy(::DecisionVariables, ::Vector{DecisionNode})
+DecisionStrategy(::DecisionVariables)
 ```
 
 ## `analysis.jl`

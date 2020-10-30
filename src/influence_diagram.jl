@@ -138,7 +138,7 @@ end
 # --- Paths ---
 
 """Path type. Alias for `NTuple{N, State} where N`."""
-const Path = NTuple{N, State} where N
+const Path{N} = NTuple{N, State} where N
 
 """Iterate over paths in lexicographical order.
 
@@ -169,6 +169,18 @@ function paths(states::AbstractVector{State}, fixed::Dict{Int, Int})
     end
     product(iters...)
 end
+
+"""ForbiddenPath type.
+
+# Examples
+```julia
+ForbiddenPath[
+    ([1, 2], Set([(1, 2)])),
+    ([3, 4, 5], Set([(1, 2, 3), (3, 4, 5)]))
+]
+```
+"""
+const ForbiddenPath = Tuple{Vector{Node}, Set{Path}}
 
 
 # --- Probabilities ---

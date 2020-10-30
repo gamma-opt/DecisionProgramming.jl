@@ -204,8 +204,8 @@ We apply an affine transformation to the utility function, making all path utili
 ```julia
 U⁺ = PositivePathUtility(S, U)
 model = Model()
-z = decision_variables(model, S, D)
-π_s = path_probability_variables(model, z, S, D, P; hard_lower_bound=false)
+z = DecisionVariables(model, S, D)
+π_s = PathProbabilityVariables(model, z, S, P; hard_lower_bound=false)
 ```
 
 We also demonstrate one of the lazy constraints defined in the same section.
@@ -240,7 +240,7 @@ optimize!(model)
 We obtain the optimal decision strategy:
 
 ```julia
-Z = DecisionStrategy(z, D)
+Z = DecisionStrategy(z)
 ```
 
 ```julia-repl

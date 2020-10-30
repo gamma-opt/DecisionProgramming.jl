@@ -1,95 +1,93 @@
 using JuMP
 
-"""DecisionVariables type."""
-const DecisionVariables = Vector{<:Array{VariableRef}}
+function decision_variable(model::Model, S::States, d::DecisionNode, base_name::String="")
+    # Create decision variables.
+    dims = S[[d.I_j; d.j]]
+    z_j = Array{VariableRef}(undef, dims...)
+    for s in paths(dims)
+        z_j[s...] = @variable(model, binary=true, base_name=base_name)
+    end
+    # Constraints to one decision per decision strategy.
+    for s_I in paths(S[d.I_j])
+        @constraint(model, sum(z_j[s_I..., s_j] for s_j in 1:S[d.j]) == 1)
+    end
+    return z_j
+end
+
+struct DecisionVariables
+    D::Vector{DecisionNode}
+    z::Vector{<:Array{VariableRef}}
+end
 
 """Create decision variables and constraints.
 
 # Examples
 ```julia
-z = decision_variables(model, S, D)
+z = DecisionVariables(model, S, D)
 ```
 """
-function decision_variables(model::Model, S::States, D::Vector{DecisionNode}; names::Bool=false, name::String="z")
-    z = Vector{Array{VariableRef}}()
-    for d in D
-        # Create decision variables.
-        dims = S[[d.I_j; d.j]]
-        z_j = Array{VariableRef}(undef, dims...)
-        for s in paths(dims)
-            z_j[s...] = @variable(model, binary=true, base_name=(names ? "$(name)_$(d.j)$(s)" : ""))
-        end
-        # Constraints to one decision per decision strategy.
-        for s_I in paths(S[d.I_j])
-            @constraint(model, sum(z_j[s_I..., s_j] for s_j in 1:S[d.j]) == 1)
-        end
-        push!(z, z_j)
-    end
-    return z
+function DecisionVariables(model::Model, S::States, D::Vector{DecisionNode}; names::Bool=false, name::String="z")
+    DecisionVariables(D, [decision_variable(model, S, d, (names ? "$(name)_$(d.j)$(s)" : "")) for d in D])
 end
 
-"""ForbiddenPath type.
+function path_probability_variable(model::Model, z::DecisionVariables, s::Path, P::AbstractPathProbability, hard_lower_bound::Bool, base_name::String="")
+    # Create a path probability variable
+    π = @variable(model, base_name=base_name)
 
-# Examples
-```julia
-ForbiddenPath[
-    ([1, 2], Set([(1, 2)])),
-    ([3, 4, 5], Set([(1, 2, 3), (3, 4, 5)]))
-]
-```
-"""
-const ForbiddenPath = Tuple{Vector{Node}, Set{NTuple{N, State} where N}}
+    # Soft constraint on the lower bound.
+    @constraint(model, π ≥ 0)
 
-"""PathProbabilityVariables type."""
-const PathProbabilityVariables{N} = Dict{NTuple{N, Int}, VariableRef} where N
+    # Hard constraint on the upper bound.
+    @constraint(model, π ≤ P(s))
+
+    # Constraints the path probability to zero if the path is
+    # incompatible with the decision strategy.
+    for (d, z_j) in zip(z.D, z.z)
+        @constraint(model, π ≤ z_j[s[[d.I_j; d.j]]...])
+    end
+
+    # Hard constraint on the lower bound.
+    if hard_lower_bound
+        n_z = @expression(model, sum(z_j[s[[d.I_j; d.j]]...] for (d, z_j) in zip(z.D, z.z)))
+        @constraint(model, π ≥ P(s) + n_z - length(z.D))
+    end
+
+    return π
+end
+
+struct PathProbabilityVariables{N} <: AbstractDict{Path{N}, VariableRef}
+    data::Dict{Path{N}, VariableRef}
+end
+
+Base.getindex(π_s::PathProbabilityVariables, key) = getindex(π_s.data, key)
+Base.get(π_s::PathProbabilityVariables, key, default) = get(π_s.data, key, default)
+Base.keys(π_s::PathProbabilityVariables) = keys(π_s.data)
+Base.values(π_s::PathProbabilityVariables) = values(π_s.data)
+Base.pairs(π_s::PathProbabilityVariables) = pairs(π_s.data)
+Base.iterate(π_s::PathProbabilityVariables) = iterate(π_s.data)
+Base.iterate(π_s::PathProbabilityVariables, i) = iterate(π_s.data, i)
 
 """Create path probability variables and constraints.
 
 # Examples
 ```julia
-π_s = path_probability_variables(model, z, S, D, P)
-π_s = path_probability_variables(model, z, S, D, P; hard_lower_bound=false))
+π_s = PathProbabilityVariables(model, z, S, P)
+π_s = PathProbabilityVariables(model, z, S, P; hard_lower_bound=false))
 ```
 """
-function path_probability_variables(model::Model, z::DecisionVariables, S::States, D::Vector{DecisionNode}, P::AbstractPathProbability; hard_lower_bound::Bool=true, names::Bool=false, name::String="π_s", forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[])
+function PathProbabilityVariables(model::Model, z::DecisionVariables, S::States, P::AbstractPathProbability; hard_lower_bound::Bool=true, names::Bool=false, name::String="π_s", forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[])
     if !isempty(forbidden_paths)
         @warn("Forbidden paths is still an experimental feature.")
     end
 
+    # Create path probability variable for each effective path.
     N = length(S)
-    π_s = Dict{NTuple{N, Int}, VariableRef}()
-
-    # Iterate over all paths.
-    for s in paths(S)
-        # Skip paths with path probability of zero.
-        iszero(P(s)) && continue
-
-        # Skip forbidden paths
-        !all(s[k]∉v for (k, v) in forbidden_paths) && continue
-
-        # Create a path probability variable
-        π = @variable(model, base_name=(names ? "$(name)$(s)" : ""))
-        π_s[s] = π
-
-        # Soft constraint on the lower bound.
-        @constraint(model, π ≥ 0)
-
-        # Hard constraint on the upper bound.
-        @constraint(model, π ≤ P(s))
-
-        # Constraints the path probability to zero if the path is
-        # incompatible with the decision strategy.
-        for (d, z_j) in zip(D, z)
-            @constraint(model, π ≤ z_j[s[[d.I_j; d.j]]...])
-        end
-
-        # Hard constraint on the lower bound.
-        if hard_lower_bound
-            n_z = @expression(model, sum(z_j[s[[d.I_j; d.j]]...] for (d, z_j) in zip(D, z)))
-            @constraint(model, π ≥ P(s) + n_z - length(D))
-        end
-    end
-    return π_s
+    π_s = Dict{Path{N}, VariableRef}(
+        s => path_probability_variable(model, z, s, P, hard_lower_bound, (names ? "$(name)$(s)" : ""))
+        for s in paths(S)
+        if !iszero(P(s)) && all(s[k]∉v for (k, v) in forbidden_paths)
+    )
+    PathProbabilityVariables{N}(π_s)
 end
 
 """Adds a probability cut to the model as a lazy constraint.
@@ -205,7 +203,7 @@ function conditional_value_at_risk(model::Model, π_s::PathProbabilityVariables{
     η = @variable(model)
     @constraint(model, η ≥ u_min)
     @constraint(model, η ≤ u_max)
-    ρ′_s = Dict{NTuple{N, Int}, VariableRef}()
+    ρ′_s = Dict{Path{N}, VariableRef}()
     for (s, π) in π_s
         u_s = U(s)
         λ = @variable(model, binary=true)
@@ -245,9 +243,9 @@ end
 
 # Examples
 ```julia
-Z = DecisionStrategy(z, D)
+Z = DecisionStrategy(z)
 ```
 """
-function DecisionStrategy(z::DecisionVariables, D::Vector{DecisionNode})
-    DecisionStrategy(D, [LocalDecisionStrategy(d.j, v) for (d, v) in zip(D, z)])
+function DecisionStrategy(z::DecisionVariables)
+    DecisionStrategy(z.D, [LocalDecisionStrategy(d.j, v) for (d, v) in zip(z.D, z.z)])
 end

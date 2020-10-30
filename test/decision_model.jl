@@ -24,11 +24,11 @@ end
 function test_decision_model(D, S, P, U, n_inactive, hard_lower_bound)
     model = Model()
 
-    @info "Testing decision_variables"
-    z = decision_variables(model, S, D)
+    @info "Testing DecisionVariables"
+    z = DecisionVariables(model, S, D)
 
-    @info "Testing path_probability_variables"
-    π_s = path_probability_variables(model, z, S, D, P; hard_lower_bound = hard_lower_bound)
+    @info "Testing PathProbabilityVariables"
+    π_s = PathProbabilityVariables(model, z, S, P; hard_lower_bound = hard_lower_bound)
 
     @info "Testing PositivePathUtility"
     U′ = if hard_lower_bound U else PositivePathUtility(S, U) end
