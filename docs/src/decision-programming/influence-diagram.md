@@ -77,13 +77,17 @@ We denote the set of **subpaths** as
 
 $$𝐒_A=∏_{i∈A} S_i.$$
 
-We refer to subpath $𝐬_{I(j)}$ as an **information path** and subpaths $𝐒_{I(j)}$ as **information paths** where $j∈N$ is a node.
+Notice that $𝐒=𝐒_{C∪D}.$ We define the **number of paths** as
+
+$$|𝐒_A|=∏_{i∈A}|S_i|.$$
+
+We refer to subpath $𝐬_{I(j)}$ as an **information path** and subpaths $𝐒_{I(j)}$ as **information paths** for a node $j∈N.$
 
 
 ## Effective Paths
 ![](figures/paths_eff.svg)
 
-It is possible for some combinations of chance or decision states to be unrealizable. We refer to such subpaths as ineffective. For example, the above tree represents the generation of paths where subpaths $𝐒_{\{1,2\}}=\{(2,2)\}$, $𝐒_{\{1,2,3\}}=\{(1,1,2), (1,2,1)\}$ are ineffective.
+It is possible for some combinations of chance or decision states to be unrealizable. We refer to such subpaths as ineffective. For example, the above tree represents the generation of paths where subpaths $𝐒_{\{1,2\}}^′=\{(2,2)\}$, $𝐒_{\{1,2,3\}}^′=\{(1,1,2), (1,2,1)\}$ are ineffective.
 
 Formally, the path $𝐬$ is **ineffective** if and only if $𝐬_A∈𝐒_A^′$ given ineffective subpaths $𝐒_A^′⊆𝐒_A$ for nodes $A⊆C∪D.$ Then, **effective paths** is a subset of all paths without ineffective paths
 
@@ -93,53 +97,102 @@ If effective paths is empty, the influence diagram has no solutions.
 
 
 ## Probabilities
-For each chance node $j∈C$, we denote the **probability** of state $s_j$ given information path $𝐬_{I(j)}$ as
+Each chance node is associated with a discrete probability distribution over its states for every information path. Formally, for each chance node $j∈C$, we denote the **probability** of state $s_j$ given information path $𝐬_{I(j)}$ as
 
-$$ℙ(X_j=s_j∣X_{I(j)}=𝐬_{I(j)})=ℙ(s_j∣𝐬_{I(j)})∈[0, 1],$$
+$$ℙ(X_j=s_j∣X_{I(j)}=𝐬_{I(j)})∈[0, 1],$$
 
 with
 
-$$∑_{s_j∈S_j} ℙ(s_j∣𝐬_{I(j)}) = 1.$$
+$$∑_{s_j∈S_j} ℙ(X_j=s_j∣X_{I(j)}=𝐬_{I(j)}) = 1.$$
 
-We refer to a chance state $s_j∈S_j$ given information path $𝐬_{I(j)}$ as **inactive** if its probability is zero $ℙ(s_j∣𝐬_{I(j)})=0.$
+We refer to chance state with given information path as **active** if its probability is nonzero
 
-Implementation wise, we can think probabilities as functions of information paths concatenated with state $X_j : (𝐒_{I(j)}∣S_j) → [0, 1]$ where $∑_{s_j∈S_j} X_j(𝐬_{I(j)}∣s_j)=1.$
+$$ℙ(X_j=s_j∣X_{I(j)}=𝐬_{I(j)})>0.$$
+
+Otherwise, it is **inactive**.
 
 
-## Decision Strategy
-For each decision node $j∈D,$ a **local decision strategy** maps an information path $𝐬_{I(j)}$ to a state $s_j$
+## Decision Strategies
+Each decision strategy models how the decision maker chooses a state $s_j∈S_j$ given an information path $𝐬_{I(j)}$ at decision node $j∈D.$ Decision node is a special type of chance node, such that the probability of the chosen state given an information path is fixed to one
+
+$$ℙ(X_j=s_j∣X_{I(j)}=𝐬_{I(j)})=1.$$
+
+By definition, the probabilities for other states are zero.
+
+Formally, for each decision node $j∈D,$ a **local decision strategy** is function that maps an information path $𝐬_{I(j)}$ to a state $s_j$
 
 $$Z_j:𝐒_{I(j)}↦S_j.$$
 
 **Decision strategy** $Z$ contains one local decision strategy for each decision node. Set of **all decision strategies** is denoted $ℤ.$
 
-A decision stategy $Z∈ℤ$ is **compatible** with the path $𝐬∈𝐒$ if and only if $Z_j(𝐬_{I(j)})=s_j$ forall $Z_j∈Z$ and $j∈D.$
 
+## Path Probability
+Each path $𝐬∈𝐒$ is associated with a probability.
+
+A decision stategy $Z∈ℤ$ is **compatible** with the path $𝐬$ if and only if $Z_j(𝐬_{I(j)})=s_j$ forall $j∈D.$ Formally,
+
+$$Z(𝐬) ↔ ⋀_{j∈D} (Z_j(𝐬_{I(j)})=s_j).$$
+
+We define the **upper bound of path probability** as
+
+$$p(𝐬) = ∏_{j∈C} ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)}).$$
+
+The **path probability** equals the upper bound $p(𝐬)$ if the path $𝐬$ is compatible with the decision strategy $Z$. Otherwise, the path cannot occur, and the probability is zero.
+
+$$ℙ(𝐬∣Z)=
+\begin{cases}
+p(𝐬), & Z(𝐬) \\
+0, & \text{otherwise}
+\end{cases}.$$
+
+
+## Active Paths
+A path is active if all of its subpaths are active
+
+$$X(𝐬)↔⋀_{j∈C} (ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)})>0)$$
+
+$$ℙ(𝐬∣Z)=
+\begin{cases}
+p(𝐬), & X(𝐬)∧Z(𝐬) \\
+0, & \text{otherwise}
+\end{cases}.$$
+
+The set of **active paths** is
+
+$$𝐒(X)=\{𝐬∈𝐒 ∣ X(𝐬)\}.$$
+
+The number of active paths is
+
+$$|𝐒(X)|≤|𝐒|.$$
+
+
+## Compatible Paths
 We denote the set of **compatible paths** as
 
-$$𝐒(Z)=\{𝐬∈𝐒 ∣ Z \text{ is compatible with } 𝐬\}.$$
+$$𝐒(Z)=\{𝐬∈𝐒 ∣ Z(𝐬)\}.$$
 
 Since each decision strategy $Z_j$ chooses only one of its states, the **number of compatible paths** is a constant
 
 $$|𝐒(Z)|=|𝐒|/\prod_{j∈D}|S_j|=\prod_{j∈C}|S_j|.$$
 
 
-## Path Probability
-We define the **upper bound of path probability** as
+## Forbidden Paths
 
-$$p(𝐬) = ∏_{j∈C} ℙ(𝐬_j∣𝐬_{I(j)}).$$
 
-Note that the upper bound is larger than zero $p(𝐬)>0$ if there are zero inactive chance states on the path $𝐬$ and equal to zero $p(𝐬)=0$ otherwise.
+## Active-Compatible Paths
 
-The **path probability** equals $p(𝐬)$ if the path $𝐬$ is compatible with the decision strategy $Z$. Otherwise, the path cannot occur, and the probability is zero.
 
-$$ℙ(𝐬∣Z)=
-\begin{cases}
-p(𝐬), & Z \text{ is compatible with } 𝐬 \\
-0, & \text{otherwise}
-\end{cases}.$$
+$$𝐒(X)∩𝐒(Z)=\{𝐬∈𝐒∣X(𝐬)∧Z(𝐬)\}$$
 
-An **active path** is a path $𝐬∈𝐒$ with a positive path probability $ℙ(𝐬∣Z)>0.$ We refer to a path with path probability of zero as **inactive path**.
+$$|𝐒(X)∩𝐒(Z)|≤|𝐒(Z)|$$
+
+---
+
+If all paths are active $𝐒(X)↔T$ then
+
+$$𝐒(X)∩𝐒(Z)=𝐒(Z)$$
+
+---
 
 We denote the set of **active paths** given a decision strategy $Z$ as
 
@@ -198,7 +251,7 @@ that comprises of path probability function and path utility function over paths
 
 
 ## Symmetry
-An influence diagram is **symmetric** if the number of active paths is independent of the decision strategy, that is, a constant. Otherwise, it is **asymmetric**. With the figures below, we demonstrate both of these properties.
+An influence diagram is **symmetric** if the number of active paths is a constant, that is, independent of the decision strategy. Otherwise, it is **asymmetric**. With the figures below, we demonstrate both of these properties.
 
 ![](figures/id1.svg)
 
