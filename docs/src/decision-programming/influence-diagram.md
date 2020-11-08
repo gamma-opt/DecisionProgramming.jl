@@ -127,17 +127,34 @@ $$Z_j:𝐒_{I(j)}↦S_j.$$
 
 
 ## Path Probability
-Each path $𝐬∈𝐒$ is associated with a probability.
+The probability distributions at chance and decision nodes define the probability distribution over all paths $𝐒,$ which depends on the decision strategy $Z∈ℤ.$ We refer to it as the path probability
 
-A decision stategy $Z∈ℤ$ is **compatible** with the path $𝐬$ if and only if $Z_j(𝐬_{I(j)})=s_j$ forall $j∈D.$ Formally,
+$$ℙ(𝐬∣Z) = ∏_{j∈C∪D} ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)}).$$
 
-$$Z(𝐬) ↔ ⋀_{j∈D} (Z_j(𝐬_{I(j)})=s_j).$$
+We can decompose the path probability into two parts
 
-We define the **upper bound of path probability** as
+$$ℙ(𝐬∣Z) = p(𝐬) q(𝐬∣Z).$$
+
+The first part consists of the probability contributed by the chance nodes. We refer to it as the **upper bound of path probability**
 
 $$p(𝐬) = ∏_{j∈C} ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)}).$$
 
-The **path probability** equals the upper bound $p(𝐬)$ if the path $𝐬$ is compatible with the decision strategy $Z$. Otherwise, the path cannot occur, and the probability is zero.
+The second part consists of the probability contributed by the decision nodes.
+
+$$q(𝐬∣Z) = ∏_{j∈D} ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)}).$$
+
+Because the probabilities of decision nodes are defined as one or zero depending on the decision strategy, we can simplify the second part to an indicator function
+
+$$q(𝐬∣Z)=\begin{cases}
+1, & Z(𝐬) \\
+0, & \text{otherwise}
+\end{cases}.$$
+
+The expression $Z(𝐬)$ indicates whether a decision stategy is **compatible** with the path $𝐬,$ that is, if each local decision strategy chooses a state on the path. Formally, we have
+
+$$Z(𝐬) ↔ ⋀_{j∈D} (Z_j(𝐬_{I(j)})=𝐬_j).$$
+
+Now the **path probability** equals the upper bound if the path is compatible with given decision strategy. Otherwise, the path probability is zero. Formally, we have
 
 $$ℙ(𝐬∣Z)=
 \begin{cases}
@@ -149,13 +166,9 @@ p(𝐬), & Z(𝐬) \\
 ## Active Paths
 A path is active if all of its subpaths are active
 
-$$X(𝐬)↔⋀_{j∈C} (ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)})>0)$$
+$$X(𝐬)↔(p(𝐬)>0)↔⋀_{j∈C} (ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)})>0).$$
 
-$$ℙ(𝐬∣Z)=
-\begin{cases}
-p(𝐬), & X(𝐬)∧Z(𝐬) \\
-0, & \text{otherwise}
-\end{cases}.$$
+The path probability of **inactive** paths is fixed to zero, irrespective of the decision strategy.
 
 The set of **active paths** is
 
