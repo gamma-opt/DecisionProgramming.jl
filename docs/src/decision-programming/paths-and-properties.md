@@ -1,4 +1,4 @@
-# Influence Diagram Advanced
+# Paths and Properties
 ## Effective Paths
 ![](figures/paths_eff.svg)
 
@@ -8,82 +8,72 @@ Formally, the path $𝐬$ is **ineffective** if and only if $𝐬_A∈𝐒_A^′
 
 $$𝐒^∗=\{𝐬∈𝐒∣𝐬_{A}∉𝐒_{A}^′\}⊆𝐒.$$
 
-If effective paths is empty, the influence diagram has no solutions.
+The size of the [Decision Model](@ref) depends on the number of effective paths, rather than the number of paths or size of the influence diagram directly. If effective paths is empty, the influence diagram has no solutions.
 
 
 ## Active Paths
-A path is active if all of its subpaths are active
+If the upper bound of path probability is zero, its probability is zero, and it has no effect on the solution. Therefore, we can only consider paths with positive upper bound of path probability. We refer to these paths as active paths. Formally, we define an **active path** as a path $𝐬$ if all of its chance states are active
 
-$$X(𝐬)↔(p(𝐬)>0)↔⋀_{j∈C} (ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)})>0).$$
+$$\begin{aligned}
+X(𝐬)&↔(p(𝐬)>0)\\ &↔ ⋀_{j∈C} (ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)})>0).
+\end{aligned}$$
 
-The path probability of **inactive** paths is fixed to zero, irrespective of the decision strategy.
-
-The set of **active paths** is
+Otherwise, it is an **inactive path**. We denote the set of **active paths** as
 
 $$𝐒(X)=\{𝐬∈𝐒 ∣ X(𝐬)\}.$$
 
-The number of active paths is
+The **number of active paths** is
 
 $$|𝐒(X)|≤|𝐒|.$$
 
+Effective paths belong to the active paths
+
+$$𝐒^∗ ⊆ 𝐒(X).$$
+
 
 ## Compatible Paths
-We denote the set of **compatible paths** as
+Each decision strategy $Z∈ℤ$ chooses a set of paths from all paths, referred to as compatible paths. Formally, we denote the set of **compatible paths** as
 
 $$𝐒(Z)=\{𝐬∈𝐒 ∣ Z(𝐬)\}.$$
 
-Since each decision strategy $Z_j$ chooses only one of its states, the **number of compatible paths** is a constant
+Since each local decision strategy $Z_j∈Z$ can choose only one of its states, the **number of compatible paths** is
 
-$$|𝐒(Z)|=|𝐒|/\prod_{j∈D}|S_j|=\prod_{j∈C}|S_j|.$$
+$$|𝐒(Z)|=|𝐒|/|𝐒_D|=|𝐒_C|.$$
 
+The compatible paths of all distinct pairs of decision strategies are disjoint. Formally, for all $Z_1,Z_2∈ℤ$ where $Z_1≠Z_2$, we have
 
-## Active-Compatible Paths
-
-
-$$𝐒(X)∩𝐒(Z)=\{𝐬∈𝐒∣X(𝐬)∧Z(𝐬)\}$$
-
-$$|𝐒(X)∩𝐒(Z)|≤|𝐒(Z)|$$
-
----
-
-If all paths are active $𝐒(X)↔T$ then
-
-$$𝐒(X)∩𝐒(Z)=𝐒(Z)$$
-
----
-
-We denote the set of **active paths** given a decision strategy $Z$ as
-
-$$𝐒^+(Z)=\{𝐬∈𝐒 ∣ ℙ(𝐬∣Z)>0\}.$$
-
-$$=\{𝐬∈𝐒(Z) ∣ p(𝐬)>0\}$$
-
-By definition, the active paths is a subset of compatible paths. Therefore, the **number of active paths** is bounded by the number of compatible paths
-
-$$|𝐒^+(Z)|≤|𝐒(Z)|.$$
-
-If an influence diagram has **zero inactive chance states** the number of active paths is equal to the number of compatible paths
-
-$$|𝐒^+(Z)|=|𝐒(Z)|.$$
-
-Otherwise, the number of active paths is less than the number of compatible paths.
+$$𝐒(Z_1)∩𝐒(Z_2)=\{𝐬∈𝐒∣Z_1(𝐬)∧Z_2(𝐬)\}=\{s∈𝐒∣⊥\}=∅.$$
 
 
 ## Symmetry
-An influence diagram is **symmetric** if the number of active paths is a constant, that is, independent of the decision strategy. Otherwise, it is **asymmetric**. With the figures below, we demonstrate both of these properties.
+We define the set of active and compatible paths as
+
+$$𝐒(X)∩𝐒(Z)=\{𝐬∈𝐒∣X(𝐬)∧Z(𝐬)\}.$$
+
+An influence diagram is **symmetric** if the number of active and compatible paths is a constant. Formally, if for all $Z_1,Z_2∈ℤ,$ where $Z_1≠Z_2,$ we have
+
+$$|𝐒(X)∩𝐒(Z_1)|=|𝐒(X)∩𝐒(Z_2)|.$$
+
+Otherwise, the influence diagram is **asymmetric**. The figures below demonstrate symmetric and asymmetric influence diagrams.
+
+### Example 1
 
 ![](figures/id1.svg)
 
 Consider the influence diagram with two nodes. The first is a decision node with two states, and the second is a chance node with three states.
 
+If all paths are active $X(𝐬)↔⊤$ then $𝐒(X)∩𝐒(Z)=𝐒(Z).$
+
 ![](figures/paths1.svg)
 
+### Example 2
 If there are no inactive chance states, all paths are possible. That is, for all $s∈S,$ we have $p(s)>0.$ In this case, the influence diagram is symmetric.
 
 ![](figures/paths2.svg)
 
 However, if there are inactive chance states, such as $ℙ(s_2=2∣s_1=2)=0$, we can remove $(2,2)$ from the paths, visualized by a dashed shape. Therefore, there is a varying number of possible paths depending on whether the decision-maker chooses state $s_1=1$ or $s_1=2$ in the first node, and the influence diagram is asymmetric.
 
+### Example 3
 ![](figures/id2.svg)
 
 Let us add one chance node with two states to the influence diagram.
@@ -93,7 +83,7 @@ Let us add one chance node with two states to the influence diagram.
 Now, given inactive chance states such that we remove the dashed paths, we have a symmetric influence diagram. Both decisions will have an equal number of possible paths. However, there are only eight possible paths instead of twelve if there were no inactive chance states.
 
 
-## Properties
+## Other Properties
 In this section, we define more properties for influence diagrams.
 
 **Discrete** influence diagram refers to countable state space. Otherwise, the influence diagram is **continuous**. We can discretize continuous influence diagrams using discrete bins.

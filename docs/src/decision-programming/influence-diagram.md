@@ -69,7 +69,7 @@ where each state $s_i∈S_i$ for all chance and decision nodes $i∈C∪D.$ We d
 
 $$𝐒=∏_{j∈C∪D} S_j=S_1×S_2×...×S_n.$$
 
-We define a **subpath** of $𝐬_A$ with $A⊆C∪D$ is a subsequence
+We define a **subpath** of $𝐬$ with $A⊆C∪D$ is a subsequence
 
 $$𝐬_A=(𝐬_{i}∣i∈A)∈𝐒_A.$$
 
@@ -77,11 +77,13 @@ We denote the set of **subpaths** as
 
 $$𝐒_A=∏_{i∈A} S_i.$$
 
-Notice that $𝐒=𝐒_{C∪D}.$ We define the **number of paths** as
+We define the **number of paths** as
 
 $$|𝐒_A|=∏_{i∈A}|S_i|.$$
 
 We refer to subpath $𝐬_{I(j)}$ as an **information path** and subpaths $𝐒_{I(j)}$ as **information paths** for a node $j∈N.$
+
+Also note that $𝐒=𝐒_{C∪D},$ and $𝐒_{i}=S_i$ and $𝐬_i=s_i$ where $i∈C∪D$ is an individual node.
 
 
 ## Probabilities

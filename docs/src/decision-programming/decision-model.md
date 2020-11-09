@@ -40,9 +40,9 @@ We can exploit the fact that the path probabilities sum to one by using the **pr
 $$∑_{𝐬∈𝐒}π(𝐬)=1. \tag{8}$$
 
 ### Active Paths Cut
-For problems where the number of active paths is constant, we can exploit it by using the **active paths cut** defined as
+For problems where the number of active and compatible paths is constant, we can exploit it by using the **active paths cut** defined as
 
-$$∑_{𝐬∈𝐒} \frac{π(𝐬)}{p(𝐬)}=|𝐒^+(Z)|. \tag{9}$$
+$$∑_{𝐬∈𝐒} \frac{π(𝐬)}{p(𝐬)}=|𝐒(X)∩𝐒(Z)|. \tag{9}$$
 
 
 ## Expected Value

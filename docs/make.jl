@@ -12,7 +12,7 @@ makedocs(
         "Home" => "index.md",
         "Decision Programming" => Any[
             "decision-programming/influence-diagram.md",
-            "decision-programming/influence-diagram-advanced.md",
+            "decision-programming/paths-and-properties.md",
             "decision-programming/decision-model.md",
             "decision-programming/analyzing-decision-strategies.md",
             "decision-programming/computational-complexity.md",
