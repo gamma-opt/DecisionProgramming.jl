@@ -12,10 +12,12 @@ makedocs(
         "Home" => "index.md",
         "Decision Programming" => Any[
             "decision-programming/influence-diagram.md",
+            "decision-programming/paths-and-properties.md",
             "decision-programming/decision-model.md",
             "decision-programming/analyzing-decision-strategies.md",
             "decision-programming/computational-complexity.md",
         ],
+        "usage.md",
         "Examples" => Any[
             "examples/used-car-buyer.md",
             "examples/pig-breeding.md",

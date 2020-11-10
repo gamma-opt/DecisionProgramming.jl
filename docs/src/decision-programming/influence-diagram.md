@@ -69,7 +69,7 @@ where each state $s_i∈S_i$ for all chance and decision nodes $i∈C∪D.$ We d
 
 $$𝐒=∏_{j∈C∪D} S_j=S_1×S_2×...×S_n.$$
 
-We define a **subpath** of $𝐬_A$ with $A⊆C∪D$ is a subsequence
+We define a **subpath** of $𝐬$ with $A⊆C∪D$ is a subsequence
 
 $$𝐬_A=(𝐬_{i}∣i∈A)∈𝐒_A.$$
 
@@ -77,85 +77,80 @@ We denote the set of **subpaths** as
 
 $$𝐒_A=∏_{i∈A} S_i.$$
 
-We refer to subpath $𝐬_{I(j)}$ as an **information path** and subpaths $𝐒_{I(j)}$ as **information paths** where $j∈N$ is a node.
+We define the **number of paths** as
 
+$$|𝐒_A|=∏_{i∈A}|S_i|.$$
 
-## Effective Paths
-![](figures/paths_eff.svg)
+We refer to subpath $𝐬_{I(j)}$ as an **information path** and subpaths $𝐒_{I(j)}$ as **information paths** for a node $j∈N.$
 
-It is possible for some combinations of chance or decision states to be unrealizable. We refer to such subpaths as ineffective. For example, the above tree represents the generation of paths where subpaths $𝐒_{\{1,2\}}=\{(2,2)\}$, $𝐒_{\{1,2,3\}}=\{(1,1,2), (1,2,1)\}$ are ineffective.
-
-Formally, the path $𝐬$ is **ineffective** if and only if $𝐬_A∈𝐒_A^′$ given ineffective subpaths $𝐒_A^′⊆𝐒_A$ for nodes $A⊆C∪D.$ Then, **effective paths** is a subset of all paths without ineffective paths
-
-$$𝐒^∗=\{𝐬∈𝐒∣𝐬_{A}∉𝐒_{A}^′\}⊆𝐒.$$
-
-If effective paths is empty, the influence diagram has no solutions.
+Also note that $𝐒=𝐒_{C∪D},$ and $𝐒_{i}=S_i$ and $𝐬_i=s_i$ where $i∈C∪D$ is an individual node.
 
 
 ## Probabilities
-For each chance node $j∈C$, we denote the **probability** of state $s_j$ given information path $𝐬_{I(j)}$ as
+Each chance node is associated with a discrete probability distribution over its states for every information path. Formally, for each chance node $j∈C$, we denote the **probability** of state $s_j$ given information path $𝐬_{I(j)}$ as
 
-$$ℙ(X_j=s_j∣X_{I(j)}=𝐬_{I(j)})=ℙ(s_j∣𝐬_{I(j)})∈[0, 1],$$
+$$ℙ(X_j=s_j∣X_{I(j)}=𝐬_{I(j)})∈[0, 1],$$
 
 with
 
-$$∑_{s_j∈S_j} ℙ(s_j∣𝐬_{I(j)}) = 1.$$
+$$∑_{s_j∈S_j} ℙ(X_j=s_j∣X_{I(j)}=𝐬_{I(j)}) = 1.$$
 
-We refer to a chance state $s_j∈S_j$ given information path $𝐬_{I(j)}$ as **inactive** if its probability is zero $ℙ(s_j∣𝐬_{I(j)})=0.$
+We refer to chance state with given information path as **active** if its probability is nonzero
 
-Implementation wise, we can think probabilities as functions of information paths concatenated with state $X_j : (𝐒_{I(j)}∣S_j) → [0, 1]$ where $∑_{s_j∈S_j} X_j(𝐬_{I(j)}∣s_j)=1.$
+$$ℙ(X_j=s_j∣X_{I(j)}=𝐬_{I(j)})>0.$$
+
+Otherwise, it is **inactive**.
 
 
-## Decision Strategy
-For each decision node $j∈D,$ a **local decision strategy** maps an information path $𝐬_{I(j)}$ to a state $s_j$
+## Decision Strategies
+Each decision strategy models how the decision maker chooses a state $s_j∈S_j$ given an information path $𝐬_{I(j)}$ at decision node $j∈D.$ Decision node is a special type of chance node, such that the probability of the chosen state given an information path is fixed to one
+
+$$ℙ(X_j=s_j∣X_{I(j)}=𝐬_{I(j)})=1.$$
+
+By definition, the probabilities for other states are zero.
+
+Formally, for each decision node $j∈D,$ a **local decision strategy** is function that maps an information path $𝐬_{I(j)}$ to a state $s_j$
 
 $$Z_j:𝐒_{I(j)}↦S_j.$$
 
 **Decision strategy** $Z$ contains one local decision strategy for each decision node. Set of **all decision strategies** is denoted $ℤ.$
 
-A decision stategy $Z∈ℤ$ is **compatible** with the path $𝐬∈𝐒$ if and only if $Z_j(𝐬_{I(j)})=s_j$ forall $Z_j∈Z$ and $j∈D.$
-
-We denote the set of **compatible paths** as
-
-$$𝐒(Z)=\{𝐬∈𝐒 ∣ Z \text{ is compatible with } 𝐬\}.$$
-
-Since each decision strategy $Z_j$ chooses only one of its states, the **number of compatible paths** is a constant
-
-$$|𝐒(Z)|=|𝐒|/\prod_{j∈D}|S_j|=\prod_{j∈C}|S_j|.$$
-
 
 ## Path Probability
-We define the **upper bound of path probability** as
+The probability distributions at chance and decision nodes define the probability distribution over all paths $𝐬∈𝐒,$ which depends on the decision strategy $Z∈ℤ.$ We refer to it as the path probability
 
-$$p(𝐬) = ∏_{j∈C} ℙ(𝐬_j∣𝐬_{I(j)}).$$
+$$ℙ(𝐬∣Z) = ∏_{j∈C∪D} ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)}).$$
 
-Note that the upper bound is larger than zero $p(𝐬)>0$ if there are zero inactive chance states on the path $𝐬$ and equal to zero $p(𝐬)=0$ otherwise.
+We can decompose the path probability into two parts
 
-The **path probability** equals $p(𝐬)$ if the path $𝐬$ is compatible with the decision strategy $Z$. Otherwise, the path cannot occur, and the probability is zero.
+$$ℙ(𝐬∣Z) = p(𝐬) q(𝐬∣Z).$$
 
-$$ℙ(𝐬∣Z)=
-\begin{cases}
-p(𝐬), & Z \text{ is compatible with } 𝐬 \\
+The first part consists of the probability contributed by the chance nodes. We refer to it as the **upper bound of path probability**
+
+$$p(𝐬) = ∏_{j∈C} ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)}).$$
+
+The second part consists of the probability contributed by the decision nodes.
+
+$$q(𝐬∣Z) = ∏_{j∈D} ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)}).$$
+
+Because the probabilities of decision nodes are defined as one or zero depending on the decision strategy, we can simplify the second part to an indicator function
+
+$$q(𝐬∣Z)=\begin{cases}
+1, & Z(𝐬) \\
 0, & \text{otherwise}
 \end{cases}.$$
 
-An **active path** is a path $𝐬∈𝐒$ with a positive path probability $ℙ(𝐬∣Z)>0.$ We refer to a path with path probability of zero as **inactive path**.
+The expression $Z(𝐬)$ indicates whether a decision stategy is **compatible** with the path $𝐬,$ that is, if each local decision strategy chooses a state on the path. Formally, we have
 
-We denote the set of **active paths** given a decision strategy $Z$ as
+$$Z(𝐬) ↔ ⋀_{j∈D} (Z_j(𝐬_{I(j)})=𝐬_j).$$
 
-$$𝐒^+(Z)=\{𝐬∈𝐒 ∣ ℙ(𝐬∣Z)>0\}.$$
+Now the **path probability** equals the upper bound if the path is compatible with given decision strategy. Otherwise, the path probability is zero. Formally, we have
 
-$$=\{𝐬∈𝐒(Z) ∣ p(𝐬)>0\}$$
-
-By definition, the active paths is a subset of compatible paths. Therefore, the **number of active paths** is bounded by the number of compatible paths
-
-$$|𝐒^+(Z)|≤|𝐒(Z)|.$$
-
-If an influence diagram has **zero inactive chance states** the number of active paths is equal to the number of compatible paths
-
-$$|𝐒^+(Z)|=|𝐒(Z)|.$$
-
-Otherwise, the number of active paths is less than the number of compatible paths.
+$$ℙ(𝐬∣Z)=
+\begin{cases}
+p(𝐬), & Z(𝐬) \\
+0, & \text{otherwise}
+\end{cases}.$$
 
 
 ## Consequences
@@ -195,46 +190,6 @@ A **path distribution** is a pair
 $$(ℙ(𝐬∣Z), \mathcal{U}(𝐬))$$
 
 that comprises of path probability function and path utility function over paths $𝐬∈𝐒$ conditional to the decision strategy $Z.$
-
-
-## Symmetry
-An influence diagram is **symmetric** if the number of active paths is independent of the decision strategy, that is, a constant. Otherwise, it is **asymmetric**. With the figures below, we demonstrate both of these properties.
-
-![](figures/id1.svg)
-
-Consider the influence diagram with two nodes. The first is a decision node with two states, and the second is a chance node with three states.
-
-![](figures/paths1.svg)
-
-If there are no inactive chance states, all paths are possible. That is, for all $s∈S,$ we have $p(s)>0.$ In this case, the influence diagram is symmetric.
-
-![](figures/paths2.svg)
-
-However, if there are inactive chance states, such as $ℙ(s_2=2∣s_1=2)=0$, we can remove $(2,2)$ from the paths, visualized by a dashed shape. Therefore, there is a varying number of possible paths depending on whether the decision-maker chooses state $s_1=1$ or $s_1=2$ in the first node, and the influence diagram is asymmetric.
-
-![](figures/id2.svg)
-
-Let us add one chance node with two states to the influence diagram.
-
-![](figures/paths3.svg)
-
-Now, given inactive chance states such that we remove the dashed paths, we have a symmetric influence diagram. Both decisions will have an equal number of possible paths. However, there are only eight possible paths instead of twelve if there were no inactive chance states.
-
-
-## Properties
-In this section, we define more properties for influence diagrams.
-
-**Discrete** influence diagram refers to countable state space. Otherwise, the influence diagram is **continuous**. We can discretize continuous influence diagrams using discrete bins.
-
-Two nodes are **sequential** if there exists a directed path from one node to the other in the influence diagram. Otherwise, the nodes are **parallel**. Sequential nodes often model time dimension.
-
-**Repeated subdiagram** refers to a recurring pattern within an influence diagram. Often, influence diagrams do not have a unique structure, but they consist of a repeated pattern due to the underlying problem's properties.
-
-**Limited-memory** influence diagram refers to an influence diagram where an upper bound limits the size of the information set for decision nodes. That is, $I(j)≤m$ for all $j∈D$ where the limit $m$ is less than $|C∪D|.$ Smaller limits of $m$ are desirable because they reduce the decision model size, as discussed in the [Computational Complexity](@ref computational-complexity) page.
-
-**Isolated subdiagrams** refer to an influence diagram that consists of multiple unconnected diagrams. That is, there are no undirected connections between the diagrams. Therefore, one isolated subdiagram's decisions affect decisions on the other isolated subdiagrams only through the utility function.
-
-Chance or decision node is **redundant** if it is a leaf node and not in any value node's information set. Formally, if $j∈C∪D$ is a leaf node and there does not exist a value node $i∈V$ such that $j∈I(i).$
 
 
 ## References
