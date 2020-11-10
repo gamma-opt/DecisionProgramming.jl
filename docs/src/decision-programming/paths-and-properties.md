@@ -1,4 +1,4 @@
-# Paths and Properties
+# [Paths and Properties](@id paths-and-properties)
 ## Effective Paths
 ![](figures/paths_eff.svg)
 
@@ -8,11 +8,11 @@ Formally, the path $𝐬$ is **ineffective** if and only if $𝐬_A∈𝐒_A^′
 
 $$𝐒^∗=\{𝐬∈𝐒∣𝐬_{A}∉𝐒_{A}^′\}⊆𝐒.$$
 
-The size of the [Decision Model](@ref) depends on the number of effective paths, rather than the number of paths or size of the influence diagram directly. If effective paths is empty, the influence diagram has no solutions.
+The [Decision Model](@ref decision-model) size depends on the number of effective paths, rather than the number of paths or size of the influence diagram directly. If effective paths is empty, the influence diagram has no solutions.
 
 
 ## Active Paths
-If the upper bound of path probability is zero, its probability is zero, and it has no effect on the solution. Therefore, we can only consider paths with positive upper bound of path probability. We refer to these paths as active paths. Formally, we define an **active path** as a path $𝐬$ if all of its chance states are active
+If the upper bound of path probability is zero, its probability is zero, and it does not affect the solution. Therefore, we can only consider paths with a positive upper bound of path probability. We refer to these paths as active paths. Formally, we define an **active path** as a path $𝐬$ if all of its chance states are active
 
 $$\begin{aligned}
 X(𝐬)&↔(p(𝐬)>0)\\ &↔ ⋀_{j∈C} (ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)})>0).
@@ -26,9 +26,17 @@ The **number of active paths** is
 
 $$|𝐒(X)|≤|𝐒|.$$
 
-Effective paths belong to the active paths
+Effective paths are related to active paths, such that, for all $j∈C,$ we have ineffective subpaths
+
+$$𝐒_{I(j)∪j}^′=\{𝐬_{I(j)∪j}∈𝐒_{I(j)∪j} ∣ ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)})=0\}.$$
+
+Generally, we have
 
 $$𝐒^∗ ⊆ 𝐒(X).$$
+
+If there are no other ineffective subpaths, we have
+
+$$𝐒^∗ = 𝐒(X).$$
 
 
 ## Compatible Paths
@@ -40,9 +48,9 @@ Since each local decision strategy $Z_j∈Z$ can choose only one of its states, 
 
 $$|𝐒(Z)|=|𝐒|/|𝐒_D|=|𝐒_C|.$$
 
-The compatible paths of all distinct pairs of decision strategies are disjoint. Formally, for all $Z_1,Z_2∈ℤ$ where $Z_1≠Z_2$, we have
+The compatible paths of all distinct pairs of decision strategies are disjoint. Formally, for all $Z,Z^′∈ℤ$ where $Z≠Z^′$, we have $Z(𝐬)∧Z^′(𝐬)↔⊥,$ which gives as
 
-$$𝐒(Z_1)∩𝐒(Z_2)=\{𝐬∈𝐒∣Z_1(𝐬)∧Z_2(𝐬)\}=\{s∈𝐒∣⊥\}=∅.$$
+$$𝐒(Z)∩𝐒(Z^′)=\{𝐬∈𝐒∣Z(𝐬)∧Z^′(𝐬)\}=∅.$$
 
 
 ## Symmetry
@@ -50,19 +58,17 @@ We define the set of active and compatible paths as
 
 $$𝐒(X)∩𝐒(Z)=\{𝐬∈𝐒∣X(𝐬)∧Z(𝐬)\}.$$
 
-An influence diagram is **symmetric** if the number of active and compatible paths is a constant. Formally, if for all $Z_1,Z_2∈ℤ,$ where $Z_1≠Z_2,$ we have
+An influence diagram is **symmetric** if the number of active and compatible paths is a constant. Formally, if for all $Z,Z^′∈ℤ,$ where $Z≠Z^′,$ we have
 
-$$|𝐒(X)∩𝐒(Z_1)|=|𝐒(X)∩𝐒(Z_2)|.$$
+$$|𝐒(X)∩𝐒(Z)|=|𝐒(X)∩𝐒(Z^′)|.$$
 
-Otherwise, the influence diagram is **asymmetric**. The figures below demonstrate symmetric and asymmetric influence diagrams.
+For example, if all paths are active $X(𝐬)↔⊤,$ we have $|𝐒(X)∩𝐒(Z)|=|𝐒(Z)|,$ which is a constant. Otherwise, the influence diagram is **asymmetric**. The figures below demonstrate symmetric and asymmetric influence diagrams.
 
 ### Example 1
 
 ![](figures/id1.svg)
 
 Consider the influence diagram with two nodes. The first is a decision node with two states, and the second is a chance node with three states.
-
-If all paths are active $X(𝐬)↔⊤$ then $𝐒(X)∩𝐒(Z)=𝐒(Z).$
 
 ![](figures/paths1.svg)
 
