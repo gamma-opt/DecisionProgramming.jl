@@ -17,6 +17,7 @@ makedocs(
             "decision-programming/analyzing-decision-strategies.md",
             "decision-programming/computational-complexity.md",
         ],
+        "usage.md",
         "Examples" => Any[
             "examples/used-car-buyer.md",
             "examples/pig-breeding.md",
