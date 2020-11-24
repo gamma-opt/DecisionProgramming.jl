@@ -113,17 +113,21 @@ Formally, for each decision node $j∈D,$ a **local decision strategy** is funct
 
 $$Z_j:𝐒_{I(j)}↦S_j.$$
 
-**Decision strategy** $Z$ contains one local decision strategy for each decision node. Set of **all decision strategies** is denoted $ℤ.$
+A **decision strategy** contains one local decision strategy for each decision node
+
+$$Z=\{Z_j∣j∈D\}.$$
+
+The set of **all decision strategies** is denoted $ℤ.$
 
 
 ## Path Probability
 The probability distributions at chance and decision nodes define the probability distribution over all paths $𝐬∈𝐒,$ which depends on the decision strategy $Z∈ℤ.$ We refer to it as the path probability
 
-$$ℙ(𝐬∣Z) = ∏_{j∈C∪D} ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)}).$$
+$$ℙ(X=𝐬∣Z) = ∏_{j∈C∪D} ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)}).$$
 
 We can decompose the path probability into two parts
 
-$$ℙ(𝐬∣Z) = p(𝐬) q(𝐬∣Z).$$
+$$ℙ(X=𝐬∣Z) = p(𝐬) q(𝐬∣Z).$$
 
 The first part consists of the probability contributed by the chance nodes. We refer to it as the **upper bound of path probability**
 
@@ -146,7 +150,7 @@ $$Z(𝐬) ↔ ⋀_{j∈D} (Z_j(𝐬_{I(j)})=𝐬_j).$$
 
 Now the **path probability** equals the upper bound if the path is compatible with given decision strategy. Otherwise, the path probability is zero. Formally, we have
 
-$$ℙ(𝐬∣Z)=
+$$ℙ(𝐬∣X,Z)=
 \begin{cases}
 p(𝐬), & Z(𝐬) \\
 0, & \text{otherwise}
@@ -187,7 +191,7 @@ Different formulations require a solver capable of solving them.
 ## Path Distribution
 A **path distribution** is a pair
 
-$$(ℙ(𝐬∣Z), \mathcal{U}(𝐬))$$
+$$(ℙ(X=𝐬∣Z), \mathcal{U}(𝐬))$$
 
 that comprises of path probability function and path utility function over paths $𝐬∈𝐒$ conditional to the decision strategy $Z.$
 
