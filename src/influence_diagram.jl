@@ -7,7 +7,9 @@ using Base.Iterators: product
 const Node = Int
 
 function validate_node(j::Node, I_j::Vector{Node})
-    I_j = sort(unique(I_j))
+    if !allunique(I_j)
+        throw(DomainError("All information nodes should be unique."))
+    end
     if !all(i < j for i in I_j)
         throw(DomainError("All nodes in the information set must be less than node j."))
     end
