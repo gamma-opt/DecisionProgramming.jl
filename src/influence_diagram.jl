@@ -3,8 +3,11 @@ using Base.Iterators: product
 
 # --- Nodes and States ---
 
-"""Node type. Alias for `Int`."""
+"""Primitive type for node. Alias for `Int`."""
 const Node = Int
+
+"""Node type for directed, acyclic graph."""
+abstract type AbstractNode end
 
 function validate_node(j::Node, I_j::Vector{Node})
     if !allunique(I_j)
@@ -13,7 +16,6 @@ function validate_node(j::Node, I_j::Vector{Node})
     if !all(i < j for i in I_j)
         throw(DomainError("All nodes in the information set must be less than node j."))
     end
-    return j, I_j
 end
 
 """Chance node type.
@@ -23,11 +25,11 @@ end
 c = ChanceNode(3, [1, 2])
 ```
 """
-struct ChanceNode
+struct ChanceNode <: AbstractNode
     j::Node
     I_j::Vector{Node}
     function ChanceNode(j::Node, I_j::Vector{Node})
-        j, I_j = validate_node(j, I_j)
+        validate_node(j, I_j)
         new(j, I_j)
     end
 end
@@ -39,11 +41,11 @@ end
 d = DecisionNode(2, [1])
 ```
 """
-struct DecisionNode
+struct DecisionNode <: AbstractNode
     j::Node
     I_j::Vector{Node}
     function DecisionNode(j::Node, I_j::Vector{Node})
-        j, I_j = validate_node(j, I_j)
+        validate_node(j, I_j)
         new(j, I_j)
     end
 end
@@ -55,16 +57,16 @@ end
 v = ValueNode(4, [1, 3])
 ```
 """
-struct ValueNode
+struct ValueNode <: AbstractNode
     j::Node
     I_j::Vector{Node}
     function ValueNode(j::Node, I_j::Vector{Node})
-        j, I_j = validate_node(j, I_j)
+        validate_node(j, I_j)
         new(j, I_j)
     end
 end
 
-"""State type. Alias for `Int`."""
+"""Primitive type for the number of states. Alias for `Int`."""
 const State = Int
 
 """States type. Works like `Vector{State}`.

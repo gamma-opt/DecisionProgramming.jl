@@ -7,6 +7,7 @@ include("analysis.jl")
 include("printing.jl")
 
 export Node,
+    AbstractNode,
     ChanceNode,
     DecisionNode,
     ValueNode,
