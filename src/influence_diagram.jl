@@ -166,7 +166,7 @@ julia> vec(collect(paths(states, Dict(1=>2))))
 [(2, 1), (2, 2), (2, 3)]
 ```
 """
-function paths(states::AbstractVector{State}, fixed::Dict{Int, Int})
+function paths(states::AbstractVector{State}, fixed::Dict{Node, State})
     iters = collect(UnitRange.(one(eltype(states)), states))
     for (i, v) in fixed
         iters[i] = UnitRange(v, v)

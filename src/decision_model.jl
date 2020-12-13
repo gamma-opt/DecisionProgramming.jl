@@ -75,7 +75,7 @@ Base.iterate(π_s::PathProbabilityVariables, i) = iterate(π_s.data, i)
 π_s = PathProbabilityVariables(model, z, S, P; hard_lower_bound=false))
 ```
 """
-function PathProbabilityVariables(model::Model, z::DecisionVariables, S::States, P::AbstractPathProbability; hard_lower_bound::Bool=true, names::Bool=false, name::String="π_s", forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[])
+function PathProbabilityVariables(model::Model, z::DecisionVariables, S::States, P::AbstractPathProbability; hard_lower_bound::Bool=true, names::Bool=false, name::String="π_s", forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[], fixed::Dict{Node, State}=Dict{Node, State}())
     if !isempty(forbidden_paths)
         @warn("Forbidden paths is still an experimental feature.")
     end
@@ -84,7 +84,7 @@ function PathProbabilityVariables(model::Model, z::DecisionVariables, S::States,
     N = length(S)
     π_s = Dict{Path{N}, VariableRef}(
         s => path_probability_variable(model, z, s, P, hard_lower_bound, (names ? "$(name)$(s)" : ""))
-        for s in paths(S)
+        for s in paths(S, fixed)
         if !iszero(P(s)) && all(s[k]∉v for (k, v) in forbidden_paths)
     )
     PathProbabilityVariables{N}(π_s)
