@@ -30,20 +30,30 @@ function DecisionVariables(model::Model, S::States, D::Vector{DecisionNode}; nam
     DecisionVariables(D, [decision_variable(model, S, d, (names ? "$(name)_$(d.j)$(s)" : "")) for d in D])
 end
 
-function path_probability_variable(model::Model, z::DecisionVariables, s::Path, P::AbstractPathProbability, hard_lower_bound::Bool, base_name::String="")
+function is_forbidden(s::Path, forbidden_paths::Vector{ForbiddenPath})
+    return !all(s[k]∉v for (k, v) in forbidden_paths)
+end
+
+function path_probability_variable(model::Model, z::DecisionVariables, s::Path, P::AbstractPathProbability, hard_lower_bound::Bool, forbidden::Bool, base_name::String="")
     # Create a path probability variable
     π = @variable(model, base_name=base_name)
 
     # Soft constraint on the lower bound.
     @constraint(model, π ≥ 0)
 
-    # Hard constraint on the upper bound.
-    @constraint(model, π ≤ P(s))
+    if !forbidden
 
-    # Constraints the path probability to zero if the path is
-    # incompatible with the decision strategy.
-    for (d, z_j) in zip(z.D, z.z)
-        @constraint(model, π ≤ z_j[s[[d.I_j; d.j]]...])
+        # Hard constraint on the upper bound.
+        @constraint(model, π ≤ P(s))
+
+        # Constraints the path probability to zero if the path is
+        # incompatible with the decision strategy.
+        for (d, z_j) in zip(z.D, z.z)
+            @constraint(model, π ≤ z_j[s[[d.I_j; d.j]]...])
+        end
+    else
+        # Path is forbidden, probability must be zero
+        @constraint(model, π ≤ 0)
     end
 
     # Hard constraint on the lower bound.
@@ -83,9 +93,9 @@ function PathProbabilityVariables(model::Model, z::DecisionVariables, S::States,
     # Create path probability variable for each effective path.
     N = length(S)
     π_s = Dict{Path{N}, VariableRef}(
-        s => path_probability_variable(model, z, s, P, hard_lower_bound, (names ? "$(name)$(s)" : ""))
+        s => path_probability_variable(model, z, s, P, hard_lower_bound, is_forbidden(s, forbidden_paths), (names ? "$(name)$(s)" : ""))
         for s in paths(S, fixed)
-        if !iszero(P(s)) && all(s[k]∉v for (k, v) in forbidden_paths)
+        if !iszero(P(s))
     )
     PathProbabilityVariables{N}(π_s)
 end
