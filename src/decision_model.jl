@@ -107,15 +107,15 @@ end
 probability_cut(model, π_s, P)
 ```
 """
-function probability_cut(model::Model, π_s::PathProbabilityVariables, P::AbstractPathProbability)
+function probability_cut(model::Model, π_s::PathProbabilityVariables, P::AbstractPathProbability; probability_scale_factor::Int64=1)
     # Add the constraints only once
     ϵ = minimum(P(s) for s in keys(π_s))
     flag = false
     function probability_cut(cb_data)
         flag && return
         πsum = sum(callback_value(cb_data, π) for π in values(π_s))
-        if !isapprox(πsum, 1.0, atol=ϵ)
-            con = @build_constraint(sum(values(π_s)) == 1.0)
+        if !isapprox(πsum, 1.0 * probability_scale_factor, atol=ϵ)
+            con = @build_constraint(sum(values(π_s)) == 1.0 * probability_scale_factor)
             MOI.submit(model, MOI.LazyConstraint(cb_data), con)
             flag = true
         end
