@@ -195,7 +195,7 @@ end
 CVaR = conditional_value_at_risk(model, π_s, U, α)
 ```
 """
-function conditional_value_at_risk(model::Model, π_s::PathProbabilityVariables{N}, U::AbstractPathUtility, α::Float64) where N
+function conditional_value_at_risk(model::Model, π_s::PathProbabilityVariables{N}, U::AbstractPathUtility, α::Float64; probability_scale_factor::Int64=1) where N
     if !(0 < α ≤ 1)
         throw(DomainError("α should be 0 < α ≤ 1"))
     end
@@ -229,8 +229,8 @@ function conditional_value_at_risk(model::Model, π_s::PathProbabilityVariables{
         @constraint(model, ρ ≤ λ)
         @constraint(model, ρ′ ≤ λ′)
         @constraint(model, ρ ≤ ρ′)
-        @constraint(model, ρ′ ≤ π)
-        @constraint(model, π - (1 - λ) ≤ ρ)
+        @constraint(model, ρ′ ≤ π / probability_scale_factor)
+        @constraint(model, π /probability_scale_factor - (1 - λ) ≤ ρ)
         ρ′_s[s] = ρ′
     end
     @constraint(model, sum(values(ρ′_s)) == α)
