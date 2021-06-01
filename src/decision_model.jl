@@ -34,7 +34,7 @@ function is_forbidden(s::Path, forbidden_paths::Vector{ForbiddenPath})
     return !all(s[k]∉v for (k, v) in forbidden_paths)
 end
 
-function path_probability_variable(model::Model, z::DecisionVariables, s::Path, P::AbstractPathProbability, hard_lower_bound::Bool, forbidden::Bool, base_name::String="", probability_scale_factor::Int64)
+function path_probability_variable(model::Model, z::DecisionVariables, s::Path, P::AbstractPathProbability, hard_lower_bound::Bool, forbidden::Bool, probability_scale_factor::Int64, base_name::String="")
     # Create a path probability variable
     π = @variable(model, base_name=base_name)
 
@@ -93,7 +93,7 @@ function PathProbabilityVariables(model::Model, z::DecisionVariables, S::States,
     # Create path probability variable for each effective path.
     N = length(S)
     π_s = Dict{Path{N}, VariableRef}(
-        s => path_probability_variable(model, z, s, P, hard_lower_bound, is_forbidden(s, forbidden_paths), (names ? "$(name)$(s)" : ""), probability_scale_factor)
+        s => path_probability_variable(model, z, s, P, hard_lower_bound, is_forbidden(s, forbidden_paths), probability_scale_factor, (names ? "$(name)$(s)" : ""))
         for s in paths(S, fixed)
         if !iszero(P(s))
     )
