@@ -226,17 +226,17 @@ function conditional_value_at_risk(model::Model, π_s::PathProbabilityVariables{
         @constraint(model, η - u_s ≥ M * (λ′ - 1))
         @constraint(model, 0 ≤ ρ)
         @constraint(model, 0 ≤ ρ′)
-        @constraint(model, ρ ≤ λ)
-        @constraint(model, ρ′ ≤ λ′)
+        @constraint(model, ρ ≤ λ * probability_scale_factor)
+        @constraint(model, ρ′ ≤ λ′* probability_scale_factor)
         @constraint(model, ρ ≤ ρ′)
-        @constraint(model, ρ′ ≤ π / probability_scale_factor)
-        @constraint(model, π /probability_scale_factor - (1 - λ) ≤ ρ)
+        @constraint(model, ρ′ ≤ π)
+        @constraint(model, π - (1 - λ)* probability_scale_factor ≤ ρ)
         ρ′_s[s] = ρ′
     end
-    @constraint(model, sum(values(ρ′_s)) == α)
+    @constraint(model, sum(values(ρ′_s)) == α * probability_scale_factor)
 
     # Return CVaR as an expression
-    CVaR = @expression(model, sum(ρ_bar * U(s) for (s, ρ_bar) in ρ′_s) / α)
+    CVaR = @expression(model, sum(ρ_bar * U(s) for (s, ρ_bar) in ρ′_s) / (α * probability_scale_factor))
 
     return CVaR
 end
