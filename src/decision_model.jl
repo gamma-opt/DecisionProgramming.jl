@@ -142,7 +142,7 @@ function active_paths_cut(model::Model, π_s::PathProbabilityVariables, S::State
     flag = false
     function active_paths_cut(cb_data)
         flag && return
-        πnum = sum(callback_value(cb_data, π) ≥ ϵ for π in values(π_s))
+        πnum = sum(callback_value(cb_data, π) ≥ ϵ * probability_scale_factor for π in values(π_s))
         if !isapprox(πnum, num_compatible_paths, atol = atol)
             num_active_paths = @expression(model, sum(π / (P(s) * probability_scale_factor) for (s, π) in π_s))
             con = @build_constraint(num_active_paths == num_compatible_paths)
