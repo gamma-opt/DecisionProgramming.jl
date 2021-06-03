@@ -6,9 +6,9 @@ using DataFrames
 
 
 # Setting subproblem specific parameters
-chosen_risk_level = 13
-scale_factor = 100
-integer_feasibility_tolerance = 1e-9
+const chosen_risk_level = 13
+const scale_factor = 100
+const integer_feasibility_tolerance = 1e-9
 
 # Reading tests' technical performance data (dummy data in this case)
 p_data = CSV.read("risk_prediction_data.csv", DataFrame)
@@ -128,9 +128,7 @@ const H_states = ["CHD", "no CHD"]
 const T_states = ["TRS", "GRS", "no test"]
 const TD_states = ["treatment", "no treatment"]
 const R_states = map( x -> string(x) * "%", [0:0.01:1.0;])
-# TC = test costs
 const TC_states = ["TRS", "GRS", "TRS & GRS", "no tests"]
-# HB = health benefits
 const HB_states = ["CHD & treatment", "CHD & no treatment", "no CHD & treatment", "no CHD & no treatment"]
 
 @info("Creating the influence diagram.")
@@ -234,7 +232,7 @@ model = Model()
 z = DecisionVariables(model, S, D)
 
 # Defining forbidden paths to include all those where a test is repeated twice
-forbidden_tests = ForbiddenPath[([T1,T2], Set([(1,1),(2,2)]))]
+forbidden_tests = ForbiddenPath[([T1,T2], Set([(1,1),(2,2),(3,1), (3,2)]))]
 
 π_s = PathProbabilityVariables(model, z, S, P; hard_lower_bound = true, forbidden_paths = forbidden_tests, probability_scale_factor = scale_factor)
 
