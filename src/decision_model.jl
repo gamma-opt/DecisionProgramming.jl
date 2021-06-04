@@ -34,7 +34,7 @@ function is_forbidden(s::Path, forbidden_paths::Vector{ForbiddenPath})
     return !all(s[k]∉v for (k, v) in forbidden_paths)
 end
 
-function path_probability_variable(model::Model, z::DecisionVariables, s::Path, P::AbstractPathProbability, hard_lower_bound::Bool, forbidden::Bool, probability_scale_factor::Int64, base_name::String="")
+function path_probability_variable(model::Model, z::DecisionVariables, s::Path, P::AbstractPathProbability, hard_lower_bound::Bool, forbidden::Bool, probability_scale_factor::Float64, base_name::String="")
     # Create a path probability variable
     π = @variable(model, base_name=base_name)
 
@@ -85,7 +85,7 @@ Base.iterate(π_s::PathProbabilityVariables, i) = iterate(π_s.data, i)
 π_s = PathProbabilityVariables(model, z, S, P; hard_lower_bound=false))
 ```
 """
-function PathProbabilityVariables(model::Model, z::DecisionVariables, S::States, P::AbstractPathProbability; hard_lower_bound::Bool=true, names::Bool=false, name::String="π_s", forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[], fixed::Dict{Node, State}=Dict{Node, State}(), probability_scale_factor::Int64=1)
+function PathProbabilityVariables(model::Model, z::DecisionVariables, S::States, P::AbstractPathProbability; hard_lower_bound::Bool=true, names::Bool=false, name::String="π_s", forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[], fixed::Dict{Node, State}=Dict{Node, State}(), probability_scale_factor::Float64=1.0)
     if !isempty(forbidden_paths)
         @warn("Forbidden paths is still an experimental feature.")
     end
@@ -107,7 +107,7 @@ end
 probability_cut(model, π_s, P)
 ```
 """
-function probability_cut(model::Model, π_s::PathProbabilityVariables, P::AbstractPathProbability; probability_scale_factor::Int64=1)
+function probability_cut(model::Model, π_s::PathProbabilityVariables, P::AbstractPathProbability; probability_scale_factor::Float64=1.0)
     # Add the constraints only once
     ϵ = minimum(P(s) for s in keys(π_s))
     flag = false
@@ -131,7 +131,7 @@ atol = 0.9  # Tolerance to trigger the creation of the lazy cut
 active_paths_cut(model, π_s, S, P; atol=atol)
 ```
 """
-function active_paths_cut(model::Model, π_s::PathProbabilityVariables, S::States, P::AbstractPathProbability; atol::Float64 = 0.9, probability_scale_factor::Int64=1)
+function active_paths_cut(model::Model, π_s::PathProbabilityVariables, S::States, P::AbstractPathProbability; atol::Float64 = 0.9, probability_scale_factor::Float64=1.0)
     all_active_states = all(all((!).(iszero.(x))) for x in P.X)
     if !all_active_states
         throw(DomainError("Cannot use active paths cut if all states are not active."))
@@ -183,7 +183,7 @@ end
 EV = expected_value(model, π_s, U)
 ```
 """
-function expected_value(model::Model, π_s::PathProbabilityVariables, U::AbstractPathUtility; probability_scale_factor::Int64=1)
+function expected_value(model::Model, π_s::PathProbabilityVariables, U::AbstractPathUtility; probability_scale_factor::Float64=1.0)
     @expression(model, sum(π / probability_scale_factor * U(s) for (s, π) in π_s))
 end
 
@@ -195,7 +195,7 @@ end
 CVaR = conditional_value_at_risk(model, π_s, U, α)
 ```
 """
-function conditional_value_at_risk(model::Model, π_s::PathProbabilityVariables{N}, U::AbstractPathUtility, α::Float64; probability_scale_factor::Int64=1) where N
+function conditional_value_at_risk(model::Model, π_s::PathProbabilityVariables{N}, U::AbstractPathUtility, α::Float64; probability_scale_factor::Float64=1.0) where N
     if !(0 < α ≤ 1)
         throw(DomainError("α should be 0 < α ≤ 1"))
     end
