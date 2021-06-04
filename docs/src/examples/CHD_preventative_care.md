@@ -86,7 +86,7 @@ $$ℙ(R0 = 12%)=1$$
 and 
 $$ℙ(R0 \neq 12%)= 0. $$
 
-In decision programming we add the node $R0$ and its state probabilities as follows:
+Notice that node $R0$ is the root done in the influence diagram. Thus, the information set $I(R0)$ is empty. In decision programming we add node $R0$ and its state probabilities as follows:
 ```julia
 I_R0 = Vector{Node}()
 X_R0 = zeros(S[R0])
@@ -94,6 +94,30 @@ X_R0[chosen_risk_level] = 1
 push!(C, ChanceNode(R0, I_R0))
 push!(X, Probabilities(R0, X_R0))
 ```
+
+Next we add node $H$ and its state probabilities. For modeling purposes, we define the information set of node $H$ to include the prior risk node $R0$. We set the probability of the patient experiencing a CHD event in the next ten years according to
+
+$$ℙ(H = CHD | R0 = \alpha) = \alpha$$.
+
+We define the probability of the patient not experiencing a CHD event in the next ten years as the complement event. Thus, 
+
+$$ℙ(H = no CHD | R0 = \alpha) = 1 - \alpha$$.
+
+Since node $R0$ is actually deterministic, defining the health node $H$ in this way means that in the our model the patient has 12% probability of experiencing a CHD event and 88% chance of not suffering one.
+
+Node $H$ and its probabilities are added in the following way:
+
+```julia
+I_H = [R0]
+X_H = zeros(S[R0], S[H])
+X_H[:, 1] = risk_levels     
+X_H[:, 2] = 1 .- X_H[:, 1] 
+push!(C, ChanceNode(H, I_H))
+push!(X, Probabilities(H, X_H))
+```
+
+### First test decision and update of the risk estimate
+
 
 
 ## Decision Model
