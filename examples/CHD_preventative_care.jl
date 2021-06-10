@@ -9,7 +9,7 @@ using CSV, DataFrames
 const chosen_risk_level = 13
 
 # Reading tests' technical performance data (dummy data in this case)
-p_data = CSV.read("risk_prediction_data.csv", DataFrame)
+p_data = CSV.read("test_probabilities_data.csv", DataFrame)
 # Risk levels that discretise the scale of risk estimates 0%-100%
 risk_levels = vec(collect(0:0.01:1.0))
 
@@ -20,7 +20,7 @@ risk_levels = vec(collect(0:0.01:1.0))
 # t = test done
 # returns a 100x1 vector with the probabilities of getting CHD given the prior risk level and test result
 # for no test done (i.e. t = 3) returns a zero vector
-function posterior_p(prior::Int64, t::Int64)
+function update_risk_distribution(prior::Int64, t::Int64)
     if t == 1 # the test is TRS
         # P(TRS = result | sick) = P(TRS_if_sick = result) * P(sick) = P(TRS_if_sick = result) * P(prior_risk)
         numerators = p_data.TRS_if_sick .* risk_levels[prior]
@@ -66,11 +66,11 @@ function posterior_p(prior::Int64, t::Int64)
 end
 
 # State probabilites calculation function
-# risk_p = the resulting array from posterior_p
+# risk_p = the resulting array from update_risk_distribution
 # t = test done
 # h = CHD or no CHD
-# returns the probability distribution in 101x1 vector for the states of the R node given the prior risk level (must be same as to function posterior_p), test t and health h
-function states_p(risk_p::Array{Float64}, t::Int64, h::Int64, prior::Int64)
+# returns the probability distribution in 101x1 vector for the states of the R node given the prior risk level (must be same as to function update_risk_distribution), test t and health h
+function state_probabilities(risk_p::Array{Float64}, t::Int64, h::Int64, prior::Int64)
 
     #if no test is performed, then the probabilities of moving to states (other than the prior risk level) are 0 and to the prior risk element is 1
     if t == 3
@@ -166,7 +166,7 @@ push!(D, DecisionNode(T1, I_T1))
 I_R1 = [R0, H, T1]
 X_R1 = zeros(S[I_R1]..., S[R1])
 for s_R0 = 1:101, s_H = 1:2, s_T1 = 1:3
-    X_R1[s_R0, s_H, s_T1, :] =  states_p(posterior_p(s_R0, s_T1), s_T1, s_H, s_R0)
+    X_R1[s_R0, s_H, s_T1, :] =  state_probabilities(update_risk_distribution(s_R0, s_T1), s_T1, s_H, s_R0)
 end
 push!(C, ChanceNode(R1, I_R1))
 push!(X, Probabilities(R1, X_R1))
@@ -179,7 +179,7 @@ push!(D, DecisionNode(T2, I_T2))
 I_R2 = [H, R1, T2]
 X_R2 = zeros(S[I_R2]..., S[R2])
 for s_R1 = 1:101, s_H = 1:2, s_T2 = 1:3
-    X_R2[s_H, s_R1, s_T2, :] =  states_p(posterior_p(s_R1, s_T2), s_T2, s_H, s_R1)
+    X_R2[s_H, s_R1, s_T2, :] =  state_probabilities(update_risk_distribution(s_R1, s_T2), s_T2, s_H, s_R1)
 end
 push!(C, ChanceNode(R2, I_R2))
 push!(X, Probabilities(R2, X_R2))
