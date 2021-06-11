@@ -8,6 +8,7 @@ using CSV, DataFrames
 # Setting subproblem specific parameters
 const chosen_risk_level = 13
 
+
 # Reading tests' technical performance data (dummy data in this case)
 data = CSV.read("CHD_preventative_care_data.csv", DataFrame)
 
@@ -29,7 +30,7 @@ function update_risk_distribution(prior::Int64, t::Int64)
         posterior_risks = numerators./denominators
 
         # if the denominator is zero, post_risk is NaN, changing those to 0
-        for i = 1:100
+        for i = 1:101
             if isnan(posterior_risks[i])
                 posterior_risks[i] = 0
             end
@@ -45,7 +46,7 @@ function update_risk_distribution(prior::Int64, t::Int64)
         posterior_risks =  numerators./denominators
 
         # if the denominator is zero, post_risk is NaN, changing those to 0
-        for i = 1:100
+        for i = 1:101
             if isnan(posterior_risks[i])
                 posterior_risks[i] = 0
             end
@@ -92,7 +93,7 @@ function state_probabilities(risk_p::Array{Float64}, t::Int64, h::Int64, prior::
     end
 
     for i = 1:101 #iterating through all risk levels 0%, 1%, ..., 99%, 100% in data.risk_levels
-        for j = 1:100 #iterates through all risk estimates in risk_p
+        for j = 1:101 #iterates through all risk estimates in risk_p
             #finding all risk estimates risk_p[j] within risk level i
             # risk_level[i] <= risk_p < risk_level[i]
             if i < 101 && data.risk_levels[i] <= risk_p[j] && risk_p[j] < data.risk_levels[i+1]
@@ -123,7 +124,7 @@ const HB = 9
 const H_states = ["CHD", "no CHD"]
 const T_states = ["TRS", "GRS", "no test"]
 const TD_states = ["treatment", "no treatment"]
-const R_states = map( x -> string(x) * "%", [0:0.01:1.0;])
+const R_states = map( x -> string(x) * "%", [0:1:100;])
 const TC_states = ["TRS", "GRS", "TRS & GRS", "no tests"]
 const HB_states = ["CHD & treatment", "CHD & no treatment", "no CHD & treatment", "no CHD & no treatment"]
 
