@@ -229,7 +229,7 @@ z = DecisionVariables(model, S, D)
 
 # Defining forbidden paths to include all those where a test is repeated twice
 forbidden_tests = ForbiddenPath[([T1,T2], Set([(1,1),(2,2),(3,1), (3,2)]))]
-scale_factor = 100
+scale_factor = 100.0
 π_s = PathProbabilityVariables(model, z, S, P; hard_lower_bound = true, forbidden_paths = forbidden_tests, probability_scale_factor = scale_factor)
 
 EV = expected_value(model, π_s, U)
