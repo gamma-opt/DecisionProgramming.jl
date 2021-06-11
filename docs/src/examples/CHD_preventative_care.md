@@ -4,32 +4,30 @@
 
 > The problem setting is such that the patient is assumed to have a prior risk estimate. A risk estimate is a prediction of the patient’s chance of having a CHD event in the next ten years. The risk estimates are grouped into risk levels, which range from 0% to 100%. The first testing decision is made based on the prior risk estimate. The first testing decision entails deciding whether TRS or GRS should be performed or if no testing is needed. If a test is conducted, the risk estimate is updated and based on the new information, the second testing decision is made. The second testing decision entails deciding whether further testing should be conducted or not. The second testing decision is constrained so that the same test which was conducted in the first stage cannot be repeated. If a second test is conducted, the risk estimate is updated again. The treatment decision – dictating whether the patient receives statin therapy or not – is made based on the resulting risk estimate of this testing process. Note that if no tests are conducted, the treatment decision is made based on the prior risk estimate.
 
-In this example, we will showcase the subproblem, which solves for the optimal decision strategy given a single prior risk level. The chosen risk level in this example is 12%. The solution to the main problem is found in [^1].
+In this example, we will showcase the subproblem, which optimises the decision strategy given a single prior risk level. The chosen risk level in this example is 12%. The solution to the main problem is found in [^1].
 
 ## Influence Diagram
 ![](figures/CHD_preventative_care.svg)
 
-The influence diagram representation of the problem is seen above. The chance nodes $R$ represent the patient's risk estimate – the prior risk estimate being $R0$. The risk estimate nodes $R0$, $R1$ and $R2$ have 101 states $R = \{0%, 1%, ..., 100%\}$, which are the discretised risk levels that the risk estimate falls into. 
+The influence diagram representation of the problem is seen above. The chance nodes $R$ represent the patient's risk estimate – the prior risk estimate being $R0$. The risk estimate nodes $R0$, $R1$ and $R2$ have 101 states $R = \{0%, 1%, ..., 100%\}$, which are the discretised risk levels for the risk estimates. 
 
 The risk estimate is updated according to the first and second test decisions, which are represented by decision nodes $T1$ and $T2$. These nodes have states $T = \{TRS, GRS, no test\}. The health of the patient represented by chance node $H$ also affects the update of the risk estimate. In this model, the health of the patient indicates whether they will have a CHD event in the next ten years or not. Thus, the node has states $H = \{CHD, no CHD\}$. The treatment decision is represented by node $TD$ and it has states $TD = \{treatment, no treatment\}$.
 
-The prior risk estimate represented by node $R0$ influences the health node $H$, because in the model we make the assumption that the prior risk accurately describes the
-probability of having a CHD event.
+The prior risk estimate represented by node $R0$ influences the health node $H$, because in the model we make the assumption that the prior risk estimate accurately describes the probability of having a CHD event.
 
 The value nodes in the model are $TC$ and $HB$. Node $TC$ represents the testing costs incurred due to the testing decisions $T1$ and $T2$. Node $HB$ represents the health benefits achieved. The test costs and health benefits are measured in quality-adjusted life-years. These parameter values were evaluated in the study [^2].
 
-We begin by declaring the chosen prior risk level, reading the conditional probability data for the tests and declaring the discretisation of the risk levels. The risk level 12% is referred to as 13 because indexing starts from 1 in Julia. Note also that the sample data in this repository, is dummy data due to distribution restrictions on the real data. We also define functions ```update_risk_distribution ```, ```state_probabilities``` and ```analysing_results ```. These functions will be discussed below when defining the probabilities for the nodes $R$.
+We begin by declaring the chosen prior risk level and reading the conditional probability data for the tests. The risk level 12% is referred to as 13 because indexing begins from 1. Note also that the sample data in this repository is dummy data due to distribution restrictions on the real data. We also define functions ```update_risk_distribution ```, ```state_probabilities``` and ```analysing_results ```. These functions will be discussed in the following sections.
 
 ```julia
 using Logging
 using JuMP, Gurobi
 using DecisionProgramming
-using CSV, DataFrames
+using CSV, DataFrames, PrettyTables
 
 
 const chosen_risk_level = 13
-const p_data = CSV.read("risk_prediction_data.csv", DataFrame)
-const risk_levels = vec(collect(0:0.01:1.0))
+const data = CSV.read("risk_prediction_data.csv", DataFrame)
 
 function update_risk_distribution(prior::Int64, t::Int64)...
 end
@@ -59,7 +57,7 @@ const HB = 9
 const H_states = ["CHD", "no CHD"]
 const T_states = ["TRS", "GRS", "no test"]
 const TD_states = ["treatment", "no treatment"]
-const R_states = map( x -> string(x) * "%", [0:0.01:1.0;])
+const R_states = map( x -> string(x) * "%", [0:1:100;])
 const TC_states = ["TRS", "GRS", "TRS & GRS", "no tests"]
 const HB_states = ["CHD & treatment", "CHD & no treatment", "no CHD & treatment", "no CHD & no treatment"]
 
@@ -83,7 +81,7 @@ Next, we define the nodes with their information sets and corresponding probabil
 
 ### Prior risk estimate and health of the patient
 
-In this subproblem, the prior risk estimate is given and therefore the node $R0$ is in effect a deterministic node. In decision programming a deterministic node is added as a chance node, for which the probability of one state is set to one and the probabilities of the rest of the states are set to zero. In this case
+In this subproblem, the prior risk estimate is given and therefore the node $R0$ is in effect a deterministic node. In decision programming a deterministic node is added as a chance node for which the probability of one state is set to one and the probabilities of the rest of the states are set to zero. In this case
 
 $$ℙ(R0 = 12%)=1$$
 and 
@@ -128,13 +126,13 @@ I_T1 = [R0]
 push!(D, DecisionNode(T1, I_T1))
 ```
 
-The probabilities of the states of node $R1$ are determined by calculating the updated risk estimates after a test is performed and aggregating these probabilities into the risk levels represented by the states of the node. The risk estimate update is calculated using the function ```update_risk_distribution```, which calculates the posterior probability distribution for a given health stat, test and prior risk estimate.
+The probabilities of the states of node $R1$ are determined by calculating the updated risk estimates after a test is performed and aggregating these probabilities into the risk levels. The update of the risk estimate is calculated using the function ```update_risk_distribution```, which calculates the posterior probability distribution for a given health state, test and prior risk estimate.
 
 $$ \textit{risk estimate} = P(\text{CHD} \mid \text{test result}) = \frac{P(\text{test result} \mid \text{CHD})}{P(\text{test result})}$$
 
-The probabilities $P(\text{test result} \mid \text{CHD})$ are test specific and these are read from the CSV data file. The updated risk estimates are aggregated according to the risk levels they fall into. These aggregated probabilities are then the state probabilities of node $R1$. The aggregating is done using function ```state_probabilities```. 
+The probabilities $P(\text{test result} \mid \text{CHD})$ are test specific and these are read from the CSV data file. The updated risk estimates are aggregated according to the risk levels. These aggregated probabilities are then the state probabilities of node $R1$. The aggregating is done using function ```state_probabilities```. 
 
-The node $R1$ and its probabilities are added:
+The node $R1$ and its probabilities are added in the following way.
 
 ```julia
 I_R1 = [R0, H, T1]
@@ -161,7 +159,7 @@ push!(C, ChanceNode(R2, I_R2))
 push!(X, Probabilities(R2, X_R2))
 ```
 
-We also add the treatment decision node $TD$ so that it's made based on the resulting risk estimate of the testing process.
+We also add the treatment decision node $TD$. The treatment decision is made based on the resulting risk estimate of the testing process.
 
 ```julia
 I_TD = [R2]
@@ -170,14 +168,14 @@ push!(D, DecisionNode(TD, I_TD))
 
 ### Test costs and health benefits
 
-To add the value node $TC$, which represents tests costs, we need to define the concequences of its different information states. The node and the concequences are added in the following way.
+To add the value node $TC$, which represents testing costs, we need to define the concequences of its different information states. The node and the concequences are added in the following way.
 
 ```julia
 I_TC = [T1, T2]
 Y_TC = zeros(S[I_TC]...)
 cost_TRS = -0.0034645
 cost_GRS = -0.004
-cost_forbidden = 0     #place holder cost for forbidden test combinations
+cost_forbidden = 0     #the cost of forbidden test combinations is negligible
 Y_TC[1 , 1] = cost_forbidden
 Y_TC[1 , 2] = cost_TRS + cost_GRS
 Y_TC[1, 3] = cost_TRS
@@ -191,7 +189,7 @@ push!(V, ValueNode(TC, I_TC))
 push!(Y, Consequences(TC, Y_TC))
 ```
 
-The health benefits achieved by the strategy are dictated by whether treatment is administered or not and if the patient has CHD or not. We add the final node to the model.
+The health benefits achieved by the strategy are dictated by whether treatment is administered and by the health of the patient. We add the final node to the model.
 
 ```julia
 I_HB = [H, TD]
