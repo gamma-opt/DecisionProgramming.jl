@@ -218,21 +218,21 @@ U = DefaultPathUtility(V, Y)
 
 
 ## Decision Model
-We begin by defining our model and declaring decision variables.
+We begin by defining our model and declaring the decision variables.
 ```julia
 model = Model()
 z = DecisionVariables(model, S, D)
 ```
 
-In this problem, we want to forbid the model from choosing paths where the same test is repeated twice and the paths where no test is conducted at first but then in the second testing decision a test is conducted. Neither of these situations would make sense in the real life problem setting, which is why we want to forbid them in the model. We do this by declaring these combinations of states as forbidden paths and then give them to the function that declares the path probability variables.
+In this problem, we want to forbid the model from choosing paths where the same test is repeated twice and the paths where the first testing decision is to not perform a test but then the second testing decision is to conduct a test. We forbid the paths by declaring these combinations of states as forbidden paths and then giving them to the function that declares the path probability variables.
 
-We also choose a scale factor of 100, which will be used to scale the probabilities. The probabilities need to be scaled because in this specific problem they are very small since the $R$ nodes have many states. Scaling the probabilities helps the solver find an optimal solution.
+We also choose a scale factor of 1000, which will be used to scale the path probabilities. The probabilities need to be scaled because in this specific problem they are very small since the $R$ nodes have many states. Scaling the probabilities helps the solver find an optimal solution.
 
 We declare the path probability variables and give the forbidden testing strategies and the scale factor to the function as additional information.
 
 ```julia
 forbidden_tests = ForbiddenPath[([T1,T2], Set([(1,1),(2,2),(3,1), (3,2)]))]
-scale_factor = 100
+scale_factor = 1000.0
 π_s = PathProbabilityVariables(model, z, S, P; hard_lower_bound = true, forbidden_paths = forbidden_tests, probability_scale_factor = scale_factor)
 ```
 
@@ -242,7 +242,7 @@ EV = expected_value(model, π_s, U)
 @objective(model, Max, EV)
 ```
 
-We set up the solver for the problem. 
+We set up the solver for the problem and optimise it. 
 ```julia
 optimizer = optimizer_with_attributes(
     () -> Gurobi.Optimizer(Gurobi.Env()),
@@ -264,7 +264,7 @@ We obtain the optimal decision strategy from the z variable values.
 Z = DecisionStrategy(z)
 ```
 
-We use the function ```analysing_results``` to visualise the results in order to inspect the decision strategy. We use the tailor made function is merely for convinience. From the printout, we can see that when the prior risk level is 12% the optimal decision strategy is to perform TRS testing in the first testing decision. At the second decision stage, GRS should be conducted if the updated risk estimate is between 16% and 28% otherwise no further testing should be performed. Treatment should be provided to those who have a final risk estimate greater than 18%. Notice that the blank spaces in the table are states which have a probability of zero, which means that given this data it is impossible for the patient to have their risk estimate updated to those risk levels.
+We use the function ```analysing_results``` to visualise the results in order to inspect the decision strategy. We use this tailor made function merely for convinience. From the printout, we can see that when the prior risk level is 12% the optimal decision strategy is to first perform TRS testing. At the second decision stage, GRS should be conducted if the updated risk estimate is between 16% and 28% and otherwise no further testing should be conducted. Treatment should be provided to those who have a final risk estimate greater than 18%. Notice that the blank spaces in the table are states which have a probability of zero, which means that given this data it is impossible for the patient to have their risk estimate updated to those risk levels.
 
 ```julia
 sprobs = StateProbabilities(S, P, Z)
