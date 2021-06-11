@@ -1,7 +1,7 @@
 using Logging
 using JuMP, Gurobi
 using DecisionProgramming
-using CSV, DataFrames
+using CSV, DataFrames, PrettyTables
 
 
 
@@ -108,6 +108,31 @@ function state_probabilities(risk_p::Array{Float64}, t::Int64, h::Int64, prior::
 end
 
 
+function analysing_results(Z::DecisionStrategy, sprobs::StateProbabilities)
+
+    d = Z.D[1] #taking one of the decision nodes to retrieve the information_set_R
+    information_set_R = vec(collect(paths(S[d.I_j])))
+    results = DataFrame(Information_set = map( x -> string(x) * "%", [0:1:100;]))
+    # T1
+    Z_j = Z.Z_j[1]
+    probs =  map(x -> x > 0 ? 1 : 0, get(sprobs.probs, 1,0)) #these are zeros and ones
+    dec = [Z_j(s_I) for s_I in information_set_R]
+    results[!, "T1"] = map(x -> x == 0 ? "" : "$x", probs.*dec)
+
+    # T2
+    Z_j = Z.Z_j[2]
+    probs = map(x -> x > 0 ? 1 : 0, (get(sprobs.probs, 4,0))) #these are zeros and ones
+    dec = [Z_j(s_I) for s_I in information_set_R]
+    results[!, "T2"] = map(x -> x == 0 ? "" : "$x", probs.*dec)
+
+    # TD
+    Z_j = Z.Z_j[3]
+    probs = map(x -> x > 0 ? 1 : 0, (get(sprobs.probs, 6,0))) #these are zeros and ones
+    dec = [Z_j(s_I) for s_I in information_set_R]
+    results[!, "TD"] = map(x -> x == 0 ? "" : "$x", probs.*dec)
+
+    pretty_table(results)
+end
 
 
 const R0 = 1
@@ -230,7 +255,7 @@ z = DecisionVariables(model, S, D)
 
 # Defining forbidden paths to include all those where a test is repeated twice
 forbidden_tests = ForbiddenPath[([T1,T2], Set([(1,1),(2,2),(3,1), (3,2)]))]
-scale_factor = 100.0
+scale_factor = 1000.0
 π_s = PathProbabilityVariables(model, z, S, P; hard_lower_bound = true, forbidden_paths = forbidden_tests, probability_scale_factor = scale_factor)
 
 EV = expected_value(model, π_s, U)
@@ -246,21 +271,18 @@ optimizer = optimizer_with_attributes(
 )
 set_optimizer(model, optimizer)
 
-GC.enable(false)
 optimize!(model)
-GC.enable(true)
 
 
 @info("Extracting results.")
 Z = DecisionStrategy(z)
 
-@info("Printing decision strategy:")
-print_decision_strategy(S, Z)
+@info("Printing decision strategy using tailor made function:")
+sprobs = StateProbabilities(S, P, Z)
+analysing_results(Z, sprobs)
 
 @info("Printing state probabilities:")
-sprobs = StateProbabilities(S, P, Z)
 # Here we can see that the probability of having a CHD event is exactly that of the chosen risk level
-print_state_probabilities(sprobs, [H])
 print_state_probabilities(sprobs, [R0, R1, R2])
 
 @info("Computing utility distribution.")
