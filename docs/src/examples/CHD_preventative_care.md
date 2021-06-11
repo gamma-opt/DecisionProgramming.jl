@@ -4,21 +4,21 @@
 
 > The problem setting is such that the patient is assumed to have a prior risk estimate. A risk estimate is a prediction of the patient’s chance of having a CHD event in the next ten years. The risk estimates are grouped into risk levels, which range from 0% to 100%. The first testing decision is made based on the prior risk estimate. The first testing decision entails deciding whether TRS or GRS should be performed or if no testing is needed. If a test is conducted, the risk estimate is updated and based on the new information, the second testing decision is made. The second testing decision entails deciding whether further testing should be conducted or not. The second testing decision is constrained so that the same test which was conducted in the first stage cannot be repeated. If a second test is conducted, the risk estimate is updated again. The treatment decision – dictating whether the patient receives statin therapy or not – is made based on the resulting risk estimate of this testing process. Note that if no tests are conducted, the treatment decision is made based on the prior risk estimate.
 
-In this example, we will showcase the subproblem that solves for the optimal decision strategy given a single prior risk level. The chosen risk level in this example is 12%. The solution to the main problem is found in [^1].
+In this example, we will showcase the subproblem, which solves for the optimal decision strategy given a single prior risk level. The chosen risk level in this example is 12%. The solution to the main problem is found in [^1].
 
 ## Influence Diagram
 ![](figures/CHD_preventative_care.svg)
 
 The influence diagram representation of the problem is seen above. The chance nodes $R$ represent the patient's risk estimate – the prior risk estimate being $R0$. The risk estimate nodes $R0$, $R1$ and $R2$ have 101 states $R = \{0%, 1%, ..., 100%\}$, which are the discretised risk levels that the risk estimate falls into. 
 
-The risk estimate is updated according to the first and second test decisions, which are represented by decision nodes $T1$ and $T2$. These nodes have states $T = \{TRS, GRS, no test\}. The health of the patient represented by chance node $H$ also affects the update of the risk estimate. In this model, the health of the patient indicates whether they will have a CHD event in the next ten years or not. Thus, the states of node $H = \{CHD, no CHD\}$. The treatment decision is represented by node $TD$ and it has states $TD = \{treatment, no treatment\}$.
+The risk estimate is updated according to the first and second test decisions, which are represented by decision nodes $T1$ and $T2$. These nodes have states $T = \{TRS, GRS, no test\}. The health of the patient represented by chance node $H$ also affects the update of the risk estimate. In this model, the health of the patient indicates whether they will have a CHD event in the next ten years or not. Thus, the node has states $H = \{CHD, no CHD\}$. The treatment decision is represented by node $TD$ and it has states $TD = \{treatment, no treatment\}$.
 
-The prior risk estimate represented by node $R0$ influences the health node $H$, because in the model, we assume that the prior risk accurately describes the
-probability of having a CHD event for technical reasons.
+The prior risk estimate represented by node $R0$ influences the health node $H$, because in the model we make the assumption that the prior risk accurately describes the
+probability of having a CHD event.
 
-The value nodes in the model are $TC$ and $HB$. Node $TC$ represents the testing costs incurred due to the testing decisions $T1$ and $T2$. Node $HB$ represents the health benefits achieved. The health benefits are measured in quality-adjusted life-years. These parameter values were evaluated in the study [^2].
+The value nodes in the model are $TC$ and $HB$. Node $TC$ represents the testing costs incurred due to the testing decisions $T1$ and $T2$. Node $HB$ represents the health benefits achieved. The test costs and health benefits are measured in quality-adjusted life-years. These parameter values were evaluated in the study [^2].
 
-In this problem, we begin by declaring the chosen prior risk level, reading the conditional probability data for the tests and declaring the discretisation of the risk levels. We also define functions ```posterior_probabilities ``` and ```state_probabilities```. These functions will be discussed below when defining the probabilities for the nodes $R$.
+We begin by declaring the chosen prior risk level, reading the conditional probability data for the tests and declaring the discretisation of the risk levels. The risk level 12% is referred to as 13 because indexing starts from 1 in Julia. Note also that the sample data in this repository, is dummy data due to distribution restrictions on the real data. We also define functions ```update_risk_distribution ```, ```state_probabilities``` and ```analysing_results ```. These functions will be discussed below when defining the probabilities for the nodes $R$.
 
 ```julia
 using Logging
@@ -31,15 +31,18 @@ const chosen_risk_level = 13
 const p_data = CSV.read("risk_prediction_data.csv", DataFrame)
 const risk_levels = vec(collect(0:0.01:1.0))
 
-function posterior_p(prior::Int64, t::Int64)...
+function update_risk_distribution(prior::Int64, t::Int64)...
 end
 
-function states_p(risk_p::Array{Float64}, t::Int64, h::Int64, prior::Int64)...
+function state_probabilities(risk_p::Array{Float64}, t::Int64, h::Int64, prior::Int64)...
+end
+
+function analysing_results(Z::DecisionStrategy, sprobs::StateProbabilities)...
 end
 ```
 
 
- Then we begin defining the decision programming model. First we define the node indices and states:
+ Then we begin defining the decision programming model. First, we define the node indices and states:
 
 ```julia
 const R0 = 1
@@ -76,17 +79,17 @@ Y = Vector{Consequences}()
 ```
 
 
-Next, we define the nodes with their information sets and corresponding probabilities or consequences.
+Next, we define the nodes with their information sets and corresponding probabilities for chance nodes and consequences for value nodes.
 
-### Prior risk estimate and health of patient
+### Prior risk estimate and health of the patient
 
-In this subproblem, the prior risk estimate is given and therefore the node $R0$ is actually not a chance node but a deterministic node. This is indicated in decision programming by setting probability of one state to one and the rest to zero. In this case
+In this subproblem, the prior risk estimate is given and therefore the node $R0$ is in effect a deterministic node. In decision programming a deterministic node is added as a chance node, for which the probability of one state is set to one and the probabilities of the rest of the states are set to zero. In this case
 
 $$ℙ(R0 = 12%)=1$$
 and 
 $$ℙ(R0 \neq 12%)= 0. $$
 
-Notice that node $R0$ is the root done in the influence diagram. Thus, the information set $I(R0)$ is empty. In decision programming we add node $R0$ and its state probabilities as follows:
+Notice also that node $R0$ is the first node in the influence diagram, meaning that its information set $I(R0)$ is empty. In decision programming we add node $R0$ and its state probabilities as follows:
 ```julia
 I_R0 = Vector{Node}()
 X_R0 = zeros(S[R0])
@@ -95,17 +98,17 @@ push!(C, ChanceNode(R0, I_R0))
 push!(X, Probabilities(R0, X_R0))
 ```
 
-Next we add node $H$ and its state probabilities. For modeling purposes, we define the information set of node $H$ to include the prior risk node $R0$. We set the probability of the patient experiencing a CHD event in the next ten years according to
+Next we add node $H$ and its state probabilities. For modeling purposes, we define the information set of node $H$ to include the prior risk node $R0$. We set the probability of the patient experiencing a CHD event in the next ten years according to the prior risk level such that
 
 $$ℙ(H = CHD | R0 = \alpha) = \alpha$$.
 
-We define the probability of the patient not experiencing a CHD event in the next ten years as the complement event. Thus, 
+We define the probability of the patient not experiencing a CHD event in the next ten years as the complement event. 
 
-$$ℙ(H = no CHD | R0 = \alpha) = 1 - \alpha$$.
+$$ℙ(H = no CHD | R0 = \alpha) = 1 - \alpha$$
 
 Since node $R0$ is actually deterministic, defining the health node $H$ in this way means that in the our model the patient has 12% probability of experiencing a CHD event and 88% chance of not suffering one.
 
-Node $H$ and its probabilities are added in the following way:
+Node $H$ and its probabilities are added in the following way.
 
 ```julia
 I_H = [R0]
@@ -116,16 +119,252 @@ push!(C, ChanceNode(H, I_H))
 push!(X, Probabilities(H, X_H))
 ```
 
-### First test decision and update of the risk estimate
+### Test decisions and updating the risk estimate
 
+The node representing the first test decision is added to the model in the following way.
+
+```julia
+I_T1 = [R0]
+push!(D, DecisionNode(T1, I_T1))
+```
+
+The probabilities of the states of node $R1$ are determined by calculating the updated risk estimates after a test is performed and aggregating these probabilities into the risk levels represented by the states of the node. The risk estimate update is calculated using the function ```update_risk_distribution```, which calculates the posterior probability distribution for a given health stat, test and prior risk estimate.
+
+$$ \textit{risk estimate} = P(\text{CHD} \mid \text{test result}) = \frac{P(\text{test result} \mid \text{CHD})}{P(\text{test result})}$$
+
+The probabilities $P(\text{test result} \mid \text{CHD})$ are test specific and these are read from the CSV data file. The updated risk estimates are aggregated according to the risk levels they fall into. These aggregated probabilities are then the state probabilities of node $R1$. The aggregating is done using function ```state_probabilities```. 
+
+The node $R1$ and its probabilities are added:
+
+```julia
+I_R1 = [R0, H, T1]
+X_R1 = zeros(S[I_R1]..., S[R1])
+for s_R0 = 1:101, s_H = 1:2, s_T1 = 1:3
+    X_R1[s_R0, s_H, s_T1, :] =  state_probabilities(update_risk_distribution(s_R0, s_T1), s_T1, s_H, s_R0)
+end
+push!(C, ChanceNode(R1, I_R1))
+push!(X, Probabilities(R1, X_R1))
+```
+
+Now we add node $T2$ and node $R2$ in a similar fashion as we added $T1$ and $R1$ above. 
+```julia
+I_T2 = [R1]
+push!(D, DecisionNode(T2, I_T2))
+
+
+I_R2 = [H, R1, T2]
+X_R2 = zeros(S[I_R2]..., S[R2])
+for s_R1 = 1:101, s_H = 1:2, s_T2 = 1:3
+    X_R2[s_H, s_R1, s_T2, :] =  state_probabilities(update_risk_distribution(s_R1, s_T2), s_T2, s_H, s_R1)
+end
+push!(C, ChanceNode(R2, I_R2))
+push!(X, Probabilities(R2, X_R2))
+```
+
+We also add the treatment decision node $TD$ so that it's made based on the resulting risk estimate of the testing process.
+
+```julia
+I_TD = [R2]
+push!(D, DecisionNode(TD, I_TD))
+```
+
+### Test costs and health benefits
+
+To add the value node $TC$, which represents tests costs, we need to define the concequences of its different information states. The node and the concequences are added in the following way.
+
+```julia
+I_TC = [T1, T2]
+Y_TC = zeros(S[I_TC]...)
+cost_TRS = -0.0034645
+cost_GRS = -0.004
+cost_forbidden = 0     #place holder cost for forbidden test combinations
+Y_TC[1 , 1] = cost_forbidden
+Y_TC[1 , 2] = cost_TRS + cost_GRS
+Y_TC[1, 3] = cost_TRS
+Y_TC[2, 1] =  cost_GRS + cost_TRS
+Y_TC[2, 2] = cost_forbidden
+Y_TC[2, 3] = cost_GRS
+Y_TC[3, 1] = cost_TRS
+Y_TC[3, 2] = cost_GRS
+Y_TC[3, 3] = 0
+push!(V, ValueNode(TC, I_TC))
+push!(Y, Consequences(TC, Y_TC))
+```
+
+The health benefits achieved by the strategy are dictated by whether treatment is administered or not and if the patient has CHD or not. We add the final node to the model.
+
+```julia
+I_HB = [H, TD]
+Y_HB = zeros(S[I_HB]...)
+Y_HB[1 , 1] = 6.89713671259061  # sick & treat
+Y_HB[1 , 2] = 6.65436854256236  # sick & don't treat
+Y_HB[2, 1] = 7.64528451705134   # healthy & treat
+Y_HB[2, 2] =  7.70088349200034  # healthy & don't treat
+push!(V, ValueNode(HB, I_HB))
+push!(Y, Consequences(HB, Y_HB))
+```
+
+### Validating Influence Diagram
+Before creating the decision model, we need to validate the influence diagram and sort the nodes, probabilities and consequences in increasing order by the node indices.
+
+```julia
+validate_influence_diagram(S, C, D, V)
+sort!.((C, D, V, X, Y), by = x -> x.j)
+```
+
+We also define the path probability and the path utility. We use the default path utility, which is the sum of the consequences of the path.
+```julia
+P = DefaultPathProbability(C, X)
+U = DefaultPathUtility(V, Y)
+```
 
 
 ## Decision Model
+We begin by defining our model and declaring decision variables.
+```julia
+model = Model()
+z = DecisionVariables(model, S, D)
+```
+
+In this problem, we want to forbid the model from choosing paths where the same test is repeated twice and the paths where no test is conducted at first but then in the second testing decision a test is conducted. Neither of these situations would make sense in the real life problem setting, which is why we want to forbid them in the model. We do this by declaring these combinations of states as forbidden paths and then give them to the function that declares the path probability variables.
+
+We also choose a scale factor of 100, which will be used to scale the probabilities. The probabilities need to be scaled because in this specific problem they are very small since the $R$ nodes have many states. Scaling the probabilities helps the solver find an optimal solution.
+
+We declare the path probability variables and give the forbidden testing strategies and the scale factor to the function as additional information.
+
+```julia
+forbidden_tests = ForbiddenPath[([T1,T2], Set([(1,1),(2,2),(3,1), (3,2)]))]
+scale_factor = 100
+π_s = PathProbabilityVariables(model, z, S, P; hard_lower_bound = true, forbidden_paths = forbidden_tests, probability_scale_factor = scale_factor)
+```
+
+We define the objective function as the expected value.
+```julia
+EV = expected_value(model, π_s, U)
+@objective(model, Max, EV)
+```
+
+We set up the solver for the problem. 
+```julia
+optimizer = optimizer_with_attributes(
+    () -> Gurobi.Optimizer(Gurobi.Env()),
+    "TimeLimit" => 100,
+    "IntFeasTol"=> 1e-9,
+    "MIPGap" => 1e-6
+)
+set_optimizer(model, optimizer)
+optimize!(model)
+```
 
 
 
 ## Analyzing Results
 
+### Decision Strategy
+We obtain the optimal decision strategy from the z variable values.
+```julia
+Z = DecisionStrategy(z)
+```
+
+We use the function ```analysing_results``` to visualise the results in order to inspect the decision strategy. We use the tailor made function is merely for convinience. From the printout, we can see that when the prior risk level is 12% the optimal decision strategy is to perform TRS testing in the first testing decision. At the second decision stage, GRS should be conducted if the updated risk estimate is between 16% and 28% otherwise no further testing should be performed. Treatment should be provided to those who have a final risk estimate greater than 18%. Notice that the blank spaces in the table are states which have a probability of zero, which means that given this data it is impossible for the patient to have their risk estimate updated to those risk levels.
+
+```julia
+sprobs = StateProbabilities(S, P, Z)
+```
+```julia
+julia> println(analysing_results(Z, sprobs))
+┌─────────────────┬────────┬────────┬────────┐
+│ Information_set │     T1 │     T2 │     TD │
+│          String │ String │ String │ String │
+├─────────────────┼────────┼────────┼────────┤
+│              0% │        │      3 │      2 │
+│              1% │        │      3 │      2 │
+│              2% │        │        │      2 │
+│              3% │        │      3 │      2 │
+│              4% │        │        │        │
+│              5% │        │        │        │
+│              6% │        │      3 │      2 │
+│              7% │        │      3 │      2 │
+│              8% │        │        │      2 │
+│              9% │        │        │      2 │
+│             10% │        │      3 │      2 │
+│             11% │        │      3 │      2 │
+│             12% │      1 │        │      2 │
+│             13% │        │      3 │      2 │
+│             14% │        │      3 │      2 │
+│             15% │        │        │      2 │
+│             16% │        │      2 │      2 │
+│             17% │        │      2 │      2 │
+│             18% │        │      2 │      1 │
+│             19% │        │        │      1 │
+│             20% │        │        │      1 │
+│             21% │        │      2 │      1 │
+│             22% │        │      2 │      1 │
+│             23% │        │      2 │      1 │
+│             24% │        │        │      1 │
+│             25% │        │        │      1 │
+│             26% │        │        │      1 │
+│             27% │        │        │      1 │
+│             28% │        │      3 │      1 │
+│             29% │        │      3 │      1 │
+│             30% │        │        │      1 │
+│        ⋮        │   ⋮     │   ⋮    │   ⋮    │
+└─────────────────┴────────┴────────┴────────┘
+                               70 rows omitted
+```
+
+### State Probabilities
+We can inspect the state probabilities for the optimal decision strategy $Z$. These describe the probability of each state in each node, given the decision strategy $Z$.
+
+```julia
+julia> print_state_probabilities(sprobs, [R0, R1, R2])
+┌───────┬──────────┬──────────┬──────────┬──────────┬──────────┬──────────┬────
+│  Node │  State 1 │  State 2 │  State 3 │  State 4 │  State 5 │  State 6 │  
+│ Int64 │  Float64 │  Float64 │  Float64 │  Float64 │  Float64 │  Float64 │ ⋯
+├───────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼────
+│     1 │ 0.000000 │ 0.000000 │ 0.000000 │ 0.000000 │ 0.000000 │ 0.000000 │ ⋯
+│     4 │ 0.001030 │ 0.355590 │ 0.000000 │ 0.130765 │ 0.000000 │ 0.000000 │ ⋯
+│     6 │ 0.001420 │ 0.355590 │ 0.000966 │ 0.132009 │ 0.000000 │ 0.000000 │ ⋯
+└───────┴──────────┴──────────┴──────────┴──────────┴──────────┴──────────┴────
+                                                            96 columns omitted
+```
+
+### Utility Distribution
+
+We can also print the utility distribution for the optimal strategy and some basic statistics for the distribution.
+
+```julia
+udist = UtilityDistribution(S, P, U, Z)
+```
+
+```julia
+julia> print_utility_distribution(udist)
+┌──────────┬─────────────┐
+│  Utility │ Probability │
+│  Float64 │     Float64 │
+├──────────┼─────────────┤
+│ 6.646904 │    0.005318 │
+│ 6.650904 │    0.038707 │
+│ 6.889672 │    0.011602 │
+│ 6.893672 │    0.064374 │
+│ 7.637820 │    0.034188 │
+│ 7.641820 │    0.073974 │
+│ 7.693419 │    0.035266 │
+│ 7.697419 │    0.736573 │
+└──────────┴─────────────┘
+```
+```julia
+julia> print_statistics(udist)
+┌──────────┬────────────┐
+│     Name │ Statistics │
+│   String │    Float64 │
+├──────────┼────────────┤
+│     Mean │   7.583923 │
+│      Std │   0.291350 │
+│ Skewness │  -2.414877 │
+│ Kurtosis │   4.059711 │
+└──────────┴────────────┘
+```
 
 
 ## References
