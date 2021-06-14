@@ -9,15 +9,16 @@ In this example, we will showcase the subproblem, which optimises the decision s
 ## Influence Diagram
 ![](figures/CHD_preventative_care.svg)
 
-The influence diagram representation of the problem is seen above. The chance nodes $R$ represent the patient's risk estimate – the prior risk estimate being $R0$. The risk estimate nodes $R0$, $R1$ and $R2$ have 101 states $R = \{0%, 1%, ..., 100%\}$, which are the discretised risk levels for the risk estimates. 
+The influence diagram representation of the problem is seen above. The chance nodes $R$ represent the patient's risk estimate – the prior risk estimate being $R0$. The risk estimate nodes $R0$, $R1$ and $R2$ have 101 states $R = \{0\%, 1\%, ..., 100\%\}$, which are the discretised risk levels for the risk estimates.
 
-The risk estimate is updated according to the first and second test decisions, which are represented by decision nodes $T1$ and $T2$. These nodes have states $T = \{TRS, GRS, no test\}. The health of the patient represented by chance node $H$ also affects the update of the risk estimate. In this model, the health of the patient indicates whether they will have a CHD event in the next ten years or not. Thus, the node has states $H = \{CHD, no CHD\}$. The treatment decision is represented by node $TD$ and it has states $TD = \{treatment, no treatment\}$.
+The risk estimate is updated according to the first and second test decisions, which are represented by decision nodes $T1$ and $T2$. These nodes have states $T = \{\text{TRS, GRS, no test}\}$. The health of the patient represented by chance node $H$ also affects the update of the risk estimate. In this model, the health of the patient indicates whether they will have a CHD event in the next ten years or not. Thus, the node has states $H = \{\text{CHD, no CHD}\}$. The treatment decision is represented by node $TD$ and it has states $TD = \{\text{treatment, no treatment}\}$.
+
 
 The prior risk estimate represented by node $R0$ influences the health node $H$, because in the model we make the assumption that the prior risk estimate accurately describes the probability of having a CHD event.
 
 The value nodes in the model are $TC$ and $HB$. Node $TC$ represents the testing costs incurred due to the testing decisions $T1$ and $T2$. Node $HB$ represents the health benefits achieved. The test costs and health benefits are measured in quality-adjusted life-years. These parameter values were evaluated in the study [^2].
 
-We begin by declaring the chosen prior risk level and reading the conditional probability data for the tests. The risk level 12% is referred to as 13 because indexing begins from 1. Note also that the sample data in this repository is dummy data due to distribution restrictions on the real data. We also define functions ```update_risk_distribution ```, ```state_probabilities``` and ```analysing_results ```. These functions will be discussed in the following sections.
+We begin by declaring the chosen prior risk level and reading the conditional probability data for the tests. The risk level 12% is referred to as 13 because indexing begins from 1 and the first risk level is 0\%. Note also that the sample data in this repository is dummy data due to distribution restrictions on the real data. We also define functions ```update_risk_distribution ```, ```state_probabilities``` and ```analysing_results ```. These functions will be discussed in the following sections.
 
 ```julia
 using Logging
@@ -44,7 +45,7 @@ end
 
 ```julia
 const R0 = 1
-const H = 2
+const H  = 2
 const T1 = 3
 const R1 = 4
 const T2 = 5
@@ -83,9 +84,9 @@ Next, we define the nodes with their information sets and corresponding probabil
 
 In this subproblem, the prior risk estimate is given and therefore the node $R0$ is in effect a deterministic node. In decision programming a deterministic node is added as a chance node for which the probability of one state is set to one and the probabilities of the rest of the states are set to zero. In this case
 
-$$ℙ(R0 = 12%)=1$$
-and 
-$$ℙ(R0 \neq 12%)= 0. $$
+$$ℙ(R0 = 12\%)=1$$
+and
+$$ℙ(R0 \neq 12\%)= 0. $$
 
 Notice also that node $R0$ is the first node in the influence diagram, meaning that its information set $I(R0)$ is empty. In decision programming we add node $R0$ and its state probabilities as follows:
 ```julia
@@ -98,11 +99,11 @@ push!(X, Probabilities(R0, X_R0))
 
 Next we add node $H$ and its state probabilities. For modeling purposes, we define the information set of node $H$ to include the prior risk node $R0$. We set the probability of the patient experiencing a CHD event in the next ten years according to the prior risk level such that
 
-$$ℙ(H = CHD | R0 = \alpha) = \alpha$$.
+$$ℙ(H = \text{CHD} | R0 = \alpha) = \alpha.$$
 
-We define the probability of the patient not experiencing a CHD event in the next ten years as the complement event. 
+We define the probability of the patient not experiencing a CHD event in the next ten years as the complement event.
 
-$$ℙ(H = no CHD | R0 = \alpha) = 1 - \alpha$$
+$$ℙ(H = \text{no CHD} | R0 = \alpha) = 1 - \alpha$$
 
 Since node $R0$ is actually deterministic, defining the health node $H$ in this way means that in the our model the patient has 12% probability of experiencing a CHD event and 88% chance of not suffering one.
 
@@ -111,8 +112,8 @@ Node $H$ and its probabilities are added in the following way.
 ```julia
 I_H = [R0]
 X_H = zeros(S[R0], S[H])
-X_H[:, 1] = risk_levels     
-X_H[:, 2] = 1 .- X_H[:, 1] 
+X_H[:, 1] = data.risk_levels
+X_H[:, 2] = 1 .- X_H[:, 1]
 push!(C, ChanceNode(H, I_H))
 push!(X, Probabilities(H, X_H))
 ```
@@ -128,9 +129,9 @@ push!(D, DecisionNode(T1, I_T1))
 
 The probabilities of the states of node $R1$ are determined by calculating the updated risk estimates after a test is performed and aggregating these probabilities into the risk levels. The update of the risk estimate is calculated using the function ```update_risk_distribution```, which calculates the posterior probability distribution for a given health state, test and prior risk estimate.
 
-$$ \textit{risk estimate} = P(\text{CHD} \mid \text{test result}) = \frac{P(\text{test result} \mid \text{CHD})}{P(\text{test result})}$$
+$$ \textit{risk estimate} = P(\text{CHD} \mid \text{test result}) = \frac{P(\text{test result} \mid \text{CHD})P(\text{CHD})}{P(\text{test result})}$$
 
-The probabilities $P(\text{test result} \mid \text{CHD})$ are test specific and these are read from the CSV data file. The updated risk estimates are aggregated according to the risk levels. These aggregated probabilities are then the state probabilities of node $R1$. The aggregating is done using function ```state_probabilities```. 
+The probabilities $P(\text{test result} \mid \text{CHD})$ are test specific and these are read from the CSV data file. The updated risk estimates are aggregated according to the risk levels. These aggregated probabilities are then the state probabilities of node $R1$. The aggregating is done using function ```state_probabilities```.
 
 The node $R1$ and its probabilities are added in the following way.
 
@@ -144,7 +145,7 @@ push!(C, ChanceNode(R1, I_R1))
 push!(X, Probabilities(R1, X_R1))
 ```
 
-Now we add node $T2$ and node $R2$ in a similar fashion as we added $T1$ and $R1$ above. 
+Now we add node $T2$ and node $R2$ in a similar fashion as we added $T1$ and $R1$ above.
 ```julia
 I_T2 = [R1]
 push!(D, DecisionNode(T2, I_T2))
@@ -168,7 +169,7 @@ push!(D, DecisionNode(TD, I_TD))
 
 ### Test costs and health benefits
 
-To add the value node $TC$, which represents testing costs, we need to define the concequences of its different information states. The node and the concequences are added in the following way.
+To add the value node $TC$, which represents testing costs, we need to define the consequences of its different information states. The node and the consequences are added in the following way.
 
 ```julia
 I_TC = [T1, T2]
@@ -231,7 +232,7 @@ We also choose a scale factor of 1000, which will be used to scale the path prob
 We declare the path probability variables and give the forbidden testing strategies and the scale factor to the function as additional information.
 
 ```julia
-forbidden_tests = ForbiddenPath[([T1,T2], Set([(1,1),(2,2),(3,1), (3,2)]))]
+forbidden_tests = ForbiddenPath[([T1,T2], Set([(1,1),(2,2),(3,1),(3,2)]))]
 scale_factor = 1000.0
 π_s = PathProbabilityVariables(model, z, S, P; hard_lower_bound = true, forbidden_paths = forbidden_tests, probability_scale_factor = scale_factor)
 ```
@@ -317,7 +318,7 @@ We can inspect the state probabilities for the optimal decision strategy $Z$. Th
 ```julia
 julia> print_state_probabilities(sprobs, [R0, R1, R2])
 ┌───────┬──────────┬──────────┬──────────┬──────────┬──────────┬──────────┬────
-│  Node │  State 1 │  State 2 │  State 3 │  State 4 │  State 5 │  State 6 │  
+│  Node │  State 1 │  State 2 │  State 3 │  State 4 │  State 5 │  State 6 │
 │ Int64 │  Float64 │  Float64 │  Float64 │  Float64 │  Float64 │  Float64 │ ⋯
 ├───────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼────
 │     1 │ 0.000000 │ 0.000000 │ 0.000000 │ 0.000000 │ 0.000000 │ 0.000000 │ ⋯
