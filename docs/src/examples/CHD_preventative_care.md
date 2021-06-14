@@ -1,6 +1,6 @@
 # CHD preventative care allocation
 ## Description
- The goal in this optimisation problem is to determine an optimal decision strategy for the testing and treatment decisions involved in providing preventative care for coronary heart disease (CHD). The optimality is evaluated from the perspective of the national health care system and is measured through net monetary benefit (NMB). The tests available in this model are the traditional risk score (TRS) and the genetic risk score (GRS) and the form of preventative care is statin treatment. The description of the CHD preventative care allocation problem is below. This description is from [^1] from section 3.2.
+ The goal in this optimisation problem is to determine an optimal decision strategy for the testing and treatment decisions involved in providing preventative care for coronary heart disease (CHD). The optimality is evaluated from the perspective of the national health care system and is measured in quality-adjusted life-years (QALY). The tests available in this model are the traditional risk score (TRS) and the genetic risk score (GRS) and the form of preventative care is statin treatment. The description of the CHD preventative care allocation problem is below. This description is from [^1] from section 3.2.
 
 > The problem setting is such that the patient is assumed to have a prior risk estimate. A risk estimate is a prediction of the patient’s chance of having a CHD event in the next ten years. The risk estimates are grouped into risk levels, which range from 0% to 100%. The first testing decision is made based on the prior risk estimate. The first testing decision entails deciding whether TRS or GRS should be performed or if no testing is needed. If a test is conducted, the risk estimate is updated and based on the new information, the second testing decision is made. The second testing decision entails deciding whether further testing should be conducted or not. The second testing decision is constrained so that the same test which was conducted in the first stage cannot be repeated. If a second test is conducted, the risk estimate is updated again. The treatment decision – dictating whether the patient receives statin therapy or not – is made based on the resulting risk estimate of this testing process. Note that if no tests are conducted, the treatment decision is made based on the prior risk estimate.
 
@@ -16,7 +16,7 @@ The risk estimate is updated according to the first and second test decisions, w
 
 The prior risk estimate represented by node $R0$ influences the health node $H$, because in the model we make the assumption that the prior risk estimate accurately describes the probability of having a CHD event.
 
-The value nodes in the model are $TC$ and $HB$. Node $TC$ represents the testing costs incurred due to the testing decisions $T1$ and $T2$. Node $HB$ represents the health benefits achieved. The test costs and health benefits are measured in quality-adjusted life-years. These parameter values were evaluated in the study [^2].
+The value nodes in the model are $TC$ and $HB$. Node $TC$ represents the testing costs incurred due to the testing decisions $T1$ and $T2$. Node $HB$ represents the health benefits achieved. The testing costs and health benefits are measured in QALYs. These parameter values were evaluated in the study [^2].
 
 We begin by declaring the chosen prior risk level and reading the conditional probability data for the tests. The risk level 12% is referred to as 13 because indexing begins from 1 and the first risk level is 0\%. Note also that the sample data in this repository is dummy data due to distribution restrictions on the real data. We also define functions ```update_risk_distribution ```, ```state_probabilities``` and ```analysing_results ```. These functions will be discussed in the following sections.
 
@@ -312,21 +312,6 @@ julia> println(analysing_results(Z, sprobs))
                                70 rows omitted
 ```
 
-### State Probabilities
-We can inspect the state probabilities for the optimal decision strategy $Z$. These describe the probability of each state in each node, given the decision strategy $Z$.
-
-```julia
-julia> print_state_probabilities(sprobs, [R0, R1, R2])
-┌───────┬──────────┬──────────┬──────────┬──────────┬──────────┬──────────┬────
-│  Node │  State 1 │  State 2 │  State 3 │  State 4 │  State 5 │  State 6 │
-│ Int64 │  Float64 │  Float64 │  Float64 │  Float64 │  Float64 │  Float64 │ ⋯
-├───────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┼────
-│     1 │ 0.000000 │ 0.000000 │ 0.000000 │ 0.000000 │ 0.000000 │ 0.000000 │ ⋯
-│     4 │ 0.001030 │ 0.355590 │ 0.000000 │ 0.130765 │ 0.000000 │ 0.000000 │ ⋯
-│     6 │ 0.001420 │ 0.355590 │ 0.000966 │ 0.132009 │ 0.000000 │ 0.000000 │ ⋯
-└───────┴──────────┴──────────┴──────────┴──────────┴──────────┴──────────┴────
-                                                            96 columns omitted
-```
 
 ### Utility Distribution
 
