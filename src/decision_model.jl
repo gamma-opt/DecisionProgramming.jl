@@ -48,19 +48,19 @@ function path_probability_variable(model::Model, z::DecisionVariables, s::Path, 
 
         # Constraints the path probability to zero if the path is
         # incompatible with the decision strategy.
-        for (d, z_j) in zip(z.D, z.z)
-            @constraint(model, π ≤ z_j[s[[d.I_j; d.j]]...] * probability_scale_factor)
-        end
+    #    for (d, z_j) in zip(z.D, z.z)
+    #        @constraint(model, π ≤ z_j[s[[d.I_j; d.j]]...] * probability_scale_factor)
+    #    end
     else
         # Path is forbidden, probability must be zero
         @constraint(model, π ≤ 0)
     end
 
     # Hard constraint on the lower bound.
-    if hard_lower_bound
-        n_z = @expression(model, sum(z_j[s[[d.I_j; d.j]]...] for (d, z_j) in zip(z.D, z.z)))
-        @constraint(model, π ≥ (P(s) + n_z - length(z.D)) * probability_scale_factor)
-    end
+#    if hard_lower_bound
+#        n_z = @expression(model, sum(z_j[s[[d.I_j; d.j]]...] for (d, z_j) in zip(z.D, z.z)))
+#        @constraint(model, π ≥ (P(s) + n_z - length(z.D)) * probability_scale_factor)
+#    end
 
     return π
 end
@@ -77,6 +77,20 @@ Base.pairs(π_s::PathProbabilityVariables) = pairs(π_s.data)
 Base.iterate(π_s::PathProbabilityVariables) = iterate(π_s.data)
 Base.iterate(π_s::PathProbabilityVariables, i) = iterate(π_s.data, i)
 
+
+function decision_strategy_constraint(model::Model, S::States, z::DecisionVariables, π_s::PathProbabilityVariables, probability_scale_factor::Float64)
+    for (d, z) in zip(z.D, z.z) #iterate through all decision nodes
+        dims = S[[d.I_j; d.j]]
+        for s in paths(dims) # iterate through all information states and states of d
+            # fix state of each node in the information set and of the decision node
+            information_group = Dict([d.I_j; d.j] .=> s)
+
+            @constraint(model, sum(get(π_s, s_j, 0) for s_j in paths(S, information_group)) ≤ z[s...] * probability_scale_factor)
+        end
+    end
+end
+
+
 """Create path probability variables and constraints.
 
 # Examples
@@ -85,19 +99,41 @@ Base.iterate(π_s::PathProbabilityVariables, i) = iterate(π_s.data, i)
 π_s = PathProbabilityVariables(model, z, S, P; hard_lower_bound=false))
 ```
 """
-function PathProbabilityVariables(model::Model, z::DecisionVariables, S::States, P::AbstractPathProbability; hard_lower_bound::Bool=true, names::Bool=false, name::String="π_s", forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[], fixed::Dict{Node, State}=Dict{Node, State}(), probability_scale_factor::Float64=1.0)
+function PathProbabilityVariables(model::Model,
+    z::DecisionVariables,
+    S::States,
+    P::AbstractPathProbability;
+    hard_lower_bound::Bool=true,
+    names::Bool=false,
+    name::String="π_s",
+    forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
+    fixed::Dict{Node, State}=Dict{Node, State}(),
+    probability_scale_factor::Float64=1.0,
+    lazy_probability_cut::Bool=false)
+
     if !isempty(forbidden_paths)
         @warn("Forbidden paths is still an experimental feature.")
     end
 
     # Create path probability variable for each effective path.
     N = length(S)
-    π_s = Dict{Path{N}, VariableRef}(
+    variables_π_s = Dict{Path{N}, VariableRef}(
         s => path_probability_variable(model, z, s, P, hard_lower_bound, is_forbidden(s, forbidden_paths), probability_scale_factor, (names ? "$(name)$(s)" : ""))
         for s in paths(S, fixed)
         if !iszero(P(s))
     )
-    PathProbabilityVariables{N}(π_s)
+
+    π_s = PathProbabilityVariables{N}(variables_π_s)
+
+    decision_strategy_constraint(model, S, z, π_s, probability_scale_factor)
+
+    if !lazy_probability_cut
+        @constraint(model, sum(values(π_s)) == 1.0 * probability_scale_factor)
+    else
+        probability_cut(model, π_s, P, probability_scale_factor=probability_scale_factor)
+    end
+
+    π_s
 end
 
 """Adds a probability cut to the model as a lazy constraint.
