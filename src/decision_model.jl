@@ -66,14 +66,17 @@ Base.iterate(x_s::BinaryPathVariables) = iterate(x_s.data)
 Base.iterate(x_s::BinaryPathVariables, i) = iterate(x_s.data, i)
 
 
-function decision_strategy_constraint(model::Model, S::States, d::DecisionNode, z::Array{VariableRef}, π_s::PathProbabilityVariables, probability_scale_factor::Float64)
+function decision_strategy_constraint(model::Model, S::States, d::DecisionNode, z::Array{VariableRef}, x_s::BinaryPathVariables)
 
     dims = S[[d.I_j; d.j]]
+    # Calculating the number of paths that include the information structure of I(d) and d
+    num_S_d_paths = prod(dims)
+
     for s in paths(dims) # iterate through all information states and states of d
         # fix state of each node in the information set and of the decision node
         information_group = Dict([d.I_j; d.j] .=> s)
 
-        @constraint(model, sum(get(π_s, s_j, 0) for s_j in paths(S, information_group)) ≤ z[s...] * probability_scale_factor)
+        @constraint(model, sum(get(π_s, s_j, 0) for s_j in paths(S, information_group)) ≤ z[s...] * num_S_paths)
     end
 
 end
@@ -111,7 +114,7 @@ function BinaryPathVariables(model::Model,
 
     # Add decision strategy constraints for each decision node
     for (d, z) in zip(z.D, z.z)
-        decision_strategy_constraint(model, S, d, z, x_s, probability_scale_factor)
+        decision_strategy_constraint(model, S, d, z, x_s)
     end
 
     x_s
