@@ -169,16 +169,12 @@ function active_paths_cut(model::Model, π_s::PathProbabilityVariables, S::State
     end
     ϵ = minimum(P(s) for s in keys(π_s))
     num_compatible_paths = prod(S[c.j] for c in P.C)
-    # Add the constraints only once
-    flag = false
     function active_paths_cut(cb_data)
-        flag && return
         πnum = sum(callback_value(cb_data, π) ≥ ϵ * probability_scale_factor for π in values(π_s))
         if !isapprox(πnum, num_compatible_paths, atol = atol)
             num_active_paths = @expression(model, sum(π / (P(s) * probability_scale_factor) for (s, π) in π_s))
             con = @build_constraint(num_active_paths == num_compatible_paths)
             MOI.submit(model, MOI.LazyConstraint(cb_data), con)
-            flag = true
         end
     end
     MOI.set(model, MOI.LazyConstraintCallback(), active_paths_cut)
