@@ -42,25 +42,13 @@ function path_probability_variable(model::Model, z::DecisionVariables, s::Path, 
     @constraint(model, π ≥ 0)
 
     if !forbidden
-
         # Hard constraint on the upper bound.
         @constraint(model, π ≤ P(s) * probability_scale_factor)
 
-        # Constraints the path probability to zero if the path is
-        # incompatible with the decision strategy.
-    #    for (d, z_j) in zip(z.D, z.z)
-    #        @constraint(model, π ≤ z_j[s[[d.I_j; d.j]]...] * probability_scale_factor)
-    #    end
     else
         # Path is forbidden, probability must be zero
         @constraint(model, π ≤ 0)
     end
-
-    # Hard constraint on the lower bound.
-#    if hard_lower_bound
-#        n_z = @expression(model, sum(z_j[s[[d.I_j; d.j]]...] for (d, z_j) in zip(z.D, z.z)))
-#        @constraint(model, π ≥ (P(s) + n_z - length(z.D)) * probability_scale_factor)
-#    end
 
     return π
 end
