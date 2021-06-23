@@ -34,36 +34,36 @@ function is_forbidden(s::Path, forbidden_paths::Vector{ForbiddenPath})
     return !all(s[k]∉v for (k, v) in forbidden_paths)
 end
 
-function path_probability_variable(model::Model, z::DecisionVariables, s::Path, P::AbstractPathProbability, hard_lower_bound::Bool, forbidden::Bool, probability_scale_factor::Float64, base_name::String="")
-    # Create a path probability variable
-    π = @variable(model, base_name=base_name)
+function binary_path_variable(model::Model, z::DecisionVariables, forbidden::Bool, base_name::String="")
+    # Create a binary path variable
+    x = @variable(model, base_name=base_name)
 
-    # Soft constraint on the lower bound.
-    @constraint(model, π ≥ 0)
+    # Constraint on the lower bound.
+    @constraint(model, x ≥ 0)
 
     if !forbidden
-        # Hard constraint on the upper bound.
-        @constraint(model, π ≤ P(s) * probability_scale_factor)
+        # Constraint on the upper bound.
+        @constraint(model, x ≤ 1.0)
 
     else
-        # Path is forbidden, probability must be zero
-        @constraint(model, π ≤ 0)
+        # Path is forbidden, path is not included and thus x must be zero
+        @constraint(model, x ≤ 0)
     end
 
-    return π
+    return x
 end
 
-struct PathProbabilityVariables{N} <: AbstractDict{Path{N}, VariableRef}
+struct BinaryPathVariables{N} <: AbstractDict{Path{N}, VariableRef}
     data::Dict{Path{N}, VariableRef}
 end
 
-Base.getindex(π_s::PathProbabilityVariables, key) = getindex(π_s.data, key)
-Base.get(π_s::PathProbabilityVariables, key, default) = get(π_s.data, key, default)
-Base.keys(π_s::PathProbabilityVariables) = keys(π_s.data)
-Base.values(π_s::PathProbabilityVariables) = values(π_s.data)
-Base.pairs(π_s::PathProbabilityVariables) = pairs(π_s.data)
-Base.iterate(π_s::PathProbabilityVariables) = iterate(π_s.data)
-Base.iterate(π_s::PathProbabilityVariables, i) = iterate(π_s.data, i)
+Base.getindex(x_s::BinaryPathVariables, key) = getindex(x_s.data, key)
+Base.get(x_s::BinaryPathVariables, key, default) = get(x_s.data, key, default)
+Base.keys(x_s::BinaryPathVariables) = keys(x_s.data)
+Base.values(x_s::BinaryPathVariables) = values(x_s.data)
+Base.pairs(x_s::BinaryPathVariables) = pairs(x_s.data)
+Base.iterate(x_s::BinaryPathVariables) = iterate(x_s.data)
+Base.iterate(x_s::BinaryPathVariables, i) = iterate(x_s.data, i)
 
 
 function decision_strategy_constraint(model::Model, S::States, z::DecisionVariables, π_s::PathProbabilityVariables, probability_scale_factor::Float64)
@@ -83,21 +83,17 @@ end
 
 # Examples
 ```julia
-π_s = PathProbabilityVariables(model, z, S, P)
-π_s = PathProbabilityVariables(model, z, S, P; hard_lower_bound=false))
+x_s = BinaryPathVariables(model, z, S)
+x_s = BinaryPathVariables(model, z, S; names=true, name="x")
 ```
 """
-function PathProbabilityVariables(model::Model,
+function BinaryPathVariables(model::Model,
     z::DecisionVariables,
     S::States,
-    P::AbstractPathProbability;
-    hard_lower_bound::Bool=true,
     names::Bool=false,
-    name::String="π_s",
+    name::String="x_s",
     forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
-    fixed::Dict{Node, State}=Dict{Node, State}(),
-    probability_scale_factor::Float64=1.0,
-    lazy_probability_cut::Bool=false)
+    fixed::Dict{Node, State}=Dict{Node, State}())
 
     if !isempty(forbidden_paths)
         @warn("Forbidden paths is still an experimental feature.")
@@ -105,23 +101,18 @@ function PathProbabilityVariables(model::Model,
 
     # Create path probability variable for each effective path.
     N = length(S)
-    variables_π_s = Dict{Path{N}, VariableRef}(
-        s => path_probability_variable(model, z, s, P, hard_lower_bound, is_forbidden(s, forbidden_paths), probability_scale_factor, (names ? "$(name)$(s)" : ""))
+    variables_x_s = Dict{Path{N}, VariableRef}(
+        s => binary_path_variable(model, z, is_forbidden(s, forbidden_paths), (names ? "$(name)$(s)" : ""))
         for s in paths(S, fixed)
         if !iszero(P(s))
     )
 
-    π_s = PathProbabilityVariables{N}(variables_π_s)
+    x_s = BinaryPathVariables{N}(variables_x_s)
 
-    decision_strategy_constraint(model, S, z, π_s, probability_scale_factor)
+    decision_strategy_constraint(model, S, z, x_s, probability_scale_factor)
 
-    if !lazy_probability_cut
-        @constraint(model, sum(values(π_s)) == 1.0 * probability_scale_factor)
-    else
-        probability_cut(model, π_s, P, probability_scale_factor=probability_scale_factor)
-    end
 
-    π_s
+    x_s
 end
 
 """Adds a probability cut to the model as a lazy constraint.
