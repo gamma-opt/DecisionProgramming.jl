@@ -23,6 +23,7 @@ makedocs(
             "examples/pig-breeding.md",
             "examples/n-monitoring.md",
             "examples/contingent-portfolio-programming.md",
+            "examples/CHD_preventative_care.md",
         ],
         "api.md"
     ]
