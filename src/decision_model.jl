@@ -125,23 +125,6 @@ function BinaryPathVariables(model::Model,
     x_s
 end
 
-"""Adds a probability cut to the model as a lazy constraint.
-
-# Examples
-```julia
-probability_cut(model, π_s, P)
-```
-"""
-function probability_cut(model::Model, π_s::PathProbabilityVariables, P::AbstractPathProbability; probability_scale_factor::Float64=1.0)
-    function probability_cut(cb_data)
-        πsum = sum(callback_value(cb_data, π) for π in values(π_s))
-        if !isapprox(πsum, 1.0 * probability_scale_factor)
-            con = @build_constraint(sum(values(π_s)) == 1.0 * probability_scale_factor)
-            MOI.submit(model, MOI.LazyConstraint(cb_data), con)
-        end
-    end
-    MOI.set(model, MOI.LazyConstraintCallback(), probability_cut)
-end
 
 """Adds a active paths cut to the model as a lazy constraint.
 
