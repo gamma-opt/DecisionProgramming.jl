@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>CHD preventative care allocation · DecisionProgramming.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="DecisionProgramming.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">DecisionProgramming.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Decision Programming</span><ul><li><a class="tocitem" href="../../decision-programming/influence-diagram/">Influence Diagram</a></li><li><a class="tocitem" href="../../decision-programming/paths-and-properties/">Paths and Properties</a></li><li><a class="tocitem" href="../../decision-programming/decision-model/">Decision Model</a></li><li><a class="tocitem" href="../../decision-programming/analyzing-decision-strategies/">Analyzing Decision Strategies</a></li><li><a class="tocitem" href="../../decision-programming/computational-complexity/">Computational Complexity</a></li></ul></li><li><a class="tocitem" href="../../usage/">Usage</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../used-car-buyer/">Used Car Buyer</a></li><li><a class="tocitem" href="../pig-breeding/">Pig Breeding</a></li><li><a class="tocitem" href="../n-monitoring/">N-Monitoring</a></li><li><a class="tocitem" href="../contingent-portfolio-programming/">Contingent Portfolio Programming</a></li></ul></li><li><a class="tocitem" href="../../api/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>CHD preventative care allocation</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>CHD preventative care allocation</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/gamma-opt/DecisionProgramming.jl/blob/master/docs/src/examples/CHD_preventative_care.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="CHD-preventative-care-allocation"><a class="docs-heading-anchor" href="#CHD-preventative-care-allocation">CHD preventative care allocation</a><a id="CHD-preventative-care-allocation-1"></a><a class="docs-heading-anchor-permalink" href="#CHD-preventative-care-allocation" title="Permalink"></a></h1><h2 id="Description"><a class="docs-heading-anchor" href="#Description">Description</a><a id="Description-1"></a><a class="docs-heading-anchor-permalink" href="#Description" title="Permalink"></a></h2><p>The goal in this optimisation problem is to determine an optimal decision strategy for the testing and treatment decisions involved in providing preventative care for coronary heart disease (CHD). The optimality is evaluated from the perspective of the national health care system and is measured in quality-adjusted life-years (QALY). The tests available in this model are the traditional risk score (TRS) and the genetic risk score (GRS) and the form of preventative care is statin treatment. The description of the CHD preventative care allocation problem is below. This description is from <sup class="footnote-reference"><a id="citeref-1" href="#footnote-1">[1]</a></sup> from section 3.2.</p><blockquote><p>The problem setting is such that the patient is assumed to have a prior risk estimate. A risk estimate is a prediction of the patient’s chance of having a CHD event in the next ten years. The risk estimates are grouped into risk levels, which range from 0% to 100%. The first testing decision is made based on the prior risk estimate. The first testing decision entails deciding whether TRS or GRS should be performed or if no testing is needed. If a test is conducted, the risk estimate is updated and based on the new information, the second testing decision is made. The second testing decision entails deciding whether further testing should be conducted or not. The second testing decision is constrained so that the same test which was conducted in the first stage cannot be repeated. If a second test is conducted, the risk estimate is updated again. The treatment decision – dictating whether the patient receives statin therapy or not – is made based on the resulting risk estimate of this testing process. Note that if no tests are conducted, the treatment decision is made based on the prior risk estimate.</p></blockquote><p>In this example, we will showcase the subproblem, which optimises the decision strategy given a single prior risk level. The chosen risk level in this example is 12%. The solution to the main problem is found in <sup class="footnote-reference"><a id="citeref-1" href="#footnote-1">[1]</a></sup>.</p><h2 id="Influence-Diagram"><a class="docs-heading-anchor" href="#Influence-Diagram">Influence Diagram</a><a id="Influence-Diagram-1"></a><a class="docs-heading-anchor-permalink" href="#Influence-Diagram" title="Permalink"></a></h2><p><img src="../figures/CHD_preventative_care.svg" alt/></p><p>The influence diagram representation of the problem is seen above. The chance nodes <span>$R$</span> represent the patient&#39;s risk estimate – the prior risk estimate being <span>$R0$</span>. The risk estimate nodes <span>$R0$</span>, <span>$R1$</span> and <span>$R2$</span> have 101 states <span>$R = \{0\%, 1\%, ..., 100\%\}$</span>, which are the discretised risk levels for the risk estimates.</p><p>The risk estimate is updated according to the first and second test decisions, which are represented by decision nodes <span>$T1$</span> and <span>$T2$</span>. These nodes have states <span>$T = \{\text{TRS, GRS, no test}\}$</span>. The health of the patient represented by chance node <span>$H$</span> also affects the update of the risk estimate. In this model, the health of the patient indicates whether they will have a CHD event in the next ten years or not. Thus, the node has states <span>$H = \{\text{CHD, no CHD}\}$</span>. The treatment decision is represented by node <span>$TD$</span> and it has states <span>$TD = \{\text{treatment, no treatment}\}$</span>.</p><p>The prior risk estimate represented by node <span>$R0$</span> influences the health node <span>$H$</span>, because in the model we make the assumption that the prior risk estimate accurately describes the probability of having a CHD event.</p><p>The value nodes in the model are <span>$TC$</span> and <span>$HB$</span>. Node <span>$TC$</span> represents the testing costs incurred due to the testing decisions <span>$T1$</span> and <span>$T2$</span>. Node <span>$HB$</span> represents the health benefits achieved. The testing costs and health benefits are measured in QALYs. These parameter values were evaluated in the study <sup class="footnote-reference"><a id="citeref-2" href="#footnote-2">[2]</a></sup>.</p><p>We begin by declaring the chosen prior risk level and reading the conditional probability data for the tests. The risk level 12% is referred to as 13 because indexing begins from 1 and the first risk level is 0\%. Note also that the sample data in this repository is dummy data due to distribution restrictions on the real data. We also define functions <code>update_risk_distribution</code>, <code>state_probabilities</code> and <code>analysing_results</code>. These functions will be discussed in the following sections.</p><pre><code class="language-julia">using Logging
+using JuMP, Gurobi
+using DecisionProgramming
+using CSV, DataFrames, PrettyTables
+
+
+const chosen_risk_level = 13
+const data = CSV.read(&quot;risk_prediction_data.csv&quot;, DataFrame)
+
+function update_risk_distribution(prior::Int64, t::Int64)...
+end
+
+function state_probabilities(risk_p::Array{Float64}, t::Int64, h::Int64, prior::Int64)...
+end
+
+function analysing_results(Z::DecisionStrategy, sprobs::StateProbabilities)...
+end</code></pre><p>Then we begin defining the decision programming model. First, we define the node indices and states:</p><pre><code class="language-julia">const R0 = 1
+const H  = 2
+const T1 = 3
+const R1 = 4
+const T2 = 5
+const R2 = 6
+const TD = 7
+const TC = 8
+const HB = 9
+
+
+const H_states = [&quot;CHD&quot;, &quot;no CHD&quot;]
+const T_states = [&quot;TRS&quot;, &quot;GRS&quot;, &quot;no test&quot;]
+const TD_states = [&quot;treatment&quot;, &quot;no treatment&quot;]
+const R_states = map( x -&gt; string(x) * &quot;%&quot;, [0:1:100;])
+const TC_states = [&quot;TRS&quot;, &quot;GRS&quot;, &quot;TRS &amp; GRS&quot;, &quot;no tests&quot;]
+const HB_states = [&quot;CHD &amp; treatment&quot;, &quot;CHD &amp; no treatment&quot;, &quot;no CHD &amp; treatment&quot;, &quot;no CHD &amp; no treatment&quot;]
+
+@info(&quot;Creating the influence diagram.&quot;)
+S = States([
+    (length(R_states), [R0, R1, R2]),
+    (length(H_states), [H]),
+    (length(T_states), [T1, T2]),
+    (length(TD_states), [TD])
+])
+
+C = Vector{ChanceNode}()
+D = Vector{DecisionNode}()
+V = Vector{ValueNode}()
+X = Vector{Probabilities}()
+Y = Vector{Consequences}()</code></pre><p>Next, we define the nodes with their information sets and corresponding probabilities for chance nodes and consequences for value nodes.</p><h3 id="Prior-risk-estimate-and-health-of-the-patient"><a class="docs-heading-anchor" href="#Prior-risk-estimate-and-health-of-the-patient">Prior risk estimate and health of the patient</a><a id="Prior-risk-estimate-and-health-of-the-patient-1"></a><a class="docs-heading-anchor-permalink" href="#Prior-risk-estimate-and-health-of-the-patient" title="Permalink"></a></h3><p>In this subproblem, the prior risk estimate is given and therefore the node <span>$R0$</span> is in effect a deterministic node. In decision programming a deterministic node is added as a chance node for which the probability of one state is set to one and the probabilities of the rest of the states are set to zero. In this case</p><p class="math-container">\[ℙ(R0 = 12\%)=1\]</p><p>and $ℙ(R0 \neq 12\%)= 0. $</p><p>Notice also that node <span>$R0$</span> is the first node in the influence diagram, meaning that its information set <span>$I(R0)$</span> is empty. In decision programming we add node <span>$R0$</span> and its state probabilities as follows:</p><pre><code class="language-julia">I_R0 = Vector{Node}()
+X_R0 = zeros(S[R0])
+X_R0[chosen_risk_level] = 1
+push!(C, ChanceNode(R0, I_R0))
+push!(X, Probabilities(R0, X_R0))</code></pre><p>Next we add node <span>$H$</span> and its state probabilities. For modeling purposes, we define the information set of node <span>$H$</span> to include the prior risk node <span>$R0$</span>. We set the probability of the patient experiencing a CHD event in the next ten years according to the prior risk level such that</p><p class="math-container">\[ℙ(H = \text{CHD} | R0 = \alpha) = \alpha.\]</p><p>We define the probability of the patient not experiencing a CHD event in the next ten years as the complement event.</p><p class="math-container">\[ℙ(H = \text{no CHD} | R0 = \alpha) = 1 - \alpha\]</p><p>Since node <span>$R0$</span> is actually deterministic, defining the health node <span>$H$</span> in this way means that in the our model the patient has 12% probability of experiencing a CHD event and 88% chance of not suffering one.</p><p>Node <span>$H$</span> and its probabilities are added in the following way.</p><pre><code class="language-julia">I_H = [R0]
+X_H = zeros(S[R0], S[H])
+X_H[:, 1] = data.risk_levels
+X_H[:, 2] = 1 .- X_H[:, 1]
+push!(C, ChanceNode(H, I_H))
+push!(X, Probabilities(H, X_H))</code></pre><h3 id="Test-decisions-and-updating-the-risk-estimate"><a class="docs-heading-anchor" href="#Test-decisions-and-updating-the-risk-estimate">Test decisions and updating the risk estimate</a><a id="Test-decisions-and-updating-the-risk-estimate-1"></a><a class="docs-heading-anchor-permalink" href="#Test-decisions-and-updating-the-risk-estimate" title="Permalink"></a></h3><p>The node representing the first test decision is added to the model in the following way.</p><pre><code class="language-julia">I_T1 = [R0]
+push!(D, DecisionNode(T1, I_T1))</code></pre><p>The probabilities of the states of node <span>$R1$</span> are determined by calculating the updated risk estimates after a test is performed and aggregating these probabilities into the risk levels. The update of the risk estimate is calculated using the function <code>update_risk_distribution</code>, which calculates the posterior probability distribution for a given health state, test and prior risk estimate.</p>$<p>\textit{risk estimate} = P(\text{CHD} \mid \text{test result}) = \frac{P(\text{test result} \mid \text{CHD})P(\text{CHD})}{P(\text{test result})}$</p><p>The probabilities <span>$P(\text{test result} \mid \text{CHD})$</span> are test specific and these are read from the CSV data file. The updated risk estimates are aggregated according to the risk levels. These aggregated probabilities are then the state probabilities of node <span>$R1$</span>. The aggregating is done using function <code>state_probabilities</code>.</p><p>The node <span>$R1$</span> and its probabilities are added in the following way.</p><pre><code class="language-julia">I_R1 = [R0, H, T1]
+X_R1 = zeros(S[I_R1]..., S[R1])
+for s_R0 = 1:101, s_H = 1:2, s_T1 = 1:3
+    X_R1[s_R0, s_H, s_T1, :] =  state_probabilities(update_risk_distribution(s_R0, s_T1), s_T1, s_H, s_R0)
+end
+push!(C, ChanceNode(R1, I_R1))
+push!(X, Probabilities(R1, X_R1))</code></pre><p>Now we add node <span>$T2$</span> and node <span>$R2$</span> in a similar fashion as we added <span>$T1$</span> and <span>$R1$</span> above.</p><pre><code class="language-julia">I_T2 = [R1]
+push!(D, DecisionNode(T2, I_T2))
+
+
+I_R2 = [H, R1, T2]
+X_R2 = zeros(S[I_R2]..., S[R2])
+for s_R1 = 1:101, s_H = 1:2, s_T2 = 1:3
+    X_R2[s_H, s_R1, s_T2, :] =  state_probabilities(update_risk_distribution(s_R1, s_T2), s_T2, s_H, s_R1)
+end
+push!(C, ChanceNode(R2, I_R2))
+push!(X, Probabilities(R2, X_R2))</code></pre><p>We also add the treatment decision node <span>$TD$</span>. The treatment decision is made based on the resulting risk estimate of the testing process.</p><pre><code class="language-julia">I_TD = [R2]
+push!(D, DecisionNode(TD, I_TD))</code></pre><h3 id="Test-costs-and-health-benefits"><a class="docs-heading-anchor" href="#Test-costs-and-health-benefits">Test costs and health benefits</a><a id="Test-costs-and-health-benefits-1"></a><a class="docs-heading-anchor-permalink" href="#Test-costs-and-health-benefits" title="Permalink"></a></h3><p>To add the value node <span>$TC$</span>, which represents testing costs, we need to define the consequences of its different information states. The node and the consequences are added in the following way.</p><pre><code class="language-julia">I_TC = [T1, T2]
+Y_TC = zeros(S[I_TC]...)
+cost_TRS = -0.0034645
+cost_GRS = -0.004
+cost_forbidden = 0     #the cost of forbidden test combinations is negligible
+Y_TC[1 , 1] = cost_forbidden
+Y_TC[1 , 2] = cost_TRS + cost_GRS
+Y_TC[1, 3] = cost_TRS
+Y_TC[2, 1] =  cost_GRS + cost_TRS
+Y_TC[2, 2] = cost_forbidden
+Y_TC[2, 3] = cost_GRS
+Y_TC[3, 1] = cost_TRS
+Y_TC[3, 2] = cost_GRS
+Y_TC[3, 3] = 0
+push!(V, ValueNode(TC, I_TC))
+push!(Y, Consequences(TC, Y_TC))</code></pre><p>The health benefits achieved by the strategy are dictated by whether treatment is administered and by the health of the patient. We add the final node to the model.</p><pre><code class="language-julia">I_HB = [H, TD]
+Y_HB = zeros(S[I_HB]...)
+Y_HB[1 , 1] = 6.89713671259061  # sick &amp; treat
+Y_HB[1 , 2] = 6.65436854256236  # sick &amp; don&#39;t treat
+Y_HB[2, 1] = 7.64528451705134   # healthy &amp; treat
+Y_HB[2, 2] =  7.70088349200034  # healthy &amp; don&#39;t treat
+push!(V, ValueNode(HB, I_HB))
+push!(Y, Consequences(HB, Y_HB))</code></pre><h3 id="Validating-Influence-Diagram"><a class="docs-heading-anchor" href="#Validating-Influence-Diagram">Validating Influence Diagram</a><a id="Validating-Influence-Diagram-1"></a><a class="docs-heading-anchor-permalink" href="#Validating-Influence-Diagram" title="Permalink"></a></h3><p>Before creating the decision model, we need to validate the influence diagram and sort the nodes, probabilities and consequences in increasing order by the node indices.</p><pre><code class="language-julia">validate_influence_diagram(S, C, D, V)
+sort!.((C, D, V, X, Y), by = x -&gt; x.j)</code></pre><p>We also define the path probability and the path utility. We use the default path utility, which is the sum of the consequences of the path.</p><pre><code class="language-julia">P = DefaultPathProbability(C, X)
+U = DefaultPathUtility(V, Y)</code></pre><h2 id="Decision-Model"><a class="docs-heading-anchor" href="#Decision-Model">Decision Model</a><a id="Decision-Model-1"></a><a class="docs-heading-anchor-permalink" href="#Decision-Model" title="Permalink"></a></h2><p>We begin by defining our model and declaring the decision variables.</p><pre><code class="language-julia">model = Model()
+z = DecisionVariables(model, S, D)</code></pre><p>In this problem, we want to forbid the model from choosing paths where the same test is repeated twice and the paths where the first testing decision is to not perform a test but then the second testing decision is to conduct a test. We forbid the paths by declaring these combinations of states as forbidden paths and then giving them to the function that declares the path probability variables.</p><p>We also choose a scale factor of 1000, which will be used to scale the path probabilities. The probabilities need to be scaled because in this specific problem they are very small since the <span>$R$</span> nodes have many states. Scaling the probabilities helps the solver find an optimal solution.</p><p>We declare the path probability variables and give the forbidden testing strategies and the scale factor to the function as additional information.</p><pre><code class="language-julia">forbidden_tests = ForbiddenPath[([T1,T2], Set([(1,1),(2,2),(3,1),(3,2)]))]
+scale_factor = 1000.0
+π_s = PathProbabilityVariables(model, z, S, P; hard_lower_bound = true, forbidden_paths = forbidden_tests, probability_scale_factor = scale_factor)</code></pre><p>We define the objective function as the expected value.</p><pre><code class="language-julia">EV = expected_value(model, π_s, U)
+@objective(model, Max, EV)</code></pre><p>We set up the solver for the problem and optimise it. </p><pre><code class="language-julia">optimizer = optimizer_with_attributes(
+    () -&gt; Gurobi.Optimizer(Gurobi.Env()),
+    &quot;TimeLimit&quot; =&gt; 100,
+    &quot;IntFeasTol&quot;=&gt; 1e-9,
+    &quot;MIPGap&quot; =&gt; 1e-6
+)
+set_optimizer(model, optimizer)
+optimize!(model)</code></pre><h2 id="Analyzing-Results"><a class="docs-heading-anchor" href="#Analyzing-Results">Analyzing Results</a><a id="Analyzing-Results-1"></a><a class="docs-heading-anchor-permalink" href="#Analyzing-Results" title="Permalink"></a></h2><h3 id="Decision-Strategy"><a class="docs-heading-anchor" href="#Decision-Strategy">Decision Strategy</a><a id="Decision-Strategy-1"></a><a class="docs-heading-anchor-permalink" href="#Decision-Strategy" title="Permalink"></a></h3><p>We obtain the optimal decision strategy from the z variable values.</p><pre><code class="language-julia">Z = DecisionStrategy(z)</code></pre><p>We use the function <code>analysing_results</code> to visualise the results in order to inspect the decision strategy. We use this tailor made function merely for convinience. From the printout, we can see that when the prior risk level is 12% the optimal decision strategy is to first perform TRS testing. At the second decision stage, GRS should be conducted if the updated risk estimate is between 16% and 28% and otherwise no further testing should be conducted. Treatment should be provided to those who have a final risk estimate greater than 18%. Notice that the blank spaces in the table are states which have a probability of zero, which means that given this data it is impossible for the patient to have their risk estimate updated to those risk levels.</p><pre><code class="language-julia">sprobs = StateProbabilities(S, P, Z)</code></pre><pre><code class="language-julia">julia&gt; println(analysing_results(Z, sprobs))
+┌─────────────────┬────────┬────────┬────────┐
+│ Information_set │     T1 │     T2 │     TD │
+│          String │ String │ String │ String │
+├─────────────────┼────────┼────────┼────────┤
+│              0% │        │      3 │      2 │
+│              1% │        │      3 │      2 │
+│              2% │        │        │      2 │
+│              3% │        │      3 │      2 │
+│              4% │        │        │        │
+│              5% │        │        │        │
+│              6% │        │      3 │      2 │
+│              7% │        │      3 │      2 │
+│              8% │        │        │      2 │
+│              9% │        │        │      2 │
+│             10% │        │      3 │      2 │
+│             11% │        │      3 │      2 │
+│             12% │      1 │        │      2 │
+│             13% │        │      3 │      2 │
+│             14% │        │      3 │      2 │
+│             15% │        │        │      2 │
+│             16% │        │      2 │      2 │
+│             17% │        │      2 │      2 │
+│             18% │        │      2 │      1 │
+│             19% │        │        │      1 │
+│             20% │        │        │      1 │
+│             21% │        │      2 │      1 │
+│             22% │        │      2 │      1 │
+│             23% │        │      2 │      1 │
+│             24% │        │        │      1 │
+│             25% │        │        │      1 │
+│             26% │        │        │      1 │
+│             27% │        │        │      1 │
+│             28% │        │      3 │      1 │
+│             29% │        │      3 │      1 │
+│             30% │        │        │      1 │
+│        ⋮        │   ⋮     │   ⋮    │   ⋮    │
+└─────────────────┴────────┴────────┴────────┘
+                               70 rows omitted</code></pre><h3 id="Utility-Distribution"><a class="docs-heading-anchor" href="#Utility-Distribution">Utility Distribution</a><a id="Utility-Distribution-1"></a><a class="docs-heading-anchor-permalink" href="#Utility-Distribution" title="Permalink"></a></h3><p>We can also print the utility distribution for the optimal strategy and some basic statistics for the distribution.</p><pre><code class="language-julia">udist = UtilityDistribution(S, P, U, Z)</code></pre><pre><code class="language-julia">julia&gt; print_utility_distribution(udist)
+┌──────────┬─────────────┐
+│  Utility │ Probability │
+│  Float64 │     Float64 │
+├──────────┼─────────────┤
+│ 6.646904 │    0.005318 │
+│ 6.650904 │    0.038707 │
+│ 6.889672 │    0.011602 │
+│ 6.893672 │    0.064374 │
+│ 7.637820 │    0.034188 │
+│ 7.641820 │    0.073974 │
+│ 7.693419 │    0.035266 │
+│ 7.697419 │    0.736573 │
+└──────────┴─────────────┘</code></pre><pre><code class="language-julia">julia&gt; print_statistics(udist)
+┌──────────┬────────────┐
+│     Name │ Statistics │
+│   String │    Float64 │
+├──────────┼────────────┤
+│     Mean │   7.583923 │
+│      Std │   0.291350 │
+│ Skewness │  -2.414877 │
+│ Kurtosis │   4.059711 │
+└──────────┴────────────┘</code></pre><h2 id="References"><a class="docs-heading-anchor" href="#References">References</a><a id="References-1"></a><a class="docs-heading-anchor-permalink" href="#References" title="Permalink"></a></h2><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>Hankimaa H. (2021). Optimising the use of genetic testing in prevention of CHD using Decision Programming. http://urn.fi/URN:NBN:fi:aalto-202103302644</li><li class="footnote" id="footnote-2"><a class="tag is-link" href="#citeref-2">2</a>Hynninen Y. (2019). Value of genetic testing in the prevention of coronary heart disease events. PLOS ONE, 14(1):1–16. https://doi.org/10.1371/journal.pone.0210010</li></ul></section></article><nav class="docs-footer"><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 24 June 2021 11:43">Thursday 24 June 2021</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
