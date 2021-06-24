@@ -199,8 +199,8 @@ end
 EV = expected_value(model, π_s, U)
 ```
 """
-function expected_value(model::Model, π_s::PathProbabilityVariables, U::AbstractPathUtility; probability_scale_factor::Float64=1.0)
-    @expression(model, sum(π / probability_scale_factor * U(s) for (s, π) in π_s))
+function expected_value(model::Model, x_s::BinaryPathVariables, U::AbstractPathUtility, P::AbstractPathProbability; probability_scale_factor::Float64=1.0)
+    @expression(model, sum(P(s) * x(s) * U(s) * probability_scale_factor for (s, x) in x_s))
 end
 
 """Create a conditional value-at-risk (CVaR) objective.
