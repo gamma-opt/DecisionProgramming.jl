@@ -194,9 +194,13 @@ end
 CVaR = conditional_value_at_risk(model, π_s, U, α)
 ```
 """
-function conditional_value_at_risk(model::Model, π_s::PathProbabilityVariables{N}, U::AbstractPathUtility, α::Float64; probability_scale_factor::Float64=1.0) where N
+function conditional_value_at_risk(model::Model, x_s::BinaryPathVariables{N}, U::AbstractPathUtility, P::AbstractPathProbability, α::Float64; probability_scale_factor::Float64=1.0) where N
     if !(0 < α ≤ 1)
         throw(DomainError("α should be 0 < α ≤ 1"))
+    end
+
+    if !(probability_scale_factor == 1.0)
+        @warn("The conditional value at risk is scaled by the probability_scale_factor. Make sure other terms of the objective function are also scaled.")
     end
 
     # Pre-computed parameters
@@ -213,7 +217,7 @@ function conditional_value_at_risk(model::Model, π_s::PathProbabilityVariables{
     @constraint(model, η ≥ u_min)
     @constraint(model, η ≤ u_max)
     ρ′_s = Dict{Path{N}, VariableRef}()
-    for (s, π) in π_s
+    for (s, x) in x_s
         u_s = U(s)
         λ = @variable(model, binary=true)
         λ′ = @variable(model, binary=true)
@@ -228,14 +232,14 @@ function conditional_value_at_risk(model::Model, π_s::PathProbabilityVariables{
         @constraint(model, ρ ≤ λ * probability_scale_factor)
         @constraint(model, ρ′ ≤ λ′* probability_scale_factor)
         @constraint(model, ρ ≤ ρ′)
-        @constraint(model, ρ′ ≤ π)
-        @constraint(model, π - (1 - λ)* probability_scale_factor ≤ ρ)
+        @constraint(model, ρ′ ≤ x * P(s) * probability_scale_factor)
+        @constraint(model, (x * P(s) - (1 - λ))* probability_scale_factor ≤ ρ)
         ρ′_s[s] = ρ′
     end
     @constraint(model, sum(values(ρ′_s)) == α * probability_scale_factor)
 
     # Return CVaR as an expression
-    CVaR = @expression(model, sum(ρ_bar * U(s) for (s, ρ_bar) in ρ′_s) / (α * probability_scale_factor))
+    CVaR = @expression(model, sum(ρ_bar * U(s) for (s, ρ_bar) in ρ′_s) / α)
 
     return CVaR
 end
