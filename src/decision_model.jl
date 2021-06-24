@@ -72,11 +72,15 @@ function decision_strategy_constraint(model::Model, S::States, d::DecisionNode, 
     # Calculating the number of paths that include the information structure of I(d) and d
     num_S_d_paths = prod(dims)
 
+    #    decision_nodes_in_I_j = d.I_j[k in map(x -> x.j, D)]
+    #    num_states_of_decision_nodes_in_SIj = prod(S[dI_j] for dI_j in d.I_j ])
+    #    num_S_otherdecisions = prod_S_decisions / S[d.j]
+
     for s in paths(dims) # iterate through all information states and states of d
         # fix state of each node in the information set and of the decision node
         information_group = Dict([d.I_j; d.j] .=> s)
 
-        @constraint(model, sum(get(π_s, s_j, 0) for s_j in paths(S, information_group)) ≤ z[s...] * num_S_paths)
+        @constraint(model, sum(get(x_s, s_j, 0) for s_j in paths(S, information_group)) ≤ z[s...] * num_S_d_paths)
     end
 
 end
@@ -93,6 +97,7 @@ x_s = BinaryPathVariables(model, z, S; names=true, name="x")
 function BinaryPathVariables(model::Model,
     z::DecisionVariables,
     S::States,
+    P::AbstractPathProbability;
     names::Bool=false,
     name::String="x_s",
     forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
