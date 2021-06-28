@@ -96,6 +96,7 @@ function PathProbabilityVariables(model::Model,
     forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
     fixed::Dict{Node, State}=Dict{Node, State}(),
     probability_scale_factor::Float64=1.0,
+    probability_cut::Bool=true,
     lazy_probability_cut::Bool=false)
 
     if !isempty(forbidden_paths)
@@ -118,10 +119,12 @@ function PathProbabilityVariables(model::Model,
     end
 
     # Constrain sum of path probabilities either using an explicit or lazy constraint
-    if !lazy_probability_cut
-        @constraint(model, sum(values(π_s)) == 1.0 * probability_scale_factor)
-    else
-        probability_cut(model, π_s, P, probability_scale_factor=probability_scale_factor)
+    if probability_cut
+        if lazy_probability_cut
+            probability_cut(model, π_s, P, probability_scale_factor=probability_scale_factor)
+        else
+            @constraint(model, sum(values(π_s)) == 1.0 * probability_scale_factor)
+        end
     end
 
     π_s
