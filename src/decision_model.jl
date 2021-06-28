@@ -34,7 +34,7 @@ function is_forbidden(s::Path, forbidden_paths::Vector{ForbiddenPath})
     return !all(s[k]∉v for (k, v) in forbidden_paths)
 end
 
-function path_probability_variable(model::Model, z::DecisionVariables, s::Path, P::AbstractPathProbability, hard_lower_bound::Bool, forbidden::Bool, probability_scale_factor::Float64, base_name::String="")
+function path_probability_variable(model::Model, z::DecisionVariables, s::Path, P::AbstractPathProbability, forbidden::Bool, probability_scale_factor::Float64, base_name::String="")
     # Create a path probability variable
     π = @variable(model, base_name=base_name)
 
@@ -75,7 +75,7 @@ function decision_strategy_constraint(model::Model, S::States, d::DecisionNode, 
 
         @constraint(model, sum(get(π_s, s_j, 0) for s_j in paths(S, information_group)) ≤ z[s...] * probability_scale_factor)
     end
-    
+
 end
 
 
@@ -91,7 +91,6 @@ function PathProbabilityVariables(model::Model,
     z::DecisionVariables,
     S::States,
     P::AbstractPathProbability;
-    hard_lower_bound::Bool=true,
     names::Bool=false,
     name::String="π_s",
     forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
@@ -106,7 +105,7 @@ function PathProbabilityVariables(model::Model,
     # Create path probability variable for each effective path.
     N = length(S)
     variables_π_s = Dict{Path{N}, VariableRef}(
-        s => path_probability_variable(model, z, s, P, hard_lower_bound, is_forbidden(s, forbidden_paths), probability_scale_factor, (names ? "$(name)$(s)" : ""))
+        s => path_probability_variable(model, z, s, P, is_forbidden(s, forbidden_paths), probability_scale_factor, (names ? "$(name)$(s)" : ""))
         for s in paths(S, fixed)
         if !iszero(P(s))
     )
