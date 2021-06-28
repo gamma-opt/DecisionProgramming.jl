@@ -106,6 +106,9 @@ function BinaryPathVariables(model::Model,
     if !isempty(forbidden_paths)
         @warn("Forbidden paths is still an experimental feature.")
     end
+    if probability_scale_factor ≤ 0
+        throw(DomainError("The probability_scale_factor must be greater than 0."))
+    end
 
     # Create path probability variable for each effective path.
     N = length(S)
@@ -139,6 +142,11 @@ function active_paths_cut(model::Model, π_s::PathProbabilityVariables, S::State
     if !all_active_states
         throw(DomainError("Cannot use active paths cut if all states are not active."))
     end
+
+    if probability_scale_factor ≤ 0
+        throw(DomainError("The probability_scale_factor must be greater than 0."))
+    end
+
     ϵ = minimum(P(s) for s in keys(π_s))
     num_compatible_paths = prod(S[c.j] for c in P.C)
     function active_paths_cut(cb_data)
@@ -183,6 +191,10 @@ EV = expected_value(model, π_s, U)
 ```
 """
 function expected_value(model::Model, x_s::BinaryPathVariables, U::AbstractPathUtility, P::AbstractPathProbability; probability_scale_factor::Float64=1.0)
+    if probability_scale_factor ≤ 0
+        throw(DomainError("The probability_scale_factor must be greater than 0."))
+    end
+
     @expression(model, sum(P(s) * x(s) * U(s) * probability_scale_factor for (s, x) in x_s))
 end
 
@@ -195,6 +207,9 @@ CVaR = conditional_value_at_risk(model, π_s, U, α)
 ```
 """
 function conditional_value_at_risk(model::Model, x_s::BinaryPathVariables{N}, U::AbstractPathUtility, P::AbstractPathProbability, α::Float64; probability_scale_factor::Float64=1.0) where N
+    if probability_scale_factor ≤ 0
+        throw(DomainError("The probability_scale_factor must be greater than 0."))
+    end
     if !(0 < α ≤ 1)
         throw(DomainError("α should be 0 < α ≤ 1"))
     end
