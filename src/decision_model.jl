@@ -160,7 +160,7 @@ function expected_value(model::Model, x_s::BinaryPathVariables, U::AbstractPathU
         throw(DomainError("The probability_scale_factor must be greater than 0."))
     end
 
-    @expression(model, sum(P(s) * x(s) * U(s) * probability_scale_factor for (s, x) in x_s))
+    @expression(model, sum(P(s) * x * U(s) * probability_scale_factor for (s, x) in x_s))
 end
 
 """Create a conditional value-at-risk (CVaR) objective.
