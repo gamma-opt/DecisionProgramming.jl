@@ -106,9 +106,6 @@ function BinaryPathVariables(model::Model,
     if !isempty(forbidden_paths)
         @warn("Forbidden paths is still an experimental feature.")
     end
-    if probability_scale_factor ≤ 0
-        throw(DomainError("The probability_scale_factor must be greater than 0."))
-    end
 
     # Create path probability variable for each effective path.
     N = length(S)
