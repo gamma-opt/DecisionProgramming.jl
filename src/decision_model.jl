@@ -129,38 +129,6 @@ function BinaryPathVariables(model::Model,
 end
 
 
-"""Adds a active paths cut to the model as a lazy constraint.
-
-# Examples
-```julia
-atol = 0.9  # Tolerance to trigger the creation of the lazy cut
-active_paths_cut(model, π_s, S, P; atol=atol)
-```
-"""
-function active_paths_cut(model::Model, π_s::PathProbabilityVariables, S::States, P::AbstractPathProbability; atol::Float64 = 0.9, probability_scale_factor::Float64=1.0)
-    all_active_states = all(all((!).(iszero.(x))) for x in P.X)
-    if !all_active_states
-        throw(DomainError("Cannot use active paths cut if all states are not active."))
-    end
-
-    if probability_scale_factor ≤ 0
-        throw(DomainError("The probability_scale_factor must be greater than 0."))
-    end
-
-    ϵ = minimum(P(s) for s in keys(π_s))
-    num_compatible_paths = prod(S[c.j] for c in P.C)
-    function active_paths_cut(cb_data)
-        πnum = sum(callback_value(cb_data, π) ≥ ϵ * probability_scale_factor for π in values(π_s))
-        if !isapprox(πnum, num_compatible_paths, atol = atol)
-            num_active_paths = @expression(model, sum(π / (P(s) * probability_scale_factor) for (s, π) in π_s))
-            con = @build_constraint(num_active_paths == num_compatible_paths)
-            MOI.submit(model, MOI.LazyConstraint(cb_data), con)
-        end
-    end
-    MOI.set(model, MOI.LazyConstraintCallback(), active_paths_cut)
-end
-
-
 # --- Objective Functions ---
 
 """Positive affine transformation of path utility. Always evaluates positive values.
