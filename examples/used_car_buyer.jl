@@ -68,16 +68,16 @@ U = DefaultPathUtility(V, Y)
 
 @info("Creating the decision model.")
 model = Model()
+U⁺ = PositivePathUtility(S, U)
 z = DecisionVariables(model, S, D)
-π_s = PathProbabilityVariables(model, z, S, P)
-EV = expected_value(model, π_s, U)
+x_s = BinaryPathVariables(model, z, S, P)
+EV = expected_value(model, x_s, U⁺, P)
 @objective(model, Max, EV)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
     () -> Gurobi.Optimizer(Gurobi.Env()),
     "IntFeasTol"      => 1e-9,
-    "LazyConstraints" => 1,
 )
 set_optimizer(model, optimizer)
 optimize!(model)
