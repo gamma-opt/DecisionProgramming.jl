@@ -129,7 +129,7 @@ push!(D, DecisionNode(T1, I_T1))
 
 The probabilities of the states of node $R1$ are determined by calculating the updated risk estimates after a test is performed and aggregating these probabilities into the risk levels. The update of the risk estimate is calculated using the function ```update_risk_distribution```, which calculates the posterior probability distribution for a given health state, test and prior risk estimate.
 
-$$ \textit{risk estimate} = P(\text{CHD} \mid \text{test result}) = \frac{P(\text{test result} \mid \text{CHD})P(\text{CHD})}{P(\text{test result})}$$
+$$\textit{risk estimate} = P(\text{CHD} \mid \text{test result}) = \frac{P(\text{test result} \mid \text{CHD})P(\text{CHD})}{P(\text{test result})}$$
 
 The probabilities $P(\text{test result} \mid \text{CHD})$ are test specific and these are read from the CSV data file. The updated risk estimates are aggregated according to the risk levels. These aggregated probabilities are then the state probabilities of node $R1$. The aggregating is done using function ```state_probabilities```.
 
@@ -243,7 +243,7 @@ EV = expected_value(model, π_s, U)
 @objective(model, Max, EV)
 ```
 
-We set up the solver for the problem and optimise it. 
+We set up the solver for the problem and optimise it.
 ```julia
 optimizer = optimizer_with_attributes(
     () -> Gurobi.Optimizer(Gurobi.Env()),
