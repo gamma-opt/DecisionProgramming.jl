@@ -115,16 +115,11 @@ function probability_cut(model::Model, π_s::PathProbabilityVariables, P::Abstra
         throw(DomainError("The probability_scale_factor must be greater than 0."))
     end
 
-    # Add the constraints only once
-    ϵ = minimum(P(s) for s in keys(π_s))
-    flag = false
     function probability_cut(cb_data)
-        flag && return
         πsum = sum(callback_value(cb_data, π) for π in values(π_s))
-        if !isapprox(πsum, 1.0 * probability_scale_factor, atol= ϵ * probability_scale_factor)
+        if !isapprox(πsum, 1.0 * probability_scale_factor)
             con = @build_constraint(sum(values(π_s)) == 1.0 * probability_scale_factor)
             MOI.submit(model, MOI.LazyConstraint(cb_data), con)
-            flag = true
         end
     end
     MOI.set(model, MOI.LazyConstraintCallback(), probability_cut)
