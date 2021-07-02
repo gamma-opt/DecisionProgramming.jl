@@ -93,7 +93,7 @@ U⁺ = PositivePathUtility(S, U)
 model = Model()
 z = DecisionVariables(model, S, D)
 π_s = PathProbabilityVariables(model, z, S, P; probability_cut=false)
-active_paths_cut(model, π_s, S, P)
+lazy_active_paths_cut(model, π_s, S, P)
 EV = expected_value(model, π_s, U⁺)
 @objective(model, Max, EV)
 
