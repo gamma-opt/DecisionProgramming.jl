@@ -69,7 +69,7 @@ U = DefaultPathUtility(V, Y)
 @info("Creating the decision model.")
 model = Model()
 z = DecisionVariables(model, S, D)
-π_s = PathProbabilityVariables(model, z, S, P, probability_cut=true)
+π_s = PathProbabilityVariables(model, z, S, P)
 EV = expected_value(model, π_s, U)
 @objective(model, Max, EV)
 
