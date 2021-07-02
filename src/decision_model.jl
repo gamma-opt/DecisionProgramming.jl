@@ -96,8 +96,7 @@ function PathProbabilityVariables(model::Model,
     forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
     fixed::Dict{Node, State}=Dict{Node, State}(),
     probability_scale_factor::Float64=1.0,
-    probability_cut::Bool=true,
-    lazy_probability_cut::Bool=false)
+    probability_cut::Bool=true)
 
     if !isempty(forbidden_paths)
         @warn("Forbidden paths is still an experimental feature.")
@@ -120,11 +119,7 @@ function PathProbabilityVariables(model::Model,
 
     # Constrain sum of path probabilities either using an explicit or lazy constraint
     if probability_cut
-        if lazy_probability_cut
-            probability_cut(model, π_s, P, probability_scale_factor=probability_scale_factor)
-        else
-            @constraint(model, sum(values(π_s)) == 1.0 * probability_scale_factor)
-        end
+        @constraint(model, sum(values(π_s)) == 1.0 * probability_scale_factor)
     end
 
     π_s
@@ -137,7 +132,7 @@ end
 probability_cut(model, π_s, P)
 ```
 """
-function probability_cut(model::Model, π_s::PathProbabilityVariables, P::AbstractPathProbability; probability_scale_factor::Float64=1.0)
+function lazy_probability_cut(model::Model, π_s::PathProbabilityVariables, P::AbstractPathProbability; probability_scale_factor::Float64=1.0)
     function probability_cut(cb_data)
         πsum = sum(callback_value(cb_data, π) for π in values(π_s))
         if !isapprox(πsum, 1.0 * probability_scale_factor)
@@ -156,7 +151,7 @@ atol = 0.9  # Tolerance to trigger the creation of the lazy cut
 active_paths_cut(model, π_s, S, P; atol=atol)
 ```
 """
-function active_paths_cut(model::Model, π_s::PathProbabilityVariables, S::States, P::AbstractPathProbability; atol::Float64 = 0.9, probability_scale_factor::Float64=1.0)
+function lazy_active_paths_cut(model::Model, π_s::PathProbabilityVariables, S::States, P::AbstractPathProbability; atol::Float64 = 0.9, probability_scale_factor::Float64=1.0)
     all_active_states = all(all((!).(iszero.(x))) for x in P.X)
     if !all_active_states
         throw(DomainError("Cannot use active paths cut if all states are not active."))
