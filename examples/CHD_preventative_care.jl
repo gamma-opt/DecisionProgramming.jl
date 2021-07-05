@@ -256,18 +256,18 @@ z = DecisionVariables(model, S, D)
 # Defining forbidden paths to include all those where a test is repeated twice
 forbidden_tests = ForbiddenPath[([T1,T2], Set([(1,1),(2,2),(3,1), (3,2)]))]
 scale_factor = 1000.0
-π_s = PathProbabilityVariables(model, z, S, P; hard_lower_bound = true, forbidden_paths = forbidden_tests, probability_scale_factor = scale_factor)
+x_s = BinaryPathVariables(model, z, S, P; forbidden_paths = forbidden_tests)
 
-EV = expected_value(model, π_s, U)
+EV = expected_value(model, x_s, U, P, probability_scale_factor= scale_factor)
 @objective(model, Max, EV)
 
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
     () -> Gurobi.Optimizer(Gurobi.Env()),
-    "TimeLimit" => 100,
-    "IntFeasTol"=> 1e-9,
-    "MIPGap" => 1e-6
+    "TimeLimit" => 10,
+#    "IntFeasTol"=> 1e-9,
+#    "MIPGap" => 1e-6
 )
 set_optimizer(model, optimizer)
 
