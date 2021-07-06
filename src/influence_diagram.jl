@@ -204,9 +204,6 @@ struct Probabilities{N} <: AbstractArray{Float64, N}
     j::Node
     data::Array{Float64, N}
     function Probabilities(j::Node, data::Array{Float64, N}) where N
-        if !all(x > 0 for x in data)
-            @warn("The influence diagram contains inactive chance states. Do not use active paths cut.")
-        end
         for i in CartesianIndices(size(data)[1:end-1])
             if !(sum(data[i, :]) ≈ 1)
                 throw(DomainError("Probabilities should sum to one."))
