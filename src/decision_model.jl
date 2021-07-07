@@ -69,7 +69,6 @@ Base.iterate(x_s::BinaryPathVariables, i) = iterate(x_s.data, i)
 function decision_strategy_constraint(model::Model, S::States, d::DecisionNode, z::Array{VariableRef}, x_s::BinaryPathVariables)
 
     dims = S[[d.I_j; d.j]]
-## WRONG    # Calculating the number of paths that include the information structure of I(d) and d
     num_paths = prod(S)/prod(dims)
 
 
