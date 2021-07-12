@@ -29,6 +29,7 @@ export DecisionVariables,
     BinaryPathVariables,
     ForbiddenPath,
     PositivePathUtility,
+    NegativePathUtility,
     expected_value,
     value_at_risk,
     conditional_value_at_risk
