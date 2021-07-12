@@ -32,7 +32,8 @@ export DecisionVariables,
     NegativePathUtility,
     expected_value,
     value_at_risk,
-    conditional_value_at_risk
+    conditional_value_at_risk,
+    validate_model
 
 export random_diagram
 

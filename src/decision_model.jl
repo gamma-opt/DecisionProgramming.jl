@@ -116,7 +116,6 @@ function BinaryPathVariables(model::Model,
     for (d, z) in zip(z.D, z.z)
         decision_strategy_constraint(model, S, d, z, x_s)
     end
-
     x_s
 end
 
@@ -238,6 +237,36 @@ function conditional_value_at_risk(model::Model, x_s::BinaryPathVariables{N}, U:
     CVaR = @expression(model, sum(ρ_bar * U(s) for (s, ρ_bar) in ρ′_s) / α)
 
     return CVaR
+end
+
+# --- Validating model ---
+
+"""Validate model."""
+function validate_model(model::Model, x_s::BinaryPathVariables, S::States, P::AbstractPathProbability, U::AbstractPathUtility, expected_value_objective::Bool)
+    # Check if objective is maximisation and objective function coefficients are positive
+    if objective_sense(model) == MOI.MAX_SENSE && !all(coefficient(objective_function(model), v) > 0 for v in values(x_s))
+        if expected_value_objective
+            U⁺ = PositivePathUtility(S, U)
+            EV⁺ = expected_value(model, x_s, U⁺, P)
+            set_objective_function(model, EV⁺)
+            @warn("Some path utilities had negative values. The positive path utility transformation was performed and the objective function was reformulated.")
+        else
+            throw(DomainError("Path utilities should be positive in a maximisation problem. Use the positive path utility transformation."))
+        end
+    # Check if objective is minimisation and objective function coefficients are negative
+    elseif objective_sense(model) == MOI.MIN_SENSE && !all(coefficient(objective_function(model), v) < 0 for v in values(x_s))
+        if expected_value_objective
+            U⁻ = NegativePathUtility(S, U)
+            EV⁻ = expected_value(model, x_s, U⁻, P)
+            set_objective_function(model, EV⁻)
+            @warn("Some path utilities had positive values. The negative path utility transformation was performed and the objective function was reformulated.")
+        else
+            throw(DomainError("Path utilities should be negative in a minimisation problem. Use the negative path utility transformation."))
+        end
+    # Throw error if no objective function has been set
+    elseif objective_sense(model) == MOI.FEASIBILITY_SENSE
+        throw(DomainError("An objective should be set for the optimisation."))
+    end
 end
 
 
