@@ -242,7 +242,7 @@ end
 # --- Validating model ---
 
 """Validate model."""
-function validate_model(model::Model, x_s::BinaryPathVariables, S::States, P::AbstractPathProbability, U::AbstractPathUtility, expected_value_objective::Bool)
+function validate_model(model::Model, x_s::BinaryPathVariables, S::States, P::AbstractPathProbability, U::AbstractPathUtility; expected_value_objective::Bool=false)
     # Check if objective is maximisation and objective function coefficients are positive
     if objective_sense(model) == MOI.MAX_SENSE && !all(coefficient(objective_function(model), v) > 0 for v in values(x_s))
         if expected_value_objective
