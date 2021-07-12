@@ -96,6 +96,8 @@ x_s = BinaryPathVariables(model, z, S, P)
 EV = expected_value(model, x_s, U⁺, P)
 @objective(model, Max, EV)
 
+validate_model(model, x_s, S, P, U, expected_value_objective = true)
+
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
     () -> Gurobi.Optimizer(Gurobi.Env()),

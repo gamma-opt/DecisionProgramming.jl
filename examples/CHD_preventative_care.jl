@@ -261,6 +261,7 @@ x_s = BinaryPathVariables(model, z, S, P; forbidden_paths = forbidden_tests)
 EV = expected_value(model, x_s, U, P, probability_scale_factor= scale_factor)
 @objective(model, Max, EV)
 
+validate_model(model, x_s, S, P, U, expected_value_objective = true)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
