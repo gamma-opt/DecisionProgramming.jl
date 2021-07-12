@@ -199,7 +199,7 @@ function conditional_value_at_risk(model::Model, x_s::BinaryPathVariables{N}, U:
     end
 
     # Pre-computed parameters
-    u = collect(Iterators.flatten(U(s) for s in keys(π_s)))
+    u = collect(Iterators.flatten(U(s) for s in keys(x_s)))
     u_sorted = sort(u)
     u_min = u_sorted[1]
     u_max = u_sorted[end]
