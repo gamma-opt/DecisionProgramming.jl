@@ -34,21 +34,12 @@ function is_forbidden(s::Path, forbidden_paths::Vector{ForbiddenPath})
     return !all(s[k]∉v for (k, v) in forbidden_paths)
 end
 
-function binary_path_variable(model::Model, z::DecisionVariables, forbidden::Bool, base_name::String="")
+function binary_path_variable(model::Model, z::DecisionVariables, base_name::String="")
     # Create a binary path variable
     x = @variable(model, base_name=base_name)
 
-    # Constraint on the lower bound.
-    @constraint(model, x ≥ 0)
-
-    if !forbidden
-        # Constraint on the upper bound.
-        @constraint(model, x ≤ 1.0)
-
-    else
-        # Path is forbidden, path is not included and thus x must be zero
-        @constraint(model, x ≤ 0)
-    end
+    # Constraint on the lower and upper bounds.
+    @constraint(model, 0 ≤ x ≤ 1.0)
 
     return x
 end
@@ -105,9 +96,9 @@ function BinaryPathVariables(model::Model,
     # Create path probability variable for each effective path.
     N = length(S)
     variables_x_s = Dict{Path{N}, VariableRef}(
-        s => binary_path_variable(model, z, is_forbidden(s, forbidden_paths), (names ? "$(name)$(s)" : ""))
+        s => binary_path_variable(model, z, (names ? "$(name)$(s)" : ""))
         for s in paths(S, fixed)
-        if !iszero(P(s))
+        if !iszero(P(s)) && !is_forbidden(s, forbidden_paths)
     )
 
     x_s = BinaryPathVariables{N}(variables_x_s)
