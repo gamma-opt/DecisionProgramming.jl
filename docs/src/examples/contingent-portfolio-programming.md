@@ -181,8 +181,8 @@ q_A = [0, 5, 10, 15]        # limits of the application intervals
 Shorthand for the decision variables $z$
 
 ```julia
-z_dP = z[1]
-z_dA = z[2]
+z_dP = z.z[1]
+z_dA = z.z[2]
 ```
 
 
@@ -239,22 +239,21 @@ $$x_i^T(t)∈\{0, 1\}, \quad \forall i$$
 
 $$x_k^A(a∣d_i^P,c_j^T)∈\{0, 1\}, \quad \forall i,j,k$$
 
-### Path Utility
+### Objective function
 
+The path utility can be calculated as
 $$\mathcal{U}(s) = \sum_a x_k^A(a∣d_i^P,c_j^T) (V(a|c_l^M) - I_a) - ∑_t x_i^T(t) I_t$$
 
+However, using the expected value objective would lead to a quadratic objective function as the path utility formulation now contains decision variables. In order to keep the problem completely linear, we can use the objective formulation presented in [^1]:
+
+$$\sum_i \left\{ \sum_{j,k,l} p(c_j^T \mid d_i^P) p(c_l^M \mid c_j^T, d_k^A) \left[\sum_a x_k^A(a \mid d_i^P,c_j^T) (V(a \mid c_l^M) - I_a)\right] - \sum_t x_i^T(t) I_t \right\}$$
+
 ```julia
-struct PathUtility <: AbstractPathUtility
-    expr
-end
-(U::PathUtility)(s::Path) = value.(U.expr[s])
+patent_investment_cost = @expression(model, [i=1:S[1]], sum(x_T[i, t] * I_t[t] for t in 1:n_T))
+application_investment_cost = @expression(model, [i=1:S[1], j=1:S[2], k=1:S[3]], sum(x_A[i, j, k, a] * I_a[a] for a in 1:n_A))
+application_value = @expression(model, [i=1:S[1], j=1:S[2], k=1:S[3], l=1:S[4]], sum(x_A[i, j, k, a] * V_A[l, a] for a in 1:n_A))
+@objective(model, Max, sum( sum( P((i,j,k,l)) * (application_value[i,j,k,l] - application_investment_cost[i,j,k]) for j in 1:S[2], k in 1:S[3], l in 1:S[4] ) - patent_investment_cost[i] for i in 1:S[1] ))
 
-U = PathUtility(@expression(model, [s = paths(S)],
-    sum(x_A[s[1:3]..., a]*(V_A[s[4],a] - I_a[a]) for a in 1:n_A) -
-    sum(x_T[s[1],t]*I_t[t] for t in 1:n_T)))
-
-EV = @expression(model, sum(π_s[s...] * U.expr[s] for s in paths(S)))
-@objective(model, Max, EV)
 ```
 
 ### Solving the Model
@@ -271,7 +270,7 @@ optimize!(model)
 
 ## Analyzing results
 
-The optimal decision strategy and the utility distribution are printed. The strategy is to make 6-9 patents (state 3 in node 1) and 5-10 applications if the competitiveness is low, 10-15 otherwise. The expected utility for this strategy is 0.41.
+The optimal decision strategy and the utility distribution are printed. The strategy is to make 6-9 patents (state 3 in node 1) and 10-15 applications. The expected utility for this strategy is 1.71.
 
 ```julia
 Z = DecisionStrategy(z)
@@ -289,14 +288,13 @@ julia> print_decision_strategy(S, Z)
 ├────────┼────────┼───┤
 │ States │ (1, 1) │ 1 │
 │ States │ (2, 1) │ 1 │
-│ States │ (3, 1) │ 2 │
+│ States │ (3, 1) │ 3 │
 │ States │ (1, 2) │ 1 │
 │ States │ (2, 2) │ 1 │
 │ States │ (3, 2) │ 3 │
 │ States │ (1, 3) │ 1 │
 │ States │ (2, 3) │ 1 │
 │ States │ (3, 3) │ 3 │
-│   ⋮    │   ⋮    │ ⋮ │
 └────────┴────────┴───┘
 ```
 
@@ -310,12 +308,9 @@ julia> print_utility_distribution(udist)
 │   Utility │ Probability │
 │   Float64 │     Float64 │
 ├───────────┼─────────────┤
-│ -2.164246 │    0.097222 │
-│ -0.759404 │    0.083333 │
-│ -0.077398 │    0.236111 │
-│  0.258058 │    0.055556 │
-│  0.505004 │    0.027778 │
-│  1.342020 │    0.500000 │
+│ -1.243076 │    0.152778 │
+│  0.605287 │    0.291667 │
+│  3.110470 │    0.555556 │
 └───────────┴─────────────┘
 ```
 
@@ -325,10 +320,10 @@ julia> print_statistics(udist)
 │     Name │ Statistics │
 │   String │    Float64 │
 ├──────────┼────────────┤
-│     Mean │   0.407403 │
-│      Std │   1.118111 │
-│ Skewness │  -1.004935 │
-│ Kurtosis │   0.071940 │
+│     Mean │   1.714666 │
+│      Std │   1.666694 │
+│ Skewness │  -0.613535 │
+│ Kurtosis │  -1.154244 │
 └──────────┴────────────┘
 ```
 
