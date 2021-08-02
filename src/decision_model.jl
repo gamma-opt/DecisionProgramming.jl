@@ -99,7 +99,8 @@ function BinaryPathVariables(model::Model,
     names::Bool=false,
     name::String="x_s",
     forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
-    fixed::Dict{Node, State}=Dict{Node, State}())
+    fixed::Dict{Node, State}=Dict{Node, State}(),
+    probability_cut::Bool=true)
 
     if !isempty(forbidden_paths)
         @warn("Forbidden paths is still an experimental feature.")
@@ -119,9 +120,32 @@ function BinaryPathVariables(model::Model,
     for (d, z) in zip(z.D, z.z)
         decision_strategy_constraint(model, S, d, z, x_s)
     end
+
+    if probability_cut
+        @constraint(model, sum(x * P(s) for (s, x) in x_s) == 1.0)
+    end
+
     x_s
 end
 
+"""Adds a probability cut to the model as a lazy constraint.
+
+# Examples
+```julia
+probability_cut(model, x_s, P)
+```
+"""
+function lazy_probability_cut(model::Model, x_s::BinaryPathVariables, P::AbstractPathProbability)
+
+    function probability_cut(cb_data)
+        xsum = sum(callback_value(cb_data, x) * P(s) for (s, x) in x_s)
+        if !isapprox(xsum, 1.0)
+            con = @build_constraint(sum(x * P(s) for (s, x) in x_s) == 1.0)
+            MOI.submit(model, MOI.LazyConstraint(cb_data), con)
+        end
+    end
+    MOI.set(model, MOI.LazyConstraintCallback(), probability_cut)
+end
 
 # --- Objective Functions ---
 
