@@ -57,17 +57,29 @@ Base.iterate(x_s::BinaryPathVariables) = iterate(x_s.data)
 Base.iterate(x_s::BinaryPathVariables, i) = iterate(x_s.data, i)
 
 
-function decision_strategy_constraint(model::Model, S::States, d::DecisionNode, z::Array{VariableRef}, x_s::BinaryPathVariables)
+function decision_strategy_constraint(model::Model, S::States, d::DecisionNode, D::Vector{DecisionNode}, z::Array{VariableRef}, x_s::BinaryPathVariables)
 
+    # states of nodes in information structure (s_j | s_I(j))
     dims = S[[d.I_j; d.j]]
-    feasible_paths = keys(x_s)
+
+    # Theoretical upper bound based on number of paths with information structure (s_j | s_I(j)) divided by number of possible decision strategies in other decision nodes
+    other_decisions = map(d_n -> d_n.j, filter(d_n -> all(d_n.j != i for i in [d.I_j; d.j]), D))
+    theoretical_ub = prod(S)/prod(dims)/ prod(S[other_decisions])
+
+    # paths that have corresponding binary path variables
+    existing_paths = keys(x_s)
 
     for s_j_s_Ij in paths(dims) # iterate through all information states and states of d
-        # fix state of each node in the information set and of the decision node
-        paths_S = filter(s -> s[[d.I_j; d.j]] == s_j_s_Ij, feasible_paths)
+        # paths with (s_j | s_I(j)) information structure
+        feasible_paths = filter(s -> s[[d.I_j; d.j]] == s_j_s_Ij, existing_paths)
 
-        @constraint(model, sum(get(x_s, s, 0) for s in paths_S) ≤ z[s_j_s_Ij...] * length(paths_S))
-        # println("d(s) = ", d.j, "$s_j_s_Ij, numpaths = ", length(paths_S))
+        @constraint(model, sum(get(x_s, s, 0) for s in feasible_paths) ≤ z[s_j_s_Ij...] * min(length(feasible_paths), theoretical_ub))
+        if length(feasible_paths) < theoretical_ub
+            pick = "feasible"
+        else
+            pick = "theoretical"
+        end
+        println("feasible paths ", length(feasible_paths), ", upper bound ",  theoretical_ub, " picked ", pick)
     end
 
 #=
@@ -117,8 +129,8 @@ function BinaryPathVariables(model::Model,
     x_s = BinaryPathVariables{N}(variables_x_s)
 
     # Add decision strategy constraints for each decision node
-    for (d, z) in zip(z.D, z.z)
-        decision_strategy_constraint(model, S, d, z, x_s)
+    for (d, z_d) in zip(z.D, z.z)
+        decision_strategy_constraint(model, S, d, z.D, z_d, x_s)
     end
 
     if probability_cut
