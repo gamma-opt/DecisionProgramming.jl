@@ -178,9 +178,7 @@ The **default path utility** is the sum of consequences
 
 $$\mathcal{U}(𝐬) = ∑_{j∈V} Y_j(𝐬_{I(j)}).$$
 
-The utility function, in this case, corresponds to the sum of the elements.
-
-The utility function affects the objectives discussed [Decision Model](@ref decision-model) page. We can choose the utility function such that the path utility function either returns:
+The utility function affects the objectives discussed on the [Decision Model](@ref decision-model) page. We can choose the utility function such that the path utility function either returns:
 
 * a numerical value, which leads to a mixed-integer linear programming (MILP) formulation or
 * a linear function with real and integer-valued variables leads to a mixed-integer quadratic programming (MIQP) formulation.
