@@ -26,8 +26,6 @@ EV = expected_value(model, x_s, U⁺, P)
 CVaR = conditional_value_at_risk(model, x_s, U⁺, P, α)
 @objective(model, Max, w * EV + (1 - w) * CVaR)
 
-validate_model(model, x_s, S, P, U, expected_value_objective = false)
-
 optimizer = optimizer_with_attributes(
     () -> Gurobi.Optimizer(Gurobi.Env()),
     "IntFeasTol"      => 1e-9,
