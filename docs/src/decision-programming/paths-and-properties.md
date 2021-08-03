@@ -90,6 +90,12 @@ Let us add one chance node with two states to the influence diagram.
 Now, given inactive chance states such that we remove the dashed paths, we have a symmetric influence diagram. Both decisions will have an equal number of possible paths. However, there are only eight possible paths instead of twelve if there were no inactive chance states.
 
 
+## Local Decision Strategy Defining Set
+*Local decision strategy  defining set* refers to a subset of paths that include the subpath $(s_{I(j)}, s_j)$ and thus, represent the decision alternative $s_{I(j)} \rightarrow s_j$ for decision node $j \in D$. Formally, it includes all the paths
+
+$$ 𝐒_{s_j \mid s_{I(j)}} = \{ s \in 𝐒 \mid (s_{I(j)}, s_j) ⊂ s\}.
+
+
 ## Other Properties
 In this section, we define more properties for influence diagrams.
 
