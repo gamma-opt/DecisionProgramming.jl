@@ -74,12 +74,12 @@ function decision_strategy_constraint(model::Model, S::States, d::DecisionNode, 
         feasible_paths = filter(s -> s[[d.I_j; d.j]] == s_j_s_Ij, existing_paths)
 
         @constraint(model, sum(get(x_s, s, 0) for s in feasible_paths) ≤ z[s_j_s_Ij...] * min(length(feasible_paths), theoretical_ub))
-        if length(feasible_paths) < theoretical_ub
-            pick = "feasible"
-        else
-            pick = "theoretical"
-        end
-        println("feasible paths ", length(feasible_paths), ", upper bound ",  theoretical_ub, " picked ", pick)
+#        if length(feasible_paths) < theoretical_ub
+#            pick = "feasible"
+#        else
+#            pick = "theoretical"
+#        end
+#        println("feasible paths ", length(feasible_paths), ", upper bound ",  theoretical_ub, " picked ", pick)
     end
 
 #=
