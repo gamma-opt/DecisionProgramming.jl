@@ -4,7 +4,7 @@
 
 $$\underset{Z∈ℤ}{\text{maximize}}\quad f(\{(ℙ(X=𝐬∣Z), \mathcal{U}(𝐬)) ∣ 𝐬∈𝐒\}). \tag{1}$$
 
-**Decision model** refers to the mixed-integer linear programming formulation of this optimization problem. This page explains how to express decision strategy, path probability, path utility, and the objective in the mixed-integer linear form. We also present standard objective functions, including expected value and risk measures.  We based the decision model on [^1], sections 3 and 5. We recommend reading the references for motivation, details, and proofs of the formulation.
+**Decision model** refers to the mixed-integer linear programming formulation of this optimization problem. This page explains how to express decision strategy, path probability, path utility, and the objective in the mixed-integer linear form.%% grammar? We also present standard objective functions, including expected value and risk measures.  The original decision model formulation was described in [^1], sections 3 and 5. We base the decision model on an improved formulation described in [^2] section 3.3. We recommend reading the references for motivation, details, and proofs of the formulation.
 
 
 ## Decision Variables
@@ -15,40 +15,43 @@ $$z(s_j∣𝐬_{I(j)}) ∈ \{0,1\},\quad ∀j∈D, s_j∈S_j, 𝐬_{I(j)}∈𝐒
 $$∑_{s_j∈S_j} z(s_j∣𝐬_{I(j)})=1,\quad ∀j∈D, 𝐬_{I(j)}∈𝐒_{I(j)} \tag{3}$$
 
 
-## Path Probability Variables
-**Path probability variables** $π(𝐬)$ are equivalent to the path probabilities $ℙ(X=𝐬∣Z)$ where decision variables $z$ define the decision strategy $Z$. The constraint $(4)$ defines the lower and upper bound to the probability, constraint $(5)$ defines that the probability equals zero if path is not compatible with the decision strategy, and constraint $(6)$ defines that probability equals path probability if the path is compatible with the decision strategy.
+## Binary Path Variables
+**Binary Path variables** $x(𝐬)$ are indicator variables for whether the path is an effective path given the optimal decision strategy. These variables are modeled as continous variables which only take binary values $\{0, 1\}$. The constraint $(4)$ defines the lower and upper bound of the variables. Constraint $(5)$ defines that only the paths that are compatible with the decision strategy are effective. Constraint $(6)$ is called the probability cut constraint and it defines that the sum of the probabilities of the effective paths must equal one.
 
-$$0≤π(𝐬)≤p(𝐬),\quad ∀𝐬∈𝐒 \tag{4}$$
+$$0≤x(𝐬)≤1,\quad ∀𝐬∈𝐒 \tag{4}$$
 
-$$π(𝐬) ≤ z(𝐬_j∣𝐬_{I(j)}),\quad ∀j∈D, 𝐬∈𝐒 \tag{5}$$
+$$∑_{s \in S_{s_j | s_{I(j)}} } x(𝐬) ≤ \frac{}{} z(𝐬_j∣𝐬_{I(j)}),\quad ∀j∈D, 𝐬∈𝐒 \tag{5}$$ %% Finish this
 
-$$π(𝐬) ≥ p(𝐬) + ∑_{j∈D} z(𝐬_j∣𝐬_{I(j)}) - |D|,\quad ∀𝐬∈𝐒 \tag{6}$$
+$$∑_{𝐬∈𝐒}x(𝐬) p(s) = 1 \tag{6}$$
+
+in the compatible paths $s \in 𝐒(Z)$ where decision variables $z$ define the decision strategy $Z$. 
+**Binary Path variables** $x(𝐬)$ are indicator variables for whether the path is active in the model solution. The path $s$ becomes active in the solution if it is an active path $s \in S(X)$ and it is compatible with the optimal decision paths $s \in 𝐒(Z)$ where decision variables $z$ define the decision strategy $Z$ and the . These variables are modeled as continous variables which only take binary values $\{0, 1\}$. The constraint $(4)$ defines the lower and upper bound of the variables, constraint $(5)$ defines that the sum of the probabilities of the active paths must equal one, and constraint $(6)$ defines that only the paths that are compatible with the decision strategy are active. 
+
+$$0≤x(𝐬)≤1,\quad ∀𝐬∈𝐒 \tag{4}$$
+
+$$∑_{𝐬∈𝐒}x(𝐬) p(s) = 1 \tag{5}$$
+
+$$∑_{s \in S_{s_j | s_{I(j)}} } x(𝐬) ≤ \frac{}{} z(𝐬_j∣𝐬_{I(j)}),\quad ∀j∈D, 𝐬∈𝐒 \tag{6}$$
 
 
-## Positive Path Utility
-We can omit the constraint $(6)$ from the model if we use a **positive path utility** function $\mathcal{U}^+$ which is an affine transformation of path utility function $\mathcal{U}.$ As an example, we can subtract the minimum of the original utility function and then add one as follows.
-
-$$\mathcal{U}^+(𝐬) = \mathcal{U}(𝐬) - \min_{𝐬∈𝐒} \mathcal{U}(𝐬) + 1. \tag{7}$$
-
-
-## Lazy Constraints
-Valid equalities are equalities that can be be derived from the problem structure. They can help in computing the optimal decision strategies, but adding them directly may slow down the overall solution process. By adding valid equalities during the solution process as *lazy constraints*, the MILP solver can prune nodes of the branch-and-bound tree more efficiently. We have the following valid equalities.
-
-### Probability Cut
-We can exploit the fact that the path probabilities sum to one by using the **probability cut** defined as
-
-$$∑_{𝐬∈𝐒}π(𝐬)=1. \tag{8}$$
-
-### Active Paths Cut
-For problems where the number of active and compatible paths is constant, we can exploit it by using the **active paths cut** defined as
-
-$$∑_{𝐬∈𝐒} \frac{π(𝐬)}{p(𝐬)}=|𝐒(X)∩𝐒(Z)|. \tag{9}$$
+## Lazy Probability Cut
+Constraint $(6)$ is a complicating constraint and thus adding it directly to the model may slow down the overall solution process. It may be beneficial to instead add it as a *lazy constraint*. In some instances this allows the MILP solver to prune nodes of the branch-and-bound tree more efficiently. 
 
 
 ## Expected Value
 We define the **expected value** objective as
 
-$$\operatorname{E}(Z) = ∑_{𝐬∈𝐒} π(𝐬) \mathcal{U}(𝐬). \tag{10}$$
+$$\operatorname{E}(Z) = ∑_{𝐬∈𝐒} x(𝐬) p(s) \mathcal{U}(𝐬). \tag{7}$$
+
+## Positive Path Utility
+We can omit constraint $(5)$ from the model if we are maximising expected value of utility and use a **positive path utility** function $\mathcal{U}^+$ which is an affine transformation of path utility function $\mathcal{U}.$ As an example, we can subtract the minimum of the original utility function and then add one as follows.
+
+$$\mathcal{U}^+(𝐬) = \mathcal{U}(𝐬) - \min_{𝐬∈𝐒} \mathcal{U}(𝐬) + 1. \tag{8}$$
+
+## Negative Path Utility
+We can omit constraint $(5)$ from the model if we are minimising expected value of utility and use a **negative path utility** function $\mathcal{U}^-$ which is an affine transformation of path utility function $\mathcal{U}.$ As an example, we can subtract the minimum of the original utility function and then add one as follows.
+
+$$\mathcal{U}^+(𝐬) = \mathcal{U}(𝐬) - \max_{𝐬∈𝐒} \mathcal{U}(𝐬) - 1. \tag{9}$$
 
 
 ## Conditional Value-at-Risk
@@ -133,3 +136,5 @@ where the parameter $w∈[0, 1]$ expresses the decision maker's **risk tolerance
 
 ## References
 [^1]: Salo, A., Andelmin, J., & Oliveira, F. (2019). Decision Programming for Multi-Stage Optimization under Uncertainty, 1–35. Retrieved from [http://arxiv.org/abs/1910.09196](http://arxiv.org/abs/1910.09196)
+
+[^2]: Hölsä, O. (2020). Decision Programming Framework for Evaluating Testing Costs of Disease-Prone Pigs. Retrieved from [http://urn.fi/URN:NBN:fi:aalto-202009295618](http://urn.fi/URN:NBN:fi:aalto-202009295618)
