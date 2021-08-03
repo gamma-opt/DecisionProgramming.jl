@@ -74,25 +74,7 @@ function decision_strategy_constraint(model::Model, S::States, d::DecisionNode, 
         feasible_paths = filter(s -> s[[d.I_j; d.j]] == s_j_s_Ij, existing_paths)
 
         @constraint(model, sum(get(x_s, s, 0) for s in feasible_paths) ≤ z[s_j_s_Ij...] * min(length(feasible_paths), theoretical_ub))
-#        if length(feasible_paths) < theoretical_ub
-#            pick = "feasible"
-#        else
-#            pick = "theoretical"
-#        end
-#        println("feasible paths ", length(feasible_paths), ", upper bound ",  theoretical_ub, " picked ", pick)
     end
-
-#=
-    dims = S[[d.I_j; d.j]]
-    num_paths = prod(S)/prod(dims)
-
-
-    for s in paths(dims) # iterate through all information states and states of d
-        # fix state of each node in the information set and of the decision node
-        information_group = Dict([d.I_j; d.j] .=> s)
-        @constraint(model, sum(get(x_s, s_j, 0) for s_j in paths(S, information_group)) ≤ z[s...] * num_paths)
-    end
-=#
 end
 
 
