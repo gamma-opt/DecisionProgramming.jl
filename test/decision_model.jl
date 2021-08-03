@@ -21,33 +21,34 @@ function influence_diagram(rng::AbstractRNG, n_C::Int, n_D::Int, n_V::Int, m_C::
     return D, S, P, U
 end
 
-function test_decision_model(D, S, P, U, n_inactive, hard_lower_bound)
+function test_decision_model(D, S, P, U, n_inactive, probability_scale_factor, probability_cut)
     model = Model()
 
     @info "Testing DecisionVariables"
     z = DecisionVariables(model, S, D)
 
-    @info "Testing PathProbabilityVariables"
-    π_s = PathProbabilityVariables(model, z, S, P; hard_lower_bound = hard_lower_bound)
+    @info "Testing BinaryPathVariables"
+    x_s = BinaryPathVariables(model, z, S, P; probability_cut = probability_cut)
 
     @info "Testing PositivePathUtility"
-    U′ = if hard_lower_bound U else PositivePathUtility(S, U) end
+    U′ = if probability_cut U else PositivePathUtility(S, U) end
 
     @info "Testing probability_cut"
-    probability_cut(model, π_s, P)
-
-    @info "Testing active_paths_cut"
-    if iszero(n_inactive)
-        active_paths_cut(model, π_s, S, P)
-    else
-        @test_throws DomainError active_paths_cut(model, π_s, S, P)
-    end
+    lazy_probability_cut(model, x_s, P)
 
     @info "Testing expected_value"
-    EV = expected_value(model, π_s, U′)
+    if probability_scale_factor > 0
+        EV = expected_value(model, x_s, U′, P; probability_scale_factor = probability_scale_factor)
+    else
+        @test_throws DomainError expected_value(model, x_s, U′, P; probability_scale_factor = probability_scale_factor)
+    end
 
     @info "Testing conditional_value_at_risk"
-    CVaR = conditional_value_at_risk(model, π_s, U′, 0.2)
+    if probability_scale_factor > 0
+        CVaR = conditional_value_at_risk(model, x_s, U′, P, 0.2; probability_scale_factor = probability_scale_factor)
+    else
+        @test_throws DomainError conditional_value_at_risk(model, x_s, U′, P, 0.2; probability_scale_factor = probability_scale_factor)
+    end
 
     @test true
 end
@@ -87,13 +88,14 @@ end
 
 @info "Testing model construction"
 rng = MersenneTwister(4)
-for (n_C, n_D, states, n_inactive, hard_lower_bound) in [
-        (3, 2, [1, 2, 3], 0, true),
-        (3, 2, [3], 1, true),
-        (3, 2, [1, 2, 3], 0, false),
-        (3, 2, [3], 1, false)
+for (n_C, n_D, states, n_inactive, probability_scale_factor, probability_cut) in [
+        (3, 2, [1, 2, 3], 0, 1.0, true),
+        (3, 2, [1, 2, 3], 0, -1.0, true),
+        (3, 2, [3], 1, 100.0, true),
+        (3, 2, [1, 2, 3], 0, -1.0, false),
+        (3, 2, [3], 1, 10.0, false)
     ]
     D, S, P, U = influence_diagram(rng, n_C, n_D, 2, 2, 2, states, n_inactive)
-    test_decision_model(D, S, P, U, n_inactive, hard_lower_bound)
+    test_decision_model(D, S, P, U, n_inactive, probability_scale_factor, probability_cut)
     test_analysis_and_printing(D, S, P, U)
 end
