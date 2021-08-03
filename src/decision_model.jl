@@ -96,12 +96,12 @@ function decision_strategy_constraint(model::Model, S::States, d::DecisionNode, 
 end
 
 
-"""Create path probability variables and constraints.
+"""Create binary path variables and constraints.
 
 # Examples
 ```julia
-x_s = BinaryPathVariables(model, z, S)
-x_s = BinaryPathVariables(model, z, S; names=true, name="x")
+x_s = BinaryPathVariables(model, z, S, P)
+x_s = BinaryPathVariables(model, z, S, P; probability_cut = false)
 ```
 """
 function BinaryPathVariables(model::Model,
@@ -144,7 +144,7 @@ end
 
 # Examples
 ```julia
-probability_cut(model, x_s, P)
+lazy_probability_cut(model, x_s, P)
 ```
 """
 function lazy_probability_cut(model::Model, x_s::BinaryPathVariables, P::AbstractPathProbability)
@@ -206,7 +206,8 @@ end
 
 # Examples
 ```julia
-EV = expected_value(model, π_s, U)
+EV = expected_value(model, x_s, U, P)
+EV = expected_value(model, x_s, U, P; probability_scale_factor = 10.0)
 ```
 """
 function expected_value(model::Model, x_s::BinaryPathVariables, U::AbstractPathUtility, P::AbstractPathProbability; probability_scale_factor::Float64=1.0)
@@ -222,7 +223,8 @@ end
 # Examples
 ```julia
 α = 0.05  # Parameter such that 0 ≤ α ≤ 1
-CVaR = conditional_value_at_risk(model, π_s, U, α)
+CVaR = conditional_value_at_risk(model, x_s, U, P, α)
+CVaR = conditional_value_at_risk(model, x_s, U, P, α; probability_scale_factor = 10.0)
 ```
 """
 function conditional_value_at_risk(model::Model, x_s::BinaryPathVariables{N}, U::AbstractPathUtility, P::AbstractPathProbability, α::Float64; probability_scale_factor::Float64=1.0) where N

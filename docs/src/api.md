@@ -53,14 +53,14 @@ DecisionStrategy
 ### Decision Model
 ```@docs
 DecisionVariables
-PathProbabilityVariables
-probability_cut(::Model, ::PathProbabilityVariables, ::AbstractPathProbability)
-active_paths_cut(::Model, ::PathProbabilityVariables, ::States, ::AbstractPathProbability; ::Float64)
+BinaryPathVariables
+lazy_probability_cut(::Model, ::PathProbabilityVariables, ::AbstractPathProbability)
 ```
 
 ### Objective Functions
 ```@docs
 PositivePathUtility
+NegativePathUtility
 expected_value(::Model, ::PathProbabilityVariables, ::AbstractPathUtility)
 conditional_value_at_risk(::Model, ::PathProbabilityVariables, ::AbstractPathUtility, ::Float64)
 ```
