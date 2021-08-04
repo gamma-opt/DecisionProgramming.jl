@@ -26,7 +26,7 @@ export Node,
     validate_influence_diagram
 
 export DecisionVariables,
-    BinaryPathVariables,
+    PathCompatibilityVariables,
     ForbiddenPath,
     lazy_probability_cut,
     PositivePathUtility,

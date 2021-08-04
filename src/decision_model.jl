@@ -34,8 +34,8 @@ function is_forbidden(s::Path, forbidden_paths::Vector{ForbiddenPath})
     return !all(s[k]∉v for (k, v) in forbidden_paths)
 end
 
-function binary_path_variable(model::Model, z::DecisionVariables, base_name::String="")
-    # Create a binary path variable
+function path_compatibility_variable(model::Model, z::DecisionVariables, base_name::String="")
+    # Create a path compatiblity variable
     x = @variable(model, base_name=base_name)
 
     # Constraint on the lower and upper bounds.
@@ -44,20 +44,20 @@ function binary_path_variable(model::Model, z::DecisionVariables, base_name::Str
     return x
 end
 
-struct BinaryPathVariables{N} <: AbstractDict{Path{N}, VariableRef}
+struct PathCompatibilityVariables{N} <: AbstractDict{Path{N}, VariableRef}
     data::Dict{Path{N}, VariableRef}
 end
 
-Base.getindex(x_s::BinaryPathVariables, key) = getindex(x_s.data, key)
-Base.get(x_s::BinaryPathVariables, key, default) = get(x_s.data, key, default)
-Base.keys(x_s::BinaryPathVariables) = keys(x_s.data)
-Base.values(x_s::BinaryPathVariables) = values(x_s.data)
-Base.pairs(x_s::BinaryPathVariables) = pairs(x_s.data)
-Base.iterate(x_s::BinaryPathVariables) = iterate(x_s.data)
-Base.iterate(x_s::BinaryPathVariables, i) = iterate(x_s.data, i)
+Base.getindex(x_s::PathCompatibilityVariables, key) = getindex(x_s.data, key)
+Base.get(x_s::PathCompatibilityVariables, key, default) = get(x_s.data, key, default)
+Base.keys(x_s::PathCompatibilityVariables) = keys(x_s.data)
+Base.values(x_s::PathCompatibilityVariables) = values(x_s.data)
+Base.pairs(x_s::PathCompatibilityVariables) = pairs(x_s.data)
+Base.iterate(x_s::PathCompatibilityVariables) = iterate(x_s.data)
+Base.iterate(x_s::PathCompatibilityVariables, i) = iterate(x_s.data, i)
 
 
-function decision_strategy_constraint(model::Model, S::States, d::DecisionNode, D::Vector{DecisionNode}, z::Array{VariableRef}, x_s::BinaryPathVariables)
+function decision_strategy_constraint(model::Model, S::States, d::DecisionNode, D::Vector{DecisionNode}, z::Array{VariableRef}, x_s::PathCompatibilityVariables)
 
     # states of nodes in information structure (s_j | s_I(j))
     dims = S[[d.I_j; d.j]]
@@ -66,7 +66,7 @@ function decision_strategy_constraint(model::Model, S::States, d::DecisionNode, 
     other_decisions = map(d_n -> d_n.j, filter(d_n -> all(d_n.j != i for i in [d.I_j; d.j]), D))
     theoretical_ub = prod(S)/prod(dims)/ prod(S[other_decisions])
 
-    # paths that have corresponding binary path variables
+    # paths that have corresponding path compatibility variable
     existing_paths = keys(x_s)
 
     for s_j_s_Ij in paths(dims) # iterate through all information states and states of d
@@ -78,15 +78,15 @@ function decision_strategy_constraint(model::Model, S::States, d::DecisionNode, 
 end
 
 
-"""Create binary path variables and constraints.
+"""Create path compatibility variables and constraints.
 
 # Examples
 ```julia
-x_s = BinaryPathVariables(model, z, S, P)
-x_s = BinaryPathVariables(model, z, S, P; probability_cut = false)
+x_s = PathCompatibilityVariables(model, z, S, P)
+x_s = PathCompatibilityVariables(model, z, S, P; probability_cut = false)
 ```
 """
-function BinaryPathVariables(model::Model,
+function PathCompatibilityVariables(model::Model,
     z::DecisionVariables,
     S::States,
     P::AbstractPathProbability;
@@ -103,12 +103,12 @@ function BinaryPathVariables(model::Model,
     # Create path probability variable for each effective path.
     N = length(S)
     variables_x_s = Dict{Path{N}, VariableRef}(
-        s => binary_path_variable(model, z, (names ? "$(name)$(s)" : ""))
+        s => path_compatibility_variable(model, z, (names ? "$(name)$(s)" : ""))
         for s in paths(S, fixed)
         if !iszero(P(s)) && !is_forbidden(s, forbidden_paths)
     )
 
-    x_s = BinaryPathVariables{N}(variables_x_s)
+    x_s = PathCompatibilityVariables{N}(variables_x_s)
 
     # Add decision strategy constraints for each decision node
     for (d, z_d) in zip(z.D, z.z)
@@ -129,7 +129,7 @@ end
 lazy_probability_cut(model, x_s, P)
 ```
 """
-function lazy_probability_cut(model::Model, x_s::BinaryPathVariables, P::AbstractPathProbability)
+function lazy_probability_cut(model::Model, x_s::PathCompatibilityVariables, P::AbstractPathProbability)
 
     function probability_cut(cb_data)
         xsum = sum(callback_value(cb_data, x) * P(s) for (s, x) in x_s)
@@ -192,7 +192,7 @@ EV = expected_value(model, x_s, U, P)
 EV = expected_value(model, x_s, U, P; probability_scale_factor = 10.0)
 ```
 """
-function expected_value(model::Model, x_s::BinaryPathVariables, U::AbstractPathUtility, P::AbstractPathProbability; probability_scale_factor::Float64=1.0)
+function expected_value(model::Model, x_s::PathCompatibilityVariables, U::AbstractPathUtility, P::AbstractPathProbability; probability_scale_factor::Float64=1.0)
     if probability_scale_factor ≤ 0
         throw(DomainError("The probability_scale_factor must be greater than 0."))
     end
@@ -209,7 +209,7 @@ CVaR = conditional_value_at_risk(model, x_s, U, P, α)
 CVaR = conditional_value_at_risk(model, x_s, U, P, α; probability_scale_factor = 10.0)
 ```
 """
-function conditional_value_at_risk(model::Model, x_s::BinaryPathVariables{N}, U::AbstractPathUtility, P::AbstractPathProbability, α::Float64; probability_scale_factor::Float64=1.0) where N
+function conditional_value_at_risk(model::Model, x_s::PathCompatibilityVariables{N}, U::AbstractPathUtility, P::AbstractPathProbability, α::Float64; probability_scale_factor::Float64=1.0) where N
     if probability_scale_factor ≤ 0
         throw(DomainError("The probability_scale_factor must be greater than 0."))
     end
