@@ -15,41 +15,37 @@ $$z(s_j∣𝐬_{I(j)}) ∈ \{0,1\},\quad ∀j∈D, s_j∈S_j, 𝐬_{I(j)}∈𝐒
 $$∑_{s_j∈S_j} z(s_j∣𝐬_{I(j)})=1,\quad ∀j∈D, 𝐬_{I(j)}∈𝐒_{I(j)} \tag{3}$$
 
 
-## Binary Path Variables
-**Binary Path variables** $x(𝐬)$ are indicator variables for whether the path is an effective path given the optimal decision strategy. These variables are modeled as continous variables which only take binary values $\{0, 1\}$. The constraint $(4)$ defines the lower and upper bound of the variables. Constraint $(5)$ defines that only the paths that are compatible with the decision strategy are effective. Constraint $(6)$ is called the probability cut constraint and it defines that the sum of the probabilities of the effective paths must equal one.
+## Path Compatibility Variables
+**Path compatibility variables** $x(s)$ are indicator variables for whether the path is compatible with decision strategy $Z$ that is defined by the decision variables $z$. These are continous variables but only assume binary values $\{0, 1\}$, with the compatible paths $s ∈ S$ taking values $x(s) = 1$. Constraint $(4)$ defines the lower and upper bounds for the variables. 
 
-$$0≤x(𝐬)≤1,\quad ∀𝐬∈𝐒 \tag{4}$$
+Constraint $(5)$ ensures that only the variables associated with locally compatible paths $s \in S_{s_j | s_{I(j)} }$ of the decision strategy can take value $x(s) = 1$. The upperbound of the constraint uses the minimum of the *feasible paths* upperbound and the *theoretical* upperbound. For motivation on of the feasible paths upper bound see the [Computational Complexity](@ref computational-complexity) page. For proofs and motivation on the theoretical upperbound see reference [^2].
 
-$$∑_{s \in S_{s_j | s_{I(j)}} } x(𝐬) ≤ \frac{}{} z(𝐬_j∣𝐬_{I(j)}),\quad ∀j∈D, 𝐬∈𝐒 \tag{5}$$ %% Finish this
+Constraint $(6)$ is called the probability cut constraint and it defines that the sum of the path probabilities of the compatible paths must equal one.
 
-$$∑_{𝐬∈𝐒}x(𝐬) p(s) = 1 \tag{6}$$
+$$0≤x(s)≤1,\quad ∀s∈𝐒 \tag{4}$$
 
-in the compatible paths $s \in 𝐒(Z)$ where decision variables $z$ define the decision strategy $Z$. 
-**Binary Path variables** $x(𝐬)$ are indicator variables for whether the path is active in the model solution. The path $s$ becomes active in the solution if it is an active path $s \in S(X)$ and it is compatible with the optimal decision paths $s \in 𝐒(Z)$ where decision variables $z$ define the decision strategy $Z$ and the . These variables are modeled as continous variables which only take binary values $\{0, 1\}$. The constraint $(4)$ defines the lower and upper bound of the variables, constraint $(5)$ defines that the sum of the probabilities of the active paths must equal one, and constraint $(6)$ defines that only the paths that are compatible with the decision strategy are active. 
+$$∑_{s \in S'_{s_j | s_{I(j)}} } x(s) \leq \min ( \ | S'_{s_j | s_{I(j)}}|, \ \frac{| S_{s_j | s_{I(j)}}| }{\displaystyle  \prod_{d \in D \setminus \{j, I(j)\}} |S_d|} \ ) \ z(s_j∣s_{I(j)}),\quad \forall j \in D, s_j \in S_j, s_{I(j)} \in S_{I(j)} \tag{5}$$
 
-$$0≤x(𝐬)≤1,\quad ∀𝐬∈𝐒 \tag{4}$$
+$$∑_{𝐬∈𝐒}x(s) p(s) = 1 \tag{6}$$
 
-$$∑_{𝐬∈𝐒}x(𝐬) p(s) = 1 \tag{5}$$
-
-$$∑_{s \in S_{s_j | s_{I(j)}} } x(𝐬) ≤ \frac{}{} z(𝐬_j∣𝐬_{I(j)}),\quad ∀j∈D, 𝐬∈𝐒 \tag{6}$$
 
 
 ## Lazy Probability Cut
-Constraint $(6)$ is a complicating constraint and thus adding it directly to the model may slow down the overall solution process. It may be beneficial to instead add it as a *lazy constraint*. In some instances this allows the MILP solver to prune nodes of the branch-and-bound tree more efficiently. 
+Constraint $(6)$ is a complicating constraint and thus adding it directly to the model may slow down the overall solution process. It may be beneficial to instead add it as a *lazy constraint*. In the solver, a lazy constraint is only generated when an incumbent solution violates it. In some instances, this allows the MILP solver to prune nodes of the branch-and-bound tree more efficiently. 
 
 
 ## Expected Value
-We define the **expected value** objective as
+The **expected value** objective is defined using the compatible paths $\{s \in S \mid x(s) = 1 \}$ and their path probabilities $p(s)$ and path utilities $\mathcal{U}(s)$. 
 
-$$\operatorname{E}(Z) = ∑_{𝐬∈𝐒} x(𝐬) p(s) \mathcal{U}(𝐬). \tag{7}$$
+$$\operatorname{E}(Z) = ∑_{𝐬∈𝐒} x(𝐬) \ p(𝐬) \ \mathcal{U}(𝐬). \tag{7}$$
 
 ## Positive Path Utility
-We can omit constraint $(5)$ from the model if we are maximising expected value of utility and use a **positive path utility** function $\mathcal{U}^+$ which is an affine transformation of path utility function $\mathcal{U}.$ As an example, we can subtract the minimum of the original utility function and then add one as follows.
+We can omit the probability cut defined in constraint $(6)$ from the model if we are maximising expected value of utility and use a **positive path utility** function $\mathcal{U}^+$. The positive path utility function $\mathcal{U}^+$ is an affine transformation of path utility function $\mathcal{U}$ which translates all utility values to positive values. As an example, we can subtract the minimum of the original utility function and then add one as follows.
 
 $$\mathcal{U}^+(𝐬) = \mathcal{U}(𝐬) - \min_{𝐬∈𝐒} \mathcal{U}(𝐬) + 1. \tag{8}$$
 
 ## Negative Path Utility
-We can omit constraint $(5)$ from the model if we are minimising expected value of utility and use a **negative path utility** function $\mathcal{U}^-$ which is an affine transformation of path utility function $\mathcal{U}.$ As an example, we can subtract the minimum of the original utility function and then add one as follows.
+We can omit the probability cut defined in constraint $(6)$ from the model if we are minimising expected value of utility and use a **negative path utility** function $\mathcal{U}^-$. This affine transformation of the path utility function $\mathcal{U}$ translates all utility values to negative values. As an example, we can subtract the maximum of the original utility function and then subtract one as follows.
 
 $$\mathcal{U}^+(𝐬) = \mathcal{U}(𝐬) - \max_{𝐬∈𝐒} \mathcal{U}(𝐬) - 1. \tag{9}$$
 
@@ -57,9 +53,9 @@ $$\mathcal{U}^+(𝐬) = \mathcal{U}(𝐬) - \max_{𝐬∈𝐒} \mathcal{U}(𝐬)
 ## Conditional Value-at-Risk
 The section [Measuring Risk](@ref) explains and visualizes the relationships between the formulation of expected value, value-at-risk and conditional value-at-risk for discrete probability distribution.
 
-Given decision strategy $Z,$ we define the cumulative distribution of path probability variables as
+Given decision strategy $Z,$ we define the cumulative distribution of effective paths' probabilities as
 
-$$F_Z(t) = ∑_{𝐬∈𝐒∣\mathcal{U}(𝐬)≤t} π(𝐬).$$
+$$F_Z(t) = ∑_{𝐬∈𝐒∣\mathcal{U}(𝐬)≤t} x(𝐬) p(𝐬).$$
 
 Given a **probability level** $α∈(0, 1],$ we define the **value-at-risk** as
 
@@ -73,7 +69,7 @@ $$𝐒_{α}^{=}=\{𝐬∈𝐒∣\mathcal{U}(𝐬)=u_α\}.$$
 
 We define **conditional value-at-risk** as
 
-$$\operatorname{CVaR}_α(Z)=\frac{1}{α}\left(∑_{𝐬∈𝐒_α^{<}} π(𝐬) \mathcal{U}(𝐬) + ∑_{𝐬∈𝐒_α^{=}} \left(α - ∑_{𝐬∈𝐒_α^{<}} π(𝐬) \right) \mathcal{U}(𝐬) \right).$$
+$$\operatorname{CVaR}_α(Z)=\frac{1}{α}\left(∑_{𝐬∈𝐒_α^{<}} x(𝐬) \ p(𝐬) \ \mathcal{U}(𝐬) + ∑_{𝐬∈𝐒_α^{=}} \left(α - ∑_{𝐬∈𝐒_α^{<}} x(𝐬) \ p(𝐬) \right) \mathcal{U}(𝐬) \right).$$
 
 We can form the conditional value-at-risk as an optimization problem. We have the following pre-computed parameters.
 
@@ -105,9 +101,9 @@ $$η-\mathcal{U}(𝐬)≥M (\bar{λ}(𝐬) - 1),\quad ∀𝐬∈𝐒 \tag{17}$$
 
 $$\bar{ρ}(𝐬) ≤ \bar{λ}(𝐬),\quad ∀𝐬∈𝐒 \tag{18}$$
 
-$$π(𝐬) - (1 - λ(𝐬)) ≤ ρ(𝐬) ≤ λ(𝐬),\quad ∀𝐬∈𝐒 \tag{19}$$
+$$x(𝐬) \ p(𝐬) - (1 - λ(𝐬)) ≤ ρ(𝐬) ≤ λ(𝐬),\quad ∀𝐬∈𝐒 \tag{19}$$
 
-$$ρ(𝐬) ≤ \bar{ρ}(𝐬) ≤ π(𝐬),\quad ∀𝐬∈𝐒 \tag{20}$$
+$$ρ(𝐬) ≤ \bar{ρ}(𝐬) ≤ x(𝐬) \ p(𝐬),\quad ∀𝐬∈𝐒 \tag{20}$$
 
 $$∑_{𝐬∈𝐒}\bar{ρ}(𝐬) = α \tag{21}$$
 
