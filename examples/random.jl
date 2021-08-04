@@ -18,7 +18,7 @@ U = DefaultPathUtility(V, Y)
 U⁺ = PositivePathUtility(S, U)
 model = Model()
 z = DecisionVariables(model, S, D)
-x_s = BinaryPathVariables(model, z, S, P)
+x_s = PathCompatibilityVariables(model, z, S, P)
 
 α = 0.1
 w = 0.5

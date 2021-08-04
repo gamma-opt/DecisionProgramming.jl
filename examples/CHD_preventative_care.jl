@@ -256,7 +256,7 @@ z = DecisionVariables(model, S, D)
 # Defining forbidden paths to include all those where a test is repeated twice
 forbidden_tests = ForbiddenPath[([T1,T2], Set([(1,1),(2,2),(3,1), (3,2)]))]
 scale_factor = 10000.0
-x_s = BinaryPathVariables(model, z, S, P; fixed = Dict(1 => chosen_risk_level), forbidden_paths = forbidden_tests, probability_cut=false)
+x_s = PathCompatibilityVariables(model, z, S, P; fixed = Dict(1 => chosen_risk_level), forbidden_paths = forbidden_tests, probability_cut=false)
 
 EV = expected_value(model, x_s, U, P, probability_scale_factor= scale_factor)
 @objective(model, Max, EV)
