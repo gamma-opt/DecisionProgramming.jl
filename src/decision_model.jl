@@ -19,7 +19,18 @@ struct DecisionVariables
     z::Vector{<:Array{VariableRef}}
 end
 
-"""Create decision variables and constraints.
+"""
+    DecisionVariables(model::Model, S::States, D::Vector{DecisionNode}; names::Bool=false, name::String="z")
+
+Create decision variables and constraints.
+
+# Arguments
+- `model::Model`: JuMP model into which variables are added.
+- `S::States`: States structure associated with the influence diagram.
+- `D::Vector{DecisionNode}`: Vector containing decicion nodes.
+- `names::Bool`: Use names or have JuMP variables be anonymous.
+- `name::String`: Prefix for predefined decision variable naming convention.
+
 
 # Examples
 ```julia
@@ -78,11 +89,37 @@ function decision_strategy_constraint(model::Model, S::States, d::DecisionNode, 
 end
 
 
-"""Create path compatibility variables and constraints.
+"""
+    PathCompatibilityVariables(model::Model,
+        z::DecisionVariables,
+        S::States,
+        P::AbstractPathProbability;
+        names::Bool=false,
+        name::String="x",
+        forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
+        fixed::Dict{Node, State}=Dict{Node, State}(),
+        probability_cut::Bool=true)
+
+Create path compatibility variables and constraints.
+
+# Arguments
+- `model::Model`: JuMP model into which variables are added.
+- `z::DecisionVariables`: Decision variables from `DecisionVariables` function.
+- `S::States`: States structure associated with the influence diagram.
+- `P::AbstractPathProbability`: Path probabilities structure for which the function
+  `P(s)` is defined and returns the path probabilities for path `s`.
+- `names::Bool`: Use names or have JuMP variables be anonymous.
+- `name::String`: Prefix for predefined decision variable naming convention.
+- `forbidden_paths::Vector{ForbiddenPath}`: The forbidden subpath structures.
+    Path compatibility variables will not be generated for paths that include
+    forbidden subpaths.
+- `fixed::Dict{Node, State}`: Path compatibility variable will not be generated
+    for paths which do not include these fixed subpaths.
+- `probability_cut` Includes probability cut constraint in the optimisation model.
+
 
 # Examples
 ```julia
-x_s = PathCompatibilityVariables(model, z, S, P)
 x_s = PathCompatibilityVariables(model, z, S, P; probability_cut = false)
 ```
 """
@@ -91,7 +128,7 @@ function PathCompatibilityVariables(model::Model,
     S::States,
     P::AbstractPathProbability;
     names::Bool=false,
-    name::String="x_s",
+    name::String="x",
     forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
     fixed::Dict{Node, State}=Dict{Node, State}(),
     probability_cut::Bool=true)
@@ -122,7 +159,10 @@ function PathCompatibilityVariables(model::Model,
     x_s
 end
 
-"""Adds a probability cut to the model as a lazy constraint.
+"""
+   lazy_probability_cut(model::Model, x_s::PathCompatibilityVariables, P::AbstractPathProbability)
+
+Adds a probability cut to the model as a lazy constraint.
 
 # Examples
 ```julia
@@ -143,7 +183,10 @@ end
 
 # --- Objective Functions ---
 
-"""Positive affine transformation of path utility. Always evaluates positive values.
+"""
+    PositivePathUtility(S::States, U::AbstractPathUtility)
+
+Positive affine transformation of path utility. Always evaluates positive values.
 
 # Examples
 ```julia-repl
@@ -163,7 +206,10 @@ end
 
 (U::PositivePathUtility)(s::Path) = U.U(s) - U.min + 1
 
-"""Negative affine transformation of path utility. Always evaluates negative values.
+"""
+    NegativePathUtility(S::States, U::AbstractPathUtility)
+
+Negative affine transformation of path utility. Always evaluates negative values.
 
 # Examples
 ```julia-repl
@@ -184,7 +230,22 @@ end
 (U::NegativePathUtility)(s::Path) = U.U(s) - U.max - 1
 
 
-"""Create an expected value objective.
+"""
+    expected_value(model::Model,
+        x_s::PathCompatibilityVariables,
+        U::AbstractPathUtility,
+        P::AbstractPathProbability;
+        probability_scale_factor::Float64=1.0)
+
+Create an expected value objective.
+
+# Arguments
+- `model::Model`: JuMP model into which variables are added.
+- `x_s::PathCompatibilityVariables`: Path compatibility variables.
+- `S::States`: States structure associated with the influence diagram.
+- `P::AbstractPathProbability`: Path probabilities structure for which the function
+  `P(s)` is defined and returns the path probabilities for path `s`.
+- `probability_scale_factor::Float64`: Multiplies the path probabilities by this factor.
 
 # Examples
 ```julia
@@ -192,7 +253,12 @@ EV = expected_value(model, x_s, U, P)
 EV = expected_value(model, x_s, U, P; probability_scale_factor = 10.0)
 ```
 """
-function expected_value(model::Model, x_s::PathCompatibilityVariables, U::AbstractPathUtility, P::AbstractPathProbability; probability_scale_factor::Float64=1.0)
+function expected_value(model::Model,
+    x_s::PathCompatibilityVariables,
+    U::AbstractPathUtility,
+    P::AbstractPathProbability;
+    probability_scale_factor::Float64=1.0)
+
     if probability_scale_factor ≤ 0
         throw(DomainError("The probability_scale_factor must be greater than 0."))
     end
@@ -200,7 +266,27 @@ function expected_value(model::Model, x_s::PathCompatibilityVariables, U::Abstra
     @expression(model, sum(P(s) * x * U(s) * probability_scale_factor for (s, x) in x_s))
 end
 
-"""Create a conditional value-at-risk (CVaR) objective.
+"""
+    conditional_value_at_risk(model::Model,
+        x_s::PathCompatibilityVariables{N},
+        U::AbstractPathUtility,
+        P::AbstractPathProbability,
+        α::Float64;
+        probability_scale_factor::Float64=1.0) where N
+
+Create a conditional value-at-risk (CVaR) objective.
+
+# Arguments
+- `model::Model`: JuMP model into which variables are added.
+- `x_s::PathCompatibilityVariables`: Path compatibility variables.
+- `S::States`: States structure associated with the influence diagram.
+- `P::AbstractPathProbability`: Path probabilities structure for which the function
+  `P(s)` is defined and returns the path probabilities for path `s`.
+- `α::Float64`: Probability level at which conditional value-at-risk is optimised.
+- `probability_scale_factor::Float64`: Adjusts conditional value at risk model to
+   be compatible with the expected value expression if the probabilities were scaled there.
+
+
 
 # Examples
 ```julia
@@ -209,7 +295,13 @@ CVaR = conditional_value_at_risk(model, x_s, U, P, α)
 CVaR = conditional_value_at_risk(model, x_s, U, P, α; probability_scale_factor = 10.0)
 ```
 """
-function conditional_value_at_risk(model::Model, x_s::PathCompatibilityVariables{N}, U::AbstractPathUtility, P::AbstractPathProbability, α::Float64; probability_scale_factor::Float64=1.0) where N
+function conditional_value_at_risk(model::Model,
+    x_s::PathCompatibilityVariables{N},
+    U::AbstractPathUtility,
+    P::AbstractPathProbability,
+    α::Float64;
+    probability_scale_factor::Float64=1.0) where N
+
     if probability_scale_factor ≤ 0
         throw(DomainError("The probability_scale_factor must be greater than 0."))
     end
@@ -264,12 +356,19 @@ end
 
 # --- Construct decision strategy from JuMP variables ---
 
-"""Construct decision strategy from variable refs."""
+"""
+    LocalDecisionStrategy(j::Node, z::Array{VariableRef})
+
+Construct decision strategy from variable refs.
+"""
 function LocalDecisionStrategy(j::Node, z::Array{VariableRef})
     LocalDecisionStrategy(j, @. Int(round(value(z))))
 end
 
-"""Extract values for decision variables from solved decision model.
+"""
+    DecisionStrategy(z::DecisionVariables)
+
+Extract values for decision variables from solved decision model.
 
 # Examples
 ```julia
