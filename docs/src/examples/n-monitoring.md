@@ -187,8 +187,7 @@ z = DecisionVariables(model, S, D)
 Two [lazy constraints](../decision-programming/decision-model.md) are also used to speed up the solution process.
 
 ```julia
-probability_cut(model, π_s, P)
-active_paths_cut(model, π_s, S, P)
+lazy_constraints(model, π_s, S, P, use_probability_cut=true, use_active_paths_cut=true)
 ```
 
 The expected utility is used as the objective and the problem is solved using Gurobi.
@@ -284,7 +283,7 @@ julia> print_state_probabilities(sprobs, F)
 │  Node │  State 1 │  State 2 │ Fixed state │
 │ Int64 │  Float64 │  Float64 │      String │
 ├───────┼──────────┼──────────┼─────────────┤
-│    10 │ 0.038697 │ 0.961303 │             │
+│    10 │ 0.633125 │ 0.366875 │             │
 └───────┴──────────┴──────────┴─────────────┘
 ```
 
@@ -311,10 +310,11 @@ julia> print_statistics(udist)
 │     Name │ Statistics │
 │   String │    Float64 │
 ├──────────┼────────────┤
-│     Mean │  93.248950 │
 │      Std │  19.287197 │
-│ Skewness │  -4.783515 │
-│ Kurtosis │  20.882012 │
+│     Mean │  33.806192 │
+│      Std │  48.195210 │
+│ Skewness │   0.552439 │
+│ Kurtosis │  -1.694811 │
 └──────────┴────────────┘
 ```
 

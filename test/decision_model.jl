@@ -33,14 +33,11 @@ function test_decision_model(D, S, P, U, n_inactive, hard_lower_bound)
     @info "Testing PositivePathUtility"
     U′ = if hard_lower_bound U else PositivePathUtility(S, U) end
 
-    @info "Testing probability_cut"
-    probability_cut(model, π_s, P)
-
-    @info "Testing active_paths_cut"
+    @info "Testing lazy constraints"
     if iszero(n_inactive)
-        active_paths_cut(model, π_s, S, P)
+        lazy_constraints(model, π_s, S, P, use_probability_cut=true, use_active_paths_cut=true)
     else
-        @test_throws DomainError active_paths_cut(model, π_s, S, P)
+        @test_throws DomainError lazy_constraints(model, π_s, S, P, use_probability_cut=true, use_active_paths_cut=true)
     end
 
     @info "Testing expected_value"

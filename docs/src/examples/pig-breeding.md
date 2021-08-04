@@ -211,7 +211,7 @@ z = DecisionVariables(model, S, D)
 We also demonstrate one of the lazy constraints defined in the same section.
 
 ```julia
-active_paths_cut(model, π_s, S, P)
+lazy_constraints(model, π_s, S, P, use_active_paths_cut=true)
 ```
 
 We create the objective function
