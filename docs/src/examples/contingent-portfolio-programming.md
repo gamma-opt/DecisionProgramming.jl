@@ -119,10 +119,11 @@ P = DefaultPathProbability(C, X)
 ```
 
 ## Decision Model: Portfolio Selection
+
+We create the decision variables $z(s_j|s_{I(j)})$ and notice that the activation of paths that are compatible with the decision strategy is handled by the problem specific variables and constraints together with the custom objective function, eliminating the need for separate variables representing path activation.
 ```julia
 model = Model()
 z = DecisionVariables(model, S, D)
-π_s = PathProbabilityVariables(model, z, S, P)
 ```
 
 ### Creating problem specific variables

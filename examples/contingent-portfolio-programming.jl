@@ -67,7 +67,6 @@ P = DefaultPathProbability(C, X)
 @info("Defining DecisionModel")
 model = Model()
 z = DecisionVariables(model, S, D)
-π_s = PathProbabilityVariables(model, z, S, P)
 
 @info("Creating problem specific constraints and expressions")
 
@@ -145,6 +144,20 @@ Z = DecisionStrategy(z)
 
 @info("Printing decision strategy:")
 print_decision_strategy(S, Z)
+
+
+@info("Extracting path utilities")
+struct PathUtility <: AbstractPathUtility
+    data::Array{AffExpr}
+end
+Base.getindex(U::PathUtility, i::Int) = getindex(U.data, i)
+Base.getindex(U::PathUtility, I::Vararg{Int,N}) where N = getindex(U.data, I...)
+(U::PathUtility)(s::Path) = value.(U[s...])
+
+path_utility = [@expression(model,
+    sum(x_A[s[1:3]..., a] * (V_A[s[4], a] - I_a[a]) for a in 1:n_A) -
+    sum(x_T[s[1], t] * I_t[t] for t in 1:n_T)) for s in paths(S)]
+U = PathUtility(path_utility)
 
 @info("Computing utility distribution.")
 udist = UtilityDistribution(S, P, U, Z)
