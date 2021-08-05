@@ -44,7 +44,7 @@ Effective paths are related to active paths, such that, for all $j∈C,$ we have
 
 $$𝐒_{I(j)∪j}^′=\{𝐬_{I(j)∪j}∈𝐒_{I(j)∪j} ∣ ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)})=0\}.$$
 
-Generally, the effective paths are a subset of active paths, that is
+Generally, the effective paths is a subset of the active paths, that is
 
 $$𝐒^∗ ⊆ 𝐒(X).$$
 
