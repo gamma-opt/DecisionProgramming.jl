@@ -16,7 +16,7 @@ $$∑_{s_j∈S_j} z(s_j∣𝐬_{I(j)})=1,\quad ∀j∈D, 𝐬_{I(j)}∈𝐒_{I(j
 
 
 ## Path Compatibility Variables
-**Path compatibility variables** $x(s)$ are indicator variables for whether the path is compatible with decision strategy $Z$ that is defined by the decision variables $z$. These are continous variables but only assume binary values $\{0, 1\}$, with the compatible paths $s ∈ S$ taking values $x(s) = 1$. Constraint $(4)$ defines the lower and upper bounds for the variables. 
+**Path compatibility variables** $x(s)$ are indicator variables for whether the path is compatible with decision strategy $Z$ that is defined by the decision variables $z$. These are continous variables but only assume binary values, so that the compatible paths $𝐬 ∈ 𝐒_C$ take values $x(s) = 1$ and other paths $𝐬 ∈ 𝐒 \setminus \{𝐒_C\}$ take values $x(s) = 0$. Constraint $(4)$ defines the lower and upper bounds for the variables. 
 
 Constraint $(5)$ ensures that only the variables associated with locally compatible paths $s \in S_{s_j | s_{I(j)} }$ of the decision strategy can take value $x(s) = 1$. The upperbound of the constraint uses the minimum of the *feasible paths* upperbound and the *theoretical* upperbound. For motivation on of the feasible paths upper bound see the [Computational Complexity](@ref computational-complexity) page. For proofs and motivation on the theoretical upperbound see reference [^2].
 
@@ -35,7 +35,7 @@ Constraint $(6)$ is a complicating constraint and thus adding it directly to the
 
 
 ## Expected Value
-The **expected value** objective is defined using the compatible paths $\{s \in S \mid x(s) = 1 \}$ and their path probabilities $p(s)$ and path utilities $\mathcal{U}(s)$. 
+The **expected value** objective is defined using the path compatibility variables $x(s)$ and their associated path probabilities $p(s)$ and path utilities $\mathcal{U}(s)$. 
 
 $$\operatorname{E}(Z) = ∑_{𝐬∈𝐒} x(𝐬) \ p(𝐬) \ \mathcal{U}(𝐬). \tag{7}$$
 
@@ -47,13 +47,13 @@ $$\mathcal{U}^+(𝐬) = \mathcal{U}(𝐬) - \min_{𝐬∈𝐒} \mathcal{U}(𝐬)
 ## Negative Path Utility
 We can omit the probability cut defined in constraint $(6)$ from the model if we are minimising expected value of utility and use a **negative path utility** function $\mathcal{U}^-$. This affine transformation of the path utility function $\mathcal{U}$ translates all utility values to negative values. As an example, we can subtract the maximum of the original utility function and then subtract one as follows.
 
-$$\mathcal{U}^+(𝐬) = \mathcal{U}(𝐬) - \max_{𝐬∈𝐒} \mathcal{U}(𝐬) - 1. \tag{9}$$
+$$\mathcal{U}^-(𝐬) = \mathcal{U}(𝐬) - \max_{𝐬∈𝐒} \mathcal{U}(𝐬) - 1. \tag{9}$$
 
 
 ## Conditional Value-at-Risk
 The section [Measuring Risk](@ref) explains and visualizes the relationships between the formulation of expected value, value-at-risk and conditional value-at-risk for discrete probability distribution.
 
-Given decision strategy $Z,$ we define the cumulative distribution of effective paths' probabilities as
+Given decision strategy $Z,$ we define the cumulative distribution of compatible paths' probabilities as
 
 $$F_Z(t) = ∑_{𝐬∈𝐒∣\mathcal{U}(𝐬)≤t} x(𝐬) p(𝐬).$$
 
