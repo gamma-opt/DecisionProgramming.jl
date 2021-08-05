@@ -18,13 +18,13 @@ $$∑_{s_j∈S_j} z(s_j∣𝐬_{I(j)})=1,\quad ∀j∈D, 𝐬_{I(j)}∈𝐒_{I(j
 ## Path Compatibility Variables
 **Path compatibility variables** $x(s)$ are indicator variables for whether the path is compatible with decision strategy $Z$ that is defined by the decision variables $z$. These are continous variables but only assume binary values, so that the compatible paths $𝐬 ∈ 𝐒_C$ take values $x(s) = 1$ and other paths $𝐬 ∈ 𝐒 \setminus \{𝐒_C\}$ take values $x(s) = 0$. Constraint $(4)$ defines the lower and upper bounds for the variables. 
 
-Constraint $(5)$ ensures that only the variables associated with locally compatible paths $s \in S_{s_j | s_{I(j)} }$ of the decision strategy can take value $x(s) = 1$. The upperbound of the constraint uses the minimum of the *feasible paths* upperbound and the *theoretical* upperbound. For motivation on of the feasible paths upper bound see the [Computational Complexity](@ref computational-complexity) page. For proofs and motivation on the theoretical upperbound see reference [^2].
-
-Constraint $(6)$ is called the probability cut constraint and it defines that the sum of the path probabilities of the compatible paths must equal one.
-
 $$0≤x(s)≤1,\quad ∀s∈𝐒 \tag{4}$$
 
-$$∑_{s \in S'_{s_j | s_{I(j)}} } x(s) \leq \min ( \ | S'_{s_j | s_{I(j)}}|, \ \frac{| S_{s_j | s_{I(j)}}| }{\displaystyle  \prod_{d \in D \setminus \{j, I(j)\}} |S_d|} \ ) \ z(s_j∣s_{I(j)}),\quad \forall j \in D, s_j \in S_j, s_{I(j)} \in S_{I(j)} \tag{5}$$
+Constraint $(5)$ ensures that only the variables associated with locally compatible paths $s \in S_{s_j | s_{I(j)} }$ of the decision strategy can take value $x(s) = 1$. The effective locally compatible paths are denoted with $$| S^*_{s_j | s_{I(j)}}|$$. The upper bound of the constraint uses the minimum of the *feasible paths* upper bound and the *theoretical* upper bound. For motivation on of the feasible paths upper bound see the [Computational Complexity](@ref computational-complexity) page. For proofs and motivation on the theoretical upper bound see reference [^2].
+
+$$∑_{s \in S^*_{s_j | s_{I(j)}} } x(s) \leq \min ( \ | S^*_{s_j | s_{I(j)}}|, \ \frac{| S_{s_j | s_{I(j)}}| }{\displaystyle  \prod_{d \in D \setminus \{j, I(j)\}} |S_d|} \ ) \ z(s_j∣s_{I(j)}),\quad \forall j \in D, s_j \in S_j, s_{I(j)} \in S_{I(j)} \tag{5}$$
+
+Constraint $(6)$ is called the probability cut constraint and it defines that the sum of the path probabilities of the compatible paths must equal one.
 
 $$∑_{𝐬∈𝐒}x(s) p(s) = 1 \tag{6}$$
 
