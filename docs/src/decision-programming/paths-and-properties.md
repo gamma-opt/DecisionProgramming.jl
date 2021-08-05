@@ -10,9 +10,23 @@ $$𝐒^∗=\{𝐬∈𝐒∣𝐬_{A}∉𝐒_{A}^′\}⊆𝐒.$$
 
 The [Decision Model](@ref decision-model) size depends on the number of effective paths, rather than the number of paths or size of the influence diagram directly. If effective paths is empty, the influence diagram has no solutions.
 
+In Decision Programming, one can assert certain subpaths to be effective or ineffective using the *fixed path* and *forbidden paths* sets.
+
+### Fixed Path
+**Fixed path** refers to a subpath which must be realized. If the fixed path is $s_Y = S_Y^f$ for all nodes $Y⊆C∪D$, then the effective paths in the model are
+
+$$𝐒^∗=\{𝐬∈𝐒∣s_{Y} = S_{Y}^f \forall \ Y \}.$$
+
+
+### Forbidden Paths
+**Forbidden paths** are a the to assert ineffective subpaths. If $𝐬_X∈𝐒_X^′$ are forbidden subpaths for nodes $X⊆C∪D$, then the effective paths in the model are
+
+$$𝐒^∗=\{𝐬∈𝐒∣𝐬_{X} ∉ 𝐒_{X}^′\}.$$
+
+
 
 ## Active Paths
-If the upper bound of path probability is zero, its probability is zero, and it does not affect the solution. Therefore, we can only consider paths with a positive upper bound of path probability. We refer to these paths as active paths. Formally, we define an **active path** as a path $𝐬$ if all of its chance states are active
+If the upper bound of path probability is zero, its probability is zero, and it does not affect the solution. Therefore, we can consider only the paths with a positive upper bound of path probability. We refer to these paths as active paths. Formally, we define an **active path** as a path $𝐬$ if all of its chance states are active
 
 $$\begin{aligned}
 X(𝐬)&↔(p(𝐬)>0)\\ &↔ ⋀_{j∈C} (ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)})>0).
@@ -30,7 +44,7 @@ Effective paths are related to active paths, such that, for all $j∈C,$ we have
 
 $$𝐒_{I(j)∪j}^′=\{𝐬_{I(j)∪j}∈𝐒_{I(j)∪j} ∣ ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)})=0\}.$$
 
-Generally, we have
+Generally, the effective paths are a subset of active paths, that is
 
 $$𝐒^∗ ⊆ 𝐒(X).$$
 
@@ -38,19 +52,27 @@ If there are no other ineffective subpaths, we have
 
 $$𝐒^∗ = 𝐒(X).$$
 
+Notice that, the number of active paths affects the size of the [Decision Model](@ref decision-model) because it depends on the number of effective paths.
+
 
 ## Compatible Paths
-Each decision strategy $Z∈ℤ$ chooses a set of paths from all paths, referred to as compatible paths. Formally, we denote the set of **compatible paths** as
+Each decision strategy $Z∈ℤ$ determines a set of **compatible paths**. Formally, we denote the set of compatible paths as
 
 $$𝐒(Z)=\{𝐬∈𝐒 ∣ Z(𝐬)\}.$$
 
-Since each local decision strategy $Z_j∈Z$ can choose only one of its states, the **number of compatible paths** is
+Since each local decision strategy $Z_j∈Z$ is deterministic, it can choose only one state $s_j$ for each information state $𝐬_{I(j)}$. Thus, the **number of compatible paths** is
 
 $$|𝐒(Z)|=|𝐒|/|𝐒_D|=|𝐒_C|.$$
 
 The compatible paths of all distinct pairs of decision strategies are disjoint. Formally, for all $Z,Z^′∈ℤ$ where $Z≠Z^′$, we have $Z(𝐬)∧Z^′(𝐬)↔⊥,$ which gives as
 
 $$𝐒(Z)∩𝐒(Z^′)=\{𝐬∈𝐒∣Z(𝐬)∧Z^′(𝐬)\}=∅.$$
+
+
+### Locally Compatible Paths
+**Locally compatible paths** refers to a subset of paths that include the subpath $(s_{I(j)}, s_j)$ and thus, represent the local decision strategy $Z_j(s_{I(j)}) = s_j$ for decision node $j \in D$. Formally, the locally compatible paths for node $j \in D$, state $s_j \in S_j$ and information state $s_{I(j)} \in S_{I(j)}$ includes the paths
+
+$$ 𝐒_{s_j \mid s_{I(j)}} = \{ 𝐬 \in 𝐒 \mid (s_{I(j)}, s_j) ⊂ s\}.$$
 
 
 ## Symmetry
@@ -89,11 +111,6 @@ Let us add one chance node with two states to the influence diagram.
 
 Now, given inactive chance states such that we remove the dashed paths, we have a symmetric influence diagram. Both decisions will have an equal number of possible paths. However, there are only eight possible paths instead of twelve if there were no inactive chance states.
 
-
-## Local Decision Strategy Defining Set
-*Local decision strategy  defining set* refers to a subset of paths that include the subpath $(s_{I(j)}, s_j)$ and thus, represent the decision alternative $s_{I(j)} \rightarrow s_j$ for decision node $j \in D$. Formally, it includes all the paths
-
-$$ 𝐒_{s_j \mid s_{I(j)}} = \{ s \in 𝐒 \mid (s_{I(j)}, s_j) ⊂ s\}.
 
 
 ## Other Properties
