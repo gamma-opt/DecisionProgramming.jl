@@ -1,4 +1,4 @@
-# [Paths and Properties](@id paths-and-properties)
+# [Paths](@id paths)
 ## Effective Paths
 ![](figures/paths_eff.svg)
 
