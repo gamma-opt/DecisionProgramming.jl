@@ -168,6 +168,10 @@ Adds a probability cut to the model as a lazy constraint.
 ```julia
 lazy_probability_cut(model, x_s, P)
 ```
+
+!!! warning
+Remember to separately set lazy constraints on in the solver parameters (optimizer attributes). For Gurobi `"LazyConstraints" => 1.`
+
 """
 function lazy_probability_cut(model::Model, x_s::PathCompatibilityVariables, P::AbstractPathProbability)
 
