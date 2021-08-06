@@ -16,36 +16,36 @@ $$∑_{s_j∈S_j} z(s_j∣𝐬_{I(j)})=1,\quad ∀j∈D, 𝐬_{I(j)}∈𝐒_{I(j
 
 
 ## Path Compatibility Variables
-**Path compatibility variables** $x(s)$ are indicator variables for whether the path is compatible with decision strategy $Z$ that is defined by the decision variables $z$. These are continous variables but only assume binary values, so that the compatible paths $𝐬 ∈ 𝐒_C$ take values $x(s) = 1$ and other paths $𝐬 ∈ 𝐒 \setminus \{𝐒_C\}$ take values $x(s) = 0$. Constraint $(4)$ defines the lower and upper bounds for the variables. 
+**Path compatibility variables** $x(𝐬)$ are indicator variables for whether path $𝐬$ is compatible with decision strategy $Z$ that is defined by the decision variables $z$. These are continous variables but only assume binary values, so that the compatible paths $𝐬 ∈ 𝐒_C$ take values $x(𝐬) = 1$ and other paths $𝐬 ∈ 𝐒 \setminus \{𝐒_C\}$ take values $x(𝐬) = 0$. Constraint $(4)$ defines the lower and upper bounds for the variables. 
 
-$$0≤x(s)≤1,\quad ∀s∈𝐒 \tag{4}$$
+$$0≤x(𝐬)≤1,\quad ∀𝐬∈𝐒 \tag{4}$$
 
-Constraint $(5)$ ensures that only the variables associated with locally compatible paths $s \in S_{s_j | s_{I(j)} }$ of the decision strategy can take value $x(s) = 1$. The effective locally compatible paths are denoted with $| S^*_{s_j | s_{I(j)}}|$. The upper bound of the constraint uses the minimum of the *feasible paths* upper bound and the *theoretical* upper bound. The motivation of the feasible paths upper bound is below. For proofs and motivation on the theoretical upper bound see reference [^2].
+Constraint $(5)$ ensures that only the variables associated with locally compatible paths $𝐬 \in 𝐒_{s_j | 𝐬_{I(j)} }$ of the decision strategy can take value $x(𝐬) = 1$. The effective locally compatible paths are denoted with $| 𝐒^*_{s_j | 𝐬_{I(j)}}|$. The upper bound of the constraint uses the minimum of the *feasible paths* upper bound and the *theoretical* upper bound. The motivation of the feasible paths upper bound is below. For proofs and motivation on the theoretical upper bound see reference [^2].
 
-$$∑_{s \in S^*_{s_j | s_{I(j)}} } x(s) \leq \min ( \ | S^*_{s_j | s_{I(j)}}|, \ \frac{| S_{s_j | s_{I(j)}}| }{\displaystyle  \prod_{d \in D \setminus \{j, I(j)\}} |S_d|} \ ) \ z(s_j∣s_{I(j)}),\quad \forall j \in D, s_j \in S_j, s_{I(j)} \in S_{I(j)} \tag{5}$$
+$$∑_{𝐬 \in 𝐒^*_{s_j | 𝐬_{I(j)}} } x(𝐬) \leq \min ( \ | 𝐒^*_{s_j | 𝐬_{I(j)}}|, \ \frac{| 𝐒_{s_j | 𝐬_{I(j)}}| }{\displaystyle  \prod_{d \in D \setminus \{j, I(j)\}} |𝐒_d|} \ ) \ z(s_j∣𝐬_{I(j)}),\quad \forall j \in D, s_j \in S_j, 𝐬_{I(j)} \in 𝐒_{I(j)} \tag{5}$$
 
 Constraint $(6)$ is called the probability cut constraint and it defines that the sum of the path probabilities of the compatible paths must equal one.
 
-$$∑_{𝐬∈𝐒}x(s) p(s) = 1 \tag{6}$$
+$$∑_{𝐬∈𝐒}x(𝐬) p(𝐬) = 1 \tag{6}$$
 
 ### Feasible paths upper bound
 The *feasible paths upper bound* for the path compatibility variables is 
 
-$$∑_{s \in 𝐒^*_{s_j | s_{I(j)}} } x(s) \leq  | 𝐒^*_{s_j | s_{I(j)}}| \ z(s_j∣s_{I(j)}),\quad \forall j \in D, s_j \in S_j, s_{I(j)} \in S_{I(j)} $$
+$$∑_{𝐬 \in 𝐒^*_{s_j | 𝐬_{I(j)}} } x(𝐬) \leq  | 𝐒^*_{s_j | 𝐬_{I(j)}}| \ z(s_j∣𝐬_{I(j)}),\quad \forall j \in D, s_j \in S_j, 𝐬_{I(j)} \in 𝐒_{I(j)} $$
 
-where $𝐒^*_{s_j | s_{I(j)}}$ is the set of effective locally compatible paths. This upper bound is motivated by the implementation of the framework in which path compatibility variables $x(s)$ are only generated for effective paths $s \in 𝐒^∗$. The ineffective paths are not generated because they do not influence the objective function and having less variables reduces the size of the model.
+where $𝐒^*_{s_j | s_{I(j)}}$ is the set of effective locally compatible paths. This upper bound is motivated by the implementation of the framework in which path compatibility variables $x(𝐬)$ are only generated for effective paths $𝐬 \in 𝐒^∗$. The ineffective paths are not generated because they do not influence the objective function and having less variables reduces the size of the model.
 
-Therefore, if the model has ineffective paths $s \in 𝐒^′$, then the number of effective paths is less than the number of all paths.
+Therefore, if the model has ineffective paths $𝐬 \in 𝐒^′$, then the number of effective paths is less than the number of all paths.
 
 $$ |𝐒^*| < |𝐒|$$
 
 Therefore,
 
-$$ |𝐒^*_{s_j | s_{I(j)}} | < | 𝐒_{s_j | s_{I(j)}}| .$$
+$$ |𝐒^*_{s_j | 𝐬_{I(j)}} | < | 𝐒_{s_j | 𝐬_{I(j)}}| .$$
 
 The feasible paths upper bound is used in conjunction with the *theoretical upper bound* as follows. 
 
-$$∑_{s \in S^*_{s_j | s_{I(j)}} } x(s) \leq \min ( \ | S^*_{s_j | s_{I(j)}}|, \ \frac{| S_{s_j | s_{I(j)}}| }{\displaystyle  \prod_{d \in D \setminus \{j, I(j)\}} |S_d|} \ ) \ z(s_j∣s_{I(j)}),\quad \forall j \in D, s_j \in S_j, s_{I(j)} \in S_{I(j)}$$
+$$∑_{𝐬 \in 𝐒^*_{s_j | 𝐬_{I(j)}} } x(𝐬) \leq \min ( \ | 𝐒^*_{s_j | 𝐬_{I(j)}}|, \ \frac{| 𝐒_{s_j | 𝐬_{I(j)}}| }{\displaystyle  \prod_{d \in D \setminus \{j, I(j)\}} |𝐒_d|} \ ) \ z(s_j∣𝐬_{I(j)}),\quad \forall j \in D, s_j \in S_j, 𝐬_{I(j)} \in 𝐒_{I(j)}$$
 
 The motivation for using the minimum of these bounds is that it depends on the problem structure which one is tighter. The feasible paths upper bound may be tighter if the set of ineffective paths is large compared to the number of all paths.
 
@@ -57,7 +57,7 @@ Constraint $(6)$ is a complicating constraint and thus adding it directly to the
 
 
 ## Expected Value
-The **expected value** objective is defined using the path compatibility variables $x(s)$ and their associated path probabilities $p(s)$ and path utilities $\mathcal{U}(s)$. 
+The **expected value** objective is defined using the path compatibility variables $x(𝐬)$ and their associated path probabilities $p(𝐬)$ and path utilities $\mathcal{U}(𝐬)$. 
 
 $$\operatorname{E}(Z) = ∑_{𝐬∈𝐒} x(𝐬) \ p(𝐬) \ \mathcal{U}(𝐬). \tag{7}$$
 

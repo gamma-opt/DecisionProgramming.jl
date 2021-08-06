@@ -37,7 +37,7 @@ In the worst case, $m=n$, a decision node is influenced by every other chance an
 As has become evident above, in Decision Programming the size of the [Decision Model](@ref decision-model) may become large if the influence diagram has a large number of nodes or nodes with a large number of states. In practice, this results in having a large number of path compatibility and decision variables. This may results in numerical challenges.
 
 ### Probability Scaling Factor
-In an influence diagram a large number of nodes or some nodes having a large set of states, causes the path probabilities $p(s)$ to become increasingly small. This may cause numerical and/or tractability issues with the solver. This issue is showcased in the [CHD preventative care example](../examples/CHD_preventative_care.md).
+In an influence diagram a large number of nodes or some nodes having a large set of states, causes the path probabilities $p(𝐬)$ to become increasingly small. This may cause numerical issues with the solver or inable it from finding a solution. This issue is showcased in the [CHD preventative care example](../examples/CHD_preventative_care.md).
 
 The issue may be helped by multiplying the path probabilities with a scaling factor $\gamma > 0$ in the objective function.
 
