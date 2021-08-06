@@ -27,8 +27,8 @@ function test_decision_model(D, S, P, U, n_inactive, probability_scale_factor, p
     @info "Testing DecisionVariables"
     z = DecisionVariables(model, S, D)
 
-    @info "Testing BinaryPathVariables"
-    x_s = BinaryPathVariables(model, z, S, P; probability_cut = probability_cut)
+    @info "Testing PathCompatibilityVariables"
+    x_s = PathCompatibilityVariables(model, z, S, P; probability_cut = probability_cut)
 
     @info "Testing PositivePathUtility"
     U′ = if probability_cut U else PositivePathUtility(S, U) end
