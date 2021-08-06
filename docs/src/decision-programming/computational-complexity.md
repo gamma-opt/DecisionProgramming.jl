@@ -32,38 +32,15 @@ $$0 ≤ ∑_{i∈D}|𝐒_{I(i)∪\{i\}}| ≤ |D| \left(\max_{i∈C∪D} |S_j|\ri
 
 In the worst case, $m=n$, a decision node is influenced by every other chance and decision node. However, in most practical cases, we have $m < n,$ where decision nodes are influenced only by a limited number of other chance and decision nodes, making models easier to solve.
 
-## Tackling tracktability challenges 
+## Numerical challenges 
 
-As has become evident above, in Decision Programming the [Decision Model](@ref decision-model) may become large due to a large number of paths and decisions. In practice, this means having a large number of path compatibility and decision variables.
-
-### Feasible paths upper bound
-The *feasible paths upper bound* for the path compatibility variables is 
-
-$$∑_{s \in 𝐒^*_{s_j | s_{I(j)}} } x(s) \leq  | 𝐒^*_{s_j | s_{I(j)}}| \ z(s_j∣s_{I(j)}),\quad \forall j \in D, s_j \in S_j, s_{I(j)} \in S_{I(j)} $$
-
-where $𝐒^*_{s_j | s_{I(j)}}$ is the set of effective locally compatible paths. This upper bound is motivated by the implementation of the framework in which path compatibility variables $x(s)$ are only generated for effective paths $s \in 𝐒^∗$. Remeber that effective paths are a subset of the active paths $ 𝐒(X) ⊆ 𝐒$. This is done because ineffective and inactive paths do not influence the objective function, and not generating them reduces the model size.
-
-Therefore if the model has ineffective paths $s \in 𝐒^′$, then the number of effective paths is less than the number of all paths.
-
-$$ |𝐒^*| < |𝐒|$$
-
-Therefore,
-
-$$ |𝐒^*_{s_j | s_{I(j)}} | < | 𝐒_{s_j | s_{I(j)}}| .$$
-
-The feasible paths upper bound is used in conjunction with the [*theoretical upper bound*]() as follows 
-
-$$∑_{s \in S^*_{s_j | s_{I(j)}} } x(s) \leq \min ( \ | S^*_{s_j | s_{I(j)}}|, \ \frac{| S_{s_j | s_{I(j)}}| }{\displaystyle  \prod_{d \in D \setminus \{j, I(j)\}} |S_d|} \ ) \ z(s_j∣s_{I(j)}),\quad \forall j \in D, s_j \in S_j, s_{I(j)} \in S_{I(j)}.$$
-
-The motivation for using the minimum of these bounds is because it depends on the problem structure which one is tighter. The feasible paths upper bound may be tighter if the set of ineffective paths is large compared to the number of all paths.
-
+As has become evident above, in Decision Programming the size of the [Decision Model](@ref decision-model) may become large if the influence diagram has a large number of nodes or nodes with a large number of states. In practice, this results in having a large number of path compatibility and decision variables. This may results in numerical challenges.
 
 ### Probability Scaling Factor
 In an influence diagram a large number of nodes or some nodes having a large set of states, causes the path probabilities $p(s)$ to become increasingly small. This may cause numerical and/or tractability issues with the solver. This issue is showcased in the [CHD preventative care example](../examples/CHD_preventative_care.md).
 
-The issue may be helped by multiplying the path probabilities with a scaling factor $\gamma > 0$ in the objective function and probability cut in the following way.
-
+The issue may be helped by multiplying the path probabilities with a scaling factor $\gamma > 0$ in the objective function.
 
 $$\operatorname{E}(Z) = ∑_{𝐬∈𝐒} x(𝐬) \ p(𝐬) \ \gamma \ \mathcal{U}(𝐬)$$
 
-$$∑_{𝐬∈𝐒}x(s) \ p(s) \ \gamma = \gamma $$
+The conditional value-at-risk function can also be scaled so that it is compatible with an expected value objective function that has been scaled.
