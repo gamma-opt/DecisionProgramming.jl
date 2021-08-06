@@ -68,10 +68,9 @@ U = DefaultPathUtility(V, Y)
 
 @info("Creating the decision model.")
 model = Model()
-U⁺ = PositivePathUtility(S, U)
 z = DecisionVariables(model, S, D)
 x_s = PathCompatibilityVariables(model, z, S, P)
-EV = expected_value(model, x_s, U⁺, P)
+EV = expected_value(model, x_s, U, P)
 @objective(model, Max, EV)
 
 @info("Starting the optimization process.")
