@@ -1,7 +1,10 @@
 using DataFrames, PrettyTables
 using StatsBase, StatsBase.Statistics
 
-"""Print decision strategy.
+"""
+    function print_decision_strategy(S::States, Z::DecisionStrategy)
+
+Print decision strategy.
 
 # Examples
 ```julia
@@ -18,7 +21,10 @@ function print_decision_strategy(S::States, Z::DecisionStrategy)
     end
 end
 
-"""Print utility distribution
+"""
+    function print_utility_distribution(udist::UtilityDistribution; util_fmt="%f", prob_fmt="%f")
+
+Print utility distribution.
 
 # Examples
 ```julia
@@ -34,7 +40,10 @@ function print_utility_distribution(udist::UtilityDistribution; util_fmt="%f", p
     pretty_table(df; formatters = formatters)
 end
 
-"""Print state probabilities with fixed states.
+"""
+    function print_state_probabilities(sprobs::StateProbabilities, nodes::Vector{Node}; prob_fmt="%f")
+
+Print state probabilities with fixed states.
 
 # Examples
 ```julia
@@ -62,7 +71,11 @@ function print_state_probabilities(sprobs::StateProbabilities, nodes::Vector{Nod
     pretty_table(df; formatters = ft_printf(prob_fmt, (first(states)+1):(last(states)+1)))
 end
 
-"""Print statistics."""
+"""
+function print_statistics(udist::UtilityDistribution; fmt = "%f")
+
+Print statistics about utility distribution.
+"""
 function print_statistics(udist::UtilityDistribution; fmt = "%f")
     u = udist.u
     w = ProbabilityWeights(udist.p)
@@ -72,7 +85,11 @@ function print_statistics(udist::UtilityDistribution; fmt = "%f")
     pretty_table(df, formatters = ft_printf(fmt, [2]))
 end
 
-"""Print risk measures."""
+"""
+    function print_risk_measures(udist::UtilityDistribution, αs::Vector{Float64}; fmt = "%f")
+
+Print risk measures.
+"""
 function print_risk_measures(udist::UtilityDistribution, αs::Vector{Float64}; fmt = "%f")
     u, p = udist.u, udist.p
     VaR = [value_at_risk(u, p, α) for α in αs]
