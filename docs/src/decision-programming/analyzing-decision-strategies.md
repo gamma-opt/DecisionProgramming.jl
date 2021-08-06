@@ -1,6 +1,6 @@
 # [Analyzing Decision Strategies](@id analyzing-decision-strategies)
 ## Introduction
-This section focuses on how we can analyze fixed decision strategies $Z$ on an influence diagram $G$, such as ones resulting from the optimization. We can rule out all incompatible paths from the analysis because their path probability is zero, by only generating the compatible paths $𝐬∈𝐒(Z).$ However, compatible paths may still contain inactive paths if the influence diagram contains inactive chance states. The other property of compatible paths is that their path probability is equal to the upper bound $p(𝐬).$
+This section focuses on how we can analyze fixed decision strategies $Z$ on an influence diagram $G$, such as ones resulting from the optimization. We can rule out all incompatible and inactive paths from the analysis because they do not influence the outcomes of the strategy. This means that we only consider paths $𝐬$ that are compatible and active $𝐬 \in 𝐒(X) \cap 𝐒(Z)$.
 
 
 ## Generating Compatible Paths
@@ -8,7 +8,7 @@ We can generate compatible paths $𝐬∈𝐒(Z)$ as follows.
 
 1) Initialize path $𝐬$ of length $n$ with undefined values.
 2) Fill path with chance states $𝐬_j∈S_j$ for all $j∈C.$
-3) In increasing order of decision nodes $j∈D$, fill decision states by computing decision strategy $𝐬_j=Z_j(𝐬_{I(j)}).$
+3) In increasing order of decision nodes $j∈D$, fill decision states by computing decision strategy $s_j=Z_j(𝐬_{I(j)}).$
 
 
 ## Utility Distribution
