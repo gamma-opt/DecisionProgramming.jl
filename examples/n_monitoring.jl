@@ -94,7 +94,7 @@ U = DefaultPathUtility(V, Y)
 U⁺ = PositivePathUtility(S, U)
 model = Model()
 z = DecisionVariables(model, S, D)
-x_s = PathCompatibilityVariables(model, z, S, P)
+x_s = PathCompatibilityVariables(model, z, S, P, probability_cut = false)
 EV = expected_value(model, x_s, U⁺, P)
 @objective(model, Max, EV)
 
