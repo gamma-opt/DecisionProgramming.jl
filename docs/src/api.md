@@ -64,7 +64,7 @@ lazy_probability_cut(::Model, ::PathCompatibilityVariables, ::AbstractPathProbab
 PositivePathUtility
 NegativePathUtility
 expected_value(::Model, ::PathCompatibilityVariables, ::AbstractPathUtility, ::AbstractPathProbability; ::Float64)
-conditional_value_at_risk(::Model, ::PathCompatibilityVariables{N}, ::AbstractPathUtility, ::AbstractPathProbability, ::Float64; ::Float64)
+conditional_value_at_risk(::Model, ::PathCompatibilityVariables{N}, ::AbstractPathUtility, ::AbstractPathProbability, ::Float64; ::Float64) where N
 ```
 
 ### Decision Strategy from Variables
