@@ -217,7 +217,7 @@ Negative affine transformation of path utility. Always evaluates negative values
 
 # Examples
 ```julia-repl
-julia> U⁻ = NegativetivePathUtility(S, U)
+julia> U⁻ = NegativePathUtility(S, U)
 julia> all(U⁻(s) < 0 for s in paths(S))
 true
 ```
