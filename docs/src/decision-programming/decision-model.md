@@ -4,59 +4,80 @@
 
 $$\underset{Z∈ℤ}{\text{maximize}}\quad f(\{(ℙ(X=𝐬∣Z), \mathcal{U}(𝐬)) ∣ 𝐬∈𝐒\}). \tag{1}$$
 
-**Decision model** refers to the mixed-integer linear programming formulation of this optimization problem. This page explains how to express decision strategy, path probability, path utility, and the objective in the mixed-integer linear form. We also present standard objective functions, including expected value and risk measures.  We based the decision model on [^1], sections 3 and 5. We recommend reading the references for motivation, details, and proofs of the formulation.
+**Decision model** refers to the mixed-integer linear programming formulation of this optimization problem. This page explains how to express decision strategies, compatible paths, path utilities and the objective of the model as a mixed-integer linear program. We present two standard objective functions, including expected value and risk measures. The original decision model formulation was described in [^1], sections 3 and 5. We base the decision model on an improved formulation described in [^2] section 3.3. We recommend reading the references for motivation, details, and proofs of the formulation.
 
 
 ## Decision Variables
-**Decision variables** $z(s_j∣𝐬_{I(j)})$ are equivalent to local decision strategies such that $Z_j(𝐬_I(j))=s_j$ if and only if $z(s_j∣𝐬_{I(j)})=1$ and $z(s_{j}^′∣𝐬_{I(j)})=0$ for all $s_{j}^′∈S_j∖s_j.$ Constraint $(2)$ defines the decisions to be binary variables and the constraint $(3)$ limits decisions to one per information path.
+**Decision variables** $z(s_j∣𝐬_{I(j)})$ are equivalent to local decision strategies such that $Z_j(𝐬_{I(j)})=s_j$ if and only if $z(s_j∣𝐬_{I(j)})=1$ and $z(s_{j}^′∣𝐬_{I(j)})=0$ for all $s_{j}^′∈S_j∖s_j.$ Constraint $(2)$ defines the decisions to be binary variables and the constraint $(3)$ limits decisions to one per information path.
 
 $$z(s_j∣𝐬_{I(j)}) ∈ \{0,1\},\quad ∀j∈D, s_j∈S_j, 𝐬_{I(j)}∈𝐒_{I(j)} \tag{2}$$
 
 $$∑_{s_j∈S_j} z(s_j∣𝐬_{I(j)})=1,\quad ∀j∈D, 𝐬_{I(j)}∈𝐒_{I(j)} \tag{3}$$
 
 
-## Path Probability Variables
-**Path probability variables** $π(𝐬)$ are equivalent to the path probabilities $ℙ(X=𝐬∣Z)$ where decision variables $z$ define the decision strategy $Z$. The constraint $(4)$ defines the lower and upper bound to the probability, constraint $(5)$ defines that the probability equals zero if path is not compatible with the decision strategy, and constraint $(6)$ defines that probability equals path probability if the path is compatible with the decision strategy.
+## Path Compatibility Variables
+**Path compatibility variables** $x(𝐬)$ are indicator variables for whether path $𝐬$ is compatible with decision strategy $Z$ that is defined by the decision variables $z$. These are continous variables but only assume binary values, so that the compatible paths $𝐬 ∈ 𝐒(Z)$ take values $x(𝐬) = 1$ and other paths $𝐬 ∈ 𝐒 \setminus 𝐒(Z)$ take values $x(𝐬) = 0$. Constraint $(4)$ defines the lower and upper bounds for the variables. 
 
-$$0≤π(𝐬)≤p(𝐬),\quad ∀𝐬∈𝐒 \tag{4}$$
+$$0≤x(𝐬)≤1,\quad ∀𝐬∈𝐒 \tag{4}$$
 
-$$π(𝐬) ≤ z(𝐬_j∣𝐬_{I(j)}),\quad ∀j∈D, 𝐬∈𝐒 \tag{5}$$
+Constraint $(5)$ ensures that only the variables associated with locally compatible paths $𝐬 \in 𝐒_{s_j | 𝐬_{I(j)} }$ of the decision strategy can take value $x(𝐬) = 1$. The effective locally compatible paths are denoted with $| 𝐒^*_{s_j | 𝐬_{I(j)}}|$. The upper bound of the constraint uses the minimum of the *feasible paths* upper bound and the *theoretical* upper bound. The motivation of the feasible paths upper bound is below. For proofs and motivation on the theoretical upper bound see reference [^2].
 
-$$π(𝐬) ≥ p(𝐬) + ∑_{j∈D} z(𝐬_j∣𝐬_{I(j)}) - |D|,\quad ∀𝐬∈𝐒 \tag{6}$$
+$$∑_{𝐬 \in 𝐒^*_{s_j | 𝐬_{I(j)}} } x(𝐬) \leq \min ( \ | 𝐒^*_{s_j | 𝐬_{I(j)}}|, \ \frac{| 𝐒_{s_j | 𝐬_{I(j)}}| }{\displaystyle  \prod_{d \in D \setminus \{j, I(j)\}} |𝐒_d|} \ ) \ z(s_j∣𝐬_{I(j)}),\quad \forall j \in D, s_j \in S_j, 𝐬_{I(j)} \in 𝐒_{I(j)} \tag{5}$$
+
+Constraint $(6)$ is called the probability cut constraint and it defines that the sum of the path probabilities of the compatible paths must equal one.
+
+$$∑_{𝐬∈𝐒}x(𝐬) p(𝐬) = 1 \tag{6}$$
+
+### Feasible paths upper bound
+The *feasible paths upper bound* for the path compatibility variables is 
+
+$$∑_{𝐬 \in 𝐒^*_{s_j | 𝐬_{I(j)}} } x(𝐬) \leq  | 𝐒^*_{s_j | 𝐬_{I(j)}}| \ z(s_j∣𝐬_{I(j)}),\quad \forall j \in D, s_j \in S_j, 𝐬_{I(j)} \in 𝐒_{I(j)} $$
+
+where $𝐒^*_{s_j | s_{I(j)}}$ is the set of effective locally compatible paths. This upper bound is motivated by the implementation of the framework in which path compatibility variables $x(𝐬)$ are only generated for effective paths $𝐬 \in 𝐒^∗$. The ineffective paths are not generated because they do not influence the objective function and having less variables reduces the size of the model.
+
+Therefore, if the model has ineffective paths $𝐬 \in 𝐒^′$, then the number of effective paths is less than the number of all paths.
+
+$$ |𝐒^*| < |𝐒|$$
+
+Therefore,
+
+$$ |𝐒^*_{s_j | 𝐬_{I(j)}} | < | 𝐒_{s_j | 𝐬_{I(j)}}| .$$
+
+The feasible paths upper bound is used in conjunction with the *theoretical upper bound* as follows. 
+
+$$∑_{𝐬 \in 𝐒^*_{s_j | 𝐬_{I(j)}} } x(𝐬) \leq \min ( \ | 𝐒^*_{s_j | 𝐬_{I(j)}}|, \ \frac{| 𝐒_{s_j | 𝐬_{I(j)}}| }{\displaystyle  \prod_{d \in D \setminus \{j, I(j)\}} |𝐒_d|} \ ) \ z(s_j∣𝐬_{I(j)}),\quad \forall j \in D, s_j \in S_j, 𝐬_{I(j)} \in 𝐒_{I(j)}$$
+
+The motivation for using the minimum of these bounds is that it depends on the problem structure which one is tighter. The feasible paths upper bound may be tighter if the set of ineffective paths is large compared to the number of all paths.
 
 
-## Positive Path Utility
-We can omit the constraint $(6)$ from the model if we use a **positive path utility** function $\mathcal{U}^+$ which is an affine transformation of path utility function $\mathcal{U}.$ As an example, we can subtract the minimum of the original utility function and then add one as follows.
-
-$$\mathcal{U}^+(𝐬) = \mathcal{U}(𝐬) - \min_{𝐬∈𝐒} \mathcal{U}(𝐬) + 1. \tag{7}$$
 
 
-## Lazy Constraints
-Valid equalities are equalities that can be be derived from the problem structure. They can help in computing the optimal decision strategies, but adding them directly may slow down the overall solution process. By adding valid equalities during the solution process as *lazy constraints*, the MILP solver can prune nodes of the branch-and-bound tree more efficiently. We have the following valid equalities.
-
-### Probability Cut
-We can exploit the fact that the path probabilities sum to one by using the **probability cut** defined as
-
-$$∑_{𝐬∈𝐒}π(𝐬)=1. \tag{8}$$
-
-### Active Paths Cut
-For problems where the number of active and compatible paths is constant, we can exploit it by using the **active paths cut** defined as
-
-$$∑_{𝐬∈𝐒} \frac{π(𝐬)}{p(𝐬)}=|𝐒(X)∩𝐒(Z)|. \tag{9}$$
+## Lazy Probability Cut
+Constraint $(6)$ is a complicating constraint and thus adding it directly to the model may slow down the overall solution process. It may be beneficial to instead add it as a *lazy constraint*. In the solver, a lazy constraint is only generated when an incumbent solution violates it. In some instances, this allows the MILP solver to prune nodes of the branch-and-bound tree more efficiently. 
 
 
 ## Expected Value
-We define the **expected value** objective as
+The **expected value** objective is defined using the path compatibility variables $x(𝐬)$ and their associated path probabilities $p(𝐬)$ and path utilities $\mathcal{U}(𝐬)$. 
 
-$$\operatorname{E}(Z) = ∑_{𝐬∈𝐒} π(𝐬) \mathcal{U}(𝐬). \tag{10}$$
+$$\operatorname{E}(Z) = ∑_{𝐬∈𝐒} x(𝐬) \ p(𝐬) \ \mathcal{U}(𝐬). \tag{7}$$
+
+## Positive Path Utility
+We can omit the probability cut defined in constraint $(6)$ from the model if we are maximising expected value of utility and use a **positive path utility** function $\mathcal{U}^+$. The positive path utility function $\mathcal{U}^+$ is an affine transformation of path utility function $\mathcal{U}$ which translates all utility values to positive values. As an example, we can subtract the minimum of the original utility function and then add one as follows.
+
+$$\mathcal{U}^+(𝐬) = \mathcal{U}(𝐬) - \min_{𝐬∈𝐒} \mathcal{U}(𝐬) + 1. \tag{8}$$
+
+## Negative Path Utility
+We can omit the probability cut defined in constraint $(6)$ from the model if we are minimising expected value of utility and use a **negative path utility** function $\mathcal{U}^-$. This affine transformation of the path utility function $\mathcal{U}$ translates all utility values to negative values. As an example, we can subtract the maximum of the original utility function and then subtract one as follows.
+
+$$\mathcal{U}^-(𝐬) = \mathcal{U}(𝐬) - \max_{𝐬∈𝐒} \mathcal{U}(𝐬) - 1. \tag{9}$$
 
 
 ## Conditional Value-at-Risk
 The section [Measuring Risk](@ref) explains and visualizes the relationships between the formulation of expected value, value-at-risk and conditional value-at-risk for discrete probability distribution.
 
-Given decision strategy $Z,$ we define the cumulative distribution of path probability variables as
+Given decision strategy $Z,$ we define the cumulative distribution of compatible paths' probabilities as
 
-$$F_Z(t) = ∑_{𝐬∈𝐒∣\mathcal{U}(𝐬)≤t} π(𝐬).$$
+$$F_Z(t) = ∑_{𝐬∈𝐒∣\mathcal{U}(𝐬)≤t} x(𝐬) p(𝐬).$$
 
 Given a **probability level** $α∈(0, 1],$ we define the **value-at-risk** as
 
@@ -70,7 +91,7 @@ $$𝐒_{α}^{=}=\{𝐬∈𝐒∣\mathcal{U}(𝐬)=u_α\}.$$
 
 We define **conditional value-at-risk** as
 
-$$\operatorname{CVaR}_α(Z)=\frac{1}{α}\left(∑_{𝐬∈𝐒_α^{<}} π(𝐬) \mathcal{U}(𝐬) + ∑_{𝐬∈𝐒_α^{=}} \left(α - ∑_{𝐬∈𝐒_α^{<}} π(𝐬) \right) \mathcal{U}(𝐬) \right).$$
+$$\operatorname{CVaR}_α(Z)=\frac{1}{α}\left(∑_{𝐬∈𝐒_α^{<}} x(𝐬) \ p(𝐬) \ \mathcal{U}(𝐬) + ∑_{𝐬∈𝐒_α^{=}} \left(α - ∑_{𝐬∈𝐒_α^{<}} x(𝐬) \ p(𝐬) \right) \mathcal{U}(𝐬) \right).$$
 
 We can form the conditional value-at-risk as an optimization problem. We have the following pre-computed parameters.
 
@@ -102,9 +123,9 @@ $$η-\mathcal{U}(𝐬)≥M (\bar{λ}(𝐬) - 1),\quad ∀𝐬∈𝐒 \tag{17}$$
 
 $$\bar{ρ}(𝐬) ≤ \bar{λ}(𝐬),\quad ∀𝐬∈𝐒 \tag{18}$$
 
-$$π(𝐬) - (1 - λ(𝐬)) ≤ ρ(𝐬) ≤ λ(𝐬),\quad ∀𝐬∈𝐒 \tag{19}$$
+$$x(𝐬) \ p(𝐬) - (1 - λ(𝐬)) ≤ ρ(𝐬) ≤ λ(𝐬),\quad ∀𝐬∈𝐒 \tag{19}$$
 
-$$ρ(𝐬) ≤ \bar{ρ}(𝐬) ≤ π(𝐬),\quad ∀𝐬∈𝐒 \tag{20}$$
+$$ρ(𝐬) ≤ \bar{ρ}(𝐬) ≤ x(𝐬) \ p(𝐬),\quad ∀𝐬∈𝐒 \tag{20}$$
 
 $$∑_{𝐬∈𝐒}\bar{ρ}(𝐬) = α \tag{21}$$
 
@@ -133,3 +154,5 @@ where the parameter $w∈[0, 1]$ expresses the decision maker's **risk tolerance
 
 ## References
 [^1]: Salo, A., Andelmin, J., & Oliveira, F. (2019). Decision Programming for Multi-Stage Optimization under Uncertainty, 1–35. Retrieved from [http://arxiv.org/abs/1910.09196](http://arxiv.org/abs/1910.09196)
+
+[^2]: Hölsä, O. (2020). Decision Programming Framework for Evaluating Testing Costs of Disease-Prone Pigs. Retrieved from [http://urn.fi/URN:NBN:fi:aalto-202009295618](http://urn.fi/URN:NBN:fi:aalto-202009295618)

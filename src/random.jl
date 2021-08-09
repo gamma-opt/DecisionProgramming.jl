@@ -1,12 +1,20 @@
 using Random
 
-"""Generates random information sets for chance and decision nodes."""
+"""
+    function information_set(rng::AbstractRNG, j::Int, n_I::Int)
+
+Generates random information sets for chance and decision nodes.
+"""
 function information_set(rng::AbstractRNG, j::Int, n_I::Int)
     m = min(rand(rng, 0:n_I), j-1)
     return shuffle(rng, 1:(j-1))[1:m]
 end
 
-"""Generates random information sets for value nodes."""
+"""
+    function information_set(rng::AbstractRNG, leaf_nodes::Vector{Node}, n::Int)
+
+Generates random information sets for value nodes.
+"""
 function information_set(rng::AbstractRNG, leaf_nodes::Vector{Node}, n::Int)
     @assert n ≥ 1
     non_leaf_nodes = shuffle(rng, setdiff(1:n, leaf_nodes))
@@ -19,7 +27,10 @@ function information_set(rng::AbstractRNG, leaf_nodes::Vector{Node}, n::Int)
     return [leaf_nodes; non_leaf_nodes[1:m]]
 end
 
-"""Generate random decision diagram with `n_C` chance nodes, `n_D` decision nodes, and `n_V` value nodes.
+"""
+    function random_diagram(rng::AbstractRNG, n_C::Int, n_D::Int, n_V::Int, m_C::Int, m_D::Int)
+
+Generate random decision diagram with `n_C` chance nodes, `n_D` decision nodes, and `n_V` value nodes.
 Parameter `m_C` and `m_D` are the upper bounds for the size of the information set.
 
 # Examples
@@ -61,7 +72,10 @@ function random_diagram(rng::AbstractRNG, n_C::Int, n_D::Int, n_V::Int, m_C::Int
     return C, D, V
 end
 
-"""Generate `n` random states from `states`.
+"""
+    function States(rng::AbstractRNG, states::Vector{State}, n::Int)
+
+Generate `n` random states from `states`.
 
 # Examples
 ```julia
@@ -73,7 +87,10 @@ function States(rng::AbstractRNG, states::Vector{State}, n::Int)
     States(rand(rng, states, n))
 end
 
-"""Generate random probabilities for chance node `c` with `S` states.
+"""
+    function Probabilities(rng::AbstractRNG, c::ChanceNode, S::States; n_inactive::Int=0)
+
+Generate random probabilities for chance node `c` with `S` states.
 
 # Examples
 ```julia
@@ -121,7 +138,10 @@ end
 
 scale(x::Float64, low::Float64, high::Float64) = x * (high - low) + low
 
-"""Generate random consequences between `low` and `high` for value node `v` with `S` states.
+"""
+    function Consequences(rng::AbstractRNG, v::ValueNode, S::States; low::Float64=-1.0, high::Float64=1.0)
+
+Generate random consequences between `low` and `high` for value node `v` with `S` states.
 
 # Examples
 ```julia
@@ -140,7 +160,10 @@ function Consequences(rng::AbstractRNG, v::ValueNode, S::States; low::Float64=-1
     Consequences(v.j, data)
 end
 
-"""Generate random decision strategy for decision node `d` with `S` states.
+"""
+    function LocalDecisionStrategy(rng::AbstractRNG, d::DecisionNode, S::States)
+
+Generate random decision strategy for decision node `d` with `S` states.
 
 # Examples
 ```julia

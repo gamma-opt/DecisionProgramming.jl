@@ -41,7 +41,7 @@ end
 ```
 
 
- Then we begin defining the decision programming model. First, we define the node indices and states:
+We define the decision programming model by first defining the node indices and states:
 
 ```julia
 const R0 = 1
@@ -97,15 +97,15 @@ push!(C, ChanceNode(R0, I_R0))
 push!(X, Probabilities(R0, X_R0))
 ```
 
-Next we add node $H$ and its state probabilities. For modeling purposes, we define the information set of node $H$ to include the prior risk node $R0$. We set the probability of the patient experiencing a CHD event in the next ten years according to the prior risk level such that
+Next we add node $H$ and its state probabilities. For modeling purposes, we define the information set of node $H$ to include the prior risk node $R0$. We set the probability that the patient experiences a CHD event in the next ten years according to the prior risk level such that
 
 $$ℙ(H = \text{CHD} | R0 = \alpha) = \alpha.$$
 
-We define the probability of the patient not experiencing a CHD event in the next ten years as the complement event.
+We set the probability that the patient does not experience a CHD event in the next ten years as the complement event.
 
 $$ℙ(H = \text{no CHD} | R0 = \alpha) = 1 - \alpha$$
 
-Since node $R0$ is actually deterministic, defining the health node $H$ in this way means that in the our model the patient has 12% probability of experiencing a CHD event and 88% chance of not suffering one.
+Since node $R0$ is deterministic and the health node $H$ is defined in this way, in our model the patient has a 12% chance of experiencing a CHD event and 88% chance of remaining healthy.
 
 Node $H$ and its probabilities are added in the following way.
 
@@ -120,14 +120,14 @@ push!(X, Probabilities(H, X_H))
 
 ### Test decisions and updating the risk estimate
 
-The node representing the first test decision is added to the model in the following way.
+The node representing the first test decision is added to the model.
 
 ```julia
 I_T1 = [R0]
 push!(D, DecisionNode(T1, I_T1))
 ```
 
-The probabilities of the states of node $R1$ are determined by calculating the updated risk estimates after a test is performed and aggregating these probabilities into the risk levels. The update of the risk estimate is calculated using the function ```update_risk_distribution```, which calculates the posterior probability distribution for a given health state, test and prior risk estimate.
+For node $R1%$, the probabilities of the states are calculated by aggregating the updated risk estimates, after a test is performed, into the risk levels. The updated risk estimates are calculated using the function ```update_risk_distribution```, which calculates the posterior probability distribution for a given health state, test and prior risk estimate.
 
 $$\textit{risk estimate} = P(\text{CHD} \mid \text{test result}) = \frac{P(\text{test result} \mid \text{CHD})P(\text{CHD})}{P(\text{test result})}$$
 
@@ -145,7 +145,7 @@ push!(C, ChanceNode(R1, I_R1))
 push!(X, Probabilities(R1, X_R1))
 ```
 
-Now we add node $T2$ and node $R2$ in a similar fashion as we added $T1$ and $R1$ above.
+Nodes $T2$ and $R2$ are added in a similar fashion to nodes $T1$ and $R1$ above.
 ```julia
 I_T2 = [R1]
 push!(D, DecisionNode(T2, I_T2))
@@ -160,7 +160,7 @@ push!(C, ChanceNode(R2, I_R2))
 push!(X, Probabilities(R2, X_R2))
 ```
 
-We also add the treatment decision node $TD$. The treatment decision is made based on the resulting risk estimate of the testing process.
+We also add the treatment decision node $TD$. The treatment decision is made based on the risk estimate achieved with the testing process.
 
 ```julia
 I_TD = [R2]
@@ -169,7 +169,7 @@ push!(D, DecisionNode(TD, I_TD))
 
 ### Test costs and health benefits
 
-To add the value node $TC$, which represents testing costs, we need to define the consequences of its different information states. The node and the consequences are added in the following way.
+To add the value node $TC$, which represents testing costs, we need to define the consequences for its different information states. The node and the consequences are added in the following way.
 
 ```julia
 I_TC = [T1, T2]
@@ -190,7 +190,7 @@ push!(V, ValueNode(TC, I_TC))
 push!(Y, Consequences(TC, Y_TC))
 ```
 
-The health benefits achieved by the strategy are dictated by whether treatment is administered and by the health of the patient. We add the final node to the model.
+The health benefits that are achieved are determined by whether treatment is administered and by the health of the patient. We add the final node to the model.
 
 ```julia
 I_HB = [H, TD]
@@ -203,7 +203,7 @@ push!(V, ValueNode(HB, I_HB))
 push!(Y, Consequences(HB, Y_HB))
 ```
 
-### Validating Influence Diagram
+### Validating the Influence Diagram
 Before creating the decision model, we need to validate the influence diagram and sort the nodes, probabilities and consequences in increasing order by the node indices.
 
 ```julia
@@ -219,37 +219,38 @@ U = DefaultPathUtility(V, Y)
 
 
 ## Decision Model
-We begin by defining our model and declaring the decision variables.
+We define our model and declare the decision variables.
 ```julia
 model = Model()
 z = DecisionVariables(model, S, D)
 ```
 
-In this problem, we want to forbid the model from choosing paths where the same test is repeated twice and the paths where the first testing decision is to not perform a test but then the second testing decision is to conduct a test. We forbid the paths by declaring these combinations of states as forbidden paths and then giving them to the function that declares the path probability variables.
+In this problem, we want to forbid the model from choosing paths where the same test is repeated twice and where the first testing decision is not to perform a test but the second testing decision is to perform a test. We forbid the paths by declaring these combinations of states as forbidden paths.
 
 We also choose a scale factor of 1000, which will be used to scale the path probabilities. The probabilities need to be scaled because in this specific problem they are very small since the $R$ nodes have many states. Scaling the probabilities helps the solver find an optimal solution.
 
-We declare the path probability variables and give the forbidden testing strategies and the scale factor to the function as additional information.
+We declare the path compatibility variables. We fix the state of the deterministic $R0$ node and forbid the unwanted testing strategies and scale the probabilities by giving them as parameters in the function call.
 
 ```julia
-forbidden_tests = ForbiddenPath[([T1,T2], Set([(1,1),(2,2),(3,1),(3,2)]))]
-scale_factor = 1000.0
-π_s = PathProbabilityVariables(model, z, S, P; hard_lower_bound = true, forbidden_paths = forbidden_tests, probability_scale_factor = scale_factor)
+forbidden_tests = ForbiddenPath[([T1,T2], Set([(1,1),(2,2),(3,1), (3,2)]))]
+scale_factor = 10000.0
+x_s = PathCompatibilityVariables(model, z, S, P; fixed = Dict(1 => chosen_risk_level), forbidden_paths = forbidden_tests, probability_cut=false)
+
 ```
 
 We define the objective function as the expected value.
 ```julia
-EV = expected_value(model, π_s, U)
+EV = expected_value(model, x_s, U, P, probability_scale_factor= scale_factor)
 @objective(model, Max, EV)
 ```
 
 We set up the solver for the problem and optimise it.
 ```julia
+@info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
     () -> Gurobi.Optimizer(Gurobi.Env()),
-    "TimeLimit" => 100,
-    "IntFeasTol"=> 1e-9,
-    "MIPGap" => 1e-6
+    "MIPFocus" => 3,
+    "MIPGap" => 1e-6,
 )
 set_optimizer(model, optimizer)
 optimize!(model)

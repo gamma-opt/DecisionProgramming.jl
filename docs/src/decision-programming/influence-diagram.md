@@ -16,15 +16,15 @@ We define the **information set** $I$ of node $j∈N$ as
 
 $$I(j)⊆\{i∈C∪D∣i<j\}$$
 
-Practically, the information set is a collection of arcs to reverse direction in the graph. The conditions enforce that the graph is acyclic, and there are no arcs from value nodes to other nodes.
+Practically, the information set is a collection of arcs in the reverse direction in the graph. The conditions enforce that the graph is acyclic, and there are no arcs from value nodes to other nodes.
 
 In an influence diagram, each chance and decision node $j∈C∪D$ is associates with a finite number of **states** $S_j$ that we encode using integers $S_j=\{1,...,|S_j|\}$ from one to number of states $|S_j|≥1.$ A node $j$ is **trivial** if it has only one state, $|S_j|=1.$ We refer to the collection of all states $S=\{S_1,...,S_n\}$ as the **state space**.
 
 
 ## Root and Leaf Nodes
-Chance or decision node is a root node if it is not affected by other chance or decision nodes. Formally, node $j∈C∪D$ is a **root** node if $I(j)=∅.$
+A chance or decision node is a root node if it is not affected by other chance or decision nodes. Formally, node $j∈C∪D$ is a **root** node if $I(j)=∅.$
 
-Chance or decision node is a leaf node if it does not affect other chance or decision nodes. Formally, node $j∈C∪D$ is a **leaf** node if $j∉I(i)$ for all $i∈C∪D.$
+A chance or decision node is a leaf node if it does not affect other chance or decision nodes. Formally, node $j∈C∪D$ is a **leaf** node if $j∉I(i)$ for all $i∈C∪D.$
 
 
 ## Drawing Nodes and Arcs
@@ -65,11 +65,11 @@ Formally, a **path** is a sequence of states
 
 $$𝐬=(s_1, s_2, ...,s_n)∈𝐒,$$
 
-where each state $s_i∈S_i$ for all chance and decision nodes $i∈C∪D.$ We denote the set of **paths** as
+where a state $s_i∈S_i$ is defined for all chance and decision nodes $i∈C∪D.$ We denote the set of **paths** as
 
 $$𝐒=∏_{j∈C∪D} S_j=S_1×S_2×...×S_n.$$
 
-We define a **subpath** of $𝐬$ with $A⊆C∪D$ is a subsequence
+We define a **subpath** of $𝐬$ with $A⊆C∪D$ as a subsequence
 
 $$𝐬_A=(𝐬_{i}∣i∈A)∈𝐒_A.$$
 
@@ -81,13 +81,13 @@ We define the **number of paths** as
 
 $$|𝐒_A|=∏_{i∈A}|S_i|.$$
 
-We refer to subpath $𝐬_{I(j)}$ as an **information path** and subpaths $𝐒_{I(j)}$ as **information paths** for a node $j∈N.$
+As mentioned above, each node $j∈N$ has an information set $I(j)$. A subpath, which is formed by the states of the nodes in the information set, is referred to as an **information state**  $𝐬_{I(j)}$ of node $j$. The set of these subpaths is called the **information states** $𝐒_{I(j)}$ of node $j∈N.$
 
 Also note that $𝐒=𝐒_{C∪D},$ and $𝐒_{i}=S_i$ and $𝐬_i=s_i$ where $i∈C∪D$ is an individual node.
 
 
 ## Probabilities
-Each chance node is associated with a discrete probability distribution over its states for every information path. Formally, for each chance node $j∈C$, we denote the **probability** of state $s_j$ given information path $𝐬_{I(j)}$ as
+Each chance node is associated with a set of discrete probability distributions over its states. Each of the probability distributions corresponds to one of the node's information states. Formally, for each chance node $j∈C$, we denote the **probability** of state $s_j$ given information state $𝐬_{I(j)}$ as
 
 $$ℙ(X_j=s_j∣X_{I(j)}=𝐬_{I(j)})∈[0, 1],$$
 
@@ -95,7 +95,7 @@ with
 
 $$∑_{s_j∈S_j} ℙ(X_j=s_j∣X_{I(j)}=𝐬_{I(j)}) = 1.$$
 
-We refer to chance state with given information path as **active** if its probability is nonzero
+A chance state with a given information state is considered **active** if its probability is nonzero
 
 $$ℙ(X_j=s_j∣X_{I(j)}=𝐬_{I(j)})>0.$$
 
@@ -103,13 +103,13 @@ Otherwise, it is **inactive**.
 
 
 ## Decision Strategies
-Each decision strategy models how the decision maker chooses a state $s_j∈S_j$ given an information path $𝐬_{I(j)}$ at decision node $j∈D.$ Decision node is a special type of chance node, such that the probability of the chosen state given an information path is fixed to one
+Each decision strategy models how the decision maker chooses a state $s_j∈S_j$ given an information state $𝐬_{I(j)}$ at decision node $j∈D.$ A decision node is a special type of chance node, such that the probability of the chosen state given an information state is fixed to one
 
 $$ℙ(X_j=s_j∣X_{I(j)}=𝐬_{I(j)})=1.$$
 
 By definition, the probabilities for other states are zero.
 
-Formally, for each decision node $j∈D,$ a **local decision strategy** is function that maps an information path $𝐬_{I(j)}$ to a state $s_j$
+Formally, for each decision node $j∈D,$ a **local decision strategy** is function that maps an information state $𝐬_{I(j)}$ to a state $s_j$
 
 $$Z_j:𝐒_{I(j)}↦S_j.$$
 
@@ -117,7 +117,7 @@ A **decision strategy** contains one local decision strategy for each decision n
 
 $$Z=\{Z_j∣j∈D\}.$$
 
-The set of **all decision strategies** is denoted $ℤ.$
+The set of **all decision strategies** is denoted with $ℤ.$
 
 
 ## Path Probability
@@ -140,25 +140,25 @@ $$q(𝐬∣Z) = ∏_{j∈D} ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)}).$$
 Because the probabilities of decision nodes are defined as one or zero depending on the decision strategy, we can simplify the second part to an indicator function
 
 $$q(𝐬∣Z)=\begin{cases}
-1, & Z(𝐬) \\
+1, & x(𝐬) \\
 0, & \text{otherwise}
 \end{cases}.$$
 
-The expression $Z(𝐬)$ indicates whether a decision stategy is **compatible** with the path $𝐬,$ that is, if each local decision strategy chooses a state on the path. Formally, we have
+The expression $x(𝐬)$ indicates whether a decision stategy is **compatible** with the path $𝐬,$ that is, if each local decision strategy chooses a state on the path. Formally, we have
 
-$$Z(𝐬) ↔ ⋀_{j∈D} (Z_j(𝐬_{I(j)})=𝐬_j).$$
+$$x(𝐬) ↔ ⋀_{j∈D} (Z_j(𝐬_{I(j)})=𝐬_j).$$
 
 Now the **path probability** equals the upper bound if the path is compatible with given decision strategy. Otherwise, the path probability is zero. Formally, we have
 
 $$ℙ(𝐬∣X,Z)=
 \begin{cases}
-p(𝐬), & Z(𝐬) \\
+p(𝐬), & x(𝐬) \\
 0, & \text{otherwise}
 \end{cases}.$$
 
 
 ## Consequences
-For each value node $j∈V$, we define the **consequence** given information path $𝐬_{I(j)}$ as
+For each value node $j∈V$, we define the **consequence** given information state $𝐬_{I(j)}$ as
 
 $$Y_j:𝐒_{I(j)}↦ℂ,$$
 
@@ -170,7 +170,7 @@ The **utility function** is a function that maps consequences to real-valued uti
 
 $$U:ℂ^{|V|}↦ℝ.$$
 
-The **path utility** is defined as the utility function acting on the consequences of value nodes given their information paths
+The **path utility** is defined as the utility function acting on the consequences of value nodes given their information states
 
 $$\mathcal{U}(𝐬) = U(\{Y_j(𝐬_{I(j)}) ∣ j∈V\}).$$
 
@@ -178,12 +178,10 @@ The **default path utility** is the sum of consequences
 
 $$\mathcal{U}(𝐬) = ∑_{j∈V} Y_j(𝐬_{I(j)}).$$
 
-The utility function, in this case, corresponds to the sum of the elements.
-
-The utility function affects the objectives discussed [Decision Model](@ref decision-model) page. We can choose the utility function such that the path utility function either returns:
+The utility function affects the objectives discussed on the [Decision Model](@ref decision-model) page. We can choose the utility function such that the path utility function either returns:
 
 * a numerical value, which leads to a mixed-integer linear programming (MILP) formulation or
-* a linear function with real and integer-valued variables leads to a mixed-integer quadratic programming (MIQP) formulation.
+* a linear function with real and integer-valued variables, which leads to a mixed-integer quadratic programming (MIQP) formulation.
 
 Different formulations require a solver capable of solving them.
 
@@ -193,7 +191,25 @@ A **path distribution** is a pair
 
 $$(ℙ(X=𝐬∣Z), \mathcal{U}(𝐬))$$
 
-that comprises of path probability function and path utility function over paths $𝐬∈𝐒$ conditional to the decision strategy $Z.$
+that comprises of a path probability function and a path utility function over paths $𝐬∈𝐒$ conditional to the decision strategy $Z.$
+
+
+
+
+## Other Properties
+In this section, we define more properties for influence diagrams.
+
+**Discrete** influence diagram refers to a countable state space. Otherwise, the influence diagram is **continuous**. We can discretize continuous influence diagrams using discrete bins.
+
+Two nodes are **sequential** if there exists a directed path from one node to the other in the influence diagram. Otherwise, the nodes are **parallel**. Sequential nodes often model a time dimension.
+
+**Repeated subdiagram** refers to a recurring pattern within an influence diagram. Often, influence diagrams do not have a unique structure, but they consist of a repeated pattern due to the underlying problem's properties.
+
+**Limited-memory** influence diagram refers to an influence diagram where an upper bound limits the size of the information set for decision nodes. That is, $I(j)≤m$ for all $j∈D$ where the limit $m$ is less than $|C∪D|.$ Smaller limits of $m$ are desirable because they reduce the decision model size, as discussed on the [Computational Complexity](@ref computational-complexity) page.
+
+**Isolated subdiagrams** refer to unconnected diagrams within an influence diagram. That is, there are no undirected connections between the diagrams. Therefore, one isolated subdiagram's decisions affect decisions on the other isolated subdiagrams only through the utility function.
+
+A chance or decision node is **redundant** if it is a leaf node and not in any value node's information set. Formally, if $j∈C∪D$ is a leaf node and there does not exist a value node $i∈V$ such that $j∈I(i)$, then node $j$ is redundant.
 
 
 ## References
