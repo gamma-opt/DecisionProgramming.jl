@@ -7,7 +7,7 @@ This section focuses on how we can analyze fixed decision strategies $Z$ on an i
 We can generate compatible paths $𝐬∈𝐒(Z)$ as follows.
 
 1) Initialize path $𝐬$ of length $n$ with undefined values.
-2) Fill path with chance states $𝐬_j∈S_j$ for all $j∈C.$
+2) Fill path with chance states $𝐬_j∈𝐒_j$ for all $j∈C.$
 3) In increasing order of decision nodes $j∈D$, fill decision states by computing decision strategy $s_j=Z_j(𝐬_{I(j)}).$
 
 
