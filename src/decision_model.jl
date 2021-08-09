@@ -173,6 +173,10 @@ Remember to set lazy constraints on in the solver parameters, unless your solver
 
 """
 function lazy_probability_cut(model::Model, x_s::PathCompatibilityVariables, P::AbstractPathProbability)
+    # August 2021: The current implementation of JuMP doesn't allow multiple callback functions of the same type (e.g. lazy)
+    # (see https://github.com/jump-dev/JuMP.jl/issues/2642)
+    # What this means is that if you come up with a new lazy cut, you must replace this
+    # function with a more general function (see discussion and solution in https://github.com/gamma-opt/DecisionProgramming.jl/issues/20)
 
     function probability_cut(cb_data)
         xsum = sum(callback_value(cb_data, x) * P(s) for (s, x) in x_s)
