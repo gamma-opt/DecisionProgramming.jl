@@ -21,30 +21,48 @@ function influence_diagram(rng::AbstractRNG, n_C::Int, n_D::Int, n_V::Int, m_C::
     return D, S, P, U
 end
 
-function test_decision_model(D, S, P, U, n_inactive, hard_lower_bound)
+function test_decision_model(D, S, P, U, n_inactive, probability_scale_factor, probability_cut)
     model = Model()
 
     @info "Testing DecisionVariables"
     z = DecisionVariables(model, S, D)
 
     @info "Testing PathProbabilityVariables"
-    π_s = PathProbabilityVariables(model, z, S, P; hard_lower_bound = hard_lower_bound)
+    if probability_scale_factor > 0
+        π_s = PathProbabilityVariables(model, z, S, P; probability_scale_factor = probability_scale_factor, probability_cut =  probability_cut)
+    else
+        @test_throws DomainError PathProbabilityVariables(model, z, S, P; probability_scale_factor = probability_scale_factor, probability_cut =  probability_cut)
+        # defining π variables so that other tests can be tested
+        π_s = PathProbabilityVariables(model, z, S, P; probability_scale_factor = 1.0, probability_cut =  probability_cut)
+    end
 
     @info "Testing PositivePathUtility"
-    U′ = if hard_lower_bound U else PositivePathUtility(S, U) end
+    U′ = if probability_cut U else PositivePathUtility(S, U) end
 
     @info "Testing lazy constraints"
     if iszero(n_inactive)
-        lazy_constraints(model, π_s, S, P, use_probability_cut=true, use_active_paths_cut=true)
+      if probability_scale_factor > 0
+        lazy_constraints(model, π_s, S, P, probability_scale_factor = probability_scale_factor, use_probability_cut=true, use_active_paths_cut=true)
+      else
+        @test_throws DomainError lazy_constraints(model, π_s, S, P, probability_scale_factor = probability_scale_factor, use_probability_cut=true, use_active_paths_cut=true)
+      end
     else
-        @test_throws DomainError lazy_constraints(model, π_s, S, P, use_probability_cut=true, use_active_paths_cut=true)
+        @test_throws DomainError lazy_constraints(model, π_s, S, P, probability_scale_factor = probability_scale_factor, use_probability_cut=true, use_active_paths_cut=true)
     end
 
     @info "Testing expected_value"
-    EV = expected_value(model, π_s, U′)
+    if probability_scale_factor > 0
+        EV = expected_value(model, π_s, U′, probability_scale_factor = probability_scale_factor)
+    else
+        @test_throws DomainError expected_value(model, π_s, U′, probability_scale_factor = probability_scale_factor)
+    end
 
     @info "Testing conditional_value_at_risk"
-    CVaR = conditional_value_at_risk(model, π_s, U′, 0.2)
+    if probability_scale_factor > 0
+        CVaR = conditional_value_at_risk(model, π_s, U′, 0.2, probability_scale_factor = probability_scale_factor)
+    else
+        @test_throws DomainError conditional_value_at_risk(model, π_s, U′, 0.2, probability_scale_factor = probability_scale_factor)
+    end
 
     @test true
 end
@@ -84,13 +102,14 @@ end
 
 @info "Testing model construction"
 rng = MersenneTwister(4)
-for (n_C, n_D, states, n_inactive, hard_lower_bound) in [
-        (3, 2, [1, 2, 3], 0, true),
-        (3, 2, [3], 1, true),
-        (3, 2, [1, 2, 3], 0, false),
-        (3, 2, [3], 1, false)
+for (n_C, n_D, states, n_inactive, probability_scale_factor, probability_cut) in [
+        (3, 2, [1, 2, 3], 0, 1.0, true),
+        (3, 2, [1, 2, 3], 0, -1.0, true),
+        (3, 2, [3], 1, 100.0, true),
+        (3, 2, [1, 2, 3], 0, -1.0, false),
+        (3, 2, [3], 1, 10.0, false)
     ]
     D, S, P, U = influence_diagram(rng, n_C, n_D, 2, 2, 2, states, n_inactive)
-    test_decision_model(D, S, P, U, n_inactive, hard_lower_bound)
+    test_decision_model(D, S, P, U, n_inactive, probability_scale_factor, probability_cut)
     test_analysis_and_printing(D, S, P, U)
 end
