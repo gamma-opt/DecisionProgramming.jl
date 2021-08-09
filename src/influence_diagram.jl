@@ -3,10 +3,18 @@ using Base.Iterators: product
 
 # --- Nodes and States ---
 
-"""Primitive type for node. Alias for `Int`."""
+"""
+    Node = Int
+
+Primitive type for node. Alias for `Int`.
+"""
 const Node = Int
 
-"""Node type for directed, acyclic graph."""
+"""
+    abstract type AbstractNode end
+
+Node type for directed, acyclic graph.
+"""
 abstract type AbstractNode end
 
 function validate_node(j::Node, I_j::Vector{Node})
@@ -18,7 +26,10 @@ function validate_node(j::Node, I_j::Vector{Node})
     end
 end
 
-"""Chance node type.
+"""
+    ChanceNode <: AbstractNode
+
+Chance node type.
 
 # Examples
 ```julia
@@ -34,7 +45,10 @@ struct ChanceNode <: AbstractNode
     end
 end
 
-"""Decision node type.
+"""
+    DecisionNode <: AbstractNode
+
+Decision node type.
 
 # Examples
 ```julia
@@ -50,7 +64,10 @@ struct DecisionNode <: AbstractNode
     end
 end
 
-"""Value node type.
+"""
+    ValueNode <: AbstractNode
+
+Value node type.
 
 # Examples
 ```julia
@@ -66,10 +83,18 @@ struct ValueNode <: AbstractNode
     end
 end
 
-"""Primitive type for the number of states. Alias for `Int`."""
+"""
+    const State = Int
+
+Primitive type for the number of states. Alias for `Int`.
+"""
 const State = Int
 
-"""States type. Works like `Vector{State}`.
+
+"""
+    States <: AbstractArray{State, 1}
+
+States type. Works like `Vector{State}`.
 
 # Examples
 ```julia
@@ -92,7 +117,10 @@ Base.getindex(S::States, i::Int) = getindex(S.vals, i)
 Base.length(S::States) = length(S.vals)
 Base.eltype(S::States) = eltype(S.vals)
 
-"""Construct states from vector of (state, nodes) tuples.
+"""
+    function States(states::Vector{Tuple{State, Vector{Node}}})
+
+Construct states from vector of (state, nodes) tuples.
 
 # Examples
 ```julia-repl
@@ -108,7 +136,11 @@ function States(states::Vector{Tuple{State, Vector{Node}}})
     States(S_j)
 end
 
-"""Validate influence diagram."""
+"""
+    function validate_influence_diagram(S::States, C::Vector{ChanceNode}, D::Vector{DecisionNode}, V::Vector{ValueNode})
+
+Validate influence diagram.
+"""
 function validate_influence_diagram(S::States, C::Vector{ChanceNode}, D::Vector{DecisionNode}, V::Vector{ValueNode})
     n = length(C) + length(D)
     if length(S) != n
@@ -141,10 +173,17 @@ end
 
 # --- Paths ---
 
-"""Path type. Alias for `NTuple{N, State} where N`."""
+"""
+    const Path{N} = NTuple{N, State} where N
+
+Path type. Alias for `NTuple{N, State} where N`.
+"""
 const Path{N} = NTuple{N, State} where N
 
-"""Iterate over paths in lexicographical order.
+"""
+    function paths(states::AbstractVector{State})
+
+Iterate over paths in lexicographical order.
 
 # Examples
 ```julia-repl
@@ -157,7 +196,10 @@ function paths(states::AbstractVector{State})
     product(UnitRange.(one(eltype(states)), states)...)
 end
 
-"""Iterate over paths with fixed states in lexicographical order.
+"""
+    function paths(states::AbstractVector{State}, fixed::Dict{Node, State})
+
+Iterate over paths with fixed states in lexicographical order.
 
 # Examples
 ```julia-repl
@@ -174,7 +216,10 @@ function paths(states::AbstractVector{State}, fixed::Dict{Node, State})
     product(iters...)
 end
 
-"""ForbiddenPath type.
+"""
+    const ForbiddenPath = Tuple{Vector{Node}, Set{Path}}
+
+ForbiddenPath type.
 
 # Examples
 ```julia
@@ -189,7 +234,10 @@ const ForbiddenPath = Tuple{Vector{Node}, Set{Path}}
 
 # --- Probabilities ---
 
-"""Construct and validate stage probabilities.
+"""
+    struct Probabilities{N} <: AbstractArray{Float64, N}
+
+Construct and validate stage probabilities.
 
 # Examples
 ```julia-repl
@@ -204,9 +252,6 @@ struct Probabilities{N} <: AbstractArray{Float64, N}
     j::Node
     data::Array{Float64, N}
     function Probabilities(j::Node, data::Array{Float64, N}) where N
-        if !all(x > 0 for x in data)
-            @warn("The influence diagram contains inactive chance states. Do not use active paths cut.")
-        end
         for i in CartesianIndices(size(data)[1:end-1])
             if !(sum(data[i, :]) ≈ 1)
                 throw(DomainError("Probabilities should sum to one."))
@@ -226,7 +271,10 @@ Base.getindex(P::Probabilities, I::Vararg{Int,N}) where N = getindex(P.data, I..
 
 # --- Path Probability ---
 
-"""Abstract path probability type.
+"""
+    abstract type AbstractPathProbability end
+
+Abstract path probability type.
 
 # Examples
 ```julia
@@ -240,7 +288,10 @@ end
 """
 abstract type AbstractPathProbability end
 
-"""Path probability.
+"""
+    DefaultPathProbability <: AbstractPathProbability
+
+Path probability.
 
 # Examples
 ```julia
@@ -261,7 +312,10 @@ end
 
 # --- Consequences ---
 
-"""State utilities.
+"""
+    Consequences{N} <: AbstractArray{Float64, N}
+
+State utilities.
 
 # Examples
 ```julia-repl
@@ -287,7 +341,10 @@ Base.getindex(Y::Consequences, I::Vararg{Int,N}) where N = getindex(Y.data, I...
 
 # --- Path Utility ---
 
-"""Abstract path utility type.
+"""
+    abstract type AbstractPathUtility end
+
+Abstract path utility type.
 
 # Examples
 ```julia
@@ -301,7 +358,10 @@ end
 """
 abstract type AbstractPathUtility end
 
-"""Default path utility.
+"""
+    DefaultPathUtility <: AbstractPathUtility
+
+Default path utility.
 
 # Examples
 ```julia
@@ -322,7 +382,10 @@ end
 
 # --- Local Decision Strategy ---
 
-"""Local decision strategy type.
+"""
+    LocalDecisionStrategy{N} <: AbstractArray{Int, N}
+
+Local decision strategy type.
 
 # Examples
 ```julia
@@ -358,7 +421,11 @@ end
 
 # --- Decision Strategy ---
 
-"""Decision strategy type."""
+"""
+    DecisionStrategy
+
+Decision strategy type.
+"""
 struct DecisionStrategy
     D::Vector{DecisionNode}
     Z_j::Vector{LocalDecisionStrategy}

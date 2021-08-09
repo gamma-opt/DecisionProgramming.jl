@@ -1,16 +1,4 @@
-"""Interface for iterating over active paths given influence diagram and decision strategy.
 
-1) Initialize path `s` of length `n`
-2) Fill chance states `s[C]` by generating subpaths `paths(C)`
-3) Fill decision states `s[D]` by decision strategy `Z` and path `s`
-
-# Examples
-```julia
-for s in CompatiblePaths(S, C, Z)
-    ...
-end
-```
-"""
 struct CompatiblePaths
     S::States
     C::Vector{ChanceNode}
@@ -24,6 +12,23 @@ struct CompatiblePaths
         new(S, C, Z, fixed)
     end
 end
+
+"""
+    CompatiblePaths(S::States, C::Vector{ChanceNode}, Z::DecisionStrategy)
+
+Interface for iterating over paths that are compatible and active given influence diagram and decision strategy.
+
+1) Initialize path `s` of length `n`
+2) Fill chance states `s[C]` by generating subpaths `paths(C)`
+3) Fill decision states `s[D]` by decision strategy `Z` and path `s`
+
+# Examples
+```julia
+for s in CompatiblePaths(S, C, Z)
+    ...
+end
+```
+"""
 
 function CompatiblePaths(S::States, C::Vector{ChanceNode}, Z::DecisionStrategy)
     CompatiblePaths(S, C, Z, Dict{Node, State}())
@@ -68,13 +73,21 @@ end
 Base.eltype(::Type{CompatiblePaths}) = Path
 Base.length(a::CompatiblePaths) = prod(a.S[c.j] for c in a.C)
 
-"""UtilityDistribution type."""
+"""
+     UtilityDistribution
+
+UtilityDistribution type.
+
+"""
 struct UtilityDistribution
     u::Vector{Float64}
     p::Vector{Float64}
 end
 
-"""Constructs the probability mass function for path utilities on active paths.
+"""
+    UtilityDistribution(S::States, P::AbstractPathProbability, U::AbstractPathUtility, Z::DecisionStrategy)
+
+Constructs the probability mass function for path utilities on paths that are compatible and active.
 
 # Examples
 ```julia
@@ -118,13 +131,20 @@ function UtilityDistribution(S::States, P::AbstractPathProbability, U::AbstractP
     UtilityDistribution(u2, p2)
 end
 
-"""StateProbabilities type."""
+"""
+    StateProbabilities
+
+StateProbabilities type.
+"""
 struct StateProbabilities
     probs::Dict{Node, Vector{Float64}}
     fixed::Dict{Node, State}
 end
 
-"""Associates each node with array of conditional probabilities for each of its states occuring in active paths given fixed states and prior probability.
+"""
+    function StateProbabilities(S::States, P::AbstractPathProbability, Z::DecisionStrategy, node::Node, state::State, prev::StateProbabilities)
+
+Associates each node with array of conditional probabilities for each of its states occuring in active paths given fixed states and prior probability.
 
 # Examples
 ```julia
@@ -148,7 +168,10 @@ function StateProbabilities(S::States, P::AbstractPathProbability, Z::DecisionSt
     StateProbabilities(probs, fixed)
 end
 
-"""Associates each node with array of probabilities for each of its states occuring in active paths.
+"""
+    function StateProbabilities(S::States, P::AbstractPathProbability, Z::DecisionStrategy)
+
+Associates each node with array of probabilities for each of its states occuring in active paths.
 
 # Examples
 ```julia
@@ -163,7 +186,11 @@ function StateProbabilities(S::States, P::AbstractPathProbability, Z::DecisionSt
     StateProbabilities(probs, Dict{Node, State}())
 end
 
-"""Value-at-risk."""
+"""
+    function value_at_risk(u::Vector{Float64}, p::Vector{Float64}, α::Float64)
+
+Value-at-risk.
+"""
 function value_at_risk(u::Vector{Float64}, p::Vector{Float64}, α::Float64)
     @assert 0 ≤ α ≤ 1 "We should have 0 ≤ α ≤ 1."
     i = sortperm(u)
@@ -172,7 +199,11 @@ function value_at_risk(u::Vector{Float64}, p::Vector{Float64}, α::Float64)
     return if index === nothing; u[end] else u[index] end
 end
 
-"""Conditional value-at-risk."""
+"""
+    function conditional_value_at_risk(u::Vector{Float64}, p::Vector{Float64}, α::Float64)
+
+Conditional value-at-risk.
+"""
 function conditional_value_at_risk(u::Vector{Float64}, p::Vector{Float64}, α::Float64)
     x_α = value_at_risk(u, p, α)
     if iszero(α)

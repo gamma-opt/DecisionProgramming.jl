@@ -199,25 +199,19 @@ U = DefaultPathUtility(V, Y)
 
 ## Decision Model
 
-We apply an affine transformation to the utility function, making all path utilities positive. The purpose of this is discussed in the [theoretical section](../decision-programming/decision-model.md) of this documentation.
+We apply an affine transformation to the utility function, making all path utilities positive. Now that all path utilities are positive, the probability cut can be excluded from the model. The purpose of this is discussed in the [theoretical section](../decision-programming/decision-model.md) of this documentation. 
 
 ```julia
 U⁺ = PositivePathUtility(S, U)
 model = Model()
 z = DecisionVariables(model, S, D)
-π_s = PathProbabilityVariables(model, z, S, P; hard_lower_bound=false)
-```
-
-We also demonstrate one of the lazy constraints defined in the same section.
-
-```julia
-lazy_constraints(model, π_s, S, P, use_active_paths_cut=true)
+x_s = PathCompatibilityVariables(model, z, S, P, probability_cut = false)
 ```
 
 We create the objective function
 
 ```julia
-EV = expected_value(model, π_s, U⁺)
+EV = expected_value(model, x_s, U⁺, P)
 @objective(model, Max, EV)
 ```
 
@@ -227,7 +221,6 @@ and set up the solver and solve the problem.
 optimizer = optimizer_with_attributes(
     () -> Gurobi.Optimizer(Gurobi.Env()),
     "IntFeasTol"      => 1e-9,
-    "LazyConstraints" => 1,
 )
 set_optimizer(model, optimizer)
 optimize!(model)

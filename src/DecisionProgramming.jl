@@ -26,10 +26,11 @@ export Node,
     validate_influence_diagram
 
 export DecisionVariables,
-    PathProbabilityVariables,
+    PathCompatibilityVariables,
     ForbiddenPath,
-    lazy_constraints,
+    lazy_probability_cut,
     PositivePathUtility,
+    NegativePathUtility,
     expected_value,
     value_at_risk,
     conditional_value_at_risk

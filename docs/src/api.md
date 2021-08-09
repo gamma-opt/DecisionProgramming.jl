@@ -17,7 +17,9 @@ validate_influence_diagram
 ### Paths
 ```@docs
 Path
-paths
+paths(::AbstractVector{State})
+paths(::AbstractVector{State}, ::Dict{Node, State})
+ForbiddenPath
 ```
 
 ### Probabilities
@@ -53,15 +55,16 @@ DecisionStrategy
 ### Decision Model
 ```@docs
 DecisionVariables
-PathProbabilityVariables
-lazy_constraints(::Model, ::PathProbabilityVariables, ::States, ::AbstractPathProbability; ::Float64, ::Float64, ::Bool, ::Bool)
+PathCompatibilityVariables
+lazy_probability_cut(::Model, ::PathCompatibilityVariables, ::AbstractPathProbability)
 ```
 
 ### Objective Functions
 ```@docs
 PositivePathUtility
-expected_value(::Model, ::PathProbabilityVariables, ::AbstractPathUtility)
-conditional_value_at_risk(::Model, ::PathProbabilityVariables, ::AbstractPathUtility, ::Float64)
+NegativePathUtility
+expected_value(::Model, ::PathCompatibilityVariables, ::AbstractPathUtility, ::AbstractPathProbability; ::Float64)
+conditional_value_at_risk(::Model, ::PathCompatibilityVariables{N}, ::AbstractPathUtility, ::AbstractPathProbability, ::Float64; ::Float64) where N
 ```
 
 ### Decision Strategy from Variables
@@ -95,7 +98,7 @@ print_risk_measures
 ```@docs
 random_diagram(::AbstractRNG, ::Int, ::Int, ::Int, ::Int, ::Int)
 States(::AbstractRNG, ::Vector{State}, ::Int)
-Probabilities(::AbstractRNG, ::ChanceNode, ::States)
+Probabilities(::AbstractRNG, ::ChanceNode, ::States; ::Int)
 Consequences(::AbstractRNG, ::ValueNode, ::States; ::Float64, ::Float64)
 LocalDecisionStrategy(::AbstractRNG, ::DecisionNode, ::States)
 ```

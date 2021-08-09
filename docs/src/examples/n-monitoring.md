@@ -6,7 +6,7 @@ The $N$-monitoring problem is described in [^1], sections 4.1 and 6.1.
 ## Influence Diagram
 ![](figures/n-monitoring.svg)
 
-The influence diagram of generalized $N$-monitoring problem where $N≥1$ and indices $k=1,...,N.$ The nodes are associated with states as follows. **Load state** $L=\{high, low\}$ denotes the load on a structure, **report states** $R_k=\{high, low\}$ report the load state to the **action states** $A_k=\{yes, no\}$ which represent different decisions to fortify the structure. The **failure state** $F=\{failure, success\}$ represents whether or not the (fortified) structure fails under the load $L$. Finally, the utility at target $T$ depends on the whether $F$ fails and the fortification costs.
+The influence diagram of the generalized $N$-monitoring problem where $N≥1$ and indices $k=1,...,N.$ The nodes are associated with states as follows. **Load state** $L=\{high, low\}$ denotes the load on a structure, **report states** $R_k=\{high, low\}$ report the load state to the **action states** $A_k=\{yes, no\}$ which represent different decisions to fortify the structure. The **failure state** $F=\{failure, success\}$ represents whether or not the (fortified) structure fails under the load $L$. Finally, the utility at target $T$ depends on the whether $F$ fails and the fortification costs.
 
 We draw the cost of fortification $c_k∼U(0,1)$ from a uniform distribution, and the magnitude of fortification is directly proportional to the cost. Fortification is defined as
 
@@ -153,7 +153,7 @@ for j in T
 end
 ```
 
-### Validating Influence Diagram
+### Validating the Influence Diagram
 
 Finally, we need to validate the influence diagram and sort the nodes, probabilities and consequences in increasing order by the node indices.
 
@@ -175,20 +175,15 @@ U = DefaultPathUtility(V, Y)
 
 ## Decision Model
 
-An affine transformation is applied to the path utility, making all utilities positive. See [section](../decision-programming/decision-model.md) on positive path utilities for details.
+An affine transformation is applied to the path utility, making all utilities positive. See the [section](../decision-programming/decision-model.md) on positive path utilities for details.
 
 ```julia
 U⁺ = PositivePathUtility(S, U)
 model = Model()
 z = DecisionVariables(model, S, D)
-π_s = PathProbabilityVariables(model, z, S, P; hard_lower_bound=false)
+x_s = PathCompatibilityVariables(model, z, S, P, probability_cut = false)
 ```
-
-Two [lazy constraints](../decision-programming/decision-model.md) are also used to speed up the solution process.
-
-```julia
-lazy_constraints(model, π_s, S, P, use_probability_cut=true, use_active_paths_cut=true)
-```
+`
 
 The expected utility is used as the objective and the problem is solved using Gurobi.
 
@@ -199,7 +194,6 @@ EV = expected_value(model, π_s, U⁺)
 optimizer = optimizer_with_attributes(
     () -> Gurobi.Optimizer(Gurobi.Env()),
     "IntFeasTol"      => 1e-9,
-    "LazyConstraints" => 1,
 )
 set_optimizer(model, optimizer)
 optimize!(model)
@@ -299,8 +293,8 @@ julia> print_utility_distribution(udist)
 │   Utility │ Probability │
 │   Float64 │     Float64 │
 ├───────────┼─────────────┤
-│ -2.881344 │    0.038697 │
-│ 97.118656 │    0.961303 │
+│ -2.881344 │    0.633125 │
+│ 97.118656 │    0.366875 │
 └───────────┴─────────────┘
 ```
 
@@ -310,7 +304,6 @@ julia> print_statistics(udist)
 │     Name │ Statistics │
 │   String │    Float64 │
 ├──────────┼────────────┤
-│      Std │  19.287197 │
 │     Mean │  33.806192 │
 │      Std │  48.195210 │
 │ Skewness │   0.552439 │

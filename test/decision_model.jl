@@ -27,41 +27,27 @@ function test_decision_model(D, S, P, U, n_inactive, probability_scale_factor, p
     @info "Testing DecisionVariables"
     z = DecisionVariables(model, S, D)
 
-    @info "Testing PathProbabilityVariables"
-    if probability_scale_factor > 0
-        π_s = PathProbabilityVariables(model, z, S, P; probability_scale_factor = probability_scale_factor, probability_cut =  probability_cut)
-    else
-        @test_throws DomainError PathProbabilityVariables(model, z, S, P; probability_scale_factor = probability_scale_factor, probability_cut =  probability_cut)
-        # defining π variables so that other tests can be tested
-        π_s = PathProbabilityVariables(model, z, S, P; probability_scale_factor = 1.0, probability_cut =  probability_cut)
-    end
+    @info "Testing PathCompatibilityVariables"
+    x_s = PathCompatibilityVariables(model, z, S, P; probability_cut = probability_cut)
 
     @info "Testing PositivePathUtility"
     U′ = if probability_cut U else PositivePathUtility(S, U) end
 
-    @info "Testing lazy constraints"
-    if iszero(n_inactive)
-      if probability_scale_factor > 0
-        lazy_constraints(model, π_s, S, P, probability_scale_factor = probability_scale_factor, use_probability_cut=true, use_active_paths_cut=true)
-      else
-        @test_throws DomainError lazy_constraints(model, π_s, S, P, probability_scale_factor = probability_scale_factor, use_probability_cut=true, use_active_paths_cut=true)
-      end
-    else
-        @test_throws DomainError lazy_constraints(model, π_s, S, P, probability_scale_factor = probability_scale_factor, use_probability_cut=true, use_active_paths_cut=true)
-    end
+    @info "Testing probability_cut"
+    lazy_probability_cut(model, x_s, P)
 
     @info "Testing expected_value"
     if probability_scale_factor > 0
-        EV = expected_value(model, π_s, U′, probability_scale_factor = probability_scale_factor)
+        EV = expected_value(model, x_s, U′, P; probability_scale_factor = probability_scale_factor)
     else
-        @test_throws DomainError expected_value(model, π_s, U′, probability_scale_factor = probability_scale_factor)
+        @test_throws DomainError expected_value(model, x_s, U′, P; probability_scale_factor = probability_scale_factor)
     end
 
     @info "Testing conditional_value_at_risk"
     if probability_scale_factor > 0
-        CVaR = conditional_value_at_risk(model, π_s, U′, 0.2, probability_scale_factor = probability_scale_factor)
+        CVaR = conditional_value_at_risk(model, x_s, U′, P, 0.2; probability_scale_factor = probability_scale_factor)
     else
-        @test_throws DomainError conditional_value_at_risk(model, π_s, U′, 0.2, probability_scale_factor = probability_scale_factor)
+        @test_throws DomainError conditional_value_at_risk(model, x_s, U′, P, 0.2; probability_scale_factor = probability_scale_factor)
     end
 
     @test true
