@@ -135,7 +135,6 @@ end
 lazy_constraints(model, π_s, S, P, use_probability_cut=true)
 ```
 """
-
 function lazy_constraints(model::Model, π_s::PathProbabilityVariables, S::States, P::AbstractPathProbability; atol::Float64 = 0.9, probability_scale_factor::Float64=1.0, use_probability_cut::Bool=false, use_active_paths_cut::Bool=false)
     if probability_scale_factor ≤ 0
         throw(DomainError("The probability_scale_factor must be greater than 0."))
