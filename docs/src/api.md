@@ -54,8 +54,7 @@ DecisionStrategy
 ```@docs
 DecisionVariables
 PathProbabilityVariables
-probability_cut(::Model, ::PathProbabilityVariables, ::AbstractPathProbability)
-active_paths_cut(::Model, ::PathProbabilityVariables, ::States, ::AbstractPathProbability; ::Float64)
+lazy_constraints(::Model, ::PathProbabilityVariables, ::States, ::AbstractPathProbability; ::Float64, ::Float64, ::Bool, ::Bool)
 ```
 
 ### Objective Functions
