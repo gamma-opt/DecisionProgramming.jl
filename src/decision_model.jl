@@ -137,7 +137,7 @@ function PathCompatibilityVariables(model::Model,
         @warn("Forbidden paths is still an experimental feature.")
     end
 
-    # Create path compatiblity variable for each effective path.
+    # Create path compatibility variable for each effective path.
     N = length(S)
     variables_x_s = Dict{Path{N}, VariableRef}(
         s => path_compatibility_variable(model, z, (names ? "$(name)$(s)" : ""))
