@@ -169,8 +169,8 @@ Adds a probability cut to the model as a lazy constraint.
 lazy_probability_cut(model, x_s, P)
 ```
 
-!!! warning
-Remember to separately set lazy constraints on in the solver parameters (optimizer attributes). For Gurobi `"LazyConstraints" => 1.`
+!!! note
+Remember to set lazy constraints on in the solver parameters, unless your solver does this automatically. Note that Gurobi does this automatically.
 
 """
 function lazy_probability_cut(model::Model, x_s::PathCompatibilityVariables, P::AbstractPathProbability)
