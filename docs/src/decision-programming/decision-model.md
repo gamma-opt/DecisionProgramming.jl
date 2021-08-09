@@ -4,7 +4,7 @@
 
 $$\underset{Z∈ℤ}{\text{maximize}}\quad f(\{(ℙ(X=𝐬∣Z), \mathcal{U}(𝐬)) ∣ 𝐬∈𝐒\}). \tag{1}$$
 
-**Decision model** refers to the mixed-integer linear programming formulation of this optimization problem. This page explains how to express decision strategy, path probability, path utility, and the objective in the mixed-integer linear form.%% grammar? We also present standard objective functions, including expected value and risk measures.  The original decision model formulation was described in [^1], sections 3 and 5. We base the decision model on an improved formulation described in [^2] section 3.3. We recommend reading the references for motivation, details, and proofs of the formulation.
+**Decision model** refers to the mixed-integer linear programming formulation of this optimization problem. This page explains how to express decision strategies, compatible paths, path utilities and the objective of the model as a mixed-integer linear program. We present two standard objective functions, including expected value and risk measures. The original decision model formulation was described in [^1], sections 3 and 5. We base the decision model on an improved formulation described in [^2] section 3.3. We recommend reading the references for motivation, details, and proofs of the formulation.
 
 
 ## Decision Variables
@@ -16,7 +16,7 @@ $$∑_{s_j∈S_j} z(s_j∣𝐬_{I(j)})=1,\quad ∀j∈D, 𝐬_{I(j)}∈𝐒_{I(j
 
 
 ## Path Compatibility Variables
-**Path compatibility variables** $x(𝐬)$ are indicator variables for whether path $𝐬$ is compatible with decision strategy $Z$ that is defined by the decision variables $z$. These are continous variables but only assume binary values, so that the compatible paths $𝐬 ∈ 𝐒_C$ take values $x(𝐬) = 1$ and other paths $𝐬 ∈ 𝐒 \setminus \{𝐒_C\}$ take values $x(𝐬) = 0$. Constraint $(4)$ defines the lower and upper bounds for the variables. 
+**Path compatibility variables** $x(𝐬)$ are indicator variables for whether path $𝐬$ is compatible with decision strategy $Z$ that is defined by the decision variables $z$. These are continous variables but only assume binary values, so that the compatible paths $𝐬 ∈ 𝐒(Z)$ take values $x(𝐬) = 1$ and other paths $𝐬 ∈ 𝐒 \setminus 𝐒(Z)$ take values $x(𝐬) = 0$. Constraint $(4)$ defines the lower and upper bounds for the variables. 
 
 $$0≤x(𝐬)≤1,\quad ∀𝐬∈𝐒 \tag{4}$$
 
