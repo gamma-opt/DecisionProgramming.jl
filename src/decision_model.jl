@@ -45,6 +45,7 @@ function is_forbidden(s::Path, forbidden_paths::Vector{ForbiddenPath})
     return !all(s[k]∉v for (k, v) in forbidden_paths)
 end
 
+
 function path_compatibility_variable(model::Model, z::DecisionVariables, base_name::String="")
     # Create a path compatiblity variable
     x = @variable(model, base_name=base_name)
@@ -88,7 +89,6 @@ function decision_strategy_constraint(model::Model, S::States, d::DecisionNode, 
     end
 end
 
-
 """
     PathCompatibilityVariables(model::Model,
         z::DecisionVariables,
@@ -116,7 +116,6 @@ Create path compatibility variables and constraints.
 - `fixed::Dict{Node, State}`: Path compatibility variable will not be generated
     for paths which do not include these fixed subpaths.
 - `probability_cut` Includes probability cut constraint in the optimisation model.
-
 
 # Examples
 ```julia
