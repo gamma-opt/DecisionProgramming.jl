@@ -39,22 +39,15 @@ function test_decision_model(D, S, P, U, n_inactive, probability_scale_factor, p
     @info "Testing PositivePathUtility"
     U′ = if probability_cut U else PositivePathUtility(S, U) end
 
-    @info "Testing probability_cut"
-    if probability_scale_factor > 0
-        lazy_probability_cut(model, π_s, P, probability_scale_factor = probability_scale_factor)
-    else
-        @test_throws DomainError lazy_probability_cut(model, π_s, P, probability_scale_factor = probability_scale_factor)
-    end
-
-    @info "Testing active_paths_cut"
+    @info "Testing lazy constraints"
     if iszero(n_inactive)
-        if probability_scale_factor > 0
-            lazy_active_paths_cut(model, π_s, S, P, probability_scale_factor = probability_scale_factor)
-        else
-            @test_throws DomainError lazy_active_paths_cut(model, π_s, S, P, probability_scale_factor = probability_scale_factor)
-        end
+      if probability_scale_factor > 0
+        lazy_constraints(model, π_s, S, P, probability_scale_factor = probability_scale_factor, use_probability_cut=true, use_active_paths_cut=true)
+      else
+        @test_throws DomainError lazy_constraints(model, π_s, S, P, probability_scale_factor = probability_scale_factor, use_probability_cut=true, use_active_paths_cut=true)
+      end
     else
-        @test_throws DomainError lazy_active_paths_cut(model, π_s, S, P, probability_scale_factor = probability_scale_factor)
+        @test_throws DomainError lazy_constraints(model, π_s, S, P, probability_scale_factor = probability_scale_factor, use_probability_cut=true, use_active_paths_cut=true)
     end
 
     @info "Testing expected_value"

@@ -67,7 +67,6 @@ P = DefaultPathProbability(C, X)
 @info("Defining DecisionModel")
 model = Model()
 z = DecisionVariables(model, S, D)
-π_s = PathProbabilityVariables(model, z, S, P)
 
 @info("Creating problem specific constraints and expressions")
 
@@ -126,20 +125,10 @@ z_dA = z.z[2]
 @constraint(model, [i=1:3, j=1:3, k=1:3], x_A[i,j,k,2] <= x_T[i,2])
 
 @info("Creating model objective.")
-struct PathUtility <: AbstractPathUtility
-    data::Array{AffExpr}
-end
-Base.getindex(U::PathUtility, i::Int) = getindex(U.data, i)
-Base.getindex(U::PathUtility, I::Vararg{Int,N}) where N = getindex(U.data, I...)
-(U::PathUtility)(s::Path) = value.(U[s...])
-
-path_utility = [@expression(model,
-    sum(x_A[s[1:3]..., a] * (V_A[s[4], a] - I_a[a]) for a in 1:n_A) -
-    sum(x_T[s[1], t] * I_t[t] for t in 1:n_T)) for s in paths(S)]
-U = PathUtility(path_utility)
-# EV = @expression(model, sum(π_s[s...] * U[s...] for s in paths(S)))
-EV = @expression(model, sum(π_s[s] * U[s...] for s in paths(S)))
-@objective(model, Max, EV)
+patent_investment_cost = @expression(model, [i=1:S[1]], sum(x_T[i, t] * I_t[t] for t in 1:n_T))
+application_investment_cost = @expression(model, [i=1:S[1], j=1:S[2], k=1:S[3]], sum(x_A[i, j, k, a] * I_a[a] for a in 1:n_A))
+application_value = @expression(model, [i=1:S[1], j=1:S[2], k=1:S[3], l=1:S[4]], sum(x_A[i, j, k, a] * V_A[l, a] for a in 1:n_A))
+@objective(model, Max, sum( sum( P((i,j,k,l)) * (application_value[i,j,k,l] - application_investment_cost[i,j,k]) for j in 1:S[2], k in 1:S[3], l in 1:S[4] ) - patent_investment_cost[i] for i in 1:S[1] ))
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
@@ -155,6 +144,20 @@ Z = DecisionStrategy(z)
 
 @info("Printing decision strategy:")
 print_decision_strategy(S, Z)
+
+
+@info("Extracting path utilities")
+struct PathUtility <: AbstractPathUtility
+    data::Array{AffExpr}
+end
+Base.getindex(U::PathUtility, i::Int) = getindex(U.data, i)
+Base.getindex(U::PathUtility, I::Vararg{Int,N}) where N = getindex(U.data, I...)
+(U::PathUtility)(s::Path) = value.(U[s...])
+
+path_utility = [@expression(model,
+    sum(x_A[s[1:3]..., a] * (V_A[s[4], a] - I_a[a]) for a in 1:n_A) -
+    sum(x_T[s[1], t] * I_t[t] for t in 1:n_T)) for s in paths(S)]
+U = PathUtility(path_utility)
 
 @info("Computing utility distribution.")
 udist = UtilityDistribution(S, P, U, Z)

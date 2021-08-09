@@ -128,56 +128,46 @@ function PathProbabilityVariables(model::Model,
     π_s
 end
 
-"""Adds a probability cut to the model as a lazy constraint.
+"""Adds lazy constraints to the model. Currently available: probability cut and active paths cut.
 
 # Examples
 ```julia
-probability_cut(model, π_s, P)
+lazy_constraints(model, π_s, S, P, use_probability_cut=true)
 ```
 """
-function lazy_probability_cut(model::Model, π_s::PathProbabilityVariables, P::AbstractPathProbability; probability_scale_factor::Float64=1.0)
-    if probability_scale_factor ≤ 0
-        throw(DomainError("The probability_scale_factor must be greater than 0."))
-    end
-    function probability_cut(cb_data)
-        πsum = sum(callback_value(cb_data, π) for π in values(π_s))
-        if !isapprox(πsum, 1.0 * probability_scale_factor)
-            con = @build_constraint(sum(values(π_s)) == 1.0 * probability_scale_factor)
-            MOI.submit(model, MOI.LazyConstraint(cb_data), con)
-        end
-    end
-    MOI.set(model, MOI.LazyConstraintCallback(), probability_cut)
-end
 
-"""Adds a active paths cut to the model as a lazy constraint.
-
-# Examples
-```julia
-atol = 0.9  # Tolerance to trigger the creation of the lazy cut
-active_paths_cut(model, π_s, S, P; atol=atol)
-```
-"""
-function lazy_active_paths_cut(model::Model, π_s::PathProbabilityVariables, S::States, P::AbstractPathProbability; atol::Float64 = 0.9, probability_scale_factor::Float64=1.0)
-    all_active_states = all(all((!).(iszero.(x))) for x in P.X)
-    if !all_active_states
-        throw(DomainError("Cannot use active paths cut if all states are not active."))
-    end
-
+function lazy_constraints(model::Model, π_s::PathProbabilityVariables, S::States, P::AbstractPathProbability; atol::Float64 = 0.9, probability_scale_factor::Float64=1.0, use_probability_cut::Bool=false, use_active_paths_cut::Bool=false)
     if probability_scale_factor ≤ 0
         throw(DomainError("The probability_scale_factor must be greater than 0."))
     end
 
-    ϵ = minimum(P(s) for s in keys(π_s))
-    num_compatible_paths = prod(S[c.j] for c in P.C)
-    function active_paths_cut(cb_data)
-        πnum = sum(callback_value(cb_data, π) ≥ ϵ * probability_scale_factor for π in values(π_s))
-        if !isapprox(πnum, num_compatible_paths, atol = atol)
-            num_active_paths = @expression(model, sum(π / (P(s) * probability_scale_factor) for (s, π) in π_s))
-            con = @build_constraint(num_active_paths == num_compatible_paths)
-            MOI.submit(model, MOI.LazyConstraint(cb_data), con)
+    if use_active_paths_cut
+        all_active_states = all(all((!).(iszero.(x))) for x in P.X)
+        if !all_active_states
+            throw(DomainError("Cannot use active paths cut if all states are not active."))
         end
     end
-    MOI.set(model, MOI.LazyConstraintCallback(), active_paths_cut)
+
+    function lazy_constraints(cb_data)
+        if use_probability_cut
+            πsum = sum(callback_value(cb_data, π) for π in values(π_s))
+            if !isapprox(πsum, 1.0 * probability_scale_factor)
+                con = @build_constraint(sum(values(π_s)) == 1.0 * probability_scale_factor)
+                MOI.submit(model, MOI.LazyConstraint(cb_data), con)
+            end
+        end
+        if use_active_paths_cut
+            ϵ = minimum(P(s) for s in keys(π_s))
+            num_compatible_paths = prod(S[c.j] for c in P.C)
+            πnum = sum(callback_value(cb_data, π) ≥ ϵ * probability_scale_factor for π in values(π_s))
+            if !isapprox(πnum, num_compatible_paths, atol = atol)
+                num_active_paths = @expression(model, sum(π / (P(s) * probability_scale_factor) for (s, π) in π_s))
+                con = @build_constraint(num_active_paths == num_compatible_paths)
+                MOI.submit(model, MOI.LazyConstraint(cb_data), con)
+            end
+        end
+    end
+    MOI.set(model, MOI.LazyConstraintCallback(), lazy_constraints)
 end
 
 
