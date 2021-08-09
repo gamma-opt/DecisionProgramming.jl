@@ -10,7 +10,7 @@ $$𝐒^∗=\{𝐬∈𝐒∣𝐬_{A}∉𝐒_{A}^′\}⊆𝐒.$$
 
 The [Decision Model](@ref decision-model) size depends on the number of effective paths, rather than the number of paths or size of the influence diagram directly. If effective paths is empty, the influence diagram has no solutions.
 
-In Decision Programming, one can assert certain subpaths to be effective or ineffective using the *fixed path* and *forbidden paths* sets.
+In Decision Programming, one can declare certain subpaths to be effective or ineffective using the *fixed path* and *forbidden paths* sets.
 
 ### Fixed Path
 **Fixed path** refers to a subpath which must be realized. If the fixed path is $s_Y = S_Y^f$ for all nodes $Y⊆C∪D$, then the effective paths in the model are
@@ -19,7 +19,7 @@ $$𝐒^∗=\{𝐬∈𝐒∣s_{Y} = S_{Y}^f \forall \ Y \}.$$
 
 
 ### Forbidden Paths
-**Forbidden paths** are a the to assert ineffective subpaths. If $𝐬_X∈𝐒_X^′$ are forbidden subpaths for nodes $X⊆C∪D$, then the effective paths in the model are
+**Forbidden paths** are a way to declare ineffective subpaths. If $𝐬_X∈𝐒_X^′$ are forbidden subpaths for nodes $X⊆C∪D$, then the effective paths in the model are
 
 $$𝐒^∗=\{𝐬∈𝐒∣𝐬_{X} ∉ 𝐒_{X}^′\}.$$
 
@@ -42,7 +42,7 @@ $$|𝐒(X)|≤|𝐒|.$$
 
 Effective paths are related to active paths, such that, for all $j∈C,$ we have ineffective subpaths
 
-$$𝐒_{I(j)∪j}^′=\{𝐬_{I(j)∪j}∈𝐒_{I(j)∪j} ∣ ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)})=0\}.$$
+$$𝐒_{I(j)∪j}^′=\{𝐬_{I(j)∪j}∈𝐒_{I(j)∪j} ∣ ℙ(X_j=s_j∣X_{I(j)}=𝐬_{I(j)})=0\}.$$
 
 Generally, the effective paths is a subset of the active paths, that is
 
@@ -70,9 +70,9 @@ $$𝐒(Z)∩𝐒(Z^′)=\{𝐬∈𝐒∣Z(𝐬)∧Z^′(𝐬)\}=∅.$$
 
 
 ### Locally Compatible Paths
-**Locally compatible paths** refers to a subset of paths that include the subpath $(s_{I(j)}, s_j)$ and thus, represent the local decision strategy $Z_j(s_{I(j)}) = s_j$ for decision node $j \in D$. Formally, the locally compatible paths for node $j \in D$, state $s_j \in S_j$ and information state $s_{I(j)} \in S_{I(j)}$ includes the paths
+**Locally compatible paths** refers to a subset of paths that include the subpath $(𝐬_{I(j)}, s_j)$ and thus, represent the local decision strategy $Z_j(𝐬_{I(j)}) = s_j$ for decision node $j \in D$. Formally, the locally compatible paths for node $j \in D$, state $s_j \in S_j$ and information state $𝐬_{I(j)} \in 𝐒_{I(j)}$ includes the paths
 
-$$ 𝐒_{s_j \mid s_{I(j)}} = \{ 𝐬 \in 𝐒 \mid (s_{I(j)}, s_j) ⊂ s\}.$$
+$$ 𝐒_{s_j \mid s_{I(j)}} = \{ 𝐬 \in 𝐒 \mid (𝐬_{I(j)}, s_j) ⊂ 𝐬\}.$$
 
 
 ## Symmetry
