@@ -32,8 +32,8 @@ Using the influence diagram, we create the decision model as follow:
 using JuMP
 model = Model()
 z = DecisionVariables(model, S, D)
-π_s = PathProbabilityVariables(model, z, S, P)
-EV = expected_value(model, π_s, U)
+x_s = PathCompatibilityVariables(model, z, S, P)
+EV = expected_value(model, x_s, U, P)
 @objective(model, Max, EV)
 ```
 
