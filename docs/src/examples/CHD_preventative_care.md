@@ -105,7 +105,7 @@ We set the probability that the patient does not experience a CHD event in the n
 
 $$ℙ(H = \text{no CHD} | R0 = \alpha) = 1 - \alpha$$
 
-Since node $R0$ is actually deterministic and the health node $H$ is defined in in this way, it means that in our model the patient has a 12% chance of experiencing a CHD event and 88% chance of remaining healthy.
+Since node $R0$ is deterministic and the health node $H$ is defined in this way, in our model the patient has a 12% chance of experiencing a CHD event and 88% chance of remaining healthy.
 
 Node $H$ and its probabilities are added in the following way.
 
