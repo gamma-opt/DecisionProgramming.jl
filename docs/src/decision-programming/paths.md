@@ -72,7 +72,7 @@ $$𝐒(Z)∩𝐒(Z^′)=\{𝐬∈𝐒∣Z(𝐬)∧Z^′(𝐬)\}=∅.$$
 ### Locally Compatible Paths
 **Locally compatible paths** refers to a subset of paths that include the subpath $(𝐬_{I(j)}, s_j)$ and thus, represent the local decision strategy $Z_j(𝐬_{I(j)}) = s_j$ for decision node $j \in D$. Formally, the locally compatible paths for node $j \in D$, state $s_j \in S_j$ and information state $𝐬_{I(j)} \in 𝐒_{I(j)}$ includes the paths
 
-$$ 𝐒_{s_j \mid s_{I(j)}} = \{ 𝐬 \in 𝐒 \mid (𝐬_{I(j)}, s_j) ⊂ 𝐬\}.$$
+$$𝐒_{s_j \mid s_{I(j)}} = \{ 𝐬 \in 𝐒 \mid (𝐬_{I(j)}, s_j) ⊂ 𝐬\}.$$
 
 
 ## Symmetry
@@ -110,4 +110,3 @@ Let us add one chance node with two states to the influence diagram.
 ![](figures/paths3.svg)
 
 Now, given inactive chance states such that we remove the dashed paths, we have a symmetric influence diagram. Both decisions will have an equal number of possible paths. However, there are only eight possible paths instead of twelve if there were no inactive chance states.
-
