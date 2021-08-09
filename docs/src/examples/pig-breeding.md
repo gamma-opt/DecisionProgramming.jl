@@ -199,7 +199,7 @@ U = DefaultPathUtility(V, Y)
 
 ## Decision Model
 
-We apply an affine transformation to the utility function, making all path utilities positive. Now that all path utilities positive, the probability cut can be excluded from the model. The purpose of this is discussed in the [theoretical section](../decision-programming/decision-model.md) of this documentation. 
+We apply an affine transformation to the utility function, making all path utilities positive. Now that all path utilities are positive, the probability cut can be excluded from the model. The purpose of this is discussed in the [theoretical section](../decision-programming/decision-model.md) of this documentation. 
 
 ```julia
 U⁺ = PositivePathUtility(S, U)
