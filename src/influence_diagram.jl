@@ -384,8 +384,19 @@ end
 
 # --- Influence diagram ---
 
-mutable struct Diagram
-    Nodes::Array{AbstractNode}[]
+"""
+    Name = String
+
+Primitive type for name of node. Alias for `String`.
+"""
+const Name = String
+
+
+abstract type NodeData end
+
+mutable struct InfluenceDiagram
+    Nodes::Vector{NodeData}
+    Names::Vector{Name}
     S::States
     C::Vector{ChanceNode}
     D::Vector{DecisionNode}
@@ -394,11 +405,139 @@ mutable struct Diagram
     Y::Vector{Consequences}
     P::AbstractPathProbability
     U::AbstractPathUtility
-    function Diagram()
-        new(Nodes = Array{AbstractNode}[])
+    function InfluenceDiagram()
+        new(Vector{NodeData}())
     end
 end
 
+
+
+
+# --- Node raw data ---
+
+function validate_node_data(diagram::InfluenceDiagram, name::Name, I_j::Vector{Name})
+    if !allunique([map(x -> x.name, diagram.Nodes)..., name])
+        throw(DomainError("All node names should be unique."))
+    end
+
+    if !allunique(I_j)
+        throw(DomainError("All information nodes should be unique."))
+    end
+end
+
+struct DecisionNodeData <: NodeData
+    name::Name
+    I_j::Vector{Name}
+    states::Vector{Name}
+    function DecisionNodeData(diagram::InfluenceDiagram, name::Name, I_j::Vector{Name}, states::Vector{Name})
+        return new(name, I_j, states)
+    end
+end
+
+function AddDecisionNode!(diagram::InfluenceDiagram, name::Name, I_j::Vector{Name}, states::Vector{Name})
+    validate_node_data(diagram, name, I_j)
+    push!(diagram.Nodes, DecisionNodeData(name, I_j, states))
+end
+
+struct ChanceNodeData{N} <: NodeData
+    name::Name
+    I_j::Vector{Name}
+    states::Vector{Name}
+    probabilities::Array{Float64, N}
+    function ChanceNodeData(name::Name, I_j::Vector{Name}, states::Vector{Name}, probabilities::Array{Float64, N}) where N
+        return new{N}(name, I_j, states, probabilities)
+    end
+
+end
+
+function AddChanceNode!(diagram::InfluenceDiagram, name::Name, I_j::Vector{Name}, states::Vector{Name}, probabilities::Array{Float64, N}) where N
+    validate_node_data(diagram, name, I_j)
+    push!(diagram.Nodes, ChanceNodeData(name, I_j, states, probabilities))
+end
+
+struct ValueNodeData{N} <: NodeData
+    name::Name
+    I_j::Vector{Name}
+    consequences::Array{Float64, N}
+    function ValueNodeData(name::Name, I_j::Vector{Name}, consequences::Array{Float64, N}) where N
+        return new{N}(name, I_j, consequences)
+    end
+end
+
+function AddValueNode!(diagram::InfluenceDiagram, name::Name, I_j::Vector{Name}, consequences::Array{Float64, N}) where N
+    validate_node_data(diagram, name, I_j)
+    push!(diagram.Nodes, ValueNodeData(name, I_j, Array{Float64}(consequences)))
+end
+
+function deduce_node_indices!(data::Dict{Name, Vector{Name}}, n::Int)
+
+    names = Vector{Name}(undef, n)
+    indices = Dict{Name, Node}()
+    nodes = Set{String}()
+    index = 1
+    k = 0
+
+    while index <= n && k <= n
+        for (name, I_j) in data
+            if isempty(setdiff(Set(I_j), nodes))
+                names[index] = name
+                push!(indices, name => index)
+                push!(nodes, name)
+                delete!(data, name)
+                index += 1
+            end
+        end
+        k += 1
+    end
+
+    if index != n + 1
+        throw(DomainError("The influence diagram should be acyclic.."))
+    end
+
+    return names, indices
+end
+
+
+
+function BuildDiagram!(diagram::InfluenceDiagram; default_probability::Bool=true, default_utility::Bool=true)
+
+    # Number of nodes
+    nodes = [(n.name for n in diagram.Nodes)...]
+    n = length(nodes)
+
+    # Check all information sets are subsets of all nodes
+    information_sets = union((n.I_j for n in diagram.Nodes)...)
+    if !all(information_sets ⊊ nodes)
+        throw(DomainError("Each node that is part of an information set should be added as a node."))
+    end
+
+    # Build Diagram indices
+    arc_data = Dict(map(x -> (x.name, x.I_j), diagram.Nodes))
+    diagram.Names, indices = deduce_node_indices!(arc_data, n)
+
+    # Declare states
+    states = Vector{State}()
+    for j in 1:n
+        node = diagram.Nodes[findfirst(x -> x.name == diagram.Names[j], diagram.Nodes)]
+
+        if isa(node, ChanceNodeData)
+            println("yay")
+        end
+
+    end
+
+    println(states)
+
+    # Declare C, D, V
+
+
+    # Declare X, Y
+
+    # Declare P, U
+
+
+
+end
 
 # --- Local Decision Strategy ---
 

@@ -23,7 +23,14 @@ export Node,
     DefaultPathUtility,
     LocalDecisionStrategy,
     DecisionStrategy,
-    validate_influence_diagram
+    validate_influence_diagram,
+    Name,
+    InfluenceDiagram,
+    BuildDiagram!,
+    AddNode,
+    AddChanceNode,
+    AddDecisionNode,
+    AddValueNode
 
 export DecisionVariables,
     PathCompatibilityVariables,
