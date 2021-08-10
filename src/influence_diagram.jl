@@ -136,6 +136,7 @@ function States(states::Vector{Tuple{State, Vector{Node}}})
     States(S_j)
 end
 
+
 """
     function validate_influence_diagram(S::States, C::Vector{ChanceNode}, D::Vector{DecisionNode}, V::Vector{ValueNode})
 
@@ -377,6 +378,25 @@ end
 
 function (U::DefaultPathUtility)(s::Path)
     sum(Y(s[v.I_j]) for (v, Y) in zip(U.V, U.Y))
+end
+
+
+
+# --- Influence diagram ---
+
+mutable struct Diagram
+    Nodes::Array{AbstractNode}[]
+    S::States
+    C::Vector{ChanceNode}
+    D::Vector{DecisionNode}
+    V::Vector{ValueNode}
+    X::Vector{Probabilities}
+    Y::Vector{Consequences}
+    P::AbstractPathProbability
+    U::AbstractPathUtility
+    function Diagram()
+        new(Nodes = Array{AbstractNode}[])
+    end
 end
 
 
