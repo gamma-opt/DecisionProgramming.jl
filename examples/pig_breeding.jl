@@ -4,7 +4,6 @@ using DecisionProgramming
 
 const N = 4
 
-
 @info("Creating the influence diagram.")
 diagram = InfluenceDiagram()
 
@@ -40,7 +39,7 @@ for i in 1:N-1
 end
 
 # Selling price
-AddValueNode!(diagram, "SP", ["H4"], [300.0, 1000.0])
+AddValueNode!(diagram, "SP", ["H$N"], [300.0, 1000.0])
 
 GenerateDiagram!(diagram)
 
