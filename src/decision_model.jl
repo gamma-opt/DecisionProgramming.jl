@@ -37,8 +37,8 @@ Create decision variables and constraints.
 z = DecisionVariables(model, S, D)
 ```
 """
-function DecisionVariables(model::Model, S::States, D::Vector{DecisionNode}; names::Bool=false, name::String="z")
-    DecisionVariables(D, [decision_variable(model, S, d, (names ? "$(name)_$(d.j)$(s)" : "")) for d in D])
+function DecisionVariables(model::Model, diagram::InfluenceDiagram; names::Bool=false, name::String="z")
+    DecisionVariables(diagram.D, [decision_variable(model, diagram.S, d, (names ? "$(name)_$(d.j)$(s)" : "")) for d in diagram.D])
 end
 
 function is_forbidden(s::Path, forbidden_paths::Vector{ForbiddenPath})
@@ -123,9 +123,8 @@ x_s = PathCompatibilityVariables(model, z, S, P; probability_cut = false)
 ```
 """
 function PathCompatibilityVariables(model::Model,
-    z::DecisionVariables,
-    S::States,
-    P::AbstractPathProbability;
+    diagram::InfluenceDiagram,
+    z::DecisionVariables;
     names::Bool=false,
     name::String="x",
     forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
@@ -137,22 +136,22 @@ function PathCompatibilityVariables(model::Model,
     end
 
     # Create path compatibility variable for each effective path.
-    N = length(S)
+    N = length(diagram.S)
     variables_x_s = Dict{Path{N}, VariableRef}(
         s => path_compatibility_variable(model, z, (names ? "$(name)$(s)" : ""))
-        for s in paths(S, fixed)
-        if !iszero(P(s)) && !is_forbidden(s, forbidden_paths)
+        for s in paths(diagram.S, fixed)
+        if !iszero(diagram.P(s)) && !is_forbidden(s, forbidden_paths)
     )
 
     x_s = PathCompatibilityVariables{N}(variables_x_s)
 
     # Add decision strategy constraints for each decision node
     for (d, z_d) in zip(z.D, z.z)
-        decision_strategy_constraint(model, S, d, z.D, z_d, x_s)
+        decision_strategy_constraint(model, diagram.S, d, z.D, z_d, x_s)
     end
 
     if probability_cut
-        @constraint(model, sum(x * P(s) for (s, x) in x_s) == 1.0)
+        @constraint(model, sum(x * diagram.P(s) for (s, x) in x_s) == 1.0)
     end
 
     x_s
@@ -172,16 +171,16 @@ lazy_probability_cut(model, x_s, P)
     Remember to set lazy constraints on in the solver parameters, unless your solver does this automatically. Note that Gurobi does this automatically.
 
 """
-function lazy_probability_cut(model::Model, x_s::PathCompatibilityVariables, P::AbstractPathProbability)
+function lazy_probability_cut(model::Model, diagram::InfluenceDiagram, x_s::PathCompatibilityVariables)
     # August 2021: The current implementation of JuMP doesn't allow multiple callback functions of the same type (e.g. lazy)
     # (see https://github.com/jump-dev/JuMP.jl/issues/2642)
     # What this means is that if you come up with a new lazy cut, you must replace this
     # function with a more general function (see discussion and solution in https://github.com/gamma-opt/DecisionProgramming.jl/issues/20)
 
     function probability_cut(cb_data)
-        xsum = sum(callback_value(cb_data, x) * P(s) for (s, x) in x_s)
+        xsum = sum(callback_value(cb_data, x) * diagram.P(s) for (s, x) in x_s)
         if !isapprox(xsum, 1.0)
-            con = @build_constraint(sum(x * P(s) for (s, x) in x_s) == 1.0)
+            con = @build_constraint(sum(x * diagram.P(s) for (s, x) in x_s) == 1.0)
             MOI.submit(model, MOI.LazyConstraint(cb_data), con)
         end
     end
@@ -205,6 +204,8 @@ true
 struct PositivePathUtility <: AbstractPathUtility
     U::AbstractPathUtility
     min::Float64
+    # TODO decide if P and U should be in struct InfluenceDiagram, if so then change this
+    #      to outer construction function and make it update diagram.U
     function PositivePathUtility(S::States, U::AbstractPathUtility)
         u_min = minimum(U(s) for s in paths(S))
         new(U, u_min)
@@ -228,6 +229,8 @@ true
 struct NegativePathUtility <: AbstractPathUtility
     U::AbstractPathUtility
     max::Float64
+    # TODO decide if P and U should be in struct InfluenceDiagram, if so then change this
+    #      to outer construction function and make it update diagram.U
     function NegativePathUtility(S::States, U::AbstractPathUtility)
         u_max = maximum(U(s) for s in paths(S))
         new(U, u_max)
@@ -261,16 +264,15 @@ EV = expected_value(model, x_s, U, P; probability_scale_factor = 10.0)
 ```
 """
 function expected_value(model::Model,
-    x_s::PathCompatibilityVariables,
-    U::AbstractPathUtility,
-    P::AbstractPathProbability;
+    diagram::InfluenceDiagram,
+    x_s::PathCompatibilityVariables;
     probability_scale_factor::Float64=1.0)
 
     if probability_scale_factor ≤ 0
         throw(DomainError("The probability_scale_factor must be greater than 0."))
     end
 
-    @expression(model, sum(P(s) * x * U(s) * probability_scale_factor for (s, x) in x_s))
+    @expression(model, sum(diagram.P(s) * x * diagram.U(s) * probability_scale_factor for (s, x) in x_s))
 end
 
 """
@@ -302,6 +304,7 @@ CVaR = conditional_value_at_risk(model, x_s, U, P, α)
 CVaR = conditional_value_at_risk(model, x_s, U, P, α; probability_scale_factor = 10.0)
 ```
 """
+# TODO decide if P and U should be in struct InfluenceDiagram, if so then update this function
 function conditional_value_at_risk(model::Model,
     x_s::PathCompatibilityVariables{N},
     U::AbstractPathUtility,
