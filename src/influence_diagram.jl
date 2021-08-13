@@ -144,19 +144,27 @@ Validate influence diagram.
 """
 function validate_influence_diagram(S::States, C::Vector{ChanceNode}, D::Vector{DecisionNode}, V::Vector{ValueNode})
     n = length(C) + length(D)
+    # in validate_node_data
     if length(S) != n
         throw(DomainError("Each change and decision node should have states."))
     end
+
+    # in deduce_node_indices logic...
     if Set(c.j for c in C) ∪ Set(d.j for d in D) != Set(1:n)
         throw(DomainError("Union of change and decision nodes should be {1,...,n}."))
     end
+
+    # in deduce_node_indices logic...
     if Set(v.j for v in V) != Set((n+1):(n+length(V)))
         throw(DomainError("Values nodes should be {n+1,...,n+|V|}."))
     end
+
+    # in deduce_node_indices
     I_V = union((v.I_j for v in V)...)
     if !(I_V ⊆ Set(1:n))
         throw(DomainError("Each information set I(v) for value node v should be a subset of C∪D."))
     end
+    # in deduce_node_indices
     # Check for redundant nodes.
     leaf_nodes = setdiff(1:n, (c.I_j for c in C)..., (d.I_j for d in D)...)
     for i in leaf_nodes
@@ -164,6 +172,7 @@ function validate_influence_diagram(S::States, C::Vector{ChanceNode}, D::Vector{
             @warn("Chance or decision node $i is redundant.")
         end
     end
+    # in validate_node_data
     for v in V
         if isempty(v.I_j)
             @warn("Value node $(v.j) is redundant.")
@@ -397,6 +406,7 @@ abstract type NodeData end
 mutable struct InfluenceDiagram
     Nodes::Vector{NodeData}
     Names::Vector{Name}
+    I_j::Vector{Vector{State}}
     S::States
     C::Vector{ChanceNode}
     D::Vector{DecisionNode}
@@ -415,13 +425,33 @@ end
 
 # --- Node raw data ---
 
-function validate_node_data(diagram::InfluenceDiagram, name::Name, I_j::Vector{Name})
+function validate_node_data(diagram::InfluenceDiagram,
+    name::Name,
+    I_j::Vector{Name};
+    value_node::Bool=false,
+    states::Vector{Name}=Vector{Name}())
     if !allunique([map(x -> x.name, diagram.Nodes)..., name])
         throw(DomainError("All node names should be unique."))
     end
 
     if !allunique(I_j)
-        throw(DomainError("All information nodes should be unique."))
+        throw(DomainError("All nodes in an information set should be unique."))
+    end
+
+    if !allunique([name, I_j...])
+        throw(DomainError("Node should not be included in its own information set."))
+    end
+
+    if !value_node
+        if length(states) < 2
+            throw(DomainError("Each chance and decision node should have more than one state."))
+        end
+    end
+
+    if value_node
+        if isempty(I_j)
+            @warn("Value node $name is redundant.")
+        end
     end
 end
 
@@ -429,13 +459,16 @@ struct DecisionNodeData <: NodeData
     name::Name
     I_j::Vector{Name}
     states::Vector{Name}
-    function DecisionNodeData(diagram::InfluenceDiagram, name::Name, I_j::Vector{Name}, states::Vector{Name})
+    function DecisionNodeData(name::Name, I_j::Vector{Name}, states::Vector{Name})
         return new(name, I_j, states)
     end
 end
 
-function AddDecisionNode!(diagram::InfluenceDiagram, name::Name, I_j::Vector{Name}, states::Vector{Name})
-    validate_node_data(diagram, name, I_j)
+function AddDecisionNode!(diagram::InfluenceDiagram,
+    name::Name,
+    I_j::Vector{Name},
+    states::Vector{Name})
+    validate_node_data(diagram, name, I_j, states = states)
     push!(diagram.Nodes, DecisionNodeData(name, I_j, states))
 end
 
@@ -450,8 +483,11 @@ struct ChanceNodeData{N} <: NodeData
 
 end
 
-function AddChanceNode!(diagram::InfluenceDiagram, name::Name, I_j::Vector{Name}, states::Vector{Name}, probabilities::Array{Float64, N}) where N
-    validate_node_data(diagram, name, I_j)
+function AddChanceNode!(diagram::InfluenceDiagram,
+    name::Name, I_j::Vector{Name},
+    states::Vector{Name},
+    probabilities::Array{Float64, N}) where N
+    validate_node_data(diagram, name, I_j, states = states)
     push!(diagram.Nodes, ChanceNodeData(name, I_j, states, probabilities))
 end
 
@@ -464,42 +500,106 @@ struct ValueNodeData{N} <: NodeData
     end
 end
 
-function AddValueNode!(diagram::InfluenceDiagram, name::Name, I_j::Vector{Name}, consequences::Array{Float64, N}) where N
-    validate_node_data(diagram, name, I_j)
+function AddValueNode!(diagram::InfluenceDiagram,
+    name::Name,
+    I_j::Vector{Name},
+    consequences::Array{Float64, N}) where N
+    validate_node_data(diagram, name, I_j, value_node = true)
     push!(diagram.Nodes, ValueNodeData(name, I_j, Array{Float64}(consequences)))
 end
 
-function deduce_node_indices!(data::Dict{Name, Vector{Name}}, n::Int)
 
-    names = Vector{Name}(undef, n)
+function deduce_node_indices(Nodes::Vector{NodeData})
+
+    # Chance and decision nodes
+    C_and_D = filter(x -> !isa(x, ValueNodeData), Nodes)
+    n_CD = length(C_and_D)
+
+    # Value nodes
+    V = filter(x -> isa(x, ValueNodeData), Nodes)
+    n_V = length(V)
+
+
+    # Validating node structure
+    if !isempty(Set(j.I_j for j in C_and_D) ∩ Set(v.name for v in V))
+        throw(DomainError("Information set I(j) for chance or decision node j should not include value nodes."))
+    end
+
+    if !isempty(Set(v.I_j for v in V) ∩ Set(v.name for v in V))
+        throw(DomainError("Information set I(v) for value nodes v should not include value nodes."))
+    end
+    # Check for redundant chance or decision nodes.
+    last_CD_nodes = setdiff((j.name for j in C_and_D), (j.I_j for j in C_and_D)...)
+    for i in last_CD_nodes
+        if i ∉ union((v.I_j for v in V)...)
+            @warn("Chance or decision node $i is redundant.")
+        end
+    end
+
+
+    # Declare vectors for results (final resting place InfluenceDiagram.Names and InfluenceDiagram.I_j)
+    Names = Vector{Name}(undef, n_CD+n_V)
+    I_js = Vector{Vector{Node}}(undef, n_CD+n_V)
+
+    # Declare helper collections
     indices = Dict{Name, Node}()
-    nodes = Set{String}()
-    index = 1
-    k = 0
+    indexed_nodes = Set{Name}()
 
-    while index <= n && k <= n
-        for (name, I_j) in data
-            if isempty(setdiff(Set(I_j), nodes))
-                names[index] = name
-                push!(indices, name => index)
-                push!(nodes, name)
-                delete!(data, name)
+    # Declare index for indexing nodes and loop iteration counter k
+    index = 1
+    k = 1
+
+    while index <= n_CD+n_V && k == index
+
+        # First index nodes C and D nodes
+        if index <= n_CD
+            for j in C_and_D
+                # Give bindex if node does not already have an index and all of its I_j have an index
+                if j.name ∉ indexed_nodes && Set(j.I_j) ⊆ indexed_nodes
+                    # Update helper collections
+                    push!(indices, j.name => index)
+                    push!(indexed_nodes, j.name)
+
+                    # Update results
+                    Names[index] = j.name
+                    I_js[index] = map(x -> indices[x], j.I_j)
+
+                    # Increase index
+                    index += 1
+                end
+            end
+
+        # After indexing all C and D nodes, index value nodes
+        else
+
+            for v in V
+                # Update results
+                Names[index] = v.name
+                I_js[index] = map(x -> indices[x], v.I_j)
+
+                # Increase index
                 index += 1
             end
         end
-        k += 1
+
+        # If new nodes have not been indexed during this iteration, terminate while loop
+        if index <= k
+            k += 1
+        else
+            k = index
+        end
     end
 
-    if index != n + 1
-        throw(DomainError("The influence diagram should be acyclic.."))
+
+    if index != k
+        throw(DomainError("The influence diagram should be acyclic."))
     end
 
-    return names, indices
+    return Names, I_js
 end
 
 
-
-function BuildDiagram!(diagram::InfluenceDiagram; default_probability::Bool=true, default_utility::Bool=true)
+function GenerateDiagram!(diagram::InfluenceDiagram; default_probability::Bool=true, default_utility::Bool=true)
 
     # Number of nodes
     nodes = [(n.name for n in diagram.Nodes)...]
@@ -511,31 +611,62 @@ function BuildDiagram!(diagram::InfluenceDiagram; default_probability::Bool=true
         throw(DomainError("Each node that is part of an information set should be added as a node."))
     end
 
-    # Build Diagram indices
-    arc_data = Dict(map(x -> (x.name, x.I_j), diagram.Nodes))
-    diagram.Names, indices = deduce_node_indices!(arc_data, n)
+    # Deduce indices for nodes
+    diagram.Names, diagram.I_j = deduce_node_indices(diagram.Nodes)
 
-    # Declare states
+    # Declare states, C, D, V, X, Y
     states = Vector{State}()
-    for j in 1:n
+    diagram.C = Vector{ChanceNode}()
+    diagram.D = Vector{DecisionNode}()
+    diagram.V = Vector{ValueNode}()
+    diagram.X = Vector{Probabilities}()
+    diagram.Y = Vector{Consequences}()
+
+    for (j, name) in enumerate(diagram.Names)
         node = diagram.Nodes[findfirst(x -> x.name == diagram.Names[j], diagram.Nodes)]
 
-        if isa(node, ChanceNodeData)
-            println("yay")
+        if isa(node, DecisionNodeData)
+            push!(states, length(node.states))
+            push!(diagram.D, DecisionNode(j, diagram.I_j[j]))
+
+        elseif isa(node, ChanceNodeData)
+            push!(states, length(node.states))
+            push!(diagram.C, ChanceNode(j, diagram.I_j[j]))
+
+            # Check dimensions of probabiltiies match states of (I_j, j)
+            if size(node.probabilities) == Tuple((states[n] for n in (diagram.I_j[j]..., j)))
+                push!(diagram.X, Probabilities(j, node.probabilities))
+            else
+                # TODO rephrase this error message
+                throw(DomainError("The dimensions of the probability matrix of node $name should match the number of states its information set and it has. In this case ", Tuple((states[n] for n in (diagram.I_j[j]..., j))), "."))
+            end
+        elseif isa(node, ValueNodeData)
+            push!(diagram.V, ValueNode(j, diagram.I_j[j]))
+
+            # Check dimensions of consequences match states of I_j
+            if size(node.consequences) == Tuple((states[n] for n in diagram.I_j[j]))
+                push!(diagram.Y, Consequences(j, node.consequences))
+            else
+                # TODO rephrase this error message
+                throw(DomainError("The dimensions of the consequences matrix of node $name should match the number of states its information set has. In this case ", Tuple((states[n] for n in (diagram.I_j[j]..., j))), "."))
+            end
+
         end
-
     end
+    # TODO ask Olli about this, if the States should be changed
+    diagram.S = States(states)
 
-    println(states)
+    # Validate influence diagram
+    validate_influence_diagram(diagram.S, diagram.C, diagram.D, diagram.V)
+    sort!.((diagram.C, diagram.D, diagram.V, diagram.X, diagram.Y), by = x -> x.j)
 
-    # Declare C, D, V
-
-
-    # Declare X, Y
-
-    # Declare P, U
-
-
+    # Declare P and U if defaults are used
+    if default_probability
+        diagram.P = DefaultPathProbability(diagram.C, diagram.X)
+    end
+    if default_utility
+        diagram.U = DefaultPathUtility(diagram.V, diagram.Y)
+    end
 
 end
 
