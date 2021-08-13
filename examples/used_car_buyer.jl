@@ -1,6 +1,60 @@
+
 using Logging
 using JuMP, Gurobi
 using DecisionProgramming
+
+@info("Creating the influence diagram.")
+diagram = InfluenceDiagram()
+
+AddChanceNode!(diagram, "O", Vector{Name}(), ["lemon", "peach"],  [0.2, 0.8])
+
+X_R = zeros(2, 2, 3)
+X_R[1, 1, :] = [1,0,0]
+X_R[1, 2, :] = [0,1,0]
+X_R[2, 1, :] = [1,0,0]
+X_R[2, 2, :] = [0,0,1]
+AddChanceNode!(diagram, "R", ["O", "T"], ["no test", "lemon", "peach"], X_R)
+AddDecisionNode!(diagram, "T", Vector{Name}(), ["no test", "test"])
+AddDecisionNode!(diagram, "A", ["R"], ["buy without guarantee", "buy with guarantee", "don't buy"])
+AddValueNode!(diagram, "V1", ["T"], [0.0, -25.0])
+AddValueNode!(diagram, "V2", ["A"], [100.0, 40.0, 0.0])
+AddValueNode!(diagram, "V3", ["O", "A"], [-200.0 0.0 0.0; -40.0 -20.0 0.0])
+
+GenerateDiagram!(diagram)
+
+
+@info("Creating the decision model.")
+model = Model()
+z = DecisionVariables(model, diagram)
+x_s = PathCompatibilityVariables(model, diagram, z)
+EV = expected_value(model, diagram, x_s)
+@objective(model, Max, EV)
+
+@info("Starting the optimization process.")
+optimizer = optimizer_with_attributes(
+    () -> Gurobi.Optimizer(Gurobi.Env()),
+    "IntFeasTol"      => 1e-9,
+)
+set_optimizer(model, optimizer)
+optimize!(model)
+
+@info("Extracting results.")
+Z = DecisionStrategy(z)
+
+@info("Printing decision strategy:")
+print_decision_strategy(S, Z)
+
+@info("Computing utility distribution.")
+udist = UtilityDistribution(S, P, U, Z)
+
+@info("Printing utility distribution.")
+print_utility_distribution(udist)
+
+@info("Printing expected utility.")
+print_statistics(udist)
+
+
+#=
 
 const O = 1  # Chance node: lemon or peach
 const T = 2  # Decision node: pay stranger for advice
@@ -23,6 +77,7 @@ D = Vector{DecisionNode}()
 V = Vector{ValueNode}()
 X = Vector{Probabilities}()
 Y = Vector{Consequences}()
+
 
 I_O = Vector{Node}()
 X_O = [0.2, 0.8]
@@ -95,3 +150,4 @@ print_utility_distribution(udist)
 
 @info("Printing expected utility.")
 print_statistics(udist)
+=#
