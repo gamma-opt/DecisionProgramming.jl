@@ -42,10 +42,10 @@ optimize!(model)
 Z = DecisionStrategy(z)
 
 @info("Printing decision strategy:")
-print_decision_strategy(S, Z)
+print_decision_strategy(diagram, Z)
 
 @info("Computing utility distribution.")
-udist = UtilityDistribution(S, P, U, Z)
+udist = UtilityDistribution(diagram.S, diagram.P, diagram.U, Z)
 
 @info("Printing utility distribution.")
 print_utility_distribution(udist)
