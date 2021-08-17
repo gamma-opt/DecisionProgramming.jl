@@ -41,13 +41,12 @@ end
 # Selling price
 AddValueNode!(diagram, "SP", ["H$N"], [300.0, 1000.0])
 
-GenerateDiagram!(diagram)
+GenerateDiagram!(diagram, positive_path_utility = true)
 
 @info("Creating the decision model.")
-#U⁺ = PositivePathUtility(S, U)
 model = Model()
 z = DecisionVariables(model, diagram)
-x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = true)
+x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
 EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
 
