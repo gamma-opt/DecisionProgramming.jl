@@ -389,7 +389,9 @@ function (U::DefaultPathUtility)(s::Path)
     sum(Y(s[v.I_j]) for (v, Y) in zip(U.V, U.Y))
 end
 
-
+function (U::DefaultPathUtility)(s::Path, t::Float64)
+    U(s) + t
+end
 
 # --- Influence diagram ---
 
@@ -415,6 +417,7 @@ mutable struct InfluenceDiagram
     Y::Vector{Consequences}
     P::AbstractPathProbability
     U::AbstractPathUtility
+    translation::Float64
     function InfluenceDiagram()
         new(Vector{NodeData}())
     end
@@ -514,7 +517,6 @@ function deduce_node_indices(Nodes::Vector{NodeData})
     # Chance and decision nodes
     C_and_D = filter(x -> !isa(x, ValueNodeData), Nodes)
     n_CD = length(C_and_D)
-
     # Value nodes
     V = filter(x -> isa(x, ValueNodeData), Nodes)
     n_V = length(V)
@@ -543,21 +545,17 @@ function deduce_node_indices(Nodes::Vector{NodeData})
         end
     end
 
-
     # Declare vectors for results (final resting place InfluenceDiagram.Names and InfluenceDiagram.I_j)
     Names = Vector{Name}(undef, n_CD+n_V)
     I_js = Vector{Vector{Node}}(undef, n_CD+n_V)
-
     # Declare helper collections
     indices = Dict{Name, Node}()
     indexed_nodes = Set{Name}()
-
     # Declare index for indexing nodes and loop iteration counter k
     index = 1
     k = 1
 
     while index <= n_CD+n_V && k == index
-
         # First index nodes C and D nodes
         if index <= n_CD
             for j in C_and_D
@@ -566,24 +564,19 @@ function deduce_node_indices(Nodes::Vector{NodeData})
                     # Update helper collections
                     push!(indices, j.name => index)
                     push!(indexed_nodes, j.name)
-
                     # Update results
                     Names[index] = j.name
                     I_js[index] = map(x -> indices[x], j.I_j)
-
                     # Increase index
                     index += 1
                 end
             end
-
         # After indexing all C and D nodes, index value nodes
         else
-
             for v in V
                 # Update results
                 Names[index] = v.name
                 I_js[index] = map(x -> indices[x], v.I_j)
-
                 # Increase index
                 index += 1
             end
@@ -597,7 +590,6 @@ function deduce_node_indices(Nodes::Vector{NodeData})
         end
     end
 
-
     if index != k
         throw(DomainError("The influence diagram should be acyclic."))
     end
@@ -606,7 +598,11 @@ function deduce_node_indices(Nodes::Vector{NodeData})
 end
 
 
-function GenerateDiagram!(diagram::InfluenceDiagram; default_probability::Bool=true, default_utility::Bool=true)
+function GenerateDiagram!(diagram::InfluenceDiagram;
+    default_probability::Bool=true,
+    default_utility::Bool=true,
+    positive_path_utility::Bool=false,
+    negative_path_utility::Bool=false)
 
     # Number of nodes
     nodes = [(n.name for n in diagram.Nodes)...]
@@ -665,6 +661,13 @@ function GenerateDiagram!(diagram::InfluenceDiagram; default_probability::Bool=t
     end
     if default_utility
         diagram.U = DefaultPathUtility(diagram.V, diagram.Y)
+        if positive_path_utility
+            diagram.translation = 1 -  minimum(diagram.U(s) for s in paths(diagram.S))
+        elseif negative_path_utility
+            diagram.translation = -1 - maximum(diagram.U(s) for s in paths(diagram.S))
+        else
+            diagram.translation = 0
+        end
     end
 
 end

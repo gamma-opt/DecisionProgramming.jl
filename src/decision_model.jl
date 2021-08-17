@@ -187,59 +187,6 @@ function lazy_probability_cut(model::Model, diagram::InfluenceDiagram, x_s::Path
     MOI.set(model, MOI.LazyConstraintCallback(), probability_cut)
 end
 
-# --- Objective Functions ---
-
-"""
-    PositivePathUtility(S::States, U::AbstractPathUtility)
-
-Positive affine transformation of path utility. Always evaluates positive values.
-
-# Examples
-```julia-repl
-julia> U⁺ = PositivePathUtility(S, U)
-julia> all(U⁺(s) > 0 for s in paths(S))
-true
-```
-"""
-struct PositivePathUtility <: AbstractPathUtility
-    U::AbstractPathUtility
-    min::Float64
-    # TODO decide if P and U should be in struct InfluenceDiagram, if so then change this
-    #      to outer construction function and make it update diagram.U
-    function PositivePathUtility(S::States, U::AbstractPathUtility)
-        u_min = minimum(U(s) for s in paths(S))
-        new(U, u_min)
-    end
-end
-
-(U::PositivePathUtility)(s::Path) = U.U(s) - U.min + 1
-
-"""
-    NegativePathUtility(S::States, U::AbstractPathUtility)
-
-Negative affine transformation of path utility. Always evaluates negative values.
-
-# Examples
-```julia-repl
-julia> U⁻ = NegativePathUtility(S, U)
-julia> all(U⁻(s) < 0 for s in paths(S))
-true
-```
-"""
-struct NegativePathUtility <: AbstractPathUtility
-    U::AbstractPathUtility
-    max::Float64
-    # TODO decide if P and U should be in struct InfluenceDiagram, if so then change this
-    #      to outer construction function and make it update diagram.U
-    function NegativePathUtility(S::States, U::AbstractPathUtility)
-        u_max = maximum(U(s) for s in paths(S))
-        new(U, u_max)
-    end
-end
-
-(U::NegativePathUtility)(s::Path) = U.U(s) - U.max - 1
-
-
 """
     expected_value(model::Model,
         x_s::PathCompatibilityVariables,
@@ -272,7 +219,7 @@ function expected_value(model::Model,
         throw(DomainError("The probability_scale_factor must be greater than 0."))
     end
 
-    @expression(model, sum(diagram.P(s) * x * diagram.U(s) * probability_scale_factor for (s, x) in x_s))
+    @expression(model, sum(diagram.P(s) * x * diagram.U(s, diagram.translation) * probability_scale_factor for (s, x) in x_s))
 end
 
 """
@@ -304,8 +251,8 @@ CVaR = conditional_value_at_risk(model, x_s, U, P, α)
 CVaR = conditional_value_at_risk(model, x_s, U, P, α; probability_scale_factor = 10.0)
 ```
 """
-# TODO decide if P and U should be in struct InfluenceDiagram, if so then update this function
 function conditional_value_at_risk(model::Model,
+    diagram::InfluenceDiagram,
     x_s::PathCompatibilityVariables{N},
     U::AbstractPathUtility,
     P::AbstractPathProbability,
@@ -324,7 +271,7 @@ function conditional_value_at_risk(model::Model,
     end
 
     # Pre-computed parameters
-    u = collect(Iterators.flatten(U(s) for s in keys(x_s)))
+    u = collect(Iterators.flatten(diagram.U(s, diagram.translation) for s in keys(x_s)))
     u_sorted = sort(u)
     u_min = u_sorted[1]
     u_max = u_sorted[end]
@@ -338,7 +285,7 @@ function conditional_value_at_risk(model::Model,
     @constraint(model, η ≤ u_max)
     ρ′_s = Dict{Path{N}, VariableRef}()
     for (s, x) in x_s
-        u_s = U(s)
+        u_s = diagram.U(s, diagram.translation)
         λ = @variable(model, binary=true)
         λ′ = @variable(model, binary=true)
         ρ = @variable(model)
@@ -352,14 +299,14 @@ function conditional_value_at_risk(model::Model,
         @constraint(model, ρ ≤ λ * probability_scale_factor)
         @constraint(model, ρ′ ≤ λ′* probability_scale_factor)
         @constraint(model, ρ ≤ ρ′)
-        @constraint(model, ρ′ ≤ x * P(s) * probability_scale_factor)
-        @constraint(model, (x * P(s) - (1 - λ))* probability_scale_factor ≤ ρ)
+        @constraint(model, ρ′ ≤ x * diagram.P(s) * probability_scale_factor)
+        @constraint(model, (x * diagram.P(s) - (1 - λ))* probability_scale_factor ≤ ρ)
         ρ′_s[s] = ρ′
     end
     @constraint(model, sum(values(ρ′_s)) == α * probability_scale_factor)
 
     # Return CVaR as an expression
-    CVaR = @expression(model, sum(ρ_bar * U(s) for (s, ρ_bar) in ρ′_s) / α)
+    CVaR = @expression(model, sum(ρ_bar * diagram.U(s, diagram.translation) for (s, ρ_bar) in ρ′_s) / α)
 
     return CVaR
 end
