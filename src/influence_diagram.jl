@@ -657,7 +657,6 @@ function GenerateDiagram!(diagram::InfluenceDiagram; default_probability::Bool=t
     diagram.S = States(states)
 
     # Validate influence diagram
-    validate_influence_diagram(diagram.S, diagram.C, diagram.D, diagram.V)
     sort!.((diagram.C, diagram.D, diagram.V, diagram.X, diagram.Y), by = x -> x.j)
 
     # Declare P and U if defaults are used
