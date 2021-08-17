@@ -623,6 +623,7 @@ function GenerateDiagram!(diagram::InfluenceDiagram; default_probability::Bool=t
     diagram.X = Vector{Probabilities}()
     diagram.Y = Vector{Consequences}()
 
+    # Fill states, C, D, V, X, Y
     for (j, name) in enumerate(diagram.Names)
         node = diagram.Nodes[findfirst(x -> x.name == diagram.Names[j], diagram.Nodes)]
 
@@ -638,8 +639,7 @@ function GenerateDiagram!(diagram::InfluenceDiagram; default_probability::Bool=t
             if size(node.probabilities) == Tuple((states[n] for n in (diagram.I_j[j]..., j)))
                 push!(diagram.X, Probabilities(j, node.probabilities))
             else
-                # TODO rephrase this error message
-                throw(DomainError("The dimensions of the probability matrix of node $name should match the number of states its information set and it has. In this case ", Tuple((states[n] for n in (diagram.I_j[j]..., j))), "."))
+                throw(DomainError("The dimensions of a probability matrix should match the node's states' and information states' cardinality. Expected $(Tuple((states[n] for n in (diagram.I_j[j]..., j)))) for node $name, got $(size(node.probabilities))."))
             end
         elseif isa(node, ValueNodeData)
             push!(diagram.V, ValueNode(j, diagram.I_j[j]))
@@ -648,8 +648,7 @@ function GenerateDiagram!(diagram::InfluenceDiagram; default_probability::Bool=t
             if size(node.consequences) == Tuple((states[n] for n in diagram.I_j[j]))
                 push!(diagram.Y, Consequences(j, node.consequences))
             else
-                # TODO rephrase this error message
-                throw(DomainError("The dimensions of the consequences matrix of node $name should match the number of states its information set has. In this case ", Tuple((states[n] for n in (diagram.I_j[j]..., j))), "."))
+                throw(DomainError("The dimensions of the consequences matrix should match the node's information states' cardinality. Expected $(Tuple((states[n] for n in diagram.I_j[j]))) for node $name, got $(size(node.consequences))."))
             end
 
         end
