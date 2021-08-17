@@ -521,18 +521,25 @@ function deduce_node_indices(Nodes::Vector{NodeData})
 
 
     # Validating node structure
-    if !isempty(Set(j.I_j for j in C_and_D) ∩ Set(v.name for v in V))
-        throw(DomainError("Information set I(j) for chance or decision node j should not include value nodes."))
+    if n_CD == 0
+        throw(DomainError("The influence diagram must have chance or decision nodes."))
     end
-
-    if !isempty(Set(v.I_j for v in V) ∩ Set(v.name for v in V))
-        throw(DomainError("Information set I(v) for value nodes v should not include value nodes."))
+    if !(union((n.I_j for n in Nodes)...) ⊊ Set(n.name for n in Nodes))
+        throw(DomainError("Each node that is part of an information set should be added as a node."))
+    end
+    # Checking the information sets of C and D nodes
+    if !isempty(union((j.I_j for j in C_and_D)...) ∩ Set(v.name for v in V))
+        throw(DomainError("Information sets should not include any value nodes."))
+    end
+    # Checking the information sets of V nodes
+    if !isempty(V) && !isempty(union((v.I_j for v in V)...) ∩ Set(v.name for v in V))
+        throw(DomainError("Information sets should not include any value nodes."))
     end
     # Check for redundant chance or decision nodes.
     last_CD_nodes = setdiff((j.name for j in C_and_D), (j.I_j for j in C_and_D)...)
     for i in last_CD_nodes
-        if i ∉ union((v.I_j for v in V)...)
-            @warn("Chance or decision node $i is redundant.")
+        if !isempty(V) && i ∉ union((v.I_j for v in V)...)
+            @warn("Node $i is redundant.")
         end
     end
 
@@ -604,12 +611,6 @@ function GenerateDiagram!(diagram::InfluenceDiagram; default_probability::Bool=t
     # Number of nodes
     nodes = [(n.name for n in diagram.Nodes)...]
     n = length(nodes)
-
-    # Check all information sets are subsets of all nodes
-    information_sets = union((n.I_j for n in diagram.Nodes)...)
-    if !all(information_sets ⊊ nodes)
-        throw(DomainError("Each node that is part of an information set should be added as a node."))
-    end
 
     # Deduce indices for nodes
     diagram.Names, diagram.I_j = deduce_node_indices(diagram.Nodes)
