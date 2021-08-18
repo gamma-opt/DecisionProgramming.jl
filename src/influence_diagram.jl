@@ -551,47 +551,41 @@ function deduce_node_indices(Nodes::Vector{NodeData})
     # Declare helper collections
     indices = Dict{Name, Node}()
     indexed_nodes = Set{Name}()
-    # Declare index for indexing nodes and loop iteration counter k
+    # Declare index
     index = 1
-    k = 1
 
-    while index <= n_CD+n_V && k == index
-        # First index nodes C and D nodes
-        if index <= n_CD
-            for j in C_and_D
-                # Give bindex if node does not already have an index and all of its I_j have an index
-                if j.name ∉ indexed_nodes && Set(j.I_j) ⊆ indexed_nodes
-                    # Update helper collections
-                    push!(indices, j.name => index)
-                    push!(indexed_nodes, j.name)
-                    # Update results
-                    Names[index] = j.name
-                    I_js[index] = map(x -> indices[x], j.I_j)
-                    # Increase index
-                    index += 1
-                end
-            end
-        # After indexing all C and D nodes, index value nodes
-        else
-            for v in V
-                # Update results
-                Names[index] = v.name
-                I_js[index] = map(x -> indices[x], v.I_j)
-                # Increase index
-                index += 1
-            end
+
+    while true
+        # Index nodes C and D that don't yet have indices but whose I_j have indices
+        new_nodes = filter(j -> (j.name ∉ indexed_nodes && Set(j.I_j) ⊆ indexed_nodes), C_and_D)
+        for j in new_nodes
+            # Update helper collections
+            push!(indices, j.name => index)
+            push!(indexed_nodes, j.name)
+            # Update results
+            Names[index] = j.name
+            I_js[index] = map(x -> indices[x], j.I_j)
+            # Increase index
+            index += 1
         end
 
-        # If new nodes have not been indexed during this iteration, terminate while loop
-        if index <= k
-            k += 1
-        else
-            k = index
+        # If no new nodes were indexed this iteration, terminate while loop
+        if isempty(new_nodes)
+            if index < n_CD
+                throw(DomainError("The influence diagram should be acyclic."))
+            else
+                break
+            end
         end
     end
 
-    if index != k
-        throw(DomainError("The influence diagram should be acyclic."))
+    # Index value nodes
+    for v in V
+        # Update results
+        Names[index] = v.name
+        I_js[index] = map(x -> indices[x], v.I_j)
+        # Increase index
+        index += 1
     end
 
     return Names, I_js
