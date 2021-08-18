@@ -128,7 +128,7 @@ julia> S = States([(2, [1, 3]), (3, [2, 4, 5])])
 States([2, 3, 2, 3, 3])
 ```
 """
-function States(states::Vector{Tuple{State, Vector{Node}}})
+function States(states::Vector{Tuple{State, Vector{Node}}}) # TODO should this just be gotten rid of?
     S_j = Vector{State}(undef, sum(length(j) for (_, j) in states))
     for (s, j) in states
         S_j[j] .= s
@@ -141,7 +141,7 @@ end
     function validate_influence_diagram(S::States, C::Vector{ChanceNode}, D::Vector{DecisionNode}, V::Vector{ValueNode})
 
 Validate influence diagram.
-"""
+""" #TODO should this be gotten rid of?
 function validate_influence_diagram(S::States, C::Vector{ChanceNode}, D::Vector{DecisionNode}, V::Vector{ValueNode})
     n = length(C) + length(D)
     # in validate_node_data
