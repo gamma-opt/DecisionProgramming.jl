@@ -432,12 +432,12 @@ U(s)
 ```
 """
 struct DefaultPathUtility <: AbstractPathUtility
-    V::Vector{ValueNode}
+    v_I_j::Vector{Vector{Node}}
     Y::Vector{Consequences}
 end
 
 function (U::DefaultPathUtility)(s::Path)
-    sum(Y(s[v.I_j]) for (v, Y) in zip(U.V, U.Y))
+    sum(Y(s[I_j]) for (I_j, Y) in zip(U.v_I_j, U.Y))
 end
 
 function (U::DefaultPathUtility)(s::Path, t::Float64)
