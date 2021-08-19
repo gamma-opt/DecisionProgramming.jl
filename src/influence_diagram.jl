@@ -353,12 +353,21 @@ P(s)
 ```
 """
 struct DefaultPathProbability <: AbstractPathProbability
-    C::Vector{ChanceNode}
+    C::Vector{Node}
+    I_j::Vector{Vector{Node}}
     X::Vector{Probabilities}
+    function DefaultPathProbability(C, I_j, X)
+        if length(C) == length(I_j)
+            new(C, I_j, X)
+        else
+            throw(DomainError("The number of chance nodes and information sets have to be equal."))
+        end
+    end
+
 end
 
 function (P::DefaultPathProbability)(s::Path)
-    prod(X(s[[c.I_j; c.j]]) for (c, X) in zip(P.C, P.X))
+    prod(X(s[[I_j; j]]) for (j, I_j, X) in zip(P.C, P.I_j, P.X))
 end
 
 
