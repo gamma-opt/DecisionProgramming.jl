@@ -6,9 +6,16 @@ using Base.Iterators: product
 """
     Node = Int
 
-Primitive type for node. Alias for `Int`.
+Primitive type for node index. Alias for `Int`.
 """
 const Node = Int
+
+"""
+    Name = String
+
+Primitive type for node names. Alias for `String`.
+"""
+const Name = String
 
 """
     abstract type AbstractNode end
@@ -395,20 +402,11 @@ end
 
 # --- Influence diagram ---
 
-"""
-    Name = String
-
-Primitive type for name of node. Alias for `String`.
-"""
-const Name = String
-
-
-abstract type NodeData end
 
 mutable struct InfluenceDiagram
-    Nodes::Vector{NodeData}
+    Nodes::Vector{AbstractNode}
     Names::Vector{Name}
-    I_j::Vector{Vector{State}}
+    I_j::Vector{Vector{Node}}
     S::States
     C::Vector{ChanceNode}
     D::Vector{DecisionNode}
@@ -458,58 +456,9 @@ function validate_node_data(diagram::InfluenceDiagram,
     end
 end
 
-struct DecisionNodeData <: NodeData
-    name::Name
-    I_j::Vector{Name}
-    states::Vector{Name}
-    function DecisionNodeData(name::Name, I_j::Vector{Name}, states::Vector{Name})
-        return new(name, I_j, states)
-    end
-end
 
-function AddDecisionNode!(diagram::InfluenceDiagram,
-    name::Name,
-    I_j::Vector{Name},
-    states::Vector{Name})
-    validate_node_data(diagram, name, I_j, states = states)
-    push!(diagram.Nodes, DecisionNodeData(name, I_j, states))
-end
 
-struct ChanceNodeData{N} <: NodeData
-    name::Name
-    I_j::Vector{Name}
-    states::Vector{Name}
-    probabilities::Array{Float64, N}
-    function ChanceNodeData(name::Name, I_j::Vector{Name}, states::Vector{Name}, probabilities::Array{Float64, N}) where N
-        return new{N}(name, I_j, states, probabilities)
-    end
 
-end
-
-function AddChanceNode!(diagram::InfluenceDiagram,
-    name::Name, I_j::Vector{Name},
-    states::Vector{Name},
-    probabilities::Array{Float64, N}) where N
-    validate_node_data(diagram, name, I_j, states = states)
-    push!(diagram.Nodes, ChanceNodeData(name, I_j, states, probabilities))
-end
-
-struct ValueNodeData{N} <: NodeData
-    name::Name
-    I_j::Vector{Name}
-    consequences::Array{Float64, N}
-    function ValueNodeData(name::Name, I_j::Vector{Name}, consequences::Array{Float64, N}) where N
-        return new{N}(name, I_j, consequences)
-    end
-end
-
-function AddValueNode!(diagram::InfluenceDiagram,
-    name::Name,
-    I_j::Vector{Name},
-    consequences::Array{Float64, N}) where N
-    validate_node_data(diagram, name, I_j, value_node = true)
-    push!(diagram.Nodes, ValueNodeData(name, I_j, Array{Float64}(consequences)))
-end
 
 
 function deduce_node_indices(Nodes::Vector{NodeData})
