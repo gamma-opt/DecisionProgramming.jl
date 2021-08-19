@@ -24,6 +24,9 @@ Node type for directed, acyclic graph.
 """
 abstract type AbstractNode end
 
+
+
+#=
 function validate_node(j::Node, I_j::Vector{Node})
     if !allunique(I_j)
         throw(DomainError("All information nodes should be unique."))
@@ -90,6 +93,38 @@ struct ValueNode <: AbstractNode
     end
 end
 
+
+=#
+
+struct ChanceNode <: AbstractNode
+    name::Name
+    I_j::Vector{Name}
+    states::Vector{Name}
+    function ChanceNode(name, I_j, states)
+        return new(name, I_j, states)
+    end
+
+end
+
+struct DecisionNode <: AbstractNode
+    name::Name
+    I_j::Vector{Name}
+    states::Vector{Name}
+    function DecisionNode(name, I_j, states)
+        return new(name, I_j, states)
+    end
+end
+
+struct ValueNode <: NodeData
+    name::Name
+    I_j::Vector{Name}
+    function ValueNode(name, I_j)
+        return new(name, I_j, consequences)
+    end
+end
+
+
+
 """
     const State = Int
 
@@ -143,7 +178,7 @@ function States(states::Vector{Tuple{State, Vector{Node}}}) # TODO should this j
     States(S_j)
 end
 
-
+#=
 """
     function validate_influence_diagram(S::States, C::Vector{ChanceNode}, D::Vector{DecisionNode}, V::Vector{ValueNode})
 
@@ -186,7 +221,7 @@ function validate_influence_diagram(S::States, C::Vector{ChanceNode}, D::Vector{
         end
     end
 end
-
+=#
 
 # --- Paths ---
 
@@ -408,9 +443,9 @@ mutable struct InfluenceDiagram
     Names::Vector{Name}
     I_j::Vector{Vector{Node}}
     S::States
-    C::Vector{ChanceNode}
-    D::Vector{DecisionNode}
-    V::Vector{ValueNode}
+    C::Vector{Node}
+    D::Vector{Node}
+    V::Vector{Node}
     X::Vector{Probabilities}
     Y::Vector{Consequences}
     P::AbstractPathProbability
@@ -423,10 +458,7 @@ end
 
 
 
-
-# --- Node raw data ---
-
-function validate_node_data(diagram::InfluenceDiagram,
+function validate_node(diagram::InfluenceDiagram,
     name::Name,
     I_j::Vector{Name};
     value_node::Bool=false,
@@ -456,7 +488,14 @@ function validate_node_data(diagram::InfluenceDiagram,
     end
 end
 
-
+function AddNode!(diagram::InfluenceDiagram, node::AbstractNode)
+    if !isa(node, ValueNode)
+        validate_node_data(diagram, node.name, node.I_j, states = states)
+    else
+        validate_node_data(diagram, node.name, node.I_j, value_node = true)
+    end
+    push!(diagram.Nodes, node)
+end
 
 
 
