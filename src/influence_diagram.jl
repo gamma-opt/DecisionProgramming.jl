@@ -115,11 +115,11 @@ struct DecisionNode <: AbstractNode
     end
 end
 
-struct ValueNode <: NodeData
+struct ValueNode <: AbstractNode
     name::Name
     I_j::Vector{Name}
     function ValueNode(name, I_j)
-        return new(name, I_j, consequences)
+        return new(name, I_j)
     end
 end
 
@@ -360,7 +360,7 @@ struct DefaultPathProbability <: AbstractPathProbability
         if length(C) == length(I_j)
             new(C, I_j, X)
         else
-            throw(DomainError("The number of chance nodes and information sets have to be equal."))
+            throw(DomainError("The number of chance nodes and information sets given to DefaultPathProbability should be equal."))
         end
     end
 
@@ -461,7 +461,7 @@ mutable struct InfluenceDiagram
     U::AbstractPathUtility
     translation::Float64
     function InfluenceDiagram()
-        new(Vector{NodeData}())
+        new(Vector{AbstractNode}())
     end
 end
 
@@ -499,9 +499,9 @@ end
 
 function AddNode!(diagram::InfluenceDiagram, node::AbstractNode)
     if !isa(node, ValueNode)
-        validate_node_data(diagram, node.name, node.I_j, states = states)
+        validate_node(diagram, node.name, node.I_j, states = node.states)
     else
-        validate_node_data(diagram, node.name, node.I_j, value_node = true)
+        validate_node(diagram, node.name, node.I_j, value_node = true)
     end
     push!(diagram.Nodes, node)
 end
