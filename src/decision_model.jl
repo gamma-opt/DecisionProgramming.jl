@@ -1,21 +1,21 @@
 using JuMP
 
-function decision_variable(model::Model, S::States, d::DecisionNode, base_name::String="")
+function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node}, base_name::String="")
     # Create decision variables.
-    dims = S[[d.I_j; d.j]]
-    z_j = Array{VariableRef}(undef, dims...)
+    dims = S[[I_d; d]]
+    z_d = Array{VariableRef}(undef, dims...)
     for s in paths(dims)
-        z_j[s...] = @variable(model, binary=true, base_name=base_name)
+        z_d[s...] = @variable(model, binary=true, base_name=base_name)
     end
     # Constraints to one decision per decision strategy.
-    for s_I in paths(S[d.I_j])
-        @constraint(model, sum(z_j[s_I..., s_j] for s_j in 1:S[d.j]) == 1)
+    for s_I in paths(S[I_d])
+        @constraint(model, sum(z_d[s_I..., s_d] for s_d in 1:S[d]) == 1)
     end
-    return z_j
+    return z_d
 end
 
 struct DecisionVariables
-    D::Vector{DecisionNode}
+    D::Vector{Node}
     z::Vector{<:Array{VariableRef}}
 end
 
@@ -38,7 +38,7 @@ z = DecisionVariables(model, S, D)
 ```
 """
 function DecisionVariables(model::Model, diagram::InfluenceDiagram; names::Bool=false, name::String="z")
-    DecisionVariables(diagram.D, [decision_variable(model, diagram.S, d, (names ? "$(name)_$(d.j)$(s)" : "")) for d in diagram.D])
+    DecisionVariables(diagram.D, [decision_variable(model, diagram.S, d, I_d, (names ? "$(name)_$(d.j)$(s)" : "")) for (d, I_d) in zip(diagram.D, diagram.I_j[diagram.D])])
 end
 
 function is_forbidden(s::Path, forbidden_paths::Vector{ForbiddenPath})
