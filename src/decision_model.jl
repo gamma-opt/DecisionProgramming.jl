@@ -254,8 +254,6 @@ CVaR = conditional_value_at_risk(model, x_s, U, P, α; probability_scale_factor 
 function conditional_value_at_risk(model::Model,
     diagram::InfluenceDiagram,
     x_s::PathCompatibilityVariables{N},
-    U::AbstractPathUtility,
-    P::AbstractPathProbability,
     α::Float64;
     probability_scale_factor::Float64=1.0) where N
 
