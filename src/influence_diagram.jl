@@ -745,5 +745,6 @@ Decision strategy type.
 """
 struct DecisionStrategy
     D::Vector{Node}
+    I_d::Vector{Vector{Node}}
     Z_d::Vector{LocalDecisionStrategy}
 end

@@ -16,6 +16,7 @@ end
 
 struct DecisionVariables
     D::Vector{Node}
+    I_d::Vector{Vector{Node}}
     z::Vector{<:Array{VariableRef}}
 end
 
@@ -38,7 +39,7 @@ z = DecisionVariables(model, S, D)
 ```
 """
 function DecisionVariables(model::Model, diagram::InfluenceDiagram; names::Bool=false, name::String="z")
-    DecisionVariables(diagram.D, [decision_variable(model, diagram.S, d, I_d, (names ? "$(name)_$(d.j)$(s)" : "")) for (d, I_d) in zip(diagram.D, diagram.I_j[diagram.D])])
+    DecisionVariables(diagram.D, diagram.I_j[diagram.D], [decision_variable(model, diagram.S, d, I_d, (names ? "$(name)_$(d.j)$(s)" : "")) for (d, I_d) in zip(diagram.D, diagram.I_j[diagram.D])])
 end
 
 function is_forbidden(s::Path, forbidden_paths::Vector{ForbiddenPath})
@@ -331,5 +332,5 @@ Z = DecisionStrategy(z)
 ```
 """
 function DecisionStrategy(z::DecisionVariables)
-    DecisionStrategy(z.D, [LocalDecisionStrategy(d, z_var) for (d, z_var) in zip(z.D, z.z)])
+    DecisionStrategy(z.D, z.I_d, [LocalDecisionStrategy(d, z_var) for (d, z_var) in zip(z.D, z.z)])
 end
