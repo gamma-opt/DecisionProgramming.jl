@@ -1,12 +1,11 @@
 
 struct CompatiblePaths
     S::States
-    C::Vector{ChanceNode}
+    C::Vector{Node}
     Z::DecisionStrategy
     fixed::Dict{Node, State}
     function CompatiblePaths(S, C, Z, fixed)
-        C_j = Set([c.j for c in C])
-        if !all(k∈C_j for k in keys(fixed))
+        if !all(k∈Set(C) for k in keys(fixed))
             throw(DomainError("You can only fix chance states."))
         end
         new(S, C, Z, fixed)
@@ -30,48 +29,47 @@ end
 ```
 """
 
-function CompatiblePaths(S::States, C::Vector{ChanceNode}, Z::DecisionStrategy)
-    CompatiblePaths(S, C, Z, Dict{Node, State}())
+function CompatiblePaths(diagram::InfluenceDiagram, Z::DecisionStrategy)
+    CompatiblePaths(diagram.S, diagram.C, Z, Dict{Node, State}())
 end
 
-function compatible_path(S::States, C::Vector{ChanceNode}, Z::DecisionStrategy, s_C::Path)
+function compatible_path(S::States, C::Vector{Node}, Z::DecisionStrategy, s_C::Path)
     s = Array{Int}(undef, length(S))
     for (c, s_C_j) in zip(C, s_C)
-        s[c.j] = s_C_j
+        s[c] = s_C_j
     end
-    for (d, Z_j) in zip(Z.D, Z.Z_j)
-        s[d.j] = Z_j((s[d.I_j]...,))
+    for (d, I_d, Z_d) in zip(Z.D, Z.I_d, Z.Z_d)
+        s[d] = Z_d((s[I_d]...,))
     end
     return (s...,)
 end
 
-function Base.iterate(a::CompatiblePaths)
-    C_j = [c.j for c in a.C]
-    if isempty(a.fixed)
-        iter = paths(a.S[C_j])
+function Base.iterate(S_Z::CompatiblePaths)
+    if isempty(S_Z.fixed)
+        iter = paths(S_Z.S[S_Z.C])
     else
-        ks = sort(collect(keys(a.fixed)))
-        fixed = Dict{Int, Int}(i => a.fixed[k] for (i, k) in enumerate(ks))
-        iter = paths(a.S[C_j], fixed)
+        ks = sort(collect(keys(S_Z.fixed)))
+        fixed = Dict{Int, Int}(i => S_Z.fixed[k] for (i, k) in enumerate(ks))
+        iter = paths(S_Z.S[S_Z.C], fixed)
     end
     next = iterate(iter)
     if next !== nothing
         s_C, state = next
-        return (compatible_path(a.S, a.C, a.Z, s_C), (iter, state))
+        return (compatible_path(S_Z.S, S_Z.C, S_Z.Z, s_C), (iter, state))
     end
 end
 
-function Base.iterate(a::CompatiblePaths, gen)
+function Base.iterate(S_Z::CompatiblePaths, gen)
     iter, state = gen
     next = iterate(iter, state)
     if next !== nothing
         s_C, state = next
-        return (compatible_path(a.S, a.C, a.Z, s_C), (iter, state))
+        return (compatible_path(S_Z.S, S_Z.C, S_Z.Z, s_C), (iter, state))
     end
 end
 
 Base.eltype(::Type{CompatiblePaths}) = Path
-Base.length(a::CompatiblePaths) = prod(a.S[c.j] for c in a.C)
+Base.length(S_Z::CompatiblePaths) = prod(S_Z.S[c] for c in S_Z.C)
 
 """
      UtilityDistribution
@@ -96,7 +94,7 @@ UtilityDistribution(S, P, U, Z)
 """
 function UtilityDistribution(S::States, P::AbstractPathProbability, U::AbstractPathUtility, Z::DecisionStrategy)
     # Extract utilities and probabilities of active paths
-    S_Z = CompatiblePaths(S, P.C, Z)
+    S_Z = CompatiblePaths(diagram, Z)
     utilities = Vector{Float64}(undef, length(S_Z))
     probabilities = Vector{Float64}(undef, length(S_Z))
     for (i, s) in enumerate(S_Z)
