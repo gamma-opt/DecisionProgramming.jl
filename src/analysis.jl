@@ -92,14 +92,14 @@ Constructs the probability mass function for path utilities on paths that are co
 UtilityDistribution(S, P, U, Z)
 ```
 """
-function UtilityDistribution(S::States, P::AbstractPathProbability, U::AbstractPathUtility, Z::DecisionStrategy)
+function UtilityDistribution(diagram::InfluenceDiagram, Z::DecisionStrategy)
     # Extract utilities and probabilities of active paths
     S_Z = CompatiblePaths(diagram, Z)
     utilities = Vector{Float64}(undef, length(S_Z))
     probabilities = Vector{Float64}(undef, length(S_Z))
     for (i, s) in enumerate(S_Z)
-        utilities[i] = U(s)
-        probabilities[i] = P(s)
+        utilities[i] = diagram.U(s)
+        probabilities[i] = diagram.P(s)
     end
 
     # Filter zero probabilities
