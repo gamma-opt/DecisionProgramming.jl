@@ -519,6 +519,7 @@ function deduce_node_indices(Nodes::Vector{NodeData})
     n_V = length(V)
 
 
+function validate_structure(Nodes::Vector{AbstractNode}, C_and_D::Vector{AbstractNode}, n_CD::Int, V::Vector{AbstractNode}, n_V::Int)
     # Validating node structure
     if n_CD == 0
         throw(DomainError("The influence diagram must have chance or decision nodes."))
@@ -541,10 +542,28 @@ function deduce_node_indices(Nodes::Vector{NodeData})
             @warn("Node $i is redundant.")
         end
     end
+end
+
+
+function GenerateArcs!(diagram::InfluenceDiagram)
+
+    # Chance and decision nodes
+    C_and_D = filter(x -> !isa(x, ValueNode), diagram.Nodes)
+    n_CD = length(C_and_D)
+    # Value nodes
+    V_nodes = filter(x -> isa(x, ValueNode), diagram.Nodes)
+    n_V = length(V_nodes)
+
+    validate_structure(diagram.Nodes, C_and_D, n_CD, V_nodes, n_V)
 
     # Declare vectors for results (final resting place InfluenceDiagram.Names and InfluenceDiagram.I_j)
     Names = Vector{Name}(undef, n_CD+n_V)
-    I_js = Vector{Vector{Node}}(undef, n_CD+n_V)
+    I_j = Vector{Vector{Node}}(undef, n_CD+n_V)
+    states = Vector{State}()
+    C = Vector{Node}()
+    D = Vector{Node}()
+    V = Vector{Node}()
+
     # Declare helper collections
     indices = Dict{Name, Node}()
     indexed_nodes = Set{Name}()
@@ -560,8 +579,14 @@ function deduce_node_indices(Nodes::Vector{NodeData})
             push!(indices, j.name => index)
             push!(indexed_nodes, j.name)
             # Update results
-            Names[index] = j.name
-            I_js[index] = map(x -> indices[x], j.I_j)
+            Names[index] = Name(j.name)     #TODO datatype conversion happens here
+            I_j[index] = map(x -> Node(indices[x]), j.I_j)
+            push!(states, State(length(j.states)))
+            if isa(j, ChanceNode)
+                push!(C, Node(index))
+            else
+                push!(D, Node(index))
+            end
             # Increase index
             index += 1
         end
@@ -576,16 +601,26 @@ function deduce_node_indices(Nodes::Vector{NodeData})
         end
     end
 
+
     # Index value nodes
-    for v in V
+    for v in V_nodes
         # Update results
-        Names[index] = v.name
-        I_js[index] = map(x -> indices[x], v.I_j)
+        Names[index] = Name(v.name)
+        I_j[index] = map(x -> Node(indices[x]), v.I_j)
+        push!(V, Node(index))
         # Increase index
         index += 1
     end
 
-    return Names, I_js
+    diagram.Names = Names
+    diagram.I_j = I_j
+    diagram.S = States(states)
+    diagram.C = C
+    diagram.D = D
+    diagram.V = V
+    # Declaring X and Y
+    diagram.X = Vector{Probabilities}()
+    diagram.Y = Vector{Consequences}()
 end
 
 
@@ -595,22 +630,14 @@ function GenerateDiagram!(diagram::InfluenceDiagram;
     positive_path_utility::Bool=false,
     negative_path_utility::Bool=false)
 
-    # Number of nodes
-    nodes = [(n.name for n in diagram.Nodes)...]
-    n = length(nodes)
-
     # Deduce indices for nodes
-    diagram.Names, diagram.I_j = deduce_node_indices(diagram.Nodes)
+    #diagram.Names, diagram.I_j, diagram.S, diagram.C, diagram.D, diagram.V = deduce_node_indices(diagram.Nodes)
 
-    # Declare states, C, D, V, X, Y
-    states = Vector{State}()
-    diagram.C = Vector{ChanceNode}()
-    diagram.D = Vector{DecisionNode}()
-    diagram.V = Vector{ValueNode}()
-    diagram.X = Vector{Probabilities}()
-    diagram.Y = Vector{Consequences}()
+    # Declare states, X, Y
+    #diagram.X = Vector{Probabilities}()
+    #diagram.Y = Vector{Consequences}()
 
-    # Fill states, C, D, V, X, Y
+#=    # Fill X, Y
     for (j, name) in enumerate(diagram.Names)
         node = diagram.Nodes[findfirst(x -> x.name == diagram.Names[j], diagram.Nodes)]
 
@@ -640,18 +667,17 @@ function GenerateDiagram!(diagram::InfluenceDiagram;
 
         end
     end
-    # TODO ask Olli about this, if the States should be changed
-    diagram.S = States(states)
-
+=#
     # Validate influence diagram
-    sort!.((diagram.C, diagram.D, diagram.V, diagram.X, diagram.Y), by = x -> x.j)
+    sort!.((diagram.C, diagram.D, diagram.V))
+    sort!.((diagram.X, diagram.Y), by = x -> x.j)
 
     # Declare P and U if defaults are used
     if default_probability
-        diagram.P = DefaultPathProbability(diagram.C, diagram.X)
+        diagram.P = DefaultPathProbability(diagram.C, diagram.I_j[diagram.C], diagram.X)
     end
     if default_utility
-        diagram.U = DefaultPathUtility(diagram.V, diagram.Y)
+        diagram.U = DefaultPathUtility(diagram.I_j[diagram.V], diagram.Y)
         if positive_path_utility
             diagram.translation = 1 -  minimum(diagram.U(s) for s in paths(diagram.S))
         elseif negative_path_utility
