@@ -46,7 +46,7 @@ function is_forbidden(s::Path, forbidden_paths::Vector{ForbiddenPath})
 end
 
 
-function path_compatibility_variable(model::Model, z::DecisionVariables, base_name::String="")
+function path_compatibility_variable(model::Model, base_name::String="")
     # Create a path compatiblity variable
     x = @variable(model, base_name=base_name)
 
@@ -69,23 +69,23 @@ Base.iterate(x_s::PathCompatibilityVariables) = iterate(x_s.data)
 Base.iterate(x_s::PathCompatibilityVariables, i) = iterate(x_s.data, i)
 
 
-function decision_strategy_constraint(model::Model, S::States, d::DecisionNode, D::Vector{DecisionNode}, z::Array{VariableRef}, x_s::PathCompatibilityVariables)
+function decision_strategy_constraint(model::Model, S::States, d::Node, I_d::Vector{Node}, D::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables)
 
-    # states of nodes in information structure (s_j | s_I(j))
-    dims = S[[d.I_j; d.j]]
+    # states of nodes in information structure (s_d | s_I(d))
+    dims = S[[I_d; d]]
 
-    # Theoretical upper bound based on number of paths with information structure (s_j | s_I(j)) divided by number of possible decision strategies in other decision nodes
-    other_decisions = map(d_n -> d_n.j, filter(d_n -> all(d_n.j != i for i in [d.I_j; d.j]), D))
+    # Theoretical upper bound based on number of paths with information structure (s_d | s_I(d)) divided by number of possible decision strategies in other decision nodes
+    other_decisions = filter(j -> all(j != d_set for d_set in [I_d; d]), D)
     theoretical_ub = prod(S)/prod(dims)/ prod(S[other_decisions])
 
-    # paths that have corresponding path compatibility variable
+    # paths that have a corresponding path compatibility variable
     existing_paths = keys(x_s)
 
-    for s_j_s_Ij in paths(dims) # iterate through all information states and states of d
-        # paths with (s_j | s_I(j)) information structure
-        feasible_paths = filter(s -> s[[d.I_j; d.j]] == s_j_s_Ij, existing_paths)
+    for s_d_s_Id in paths(dims) # iterate through all information states and states of d
+        # paths with (s_d | s_I(d)) information structure
+        feasible_paths = filter(s -> s[[I_d; d]] == s_d_s_Id, existing_paths)
 
-        @constraint(model, sum(get(x_s, s, 0) for s in feasible_paths) ≤ z[s_j_s_Ij...] * min(length(feasible_paths), theoretical_ub))
+        @constraint(model, sum(get(x_s, s, 0) for s in feasible_paths) ≤ z[s_d_s_Id...] * min(length(feasible_paths), theoretical_ub))
     end
 end
 
@@ -138,7 +138,7 @@ function PathCompatibilityVariables(model::Model,
     # Create path compatibility variable for each effective path.
     N = length(diagram.S)
     variables_x_s = Dict{Path{N}, VariableRef}(
-        s => path_compatibility_variable(model, z, (names ? "$(name)$(s)" : ""))
+        s => path_compatibility_variable(model, (names ? "$(name)$(s)" : ""))
         for s in paths(diagram.S, fixed)
         if !iszero(diagram.P(s)) && !is_forbidden(s, forbidden_paths)
     )
@@ -147,7 +147,7 @@ function PathCompatibilityVariables(model::Model,
 
     # Add decision strategy constraints for each decision node
     for (d, z_d) in zip(z.D, z.z)
-        decision_strategy_constraint(model, diagram.S, d, z.D, z_d, x_s)
+        decision_strategy_constraint(model, diagram.S, d, diagram.I_j[d], z.D, z_d, x_s)
     end
 
     if probability_cut
