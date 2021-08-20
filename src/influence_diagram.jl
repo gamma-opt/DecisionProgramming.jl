@@ -507,17 +507,25 @@ function AddNode!(diagram::InfluenceDiagram, node::AbstractNode)
 end
 
 
+function AddProbabilities!(diagram::InfluenceDiagram, name::Name, probabilities::Array{Float64, N}) where N
+    j = findfirst(x -> x==name, diagram.Names)
 
+    if size(probabilities) == Tuple((diagram.S[n] for n in (diagram.I_j[j]..., j)))
+        push!(diagram.X, Probabilities(j, probabilities))
+    else
+        throw(DomainError("The dimensions of a probability matrix should match the node's states' and information states' cardinality. Expected $(Tuple((diagram.S[n] for n in (diagram.I_j[j]..., j)))) for node $name, got $(size(probabilities))."))
+    end
+end
 
-function deduce_node_indices(Nodes::Vector{NodeData})
+function AddConsequences!(diagram::InfluenceDiagram, name::Name, consequences::Array{Float64, N}) where N
+    j = findfirst(x -> x==name, diagram.Names)
 
-    # Chance and decision nodes
-    C_and_D = filter(x -> !isa(x, ValueNodeData), Nodes)
-    n_CD = length(C_and_D)
-    # Value nodes
-    V = filter(x -> isa(x, ValueNodeData), Nodes)
-    n_V = length(V)
-
+    if size(consequences) == Tuple((diagram.S[n] for n in diagram.I_j[j]))
+        push!(diagram.Y, Consequences(j, consequences))
+    else
+        throw(DomainError("The dimensions of the consequences matrix should match the node's information states' cardinality. Expected $(Tuple((diagram.S[n] for n in diagram.I_j[j]))) for node $name, got $(size(consequences))."))
+    end
+end
 
 function validate_structure(Nodes::Vector{AbstractNode}, C_and_D::Vector{AbstractNode}, n_CD::Int, V::Vector{AbstractNode}, n_V::Int)
     # Validating node structure
