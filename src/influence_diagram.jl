@@ -711,9 +711,9 @@ Z(s_I)
 ```
 """
 struct LocalDecisionStrategy{N} <: AbstractArray{Int, N}
-    j::Node
+    d::Node
     data::Array{Int, N}
-    function LocalDecisionStrategy(j::Node, data::Array{Int, N}) where N
+    function LocalDecisionStrategy(d::Node, data::Array{Int, N}) where N
         if !all(0 ≤ x ≤ 1 for x in data)
             throw(DomainError("All values x must be 0 ≤ x ≤ 1."))
         end
@@ -722,7 +722,7 @@ struct LocalDecisionStrategy{N} <: AbstractArray{Int, N}
                 throw(DomainError("Values should add to one."))
             end
         end
-        new{N}(j, data)
+        new{N}(d, data)
     end
 end
 
@@ -744,6 +744,6 @@ end
 Decision strategy type.
 """
 struct DecisionStrategy
-    D::Vector{DecisionNode}
-    Z_j::Vector{LocalDecisionStrategy}
+    D::Vector{Node}
+    Z_d::Vector{LocalDecisionStrategy}
 end

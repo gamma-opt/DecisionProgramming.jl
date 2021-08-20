@@ -316,8 +316,8 @@ end
 
 Construct decision strategy from variable refs.
 """
-function LocalDecisionStrategy(j::Node, z::Array{VariableRef})
-    LocalDecisionStrategy(j, @. Int(round(value(z))))
+function LocalDecisionStrategy(d::Node, z::Array{VariableRef})
+    LocalDecisionStrategy(d, @. Int(round(value(z))))
 end
 
 """
@@ -331,5 +331,5 @@ Z = DecisionStrategy(z)
 ```
 """
 function DecisionStrategy(z::DecisionVariables)
-    DecisionStrategy(z.D, [LocalDecisionStrategy(d.j, v) for (d, v) in zip(z.D, z.z)])
+    DecisionStrategy(z.D, [LocalDecisionStrategy(d, z_var) for (d, z_var) in zip(z.D, z.z)])
 end
