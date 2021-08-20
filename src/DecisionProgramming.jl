@@ -7,6 +7,7 @@ include("analysis.jl")
 include("printing.jl")
 
 export Node,
+    Name,
     AbstractNode,
     ChanceNode,
     DecisionNode,
@@ -24,16 +25,12 @@ export Node,
     LocalDecisionStrategy,
     DecisionStrategy,
     validate_influence_diagram,
-    Name,
     InfluenceDiagram,
+    GenerateArcs!,
     GenerateDiagram!,
-    NodeData,
-    DecisionNodeData,
-    ChanceNodeData,
-    ValueNodeData,
-    AddDecisionNode!,
-    AddChanceNode!,
-    AddValueNode!
+    AddNode!,
+    AddProbabilities!,
+    AddConsequences!
 
 export DecisionVariables,
     PathCompatibilityVariables,
