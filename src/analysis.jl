@@ -161,7 +161,7 @@ function StateProbabilities(diagram::InfluenceDiagram, Z::DecisionStrategy, node
     push!(fixed, node => state)
     probs = Dict(i => zeros(diagram.S[i]) for i in 1:length(diagram.S))
     for s in CompatiblePaths(diagram, Z, fixed), i in 1:length(diagram.S)
-        probs[i][s[i]] += diagram.P(s) / prior #TODO check what is this probability update. Does it really do Bayesian?
+        probs[i][s[i]] += diagram.P(s) / prior #TODO double check that this is correct
     end
     StateProbabilities(probs, fixed)
 end
