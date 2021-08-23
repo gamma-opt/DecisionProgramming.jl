@@ -189,10 +189,10 @@ end
 
 Value-at-risk.
 """
-function value_at_risk(u::Vector{Float64}, p::Vector{Float64}, α::Float64)
+function value_at_risk(U_distribution::UtilityDistribution, α::Float64)
     @assert 0 ≤ α ≤ 1 "We should have 0 ≤ α ≤ 1."
-    i = sortperm(u)
-    u, p = u[i], p[i]
+    perm = sortperm(U_distribution.u)
+    u, p = U_distribution.u[perm], U_distribution.p[perm]
     index = findfirst(x -> x≥α, cumsum(p))
     return if index === nothing; u[end] else u[index] end
 end
@@ -202,12 +202,12 @@ end
 
 Conditional value-at-risk.
 """
-function conditional_value_at_risk(u::Vector{Float64}, p::Vector{Float64}, α::Float64)
-    x_α = value_at_risk(u, p, α)
+function conditional_value_at_risk(U_distribution::UtilityDistribution, α::Float64)
+    x_α = value_at_risk(U_distribution, α)
     if iszero(α)
         return x_α
     else
-        tail = u .≤ x_α
-        return (sum(u[tail] .* p[tail]) - (sum(p[tail]) - α) * x_α) / α
+        tail = U_distribution.u .≤ x_α
+        return (sum(U_distribution.u[tail] .* U_distribution.p[tail]) - (sum(U_distribution.p[tail]) - α) * x_α) / α
     end
 end
