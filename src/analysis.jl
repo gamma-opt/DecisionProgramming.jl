@@ -142,7 +142,7 @@ end
 """
     function StateProbabilities(S::States, P::AbstractPathProbability, Z::DecisionStrategy, node::Node, state::State, prev::StateProbabilities)
 
-Associates each node with array of conditional probabilities for each of its states occuring in active paths given fixed states and prior probability.
+Associates each node with array of conditional probabilities for each of its states occuring in compatible paths given fixed states and prior probability.
 
 # Examples
 ```julia
@@ -155,13 +155,13 @@ state = 2
 StateProbabilities(S, P, Z, node, state, prev)
 ```
 """
-function StateProbabilities(S::States, P::AbstractPathProbability, Z::DecisionStrategy, node::Node, state::State, prev::StateProbabilities)
-    prior = prev.probs[node][state]
-    fixed = prev.fixed
+function StateProbabilities(diagram::InfluenceDiagram, Z::DecisionStrategy, node::Node, state::State, prior_probabilities::StateProbabilities)
+    prior = prior_probabilities.probs[node][state]
+    fixed = prior_probabilities.fixed
     push!(fixed, node => state)
-    probs = Dict(i => zeros(S[i]) for i in 1:length(S))
-    for s in CompatiblePaths(S, P.C, Z, fixed), i in 1:length(S)
-        probs[i][s[i]] += P(s) / prior
+    probs = Dict(i => zeros(diagram.S[i]) for i in 1:length(diagram.S))
+    for s in CompatiblePaths(diagram, Z, fixed), i in 1:length(diagram.S)
+        probs[i][s[i]] += diagram.P(s) / prior #TODO check what is this probability update. Does it really do Bayesian?
     end
     StateProbabilities(probs, fixed)
 end
@@ -169,17 +169,17 @@ end
 """
     function StateProbabilities(S::States, P::AbstractPathProbability, Z::DecisionStrategy)
 
-Associates each node with array of probabilities for each of its states occuring in active paths.
+Associates each node with array of probabilities for each of its states occuring in compatible paths.
 
 # Examples
 ```julia
 StateProbabilities(S, P, Z)
 ```
 """
-function StateProbabilities(S::States, P::AbstractPathProbability, Z::DecisionStrategy)
-    probs = Dict(i => zeros(S[i]) for i in 1:length(S))
-    for s in CompatiblePaths(S, P.C, Z), i in 1:length(S)
-        probs[i][s[i]] += P(s)
+function StateProbabilities(diagram::InfluenceDiagram, Z::DecisionStrategy)
+    probs = Dict(i => zeros(diagram.S[i]) for i in 1:length(diagram.S))
+    for s in CompatiblePaths(diagram, Z), i in 1:length(diagram.S)
+        probs[i][s[i]] += diagram.P(s)
     end
     StateProbabilities(probs, Dict{Node, State}())
 end
