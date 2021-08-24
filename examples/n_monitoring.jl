@@ -55,8 +55,8 @@ end
 Y_T = zeros([2 for i in 1:N]..., 2)
 for s in paths([2 for i in 1:N])
     cost = sum(-fortification(k, a) for (k, a) in enumerate(s))
-    Y_T[s..., 1] = cost + 0
-    Y_T[s..., 2] = cost + 100
+    Y_T[1, s...] = cost + 0
+    Y_T[2, s...] = cost + 100
 end
 AddConsequences!(diagram, "T", Y_T)
 
