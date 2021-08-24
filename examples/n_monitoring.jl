@@ -5,6 +5,94 @@ using DecisionProgramming
 Random.seed!(13)
 
 const N = 4
+const c_k = rand(N)
+const b = 0.03
+fortification(k, a) = [c_k[k], 0][a]
+
+@info("Creating the influence diagram.")
+diagram = InfluenceDiagram()
+
+AddNode!(diagram, ChanceNode("L", [], ["high", "low"]))
+
+for i in 1:N
+    AddNode!(diagram, ChanceNode("R$i", ["L"], ["high", "low"]))
+    AddNode!(diagram, DecisionNode("A$i", ["R$i"], ["yes", "no"]))
+end
+
+AddNode!(diagram, ChanceNode("F", ["L", ["A$i" for i in 1:N]...], ["failure", "success"]))
+
+AddNode!(diagram, ValueNode("T", ["F", ["A$i" for i in 1:N]...]))
+
+GenerateArcs!(diagram)
+
+X_L = [rand(), 0]
+X_L[2] = 1.0 - X_L[1]
+AddProbabilities!(diagram, "L", X_L)
+
+for i in 1:N
+    x, y = rand(2)
+    X_R = zeros(2,2)
+    X_R[1, 1] = max(x, 1-x)
+    X_R[1, 2] = 1.0 - X_R[1, 1]
+    X_R[2, 2] = max(y, 1-y)
+    X_R[2, 1] = 1.0 - X_R[2, 2]
+    AddProbabilities!(diagram, "R$i", X_R)
+end
+
+for i in [1]
+    x, y = rand(2)
+    X_F = zeros(2, [2 for i in 1:N]..., 2)
+    for s in paths([2 for i in 1:N])
+        d = exp(b * sum(fortification(k, a) for (k, a) in enumerate(s)))
+        X_F[1, s..., 1] = max(x, 1-x) / d
+        X_F[1, s..., 2] = 1.0 - X_F[1, s..., 1]
+        X_F[2, s..., 1] = min(y, 1-y) / d
+        X_F[2, s..., 2] = 1.0 - X_F[2, s..., 1]
+    end
+    AddProbabilities!(diagram, "F", X_F)
+end
+
+Y_T = zeros([2 for i in 1:N]..., 2)
+for s in paths([2 for i in 1:N])
+    cost = sum(-fortification(k, a) for (k, a) in enumerate(s))
+    Y_T[s..., 1] = cost + 0
+    Y_T[s..., 2] = cost + 100
+end
+AddConsequences!(diagram, "T", Y_T)
+
+GenerateDiagram!(diagram)#, positive_path_utility=true)
+
+
+model = Model()
+z = DecisionVariables(model, diagram)
+x_s = PathCompatibilityVariables(model, diagram, z)#, probability_cut = false)
+EV = expected_value(model, diagram, x_s)
+@objective(model, Max, EV)
+
+@info("Starting the optimization process.")
+optimizer = optimizer_with_attributes(
+    () -> Gurobi.Optimizer(Gurobi.Env()),
+    "IntFeasTol"      => 1e-9,
+)
+set_optimizer(model, optimizer)
+optimize!(model)
+
+@info("Extracting results.")
+Z = DecisionStrategy(z)
+U_distribution = UtilityDistribution(diagram, Z)
+state_probabilities = StateProbabilities(diagram, Z)
+
+@info("Printing decision strategy:")
+print_decision_strategy(diagram, Z, state_probabilities)
+
+@info("Printing utility distribution.")
+print_utility_distribution(U_distribution)
+
+@info("Printing statistics")
+print_statistics(U_distribution)
+
+#=
+const N = 4
 const L = [1]
 const R_k = [k + 1 for k in 1:N]
 const A_k = [(N + 1) + k for k in 1:N]
@@ -127,3 +215,4 @@ print_utility_distribution(udist)
 
 @info("Printing statistics")
 print_statistics(udist)
+=#
