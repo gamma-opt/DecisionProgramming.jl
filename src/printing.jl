@@ -11,13 +11,26 @@ Print decision strategy.
 print_decision_strategy(S, Z)
 ```
 """
-function print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy)
-    for (d, Z_j) in zip(Z.D, Z.Z_j)
-        a1 = vec(collect(paths(diagram.S[d.I_j])))
-        a2 = [Z_j(s_I) for s_I in a1]
-        labels = fill("States", length(a1))
-        df = DataFrame(labels = labels, a1 = a1, a2 = a2)
-        pretty_table(df, ["Nodes", "$((d.I_j...,))", "$(d.j)"])
+function print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy, state_probabilities::StateProbabilities; show_incompatible_states = false)
+    probs = state_probabilities.probs
+
+    for (d, I_d, Z_d) in zip(Z.D, Z.I_d, Z.Z_d)
+        s_I = vec(collect(paths(diagram.S[I_d])))
+        s_d = [Z_d(s) for s in s_I]
+
+        if !isempty(I_d)
+            informations_states = [join([String(diagram.States[i][s_i]) for (i, s_i) in zip(I_d, s)], ", ") for s in s_I]
+            decision_probs = [ceil(prod(probs[i][s1] for (i, s1) in zip(I_d, s))) for s in s_I]
+            decisions = collect(p == 0 ? "--" : diagram.States[d][s] for (s, p) in zip(s_d, decision_probs))
+            df = DataFrame(informations_states = informations_states, decisions = decisions)
+            if !show_incompatible_states
+                 filter!(row -> row.decisions != "--", df)
+            end
+            pretty_table(df, ["State(s) of $(join([diagram.Names[i] for i in I_d], ", "))", "Decision in $(diagram.Names[d])"], alignment=:l)
+        else
+            df = DataFrame(decisions = diagram.States[d][s_d])
+            pretty_table(df, ["Decision in $(diagram.Names[d])"], alignment=:l)
+        end
     end
 end
 
