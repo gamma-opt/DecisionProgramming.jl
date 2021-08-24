@@ -7,8 +7,20 @@ const N = 4
 @info("Creating the influence diagram.")
 diagram = InfluenceDiagram()
 
-AddChanceNode!(diagram, "H1", Vector{Name}(), ["ill", "healthy"], [0.1, 0.9])
+AddNode!(diagram, ChanceNode("H1", [], ["ill", "healthy"]))
+for i in 1:N-1
+    # Testing result
+    AddNode!(diagram, ChanceNode("T$i", ["H$i"], ["positive", "negative"]))
+    # Decision to treat
+    AddNode!(diagram, DecisionNode("D$i", ["T$i"], ["treat", "pass"]))
+    # Cost of treatment
+    AddNode!(diagram, ValueNode("C$i", ["D$i"]))
+    # Health of next period
+    AddNode!(diagram, ChanceNode("H$(i+1)", ["H$(i)", "D$(i)"], ["ill", "healthy"]))
+end
+AddNode!(diagram, ValueNode("SP", ["H$N"]))
 
+GenerateArcs!(diagram)
 # Declare proability matrix for health nodes
 X_H = zeros(2, 2, 2)
 X_H[2, 2, 1] = 0.2
@@ -27,21 +39,20 @@ X_T[1, 2] = 1.0 - X_T[1, 1]
 X_T[2, 2] = 0.9
 X_T[2, 1] = 1.0 - X_T[2, 2]
 
+AddProbabilities!(diagram, "H1", [0.1, 0.9])
 for i in 1:N-1
     # Testing result
-    AddChanceNode!(diagram, "T$i", ["H$i"], ["positive", "negative"], X_T)
-    # Decision to treat
-    AddDecisionNode!(diagram, "D$i", ["T$i"], ["treat", "pass"])
+    AddProbabilities!(diagram, "T$i", X_T)
     # Cost of treatment
-    AddValueNode!(diagram, "C$i", ["D$i"], [-100.0, 0.0])
+    AddConsequences!(diagram, "C$i", [-100.0, 0.0])
     # Health of next period
-    AddChanceNode!(diagram, "H$(i+1)", ["H$(i)", "D$(i)"], ["ill", "healthy"], X_H)
+    AddProbabilities!(diagram, "H$(i+1)", X_H)
 end
-
 # Selling price
-AddValueNode!(diagram, "SP", ["H$N"], [300.0, 1000.0])
+AddConsequences!(diagram, "SP", [300.0, 1000.0])
 
 GenerateDiagram!(diagram, positive_path_utility = true)
+
 
 @info("Creating the decision model.")
 model = Model()
@@ -60,9 +71,18 @@ optimize!(model)
 
 @info("Extracting results.")
 Z = DecisionStrategy(z)
+S_probabilities = StateProbabilities(diagram, Z)
+U_distribution = UtilityDistribution(diagram, Z)
+
 
 @info("Printing decision strategy:")
-print_decision_strategy(diagram, Z)
+print_decision_strategy(diagram, Z, S_probabilities)
+
+@info("Printing utility distribution.")
+print_utility_distribution(U_distribution)
+
+@info("Printing statistics")
+print_statistics(U_distribution)
 
 #=
 @info("State probabilities:")
@@ -80,11 +100,3 @@ for state in 1:2
     print_state_probabilities(sprobs2, treat)
 end
 =#
-@info("Computing utility distribution.")
-udist = UtilityDistribution(diagram.S, diagram.P, diagram.U, Z)
-
-@info("Printing utility distribution.")
-print_utility_distribution(udist)
-
-@info("Printing statistics")
-print_statistics(udist)
