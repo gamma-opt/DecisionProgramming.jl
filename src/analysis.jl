@@ -30,7 +30,7 @@ end
 """
 
 function CompatiblePaths(diagram::InfluenceDiagram, Z::DecisionStrategy)
-    CompatiblePaths(diagram.S, diagram.C, Z, Dict{Node, State}())
+    CompatiblePaths(diagram, Z, Dict{Node, State}())
 end
 
 function compatible_path(S::States, C::Vector{Node}, Z::DecisionStrategy, s_C::Path)
