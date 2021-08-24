@@ -451,6 +451,7 @@ mutable struct InfluenceDiagram
     Nodes::Vector{AbstractNode}
     Names::Vector{Name}
     I_j::Vector{Vector{Node}}
+    States::Vector{Vector{Name}}
     S::States
     C::Vector{Node}
     D::Vector{Node}
@@ -567,6 +568,7 @@ function GenerateArcs!(diagram::InfluenceDiagram)
     # Declare vectors for results (final resting place InfluenceDiagram.Names and InfluenceDiagram.I_j)
     Names = Vector{Name}(undef, n_CD+n_V)
     I_j = Vector{Vector{Node}}(undef, n_CD+n_V)
+    State_names = Vector{Vector{Name}}()
     states = Vector{State}()
     C = Vector{Node}()
     D = Vector{Node}()
@@ -587,8 +589,9 @@ function GenerateArcs!(diagram::InfluenceDiagram)
             push!(indices, j.name => index)
             push!(indexed_nodes, j.name)
             # Update results
-            Names[index] = Name(j.name)     #TODO datatype conversion happens here
+            Names[index] = Name(j.name)     #TODO datatype conversion happens here, should we use push! ?
             I_j[index] = map(x -> Node(indices[x]), j.I_j)
+            push!(State_names, j.states)
             push!(states, State(length(j.states)))
             if isa(j, ChanceNode)
                 push!(C, Node(index))
@@ -622,6 +625,7 @@ function GenerateArcs!(diagram::InfluenceDiagram)
 
     diagram.Names = Names
     diagram.I_j = I_j
+    diagram.States = State_names
     diagram.S = States(states)
     diagram.C = C
     diagram.D = D
