@@ -273,7 +273,7 @@ julia> Y(s)
 ```
 """
 struct Consequences{N} <: AbstractArray{Float64, N}
-    j::Node
+    v::Node
     data::Array{Float64, N}
 end
 
@@ -317,12 +317,12 @@ U(s)
 ```
 """
 struct DefaultPathUtility <: AbstractPathUtility
-    v_I_j::Vector{Vector{Node}}
+    I_v::Vector{Vector{Node}}
     Y::Vector{Consequences}
 end
 
 function (U::DefaultPathUtility)(s::Path)
-    sum(Y(s[I_j]) for (I_j, Y) in zip(U.v_I_j, U.Y))
+    sum(Y(s[I_v]) for (I_v, Y) in zip(U.I_v, U.Y))
 end
 
 function (U::DefaultPathUtility)(s::Path, t::Float64)
@@ -358,6 +358,7 @@ function validate_node(diagram::InfluenceDiagram,
     I_j::Vector{Name};
     value_node::Bool=false,
     states::Vector{Name}=Vector{Name}())
+
     if !allunique([map(x -> x.name, diagram.Nodes)..., name])
         throw(DomainError("All node names should be unique."))
     end
@@ -404,12 +405,12 @@ function AddProbabilities!(diagram::InfluenceDiagram, name::Name, probabilities:
 end
 
 function AddConsequences!(diagram::InfluenceDiagram, name::Name, consequences::Array{Float64, N}) where N
-    j = findfirst(x -> x==name, diagram.Names)
+    v = findfirst(x -> x==name, diagram.Names)
 
-    if size(consequences) == Tuple((diagram.S[n] for n in diagram.I_j[j]))
-        push!(diagram.Y, Consequences(j, consequences))
+    if size(consequences) == Tuple((diagram.S[n] for n in diagram.I_j[v]))
+        push!(diagram.Y, Consequences(v, consequences))
     else
-        throw(DomainError("The dimensions of the consequences matrix should match the node's information states' cardinality. Expected $(Tuple((diagram.S[n] for n in diagram.I_j[j]))) for node $name, got $(size(consequences))."))
+        throw(DomainError("The dimensions of the consequences matrix should match the node's information states' cardinality. Expected $(Tuple((diagram.S[n] for n in diagram.I_j[v]))) for node $name, got $(size(consequences))."))
     end
 end
 
@@ -529,7 +530,7 @@ function GenerateDiagram!(diagram::InfluenceDiagram;
 
     # Validate influence diagram
     sort!(diagram.X, by = x -> x.c)
-    sort!(diagram.Y, by = x -> x.j)
+    sort!(diagram.Y, by = x -> x.v)
 
 
     # Declare P and U if defaults are used
