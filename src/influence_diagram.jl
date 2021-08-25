@@ -186,15 +186,15 @@ julia> X(s)
 ```
 """
 struct Probabilities{N} <: AbstractArray{Float64, N}
-    j::Node
+    c::Node
     data::Array{Float64, N}
-    function Probabilities(j::Node, data::Array{Float64, N}) where N
+    function Probabilities(c::Node, data::Array{Float64, N}) where N
         for i in CartesianIndices(size(data)[1:end-1])
             if !(sum(data[i, :]) ≈ 1)
                 throw(DomainError("Probabilities should sum to one."))
             end
         end
-        new{N}(j, data)
+        new{N}(c, data)
     end
 end
 
@@ -239,11 +239,11 @@ P(s)
 """
 struct DefaultPathProbability <: AbstractPathProbability
     C::Vector{Node}
-    I_j::Vector{Vector{Node}}
+    I_c::Vector{Vector{Node}}
     X::Vector{Probabilities}
-    function DefaultPathProbability(C, I_j, X)
-        if length(C) == length(I_j)
-            new(C, I_j, X)
+    function DefaultPathProbability(C, I_c, X)
+        if length(C) == length(I_c)
+            new(C, I_c, X)
         else
             throw(DomainError("The number of chance nodes and information sets given to DefaultPathProbability should be equal."))
         end
@@ -252,7 +252,7 @@ struct DefaultPathProbability <: AbstractPathProbability
 end
 
 function (P::DefaultPathProbability)(s::Path)
-    prod(X(s[[I_j; j]]) for (j, I_j, X) in zip(P.C, P.I_j, P.X))
+    prod(X(s[[I_c; c]]) for (c, I_c, X) in zip(P.C, P.I_c, P.X))
 end
 
 
@@ -394,12 +394,12 @@ end
 
 
 function AddProbabilities!(diagram::InfluenceDiagram, name::Name, probabilities::Array{Float64, N}) where N
-    j = findfirst(x -> x==name, diagram.Names)
+    c = findfirst(x -> x==name, diagram.Names)
 
-    if size(probabilities) == Tuple((diagram.S[n] for n in (diagram.I_j[j]..., j)))
-        push!(diagram.X, Probabilities(j, probabilities))
+    if size(probabilities) == Tuple((diagram.S[n] for n in (diagram.I_j[c]..., c)))
+        push!(diagram.X, Probabilities(c, probabilities))
     else
-        throw(DomainError("The dimensions of a probability matrix should match the node's states' and information states' cardinality. Expected $(Tuple((diagram.S[n] for n in (diagram.I_j[j]..., j)))) for node $name, got $(size(probabilities))."))
+        throw(DomainError("The dimensions of a probability matrix should match the node's states' and information states' cardinality. Expected $(Tuple((diagram.S[n] for n in (diagram.I_j[c]..., c)))) for node $name, got $(size(probabilities))."))
     end
 end
 
@@ -527,47 +527,10 @@ function GenerateDiagram!(diagram::InfluenceDiagram;
     positive_path_utility::Bool=false,
     negative_path_utility::Bool=false)
 
-    # Deduce indices for nodes
-    #diagram.Names, diagram.I_j, diagram.S, diagram.C, diagram.D, diagram.V = deduce_node_indices(diagram.Nodes)
-
-    # Declare states, X, Y
-    #diagram.X = Vector{Probabilities}()
-    #diagram.Y = Vector{Consequences}()
-
-#=    # Fill X, Y
-    for (j, name) in enumerate(diagram.Names)
-        node = diagram.Nodes[findfirst(x -> x.name == diagram.Names[j], diagram.Nodes)]
-
-        if isa(node, DecisionNodeData)
-            push!(states, length(node.states))
-            push!(diagram.D, DecisionNode(j, diagram.I_j[j]))
-
-        elseif isa(node, ChanceNodeData)
-            push!(states, length(node.states))
-            push!(diagram.C, ChanceNode(j, diagram.I_j[j]))
-
-            # Check dimensions of probabiltiies match states of (I_j, j)
-            if size(node.probabilities) == Tuple((states[n] for n in (diagram.I_j[j]..., j)))
-                push!(diagram.X, Probabilities(j, node.probabilities))
-            else
-                throw(DomainError("The dimensions of a probability matrix should match the node's states' and information states' cardinality. Expected $(Tuple((states[n] for n in (diagram.I_j[j]..., j)))) for node $name, got $(size(node.probabilities))."))
-            end
-        elseif isa(node, ValueNodeData)
-            push!(diagram.V, ValueNode(j, diagram.I_j[j]))
-
-            # Check dimensions of consequences match states of I_j
-            if size(node.consequences) == Tuple((states[n] for n in diagram.I_j[j]))
-                push!(diagram.Y, Consequences(j, node.consequences))
-            else
-                throw(DomainError("The dimensions of the consequences matrix should match the node's information states' cardinality. Expected $(Tuple((states[n] for n in diagram.I_j[j]))) for node $name, got $(size(node.consequences))."))
-            end
-
-        end
-    end
-=#
     # Validate influence diagram
-    sort!.((diagram.C, diagram.D, diagram.V))
-    sort!.((diagram.X, diagram.Y), by = x -> x.j)
+    sort!(diagram.X, by = x -> x.c)
+    sort!(diagram.Y, by = x -> x.j)
+
 
     # Declare P and U if defaults are used
     if default_probability
