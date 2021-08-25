@@ -25,77 +25,6 @@ Node type for directed, acyclic graph.
 abstract type AbstractNode end
 
 
-
-#=
-function validate_node(j::Node, I_j::Vector{Node})
-    if !allunique(I_j)
-        throw(DomainError("All information nodes should be unique."))
-    end
-    if !all(i < j for i in I_j)
-        throw(DomainError("All nodes in the information set must be less than node j."))
-    end
-end
-
-"""
-    ChanceNode <: AbstractNode
-
-Chance node type.
-
-# Examples
-```julia
-c = ChanceNode(3, [1, 2])
-```
-"""
-struct ChanceNode <: AbstractNode
-    j::Node
-    I_j::Vector{Node}
-    function ChanceNode(j::Node, I_j::Vector{Node})
-        validate_node(j, I_j)
-        new(j, I_j)
-    end
-end
-
-"""
-    DecisionNode <: AbstractNode
-
-Decision node type.
-
-# Examples
-```julia
-d = DecisionNode(2, [1])
-```
-"""
-struct DecisionNode <: AbstractNode
-    j::Node
-    I_j::Vector{Node}
-    function DecisionNode(j::Node, I_j::Vector{Node})
-        validate_node(j, I_j)
-        new(j, I_j)
-    end
-end
-
-"""
-    ValueNode <: AbstractNode
-
-Value node type.
-
-# Examples
-```julia
-v = ValueNode(4, [1, 3])
-```
-"""
-struct ValueNode <: AbstractNode
-    j::Node
-    I_j::Vector{Node}
-    function ValueNode(j::Node, I_j::Vector{Node})
-        validate_node(j, I_j)
-        new(j, I_j)
-    end
-end
-
-
-=#
-
 struct ChanceNode <: AbstractNode
     name::Name
     I_j::Vector{Name}
@@ -178,50 +107,6 @@ function States(states::Vector{Tuple{State, Vector{Node}}}) # TODO should this j
     States(S_j)
 end
 
-#=
-"""
-    function validate_influence_diagram(S::States, C::Vector{ChanceNode}, D::Vector{DecisionNode}, V::Vector{ValueNode})
-
-Validate influence diagram.
-""" #TODO should this be gotten rid of?
-function validate_influence_diagram(S::States, C::Vector{ChanceNode}, D::Vector{DecisionNode}, V::Vector{ValueNode})
-    n = length(C) + length(D)
-    # in validate_node_data
-    if length(S) != n
-        throw(DomainError("Each change and decision node should have states."))
-    end
-
-    # in deduce_node_indices logic...
-    if Set(c.j for c in C) ∪ Set(d.j for d in D) != Set(1:n)
-        throw(DomainError("Union of change and decision nodes should be {1,...,n}."))
-    end
-
-    # in deduce_node_indices logic...
-    if Set(v.j for v in V) != Set((n+1):(n+length(V)))
-        throw(DomainError("Values nodes should be {n+1,...,n+|V|}."))
-    end
-
-    # in deduce_node_indices
-    I_V = union((v.I_j for v in V)...)
-    if !(I_V ⊆ Set(1:n))
-        throw(DomainError("Each information set I(v) for value node v should be a subset of C∪D."))
-    end
-    # in deduce_node_indices
-    # Check for redundant nodes.
-    leaf_nodes = setdiff(1:n, (c.I_j for c in C)..., (d.I_j for d in D)...)
-    for i in leaf_nodes
-        if !(i∈I_V)
-            @warn("Chance or decision node $i is redundant.")
-        end
-    end
-    # in validate_node_data
-    for v in V
-        if isempty(v.I_j)
-            @warn("Value node $(v.j) is redundant.")
-        end
-    end
-end
-=#
 
 # --- Paths ---
 
