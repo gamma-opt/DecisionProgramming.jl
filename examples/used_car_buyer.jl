@@ -57,9 +57,6 @@ U_distribution = UtilityDistribution(diagram, Z)
 @info("Printing decision strategy:")
 print_decision_strategy(diagram, Z, S_probabilities)
 
-@info("Computing utility distribution.")
-udist = UtilityDistribution(diagram, Z)
-
 @info("Printing utility distribution.")
 print_utility_distribution(U_distribution)
 
