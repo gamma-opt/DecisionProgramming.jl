@@ -573,6 +573,9 @@ function add_utilities!(diagram::InfluenceDiagram, node::Name, utilities::Abstra
     end
 end
 
+
+# --- Generating Arcs ---
+
 function validate_structure(Nodes::Vector{AbstractNode}, C_and_D::Vector{AbstractNode}, n_CD::Int, V::Vector{AbstractNode}, n_V::Int)
     # Validating node structure
     if n_CD == 0
@@ -680,6 +683,9 @@ function generate_arcs!(diagram::InfluenceDiagram)
     diagram.Y = Vector{Consequences}()
 end
 
+
+
+# --- Generating Diagram ---
 
 function generate_diagram!(diagram::InfluenceDiagram;
     default_probability::Bool=true,
