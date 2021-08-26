@@ -32,7 +32,9 @@ export Node,
     ProbabilityMatrix,
     set_probability!,
     add_probabilities!,
-    add_consequences!
+    UtilityMatrix,
+    set_utility!,
+    add_utilities!
 
 export DecisionVariables,
     PathCompatibilityVariables,
