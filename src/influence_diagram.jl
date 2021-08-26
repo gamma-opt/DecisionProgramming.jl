@@ -256,7 +256,7 @@ function (P::DefaultPathProbability)(s::Path)
 end
 
 
-# --- Consequences ---
+# --- Utilities ---
 
 """
     Utility = Float32
@@ -266,30 +266,36 @@ Primitive type for utility. Alias for `Float32`.
 const Utility = Float32
 
 """
-    Consequences{N} <: AbstractArray{Float64, N}
+    Utilities{N} <: AbstractArray{Utility, N}
 
 State utilities.
 
 # Examples
 ```julia-repl
 julia> vals = [1.0 -2.0; 3.0 4.0]
-julia> Y = Consequences(3, vals)
+julia> Y = Utilities(3, vals)
 julia> s = (1, 2)
 julia> Y(s)
 -2.0
 ```
 """
-struct Consequences{N} <: AbstractArray{Float64, N}
+struct Utilities{N} <: AbstractArray{Utility, N}
     v::Node
     data::Array{Utility, N}
+    function Utilities(v::Node, data::Array{Utility, N}) where N
+        if any(isinf(u) for u in data)
+            throw(DomainError("A value should be defined for each element of a utility matrix."))
+        end
+        new{N}(v, data)
+    end
 end
 
-Base.size(Y::Consequences) = size(Y.data)
-Base.IndexStyle(::Type{<:Consequences}) = IndexLinear()
-Base.getindex(Y::Consequences, i::Int) = getindex(Y.data, i)
-Base.getindex(Y::Consequences, I::Vararg{Int,N}) where N = getindex(Y.data, I...)
+Base.size(Y::Utilities) = size(Y.data)
+Base.IndexStyle(::Type{<:Utilities}) = IndexLinear()
+Base.getindex(Y::Utilities, i::Int) = getindex(Y.data, i)
+Base.getindex(Y::Utilities, I::Vararg{Int,N}) where N = getindex(Y.data, I...)
 
-(Y::Consequences)(s::Path) = Y[s...]
+(Y::Utilities)(s::Path) = Y[s...]
 
 
 # --- Path Utility ---
@@ -328,14 +334,14 @@ U(s, t)
 """
 struct DefaultPathUtility <: AbstractPathUtility
     I_v::Vector{Vector{Node}}
-    Y::Vector{Consequences}
+    Y::Vector{Utilities}
 end
 
 function (U::DefaultPathUtility)(s::Path)
     sum(Y(s[I_v]) for (I_v, Y) in zip(U.I_v, U.Y))
 end
 
-function (U::DefaultPathUtility)(s::Path, t::Float64)
+function (U::DefaultPathUtility)(s::Path, t::Utility)
     U(s) + t
 end
 
@@ -352,10 +358,10 @@ mutable struct InfluenceDiagram
     D::Vector{Node}
     V::Vector{Node}
     X::Vector{Probabilities}
-    Y::Vector{Consequences}
+    Y::Vector{Utilities}
     P::AbstractPathProbability
     U::AbstractPathUtility
-    translation::Float64
+    translation::Utility
     function InfluenceDiagram()
         new(Vector{AbstractNode}())
     end
@@ -489,9 +495,9 @@ function add_probabilities!(diagram::InfluenceDiagram, name::Name, probabilities
 end
 
 
-# --- Adding Consequences ---
+# --- Adding Utilities ---
 
-struct UtilityMatrix{N} <: AbstractArray{Float32, N}
+struct UtilityMatrix{N} <: AbstractArray{Utility, N}
     I_v::Vector{Name}
     indices::Vector{Dict{Name, Int}}
     matrix::Array{Utility, N}
@@ -559,14 +565,13 @@ end
 
 function add_utilities!(diagram::InfluenceDiagram, node::Name, utilities::AbstractArray{T, N}) where {N,T<:Real}
     v = findfirst(x -> x==node, diagram.Names)
-    # TODO should there be a check that all cells of array are filled
 
     if size(utilities) == Tuple((diagram.S[j] for j in diagram.I_j[v]))
         if isa(utilities, UtilityMatrix)
-            push!(diagram.Y, Consequences(v, utilities.matrix))
+            push!(diagram.Y, Utilities(Node(v), utilities.matrix))
         else
             # Conversion to Float32 using Utility(), since machine default is Float64
-            push!(diagram.Y, Consequences(v, [Utility(u) for u in utilities]))
+            push!(diagram.Y, Utilities(Node(v), [Utility(u) for u in utilities]))
         end
     else
         throw(DomainError("The dimensions of the utilities matrix should match the node's information states' cardinality. Expected $(Tuple((diagram.S[n] for n in diagram.I_j[v]))) for node $name, got $(size(utilities))."))
@@ -680,7 +685,7 @@ function generate_arcs!(diagram::InfluenceDiagram)
     diagram.V = V
     # Declaring X and Y
     diagram.X = Vector{Probabilities}()
-    diagram.Y = Vector{Consequences}()
+    diagram.Y = Vector{Utilities}()
 end
 
 
@@ -712,11 +717,12 @@ function generate_diagram!(diagram::InfluenceDiagram;
     if default_utility
         diagram.U = DefaultPathUtility(diagram.I_j[diagram.V], diagram.Y)
         if positive_path_utility
-            diagram.translation = 1 -  minimum(diagram.U(s) for s in paths(diagram.S))
+            # Conversion to Float32 using Utility(), since machine default is Float64
+            diagram.translation = Utility(1 -  minimum(diagram.U(s) for s in paths(diagram.S)))
         elseif negative_path_utility
-            diagram.translation = -1 - maximum(diagram.U(s) for s in paths(diagram.S))
+            diagram.translation = Utility(-1 - maximum(diagram.U(s) for s in paths(diagram.S)))
         else
-            diagram.translation = 0
+            diagram.translation = Utility(0)
         end
     end
 
