@@ -499,7 +499,7 @@ end
 
 Base.size(UM::UtilityMatrix) = size(UM.matrix)
 Base.getindex(UM::UtilityMatrix, I::Vararg{Int,N}) where N = getindex(UM.matrix, I...)
-Base.setindex!(UM::UtilityMatrix, y::Float64, I::Vararg{Int,N}) where N = (UM.matrix[I...] = y)
+Base.setindex!(UM::UtilityMatrix, y::Utility, I::Vararg{Int,N}) where N = (UM.matrix[I...] = y)
 Base.setindex!(UM::UtilityMatrix{N}, Y, I::Vararg{Any, N}) where N = (UM.matrix[I...] .= Y)
 
 
@@ -528,20 +528,20 @@ function UtilityMatrix(diagram::InfluenceDiagram, node::Name)
     return UtilityMatrix(names, indices, matrix)
 end
 
-function set_utility!(utility_matrix::UtilityMatrix, scenario::Array{String}, utility::Float64)
+function set_utility!(utility_matrix::UtilityMatrix, scenario::Array{String}, utility::Real)
     index = Vector{Int}()
     for (i, s) in enumerate(scenario)
         if get(utility_matrix.indices[i], s, 0) == 0
             throw(DomainError("Node $(utility_matrix.I_v[i]) does not have a state called $s."))
         else
-            push!(index, get(probability_matrix.indices[i], s, 0))
+            push!(index, get(utility_matrix.indices[i], s, 0))
         end
     end
 
     utility_matrix[index...] = Utility(utility)
 end
 
-function set_utility!(utility_matrix::UtilityMatrix, scenario::Array{Any}, utility::Array{Float64})
+function set_utility!(utility_matrix::UtilityMatrix, scenario::Array{Any}, utility::Array{T}) where T<:Real
     index = Vector{Any}()
     for (i, s) in enumerate(scenario)
         if isa(s, Colon)
@@ -554,14 +554,14 @@ function set_utility!(utility_matrix::UtilityMatrix, scenario::Array{Any}, utili
     end
 
     # Conversion to Float32 using Utility(), since machine default is Float64
-    utility_matrix[index...] = Utility(utility)
+    utility_matrix[index...] = [Utility(u) for u in utility]
 end
 
-function add_utilities!(diagram::InfluenceDiagram, node::Name, utilities::AbstractArray{AbstractFloat, N}) where N
-    v = findfirst(x -> x==name, diagram.Names)
+function add_utilities!(diagram::InfluenceDiagram, node::Name, utilities::AbstractArray{T, N}) where {N,T<:Real}
+    v = findfirst(x -> x==node, diagram.Names)
     # TODO should there be a check that all cells of array are filled
 
-    if size(utilities) == Tuple((diagram.S[n] for n in diagram.I_j[v]))
+    if size(utilities) == Tuple((diagram.S[j] for j in diagram.I_j[v]))
         if isa(utilities, UtilityMatrix)
             push!(diagram.Y, Consequences(v, utilities.matrix))
         else
