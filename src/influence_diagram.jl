@@ -395,11 +395,84 @@ function add_node!(diagram::InfluenceDiagram, node::AbstractNode)
 end
 
 
-function AddProbabilities!(diagram::InfluenceDiagram, name::Name, probabilities::Array{Float64, N}) where N
+# --- Adding Probabilities ---
+
+struct ProbabilityMatrix{N} <: AbstractArray{Float64, N}
+    nodes::Vector{Name}
+    indices::Vector{Dict{Name, Int}}
+    matrix::Array{Float64, N}
+end
+
+Base.size(PM::ProbabilityMatrix) = size(PM.matrix)
+Base.getindex(PM::ProbabilityMatrix, I::Vararg{Int,N}) where N = getindex(PM.matrix, I...)
+Base.setindex!(PM::ProbabilityMatrix, p::Float64, I::Vararg{Int,N}) where N = (PM.matrix[I...] = p)
+Base.setindex!(PM::ProbabilityMatrix{N}, X, I::Vararg{Any, N}) where N = (PM.matrix[I...] .= X)
+
+
+function ProbabilityMatrix(diagram::InfluenceDiagram, node::Name)
+    if node ∉ diagram.Names
+        throw(DomainError("Node $node should be added as a node to the influence diagram."))
+    end
+    if node ∉ diagram.Names[diagram.C]
+        throw(DomainError("Only chance nodes can have probability matrices."))
+    end
+
+    # Find the node's indices and it's I_c nodes
+    c = findfirst(x -> x==node, diagram.Names)
+    nodes = [diagram.I_j[c]..., c]
+    names = diagram.Names[nodes]
+
+    indices = Vector{Dict{Name, Int}}()
+    for j in nodes
+        states = Dict{Name, Int}(state => i
+            for (i, state) in enumerate(diagram.States[j])
+        )
+        push!(indices, states)
+    end
+    matrix = Array{Float64}(undef, diagram.S[nodes]...)
+
+    return ProbabilityMatrix(names, indices, matrix)
+end
+
+function set_probability!(probability_matrix::ProbabilityMatrix, scenario::Array{String}, probability::Float64)
+    index = Vector{Int}()
+    for (i, s) in enumerate(scenario)
+        if get(probability_matrix.indices[i], s, 0) == 0
+            throw(DomainError("Node $(probability_matrix.nodes[i]) does not have a state called $s."))
+        else
+            push!(index, get(probability_matrix.indices[i], s, 0))
+        end
+    end
+
+    probability_matrix[index...] = probability
+end
+
+function set_probability!(probability_matrix::ProbabilityMatrix, scenario::Array{Any}, probabilities::Array{Float64})
+    index = Vector{Any}()
+    for (i, s) in enumerate(scenario)
+        if isa(s, Colon)
+            push!(index, s)
+        elseif get(probability_matrix.indices[i], s, 0) == 0
+            throw(DomainError("Node $(probability_matrix.nodes[i]) does not have state $s."))
+        else
+            push!(index, get(probability_matrix.indices[i], s, 0))
+        end
+    end
+
+    probability_matrix[index...] = probabilities
+end
+
+
+function add_probabilities!(diagram::InfluenceDiagram, name::Name, probabilities::AbstractArray{Float64, N}) where N
     c = findfirst(x -> x==name, diagram.Names)
+    # TODO should there be a check that all cells of array are filled
 
     if size(probabilities) == Tuple((diagram.S[n] for n in (diagram.I_j[c]..., c)))
-        push!(diagram.X, Probabilities(c, probabilities))
+        if isa(probabilities, ProbabilityMatrix)
+            push!(diagram.X, Probabilities(c, probabilities.matrix))
+        else
+            push!(diagram.X, Probabilities(c, probabilities))
+        end
     else
         throw(DomainError("The dimensions of a probability matrix should match the node's states' and information states' cardinality. Expected $(Tuple((diagram.S[n] for n in (diagram.I_j[c]..., c)))) for node $name, got $(size(probabilities))."))
     end
@@ -529,7 +602,14 @@ function generate_diagram!(diagram::InfluenceDiagram;
     positive_path_utility::Bool=false,
     negative_path_utility::Bool=false)
 
-    # Validate influence diagram
+    # Check correct number of probabilities and consequences were added
+    if sort([x.c for x in diagram.X]) != diagram.C
+        throw(DomainError("A probability matrix should be defined for each chance node exactly once."))
+    end
+    if sort([y.v for y in diagram.Y]) != diagram.V
+        throw(DomainError("A consequence matrix should be defined for each value node exactly once."))
+    end
+    # Sort probabilities and consequences
     sort!(diagram.X, by = x -> x.c)
     sort!(diagram.Y, by = x -> x.v)
 
