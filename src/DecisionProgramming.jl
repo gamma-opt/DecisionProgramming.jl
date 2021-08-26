@@ -26,18 +26,18 @@ export Node,
     DecisionStrategy,
     validate_influence_diagram,
     InfluenceDiagram,
-    GenerateArcs!,
-    GenerateDiagram!,
-    AddNode!,
-    AddProbabilities!,
-    AddConsequences!
+    generate_arcs!,
+    generate_diagram!,
+    add_node!,
+    ProbabilityMatrix,
+    set_probability!,
+    add_probabilities!,
+    add_consequences!
 
 export DecisionVariables,
     PathCompatibilityVariables,
     ForbiddenPath,
     lazy_probability_cut,
-    PositivePathUtility,
-    NegativePathUtility,
     expected_value,
     value_at_risk,
     conditional_value_at_risk
@@ -46,7 +46,9 @@ export random_diagram
 
 export CompatiblePaths,
     UtilityDistribution,
-    StateProbabilities
+    StateProbabilities,
+    value_at_risk,
+    conditional_value_at_risk
 
 export print_decision_strategy,
     print_utility_distribution,

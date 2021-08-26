@@ -352,6 +352,7 @@ mutable struct InfluenceDiagram
 end
 
 
+# --- Adding nodes ---
 
 function validate_node(diagram::InfluenceDiagram,
     name::Name,
@@ -384,7 +385,7 @@ function validate_node(diagram::InfluenceDiagram,
     end
 end
 
-function AddNode!(diagram::InfluenceDiagram, node::AbstractNode)
+function add_node!(diagram::InfluenceDiagram, node::AbstractNode)
     if !isa(node, ValueNode)
         validate_node(diagram, node.name, node.I_j, states = node.states)
     else
@@ -440,7 +441,7 @@ function validate_structure(Nodes::Vector{AbstractNode}, C_and_D::Vector{Abstrac
 end
 
 
-function GenerateArcs!(diagram::InfluenceDiagram)
+function generate_arcs!(diagram::InfluenceDiagram)
 
     # Chance and decision nodes
     C_and_D = filter(x -> !isa(x, ValueNode), diagram.Nodes)
@@ -522,7 +523,7 @@ function GenerateArcs!(diagram::InfluenceDiagram)
 end
 
 
-function GenerateDiagram!(diagram::InfluenceDiagram;
+function generate_diagram!(diagram::InfluenceDiagram;
     default_probability::Bool=true,
     default_utility::Bool=true,
     positive_path_utility::Bool=false,
