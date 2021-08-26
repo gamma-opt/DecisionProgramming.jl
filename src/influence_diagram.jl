@@ -259,6 +259,13 @@ end
 # --- Consequences ---
 
 """
+    Utility = Float32
+
+Primitive type for utility. Alias for `Float32`.
+"""
+const Utility = Float32
+
+"""
     Consequences{N} <: AbstractArray{Float64, N}
 
 State utilities.
@@ -274,7 +281,7 @@ julia> Y(s)
 """
 struct Consequences{N} <: AbstractArray{Float64, N}
     v::Node
-    data::Array{Float64, N}
+    data::Array{Utility, N}
 end
 
 Base.size(Y::Consequences) = size(Y.data)
@@ -314,6 +321,9 @@ Default path utility.
 U = DefaultPathUtility(V, Y)
 s = (1, 2)
 U(s)
+
+t = -100.0
+U(s, t)
 ```
 """
 struct DefaultPathUtility <: AbstractPathUtility
@@ -478,13 +488,88 @@ function add_probabilities!(diagram::InfluenceDiagram, name::Name, probabilities
     end
 end
 
-function AddConsequences!(diagram::InfluenceDiagram, name::Name, consequences::Array{Float64, N}) where N
-    v = findfirst(x -> x==name, diagram.Names)
 
-    if size(consequences) == Tuple((diagram.S[n] for n in diagram.I_j[v]))
-        push!(diagram.Y, Consequences(v, consequences))
+# --- Adding Consequences ---
+
+struct UtilityMatrix{N} <: AbstractArray{Float32, N}
+    I_v::Vector{Name}
+    indices::Vector{Dict{Name, Int}}
+    matrix::Array{Utility, N}
+end
+
+Base.size(UM::UtilityMatrix) = size(UM.matrix)
+Base.getindex(UM::UtilityMatrix, I::Vararg{Int,N}) where N = getindex(UM.matrix, I...)
+Base.setindex!(UM::UtilityMatrix, y::Float64, I::Vararg{Int,N}) where N = (UM.matrix[I...] = y)
+Base.setindex!(UM::UtilityMatrix{N}, Y, I::Vararg{Any, N}) where N = (UM.matrix[I...] .= Y)
+
+
+function UtilityMatrix(diagram::InfluenceDiagram, node::Name)
+    if node ∉ diagram.Names
+        throw(DomainError("Node $node should be added as a node to the influence diagram."))
+    end
+    if node ∉ diagram.Names[diagram.V]
+        throw(DomainError("Only value nodes can have consequence matrices."))
+    end
+
+    # Find the node's indexand it's I_v nodes
+    v = findfirst(x -> x==node, diagram.Names)
+    I_v = diagram.I_j[v]
+    names = diagram.Names[I_v]
+
+    indices = Vector{Dict{Name, Int}}()
+    for j in I_v
+        states = Dict{Name, Int}(state => i
+            for (i, state) in enumerate(diagram.States[j])
+        )
+        push!(indices, states)
+    end
+    matrix = Array{Utility}(fill(Inf, diagram.S[I_v]...))
+
+    return UtilityMatrix(names, indices, matrix)
+end
+
+function set_utility!(utility_matrix::UtilityMatrix, scenario::Array{String}, utility::Float64)
+    index = Vector{Int}()
+    for (i, s) in enumerate(scenario)
+        if get(utility_matrix.indices[i], s, 0) == 0
+            throw(DomainError("Node $(utility_matrix.I_v[i]) does not have a state called $s."))
+        else
+            push!(index, get(probability_matrix.indices[i], s, 0))
+        end
+    end
+
+    utility_matrix[index...] = Utility(utility)
+end
+
+function set_utility!(utility_matrix::UtilityMatrix, scenario::Array{Any}, utility::Array{Float64})
+    index = Vector{Any}()
+    for (i, s) in enumerate(scenario)
+        if isa(s, Colon)
+            push!(index, s)
+        elseif get(utility_matrix.indices[i], s, 0) == 0
+            throw(DomainError("Node $(utility_matrix.I_v[i]) does not have state $s."))
+        else
+            push!(index, get(utility_matrix.indices[i], s, 0))
+        end
+    end
+
+    # Conversion to Float32 using Utility(), since machine default is Float64
+    utility_matrix[index...] = Utility(utility)
+end
+
+function add_utilities!(diagram::InfluenceDiagram, node::Name, utilities::AbstractArray{AbstractFloat, N}) where N
+    v = findfirst(x -> x==name, diagram.Names)
+    # TODO should there be a check that all cells of array are filled
+
+    if size(utilities) == Tuple((diagram.S[n] for n in diagram.I_j[v]))
+        if isa(utilities, UtilityMatrix)
+            push!(diagram.Y, Consequences(v, utilities.matrix))
+        else
+            # Conversion to Float32 using Utility(), since machine default is Float64
+            push!(diagram.Y, Consequences(v, [Utility(u) for u in utilities]))
+        end
     else
-        throw(DomainError("The dimensions of the consequences matrix should match the node's information states' cardinality. Expected $(Tuple((diagram.S[n] for n in diagram.I_j[v]))) for node $name, got $(size(consequences))."))
+        throw(DomainError("The dimensions of the utilities matrix should match the node's information states' cardinality. Expected $(Tuple((diagram.S[n] for n in diagram.I_j[v]))) for node $name, got $(size(utilities))."))
     end
 end
 
