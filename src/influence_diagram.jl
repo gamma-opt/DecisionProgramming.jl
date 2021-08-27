@@ -548,7 +548,7 @@ function set_utility!(utility_matrix::UtilityMatrix, scenario::Array{String}, ut
         end
     end
 
-    utility_matrix[index...] = Utility(utility)
+    utility_matrix[index...] = utility
 end
 
 function set_utility!(utility_matrix::UtilityMatrix, scenario::Array{Any}, utility::Array{T}) where T<:Real
@@ -563,8 +563,7 @@ function set_utility!(utility_matrix::UtilityMatrix, scenario::Array{Any}, utili
         end
     end
 
-    # Conversion to Float32 using Utility(), since machine default is Float64
-    utility_matrix[index...] = [Utility(u) for u in utility]
+    utility_matrix[index...] = utility
 end
 
 function add_utilities!(diagram::InfluenceDiagram, node::Name, utilities::AbstractArray{T, N}) where {N,T<:Real}
@@ -720,11 +719,11 @@ function generate_diagram!(diagram::InfluenceDiagram;
         diagram.U = DefaultPathUtility(diagram.I_j[diagram.V], diagram.Y)
         if positive_path_utility
             # Conversion to Float32 using Utility(), since machine default is Float64
-            diagram.translation = Utility(1 -  minimum(diagram.U(s) for s in paths(diagram.S)))
+            diagram.translation = 1 -  minimum(diagram.U(s) for s in paths(diagram.S))
         elseif negative_path_utility
-            diagram.translation = Utility(-1 - maximum(diagram.U(s) for s in paths(diagram.S)))
+            diagram.translation = -1 - maximum(diagram.U(s) for s in paths(diagram.S))
         else
-            diagram.translation = Utility(0)
+            diagram.translation = 0
         end
     end
 
