@@ -509,7 +509,7 @@ end
 
 Base.size(UM::UtilityMatrix) = size(UM.matrix)
 Base.getindex(UM::UtilityMatrix, I::Vararg{Int,N}) where N = getindex(UM.matrix, I...)
-Base.setindex!(UM::UtilityMatrix, y::Utility, I::Vararg{Int,N}) where N = (UM.matrix[I...] = y)
+Base.setindex!(UM::UtilityMatrix, y::T, I::Vararg{Int,N}) where {N, T<:Real} = (UM.matrix[I...] = y)
 Base.setindex!(UM::UtilityMatrix{N}, Y, I::Vararg{Any, N}) where N = (UM.matrix[I...] .= Y)
 
 
@@ -569,7 +569,7 @@ end
 
 function add_utilities!(diagram::InfluenceDiagram, node::Name, utilities::AbstractArray{T, N}) where {N,T<:Real}
     v = findfirst(x -> x==node, diagram.Names)
-    
+
     if v ∈ [j.v for j in diagram.Y]
         throw(DomainError("Utilities should be added only once for each node."))
     end
