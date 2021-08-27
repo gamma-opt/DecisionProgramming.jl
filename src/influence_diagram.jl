@@ -628,8 +628,8 @@ function generate_arcs!(diagram::InfluenceDiagram)
     # Declare vectors for results (final resting place InfluenceDiagram.Names and InfluenceDiagram.I_j)
     Names = Vector{Name}(undef, n_CD+n_V)
     I_j = Vector{Vector{Node}}(undef, n_CD+n_V)
-    State_names = Vector{Vector{Name}}()
-    states = Vector{State}()
+    states = Vector{Vector{Name}}()
+    S = Vector{State}(undef, n_CD)
     C = Vector{Node}()
     D = Vector{Node}()
     V = Vector{Node}()
@@ -649,10 +649,10 @@ function generate_arcs!(diagram::InfluenceDiagram)
             push!(indices, j.name => index)
             push!(indexed_nodes, j.name)
             # Update results
-            Names[index] = Name(j.name)     #TODO datatype conversion happens here, should we use push! ?
+            Names[index] = Name(j.name)    #TODO datatype conversion happens here, should we use push! ?
             I_j[index] = map(x -> Node(indices[x]), j.I_j)
-            push!(State_names, j.states)
-            push!(states, State(length(j.states)))
+            push!(states, j.states)
+            S[index] = State(length(j.states))
             if isa(j, ChanceNode)
                 push!(C, Node(index))
             else
@@ -685,8 +685,8 @@ function generate_arcs!(diagram::InfluenceDiagram)
 
     diagram.Names = Names
     diagram.I_j = I_j
-    diagram.States = State_names
-    diagram.S = States(states)
+    diagram.States = states
+    diagram.S = States(S)
     diagram.C = C
     diagram.D = D
     diagram.V = V
