@@ -471,9 +471,9 @@ function add_probabilities!(diagram::InfluenceDiagram, node::Name, probabilities
     if size(probabilities) == Tuple((diagram.S[j] for j in (diagram.I_j[c]..., c)))
         if isa(probabilities, ProbabilityMatrix)
             # Check that probabilities sum to one happesn in Probabilities
-            push!(diagram.X, Probabilities(c, probabilities.matrix))
+            push!(diagram.X, Probabilities(Node(c), probabilities.matrix))
         else
-            push!(diagram.X, Probabilities(c, probabilities))
+            push!(diagram.X, Probabilities(Node(c), probabilities))
         end
     else
         throw(DomainError("The dimensions of a probability matrix should match the node's states' and information states' cardinality. Expected $(Tuple((diagram.S[n] for n in (diagram.I_j[c]..., c)))) for node $name, got $(size(probabilities))."))
