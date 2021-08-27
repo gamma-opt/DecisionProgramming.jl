@@ -4,11 +4,11 @@ struct CompatiblePaths
     C::Vector{Node}
     Z::DecisionStrategy
     fixed::FixedPath
-    function CompatiblePaths(diagram, Z, fixed)
-        if !all(k∈Set(diagram.C) for k in keys(fixed))
+    function CompatiblePaths(S, C, Z, fixed)
+        if !all(k∈Set(C) for k in keys(fixed))
             throw(DomainError("You can only fix chance states."))
         end
-        new(diagram.S, diagram.C, Z, fixed)
+        new(S, C, Z, fixed)
     end
 end
 
@@ -28,8 +28,8 @@ for s in CompatiblePaths(diagram, Z)
 end
 ```
 """
-function CompatiblePaths(diagram::InfluenceDiagram, Z::DecisionStrategy)
-    CompatiblePaths(diagram, Z, Dict{Node, State}())
+function CompatiblePaths(diagram::InfluenceDiagram, Z::DecisionStrategy, fixed::FixedPath=Dict{Node, State}())
+    CompatiblePaths(diagram.S, diagram.C, Z, fixed)
 end
 
 function compatible_path(S::States, C::Vector{Node}, Z::DecisionStrategy, s_C::Path)
