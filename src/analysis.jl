@@ -155,10 +155,13 @@ state = 2
 StateProbabilities(S, P, Z, node, state, prev)
 ```
 """
-function StateProbabilities(diagram::InfluenceDiagram, Z::DecisionStrategy, node::Node, state::State, prior_probabilities::StateProbabilities)
-    prior = prior_probabilities.probs[node][state]
+function StateProbabilities(diagram::InfluenceDiagram, Z::DecisionStrategy, node::Name, state::Name, prior_probabilities::StateProbabilities)
+    node_index = findfirst(j -> j ==node, diagram.Names)
+    state_index = findfirst(j -> j == state, diagram.States[node_index])
+
+    prior = prior_probabilities.probs[node_index][state_index]
     fixed = prior_probabilities.fixed
-    push!(fixed, node => state)
+    push!(fixed, node_index => state_index)
     probs = Dict(i => zeros(diagram.S[i]) for i in 1:length(diagram.S))
     for s in CompatiblePaths(diagram, Z, fixed), i in 1:length(diagram.S)
         probs[i][s[i]] += diagram.P(s) / prior #TODO double check that this is correct
