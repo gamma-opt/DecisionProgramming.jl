@@ -12,22 +12,22 @@ fortification(k, a) = [c_k[k], 0][a]
 @info("Creating the influence diagram.")
 diagram = InfluenceDiagram()
 
-AddNode!(diagram, ChanceNode("L", [], ["high", "low"]))
+add_node!(diagram, ChanceNode("L", [], ["high", "low"]))
 
 for i in 1:N
-    AddNode!(diagram, ChanceNode("R$i", ["L"], ["high", "low"]))
-    AddNode!(diagram, DecisionNode("A$i", ["R$i"], ["yes", "no"]))
+    add_node!(diagram, ChanceNode("R$i", ["L"], ["high", "low"]))
+    add_node!(diagram, DecisionNode("A$i", ["R$i"], ["yes", "no"]))
 end
 
-AddNode!(diagram, ChanceNode("F", ["L", ["A$i" for i in 1:N]...], ["failure", "success"]))
+add_node!(diagram, ChanceNode("F", ["L", ["A$i" for i in 1:N]...], ["failure", "success"]))
 
-AddNode!(diagram, ValueNode("T", ["F", ["A$i" for i in 1:N]...]))
+add_node!(diagram, ValueNode("T", ["F", ["A$i" for i in 1:N]...]))
 
-GenerateArcs!(diagram)
+generate_arcs!(diagram)
 
 X_L = [rand(), 0]
 X_L[2] = 1.0 - X_L[1]
-AddProbabilities!(diagram, "L", X_L)
+add_probabilities!(diagram, "L", X_L)
 
 for i in 1:N
     x, y = rand(2)
@@ -36,7 +36,7 @@ for i in 1:N
     X_R[1, 2] = 1.0 - X_R[1, 1]
     X_R[2, 2] = max(y, 1-y)
     X_R[2, 1] = 1.0 - X_R[2, 2]
-    AddProbabilities!(diagram, "R$i", X_R)
+    add_probabilities!(diagram, "R$i", X_R)
 end
 
 for i in [1]
@@ -49,23 +49,23 @@ for i in [1]
         X_F[2, s..., 1] = min(y, 1-y) / d
         X_F[2, s..., 2] = 1.0 - X_F[2, s..., 1]
     end
-    AddProbabilities!(diagram, "F", X_F)
+    add_probabilities!(diagram, "F", X_F)
 end
 
-Y_T = zeros([2 for i in 1:N]..., 2)
+Y_T = UtilityMatrix(diagram, "T")
 for s in paths([2 for i in 1:N])
     cost = sum(-fortification(k, a) for (k, a) in enumerate(s))
     Y_T[1, s...] = cost + 0
     Y_T[2, s...] = cost + 100
 end
-AddConsequences!(diagram, "T", Y_T)
+add_utilities!(diagram, "T", Y_T)
 
-GenerateDiagram!(diagram)#, positive_path_utility=true)
+generate_diagram!(diagram, positive_path_utility=true)
 
 
 model = Model()
 z = DecisionVariables(model, diagram)
-x_s = PathCompatibilityVariables(model, diagram, z)#, probability_cut = false)
+x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
 EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
 
