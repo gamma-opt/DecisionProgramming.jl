@@ -88,24 +88,6 @@ Base.getindex(S::States, i::Int) = getindex(S.vals, i)
 Base.length(S::States) = length(S.vals)
 Base.eltype(S::States) = eltype(S.vals)
 
-"""
-    function States(states::Vector{Tuple{State, Vector{Node}}})
-
-Construct states from vector of (state, nodes) tuples.
-
-# Examples
-```julia-repl
-julia> S = States([(2, [1, 3]), (3, [2, 4, 5])])
-States([2, 3, 2, 3, 3])
-```
-"""
-function States(states::Vector{Tuple{State, Vector{Node}}}) # TODO should this just be gotten rid of?
-    S_j = Vector{State}(undef, sum(length(j) for (_, j) in states))
-    for (s, j) in states
-        S_j[j] .= s
-    end
-    States(S_j)
-end
 
 
 # --- Paths ---
