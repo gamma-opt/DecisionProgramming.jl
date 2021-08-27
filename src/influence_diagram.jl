@@ -142,13 +142,28 @@ ForbiddenPath type.
 
 # Examples
 ```julia
-ForbiddenPath[
+julia> ForbiddenPath(([1, 2], Set([(1, 2)])))
+julia> ForbiddenPath[
     ([1, 2], Set([(1, 2)])),
     ([3, 4, 5], Set([(1, 2, 3), (3, 4, 5)]))
 ]
 ```
 """
 const ForbiddenPath = Tuple{Vector{Node}, Set{Path}}
+
+
+"""
+    const FixedPath = Dict{Node, State}
+
+FixedPath type.
+
+# Examples
+```julia
+julia> FixedPath(Dict(1=>1, 2=>3))
+]
+```
+"""
+const FixedPath = Dict{Node, State}
 
 
 # --- Probabilities ---
@@ -710,6 +725,83 @@ function generate_diagram!(diagram::InfluenceDiagram;
     end
 
 end
+
+# --- ForbiddenPath and FixedPath outer construction functions ---
+"""
+    function ForbiddenPath(diagram::InfluenceDiagram, nodes::Vector{Name}, paths::Vector{NTuple{N, Name}}) where N
+
+ForbiddenPath outer construction function. Create ForbiddenPath variable.
+
+# Arguments
+- `diagram::InfluenceDiagram`: Influence diagram structure
+- `nodes::Vector{Name}`: Vector of nodes involved in forbidden paths. Identified by their names.
+- `paths`::Vector{NTuple{N, Name}}`: Vector of tuples defining the forbidden combinations of states. States identified by their names.
+
+# Example
+```julia
+julia> ForbiddenPath(diagram, ["R1", "R2"], [("high", "low"), ("low", "high")])
+```
+"""
+function ForbiddenPath(diagram::InfluenceDiagram, nodes::Vector{Name}, paths::Vector{NTuple{N, Name}}) where N
+    node_indices = Vector{Node}()
+    for node in nodes
+        j = findfirst(i -> i == node, diagram.Names)
+        if isnothing(j)
+            throw(DomainError("Node $node does not exist."))
+        end
+        push!(node_indices, j)
+    end
+
+    path_set = Set{Path}()
+    for s in paths
+        s_states = Vector{State}()
+        for (i, s_i) in enumerate(s)
+            s_i_index = findfirst(x -> x == s_i, diagram.States[node_indices[i]])
+            if isnothing(s_i_index)
+                throw(DomainError("Node $(nodes[i]) does not have a state called $s_i."))
+            end
+
+            push!(s_states, s_i_index)
+        end
+        push!(path_set, Path(s_states))
+    end
+
+    return ForbiddenPath((node_indices, path_set))
+end
+
+"""
+    function ForbiddenPath(diagram::InfluenceDiagram, nodes::Vector{Name}, paths::Vector{NTuple{N, Name}}) where N
+
+FixedPath outer construction function. Create FixedPath variable.
+
+# Arguments
+- `diagram::InfluenceDiagram`: Influence diagram structure
+- `fixed::Dict{Name, Name}`: Dictionary of nodes and their fixed states. Order is node=>state, and both are idefied with their names.
+
+# Example
+```julia
+julia> FixedPath(diagram, Dict("R1"=>"high", "R2"=>"high"))
+```
+"""
+function FixedPath(diagram::InfluenceDiagram, fixed::Dict{Name, Name})
+    fixed_paths = Dict{Node, State}()
+
+    for (j, s_j) in fixed
+        j_index = findfirst(i -> i == j, diagram.Names)
+        if isnothing(j_index)
+            throw(DomainError("Node $j does not exist."))
+        end
+
+        s_j_index = findfirst(s -> s == s_j, diagram.States[j_index])
+        if isnothing(s_j_index)
+            throw(DomainError("Node $j does not have a state called $s_j."))
+        end
+        push!(fixed_paths, Node(j_index) => State(s_j_index))
+    end
+
+    return FixedPath(fixed_paths)
+end
+
 
 # --- Local Decision Strategy ---
 

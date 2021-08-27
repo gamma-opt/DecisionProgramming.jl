@@ -98,7 +98,7 @@ end
         names::Bool=false,
         name::String="x",
         forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
-        fixed::Dict{Node, State}=Dict{Node, State}(),
+        fixed::FixedPath=Dict{Node, State}(),
         probability_cut::Bool=true)
 
 Create path compatibility variables and constraints.
@@ -114,7 +114,7 @@ Create path compatibility variables and constraints.
 - `forbidden_paths::Vector{ForbiddenPath}`: The forbidden subpath structures.
     Path compatibility variables will not be generated for paths that include
     forbidden subpaths.
-- `fixed::Dict{Node, State}`: Path compatibility variable will not be generated
+- `fixed::FixedPath`: Path compatibility variable will not be generated
     for paths which do not include these fixed subpaths.
 - `probability_cut` Includes probability cut constraint in the optimisation model.
 
@@ -129,7 +129,7 @@ function PathCompatibilityVariables(model::Model,
     names::Bool=false,
     name::String="x",
     forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
-    fixed::Dict{Node, State}=Dict{Node, State}(),
+    fixed::FixedPath=Dict{Node, State}(),
     probability_cut::Bool=true)
 
     if !isempty(forbidden_paths)

@@ -3,7 +3,7 @@ struct CompatiblePaths
     S::States
     C::Vector{Node}
     Z::DecisionStrategy
-    fixed::Dict{Node, State}
+    fixed::FixedPath
     function CompatiblePaths(diagram, Z, fixed)
         if !all(k∈Set(diagram.C) for k in keys(fixed))
             throw(DomainError("You can only fix chance states."))
@@ -13,7 +13,7 @@ struct CompatiblePaths
 end
 
 """
-    CompatiblePaths(S::States, C::Vector{ChanceNode}, Z::DecisionStrategy)
+    CompatiblePaths(diagram::InfluenceDiagram, Z::DecisionStrategy)
 
 Interface for iterating over paths that are compatible and active given influence diagram and decision strategy.
 
@@ -23,12 +23,11 @@ Interface for iterating over paths that are compatible and active given influenc
 
 # Examples
 ```julia
-for s in CompatiblePaths(S, C, Z)
+for s in CompatiblePaths(diagram, Z)
     ...
 end
 ```
 """
-
 function CompatiblePaths(diagram::InfluenceDiagram, Z::DecisionStrategy)
     CompatiblePaths(diagram, Z, Dict{Node, State}())
 end
@@ -130,13 +129,16 @@ function UtilityDistribution(diagram::InfluenceDiagram, Z::DecisionStrategy)
 end
 
 """
-    StateProbabilities
+    struct StateProbabilities
+        probs::Dict{Node, Vector{Float64}}
+        fixed::FixedPath
+    end
 
 StateProbabilities type.
 """
 struct StateProbabilities
     probs::Dict{Node, Vector{Float64}}
-    fixed::Dict{Node, State}
+    fixed::FixedPath
 end
 
 """
