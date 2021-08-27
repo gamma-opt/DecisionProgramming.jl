@@ -4,11 +4,11 @@ using Base.Iterators: product
 # --- Nodes and States ---
 
 """
-    Node = Int
+    Node = Int16
 
 Primitive type for node index. Alias for `Int`.
 """
-const Node = Int
+const Node = Int16
 
 """
     Name = String
