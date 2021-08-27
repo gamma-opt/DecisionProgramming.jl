@@ -6,32 +6,42 @@ using DecisionProgramming
 @info("Creating the influence diagram.")
 diagram = InfluenceDiagram()
 
-AddNode!(diagram, ChanceNode("O", [], ["lemon", "peach"]))
-AddNode!(diagram, ChanceNode("R", ["O", "T"], ["no test", "lemon", "peach"]))
+add_node!(diagram, ChanceNode("O", [], ["lemon", "peach"]))
+add_node!(diagram, ChanceNode("R", ["O", "T"], ["no test", "lemon", "peach"]))
 
-AddNode!(diagram, DecisionNode("T", [], ["no test", "test"]))
-AddNode!(diagram, DecisionNode("A", ["R"], ["buy without guarantee", "buy with guarantee", "don't buy"]))
+add_node!(diagram, DecisionNode("T", [], ["no test", "test"]))
+add_node!(diagram, DecisionNode("A", ["R"], ["buy without guarantee", "buy with guarantee", "don't buy"]))
 
-AddNode!(diagram, ValueNode("V1", ["T"]))
-AddNode!(diagram, ValueNode("V2", ["A"]))
-AddNode!(diagram, ValueNode("V3", ["O", "A"]))
+add_node!(diagram, ValueNode("V1", ["T"]))
+add_node!(diagram, ValueNode("V2", ["A"]))
+add_node!(diagram, ValueNode("V3", ["O", "A"]))
 
-GenerateArcs!(diagram)
+generate_arcs!(diagram)
+
+X_O = ProbabilityMatrix(diagram, "O")
+set_probability!(X_O, ["peach"], 0.8)
+set_probability!(X_O, ["lemon"], 0.2)
+add_probabilities!(diagram, "O", X_O)
 
 
-X_R = zeros(2, 2, 3)
+X_R = ProbabilityMatrix(diagram, "R")
 X_R[1, 1, :] = [1,0,0]
 X_R[1, 2, :] = [0,1,0]
 X_R[2, 1, :] = [1,0,0]
 X_R[2, 2, :] = [0,0,1]
-AddProbabilities!(diagram, "R", X_R)
-AddProbabilities!(diagram, "O", [0.2, 0.8])
+add_probabilities!(diagram, "R", X_R)
 
-AddConsequences!(diagram, "V1", [0.0, -25.0])
-AddConsequences!(diagram, "V2", [100.0, 40.0, 0.0])
-AddConsequences!(diagram, "V3", [-200.0 0.0 0.0; -40.0 -20.0 0.0])
+add_utilities!(diagram, "V1", [0, -25])
+add_utilities!(diagram, "V2", [100, 40, 0])
 
-GenerateDiagram!(diagram)
+Y_V3 = UtilityMatrix(diagram, "V3")
+set_utility!(Y_V3, ["lemon", "buy without guarantee"], -200)
+set_utility!(Y_V3, ["lemon", "buy with guarantee"], 0)
+set_utility!(Y_V3, ["lemon", "don't buy"], 0)
+set_utility!(Y_V3, ["peach", :], [-40, -20, 0])
+add_utilities!(diagram, "V3", Y_V3)
+
+generate_diagram!(diagram)
 
 
 @info("Creating the decision model.")
