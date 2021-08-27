@@ -7,51 +7,47 @@ const N = 4
 @info("Creating the influence diagram.")
 diagram = InfluenceDiagram()
 
-AddNode!(diagram, ChanceNode("H1", [], ["ill", "healthy"]))
+add_node!(diagram, ChanceNode("H1", [], ["ill", "healthy"]))
 for i in 1:N-1
     # Testing result
-    AddNode!(diagram, ChanceNode("T$i", ["H$i"], ["positive", "negative"]))
+    add_node!(diagram, ChanceNode("T$i", ["H$i"], ["positive", "negative"]))
     # Decision to treat
-    AddNode!(diagram, DecisionNode("D$i", ["T$i"], ["treat", "pass"]))
+    add_node!(diagram, DecisionNode("D$i", ["T$i"], ["treat", "pass"]))
     # Cost of treatment
-    AddNode!(diagram, ValueNode("C$i", ["D$i"]))
+    add_node!(diagram, ValueNode("C$i", ["D$i"]))
     # Health of next period
-    AddNode!(diagram, ChanceNode("H$(i+1)", ["H$(i)", "D$(i)"], ["ill", "healthy"]))
+    add_node!(diagram, ChanceNode("H$(i+1)", ["H$(i)", "D$(i)"], ["ill", "healthy"]))
 end
-AddNode!(diagram, ValueNode("SP", ["H$N"]))
+add_node!(diagram, ValueNode("SP", ["H$N"]))
 
-GenerateArcs!(diagram)
-# Declare proability matrix for health nodes
-X_H = zeros(2, 2, 2)
-X_H[2, 2, 1] = 0.2
-X_H[2, 2, 2] = 1.0 - X_H[2, 2, 1]
-X_H[2, 1, 1] = 0.1
-X_H[2, 1, 2] = 1.0 - X_H[2, 1, 1]
-X_H[1, 2, 1] = 0.9
-X_H[1, 2, 2] = 1.0 - X_H[1, 2, 1]
-X_H[1, 1, 1] = 0.5
-X_H[1, 1, 2] = 1.0 - X_H[1, 1, 1]
+generate_arcs!(diagram)
 
-# Declare proability matrix for test results nodes
-X_T = zeros(2, 2)
-X_T[1, 1] = 0.8
-X_T[1, 2] = 1.0 - X_T[1, 1]
-X_T[2, 2] = 0.9
-X_T[2, 1] = 1.0 - X_T[2, 2]
+# Add probabilities for node H1
+add_probabilities!(diagram, "H1", [0.1, 0.9])
 
-AddProbabilities!(diagram, "H1", [0.1, 0.9])
+# Declare proability matrix for health nodes H_2, ... H_N-1, which have identical information sets and states
+X_H = ProbabilityMatrix(diagram, "H2")
+set_probability!(X_H, ["healthy", "pass", :], [0.2, 0.8])
+set_probability!(X_H, ["healthy", "treat", :], [0.1, 0.9])
+set_probability!(X_H, ["ill", "pass", :], [0.9, 0.1])
+set_probability!(X_H, ["ill", "treat", :], [0.5, 0.5])
+
+# Declare proability matrix for test result nodes T_1...T_N
+X_T = ProbabilityMatrix(diagram, "T1")
+set_probability!(X_T, ["ill", "positive"], 0.8)
+set_probability!(X_T, ["ill", "negative"], 0.2)
+set_probability!(X_T, ["healthy", "negative"], 0.9)
+set_probability!(X_T, ["healthy", "positive"], 0.1)
+
 for i in 1:N-1
-    # Testing result
-    AddProbabilities!(diagram, "T$i", X_T)
-    # Cost of treatment
-    AddConsequences!(diagram, "C$i", [-100.0, 0.0])
-    # Health of next period
-    AddProbabilities!(diagram, "H$(i+1)", X_H)
+    add_probabilities!(diagram, "T$i", X_T)
+    add_utilities!(diagram, "C$i", [-100.0, 0.0])
+    add_probabilities!(diagram, "H$(i+1)", X_H)
 end
-# Selling price
-AddConsequences!(diagram, "SP", [300.0, 1000.0])
 
-GenerateDiagram!(diagram, positive_path_utility = true)
+add_utilities!(diagram, "SP", [300.0, 1000.0])
+
+generate_diagram!(diagram, positive_path_utility = true)
 
 
 @info("Creating the decision model.")
