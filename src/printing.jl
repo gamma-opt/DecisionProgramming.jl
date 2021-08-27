@@ -65,22 +65,24 @@ print_state_probabilities(sprobs, [c.j for c in C])
 print_state_probabilities(sprobs, [d.j for d in D])
 ```
 """
-function print_state_probabilities(sprobs::StateProbabilities, nodes::Vector{Node}; prob_fmt="%f")
-    probs = sprobs.probs
-    fixed = sprobs.fixed
+function print_state_probabilities(diagram::InfluenceDiagram, state_probabilities::StateProbabilities, nodes::Vector{Name}; prob_fmt="%f")
+    node_indices = [findfirst(j -> j ==node, diagram.Names) for node in nodes]
+
+    probs = state_probabilities.probs
+    fixed = state_probabilities.fixed
 
     prob(p, state) = if 1≤state≤length(p) p[state] else NaN end
     fix_state(i) = if i∈keys(fixed) string(fixed[i]) else "" end
 
     # Maximum number of states
-    limit = maximum(length(probs[i]) for i in nodes)
+    limit = maximum(length(probs[i]) for i in node_indices)
     states = 1:limit
     df = DataFrame()
     df[!, :Node] = nodes
     for state in states
-        df[!, Symbol("State $state")] = [prob(probs[i], state) for i in nodes]
+        df[!, Symbol("State $state")] = [prob(probs[i], state) for i in node_indices]
     end
-    df[!, Symbol("Fixed state")] = [fix_state(i) for i in nodes]
+    df[!, Symbol("Fixed state")] = [fix_state(i) for i in node_indices]
     pretty_table(df; formatters = ft_printf(prob_fmt, (first(states)+1):(last(states)+1)))
 end
 
