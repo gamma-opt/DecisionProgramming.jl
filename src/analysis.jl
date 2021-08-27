@@ -34,7 +34,7 @@ function CompatiblePaths(diagram::InfluenceDiagram, Z::DecisionStrategy)
 end
 
 function compatible_path(S::States, C::Vector{Node}, Z::DecisionStrategy, s_C::Path)
-    s = Array{Int}(undef, length(S))
+    s = Array{State}(undef, length(S))
     for (c, s_C_j) in zip(C, s_C)
         s[c] = s_C_j
     end
@@ -49,7 +49,7 @@ function Base.iterate(S_Z::CompatiblePaths)
         iter = paths(S_Z.S[S_Z.C])
     else
         ks = sort(collect(keys(S_Z.fixed)))
-        fixed = Dict{Int, Int}(i => S_Z.fixed[k] for (i, k) in enumerate(ks))
+        fixed = Dict{Node, State}(i => S_Z.fixed[k] for (i, k) in enumerate(ks))
         iter = paths(S_Z.S[S_Z.C], fixed)
     end
     next = iterate(iter)
