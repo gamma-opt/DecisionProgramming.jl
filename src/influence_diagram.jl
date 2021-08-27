@@ -445,7 +445,7 @@ function ProbabilityMatrix(diagram::InfluenceDiagram, node::Name)
         )
         push!(indices, states)
     end
-    matrix = Array{Float64}(undef, diagram.S[nodes]...)
+    matrix = fill(0.0, diagram.S[nodes]...)
 
     return ProbabilityMatrix(names, indices, matrix)
 end
@@ -479,12 +479,12 @@ function set_probability!(probability_matrix::ProbabilityMatrix, scenario::Array
 end
 
 
-function add_probabilities!(diagram::InfluenceDiagram, name::Name, probabilities::AbstractArray{Float64, N}) where N
-    c = findfirst(x -> x==name, diagram.Names)
-    # TODO should there be a check that all cells of array are filled
+function add_probabilities!(diagram::InfluenceDiagram, node::Name, probabilities::AbstractArray{Float64, N}) where N
+    c = findfirst(x -> x==node, diagram.Names)
 
-    if size(probabilities) == Tuple((diagram.S[n] for n in (diagram.I_j[c]..., c)))
+    if size(probabilities) == Tuple((diagram.S[j] for j in (diagram.I_j[c]..., c)))
         if isa(probabilities, ProbabilityMatrix)
+            # Check that probabilities sum to one happesn in Probabilities
             push!(diagram.X, Probabilities(c, probabilities.matrix))
         else
             push!(diagram.X, Probabilities(c, probabilities))
