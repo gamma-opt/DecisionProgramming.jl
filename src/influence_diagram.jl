@@ -482,6 +482,10 @@ end
 function add_probabilities!(diagram::InfluenceDiagram, node::Name, probabilities::AbstractArray{Float64, N}) where N
     c = findfirst(x -> x==node, diagram.Names)
 
+    if c ∈ [j.c for j in diagram.X]
+        throw(DomainError("Probabilities should be added only once for each node."))
+    end
+
     if size(probabilities) == Tuple((diagram.S[j] for j in (diagram.I_j[c]..., c)))
         if isa(probabilities, ProbabilityMatrix)
             # Check that probabilities sum to one happesn in Probabilities
@@ -565,6 +569,10 @@ end
 
 function add_utilities!(diagram::InfluenceDiagram, node::Name, utilities::AbstractArray{T, N}) where {N,T<:Real}
     v = findfirst(x -> x==node, diagram.Names)
+    
+    if v ∈ [j.v for j in diagram.Y]
+        throw(DomainError("Utilities should be added only once for each node."))
+    end
 
     if size(utilities) == Tuple((diagram.S[j] for j in diagram.I_j[v]))
         if isa(utilities, UtilityMatrix)
@@ -698,13 +706,7 @@ function generate_diagram!(diagram::InfluenceDiagram;
     positive_path_utility::Bool=false,
     negative_path_utility::Bool=false)
 
-    # Check correct number of probabilities and consequences were added
-    if sort([x.c for x in diagram.X]) != diagram.C
-        throw(DomainError("A probability matrix should be defined for each chance node exactly once."))
-    end
-    if sort([y.v for y in diagram.Y]) != diagram.V
-        throw(DomainError("A consequence matrix should be defined for each value node exactly once."))
-    end
+
     # Sort probabilities and consequences
     sort!(diagram.X, by = x -> x.c)
     sort!(diagram.Y, by = x -> x.v)
