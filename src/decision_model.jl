@@ -21,21 +21,20 @@ struct DecisionVariables
 end
 
 """
-    DecisionVariables(model::Model, S::States, D::Vector{DecisionNode}; names::Bool=false, name::String="z")
+    DecisionVariables(model::Model,  diagram::InfluenceDiagram; names::Bool=false, name::String="z")
 
 Create decision variables and constraints.
 
 # Arguments
 - `model::Model`: JuMP model into which variables are added.
-- `S::States`: States structure associated with the influence diagram.
-- `D::Vector{DecisionNode}`: Vector containing decicion nodes.
+- `diagram::InfluenceDiagram`: Influence diagram structure.
 - `names::Bool`: Use names or have JuMP variables be anonymous.
 - `name::String`: Prefix for predefined decision variable naming convention.
 
 
 # Examples
 ```julia
-z = DecisionVariables(model, S, D)
+julia> z = DecisionVariables(model, diagram)
 ```
 """
 function DecisionVariables(model::Model, diagram::InfluenceDiagram; names::Bool=false, name::String="z")
@@ -92,9 +91,8 @@ end
 
 """
     PathCompatibilityVariables(model::Model,
-        z::DecisionVariables,
-        S::States,
-        P::AbstractPathProbability;
+        diagram::InfluenceDiagram,
+        z::DecisionVariables;
         names::Bool=false,
         name::String="x",
         forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
@@ -105,10 +103,8 @@ Create path compatibility variables and constraints.
 
 # Arguments
 - `model::Model`: JuMP model into which variables are added.
+- `diagram::InfluenceDiagram`: Influence diagram structure.
 - `z::DecisionVariables`: Decision variables from `DecisionVariables` function.
-- `S::States`: States structure associated with the influence diagram.
-- `P::AbstractPathProbability`: Path probabilities structure for which the function
-  `P(s)` is defined and returns the path probabilities for path `s`.
 - `names::Bool`: Use names or have JuMP variables be anonymous.
 - `name::String`: Prefix for predefined decision variable naming convention.
 - `forbidden_paths::Vector{ForbiddenPath}`: The forbidden subpath structures.
@@ -120,7 +116,7 @@ Create path compatibility variables and constraints.
 
 # Examples
 ```julia
-x_s = PathCompatibilityVariables(model, z, S, P; probability_cut = false)
+julia> x_s = PathCompatibilityVariables(model, diagram; probability_cut = false)
 ```
 """
 function PathCompatibilityVariables(model::Model,
@@ -159,13 +155,13 @@ function PathCompatibilityVariables(model::Model,
 end
 
 """
-    lazy_probability_cut(model::Model, x_s::PathCompatibilityVariables, P::AbstractPathProbability)
+    lazy_probability_cut(model::Model, diagram::InfluenceDiagram, x_s::PathCompatibilityVariables)
 
-Adds a probability cut to the model as a lazy constraint.
+Add a probability cut to the model as a lazy constraint.
 
 # Examples
 ```julia
-lazy_probability_cut(model, x_s, P)
+julia> lazy_probability_cut(model, diagram, x_s)
 ```
 
 !!! note
@@ -190,25 +186,22 @@ end
 
 """
     expected_value(model::Model,
-        x_s::PathCompatibilityVariables,
-        U::AbstractPathUtility,
-        P::AbstractPathProbability;
+        diagram::InfluenceDiagram,
+        x_s::PathCompatibilityVariables;
         probability_scale_factor::Float64=1.0)
 
 Create an expected value objective.
 
 # Arguments
 - `model::Model`: JuMP model into which variables are added.
+- `diagram::InfluenceDiagram`: Influence diagram structure.
 - `x_s::PathCompatibilityVariables`: Path compatibility variables.
-- `S::States`: States structure associated with the influence diagram.
-- `P::AbstractPathProbability`: Path probabilities structure for which the function
-  `P(s)` is defined and returns the path probabilities for path `s`.
 - `probability_scale_factor::Float64`: Multiplies the path probabilities by this factor.
 
 # Examples
 ```julia
-EV = expected_value(model, x_s, U, P)
-EV = expected_value(model, x_s, U, P; probability_scale_factor = 10.0)
+julia> EV = expected_value(model, diagram, x_s)
+julia> EV = expected_value(model, diagram, x_s; probability_scale_factor = 10.0)
 ```
 """
 function expected_value(model::Model,
@@ -225,9 +218,8 @@ end
 
 """
     conditional_value_at_risk(model::Model,
+        diagram,
         x_s::PathCompatibilityVariables{N},
-        U::AbstractPathUtility,
-        P::AbstractPathProbability,
         α::Float64;
         probability_scale_factor::Float64=1.0) where N
 
@@ -235,10 +227,8 @@ Create a conditional value-at-risk (CVaR) objective.
 
 # Arguments
 - `model::Model`: JuMP model into which variables are added.
+- `diagram::InfluenceDiagram`: Influence diagram structure.
 - `x_s::PathCompatibilityVariables`: Path compatibility variables.
-- `S::States`: States structure associated with the influence diagram.
-- `P::AbstractPathProbability`: Path probabilities structure for which the function
-  `P(s)` is defined and returns the path probabilities for path `s`.
 - `α::Float64`: Probability level at which conditional value-at-risk is optimised.
 - `probability_scale_factor::Float64`: Adjusts conditional value at risk model to
    be compatible with the expected value expression if the probabilities were scaled there.
@@ -247,9 +237,9 @@ Create a conditional value-at-risk (CVaR) objective.
 
 # Examples
 ```julia
-α = 0.05  # Parameter such that 0 ≤ α ≤ 1
-CVaR = conditional_value_at_risk(model, x_s, U, P, α)
-CVaR = conditional_value_at_risk(model, x_s, U, P, α; probability_scale_factor = 10.0)
+julia> α = 0.05  # Parameter such that 0 ≤ α ≤ 1
+julia> CVaR = conditional_value_at_risk(model, x_s, U, P, α)
+julia> CVaR = conditional_value_at_risk(model, x_s, U, P, α; probability_scale_factor = 10.0)
 ```
 """
 function conditional_value_at_risk(model::Model,
