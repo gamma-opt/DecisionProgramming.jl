@@ -57,7 +57,7 @@ function Base.iterate(S_Z::CompatiblePaths)
         iter = paths(S_Z.S[S_Z.C])
     else
         ks = sort(collect(keys(S_Z.fixed)))
-        fixed = Dict{Node, State}(i => S_Z.fixed[k] for (i, k) in enumerate(ks))
+        fixed = Dict{Node, State}(Node(i) => S_Z.fixed[k] for (i, k) in enumerate(S_Z.C) if k in ks)
         iter = paths(S_Z.S[S_Z.C], fixed)
     end
     next = iterate(iter)
@@ -174,7 +174,8 @@ function StateProbabilities(diagram::InfluenceDiagram, Z::DecisionStrategy, node
     state_index = findfirst(j -> j == state, diagram.States[node_index])
 
     prior = prior_probabilities.probs[node_index][state_index]
-    fixed = prior_probabilities.fixed
+    fixed = deepcopy(prior_probabilities.fixed)
+
     push!(fixed, node_index => state_index)
     probs = Dict(i => zeros(diagram.S[i]) for i in 1:length(diagram.S))
     for s in CompatiblePaths(diagram, Z, fixed), i in 1:length(diagram.S)
