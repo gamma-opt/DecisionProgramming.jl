@@ -2,13 +2,13 @@ using DataFrames, PrettyTables
 using StatsBase, StatsBase.Statistics
 
 """
-    function print_decision_strategy(S::States, Z::DecisionStrategy)
+    print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy, state_probabilities::StateProbabilities; show_incompatible_states = false)
 
 Print decision strategy.
 
 # Examples
 ```julia
-print_decision_strategy(S, Z)
+>julia print_decision_strategy(diagram, Z, S_probabilities)
 ```
 """
 function print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy, state_probabilities::StateProbabilities; show_incompatible_states = false)
@@ -35,18 +35,18 @@ function print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy,
 end
 
 """
-    function print_utility_distribution(udist::UtilityDistribution; util_fmt="%f", prob_fmt="%f")
+    print_utility_distribution(U_distribution::UtilityDistribution; util_fmt="%f", prob_fmt="%f")
 
 Print utility distribution.
 
 # Examples
 ```julia
-udist = UtilityDistribution(S, P, U, Z)
-print_utility_distribution(udist)
+>julia U_distribution = UtilityDistribution(diagram, Z)
+>julia print_utility_distribution(U_distribution)
 ```
 """
-function print_utility_distribution(udist::UtilityDistribution; util_fmt="%f", prob_fmt="%f")
-    df = DataFrame(Utility = udist.u, Probability = udist.p)
+function print_utility_distribution(U_distribution::UtilityDistribution; util_fmt="%f", prob_fmt="%f")
+    df = DataFrame(Utility = U_distribution.u, Probability = U_distribution.p)
     formatters = (
         ft_printf(util_fmt, [1]),
         ft_printf(prob_fmt, [2]))
@@ -54,19 +54,19 @@ function print_utility_distribution(udist::UtilityDistribution; util_fmt="%f", p
 end
 
 """
-    function print_state_probabilities(sprobs::StateProbabilities, nodes::Vector{Node}; prob_fmt="%f")
+    print_state_probabilities(sprobs::StateProbabilities, nodes::Vector{Node}; prob_fmt="%f")
 
 Print state probabilities with fixed states.
 
 # Examples
 ```julia
-sprobs = StateProbabilities(S, P, U, Z)
-print_state_probabilities(sprobs, [c.j for c in C])
-print_state_probabilities(sprobs, [d.j for d in D])
+>julia S_probabilities = StateProbabilities(diagram, Z)
+>julia print_state_probabilities(S_probabilities, ["R"])
+>julia print_state_probabilities(S_probabilities, ["A"])
 ```
 """
 function print_state_probabilities(diagram::InfluenceDiagram, state_probabilities::StateProbabilities, nodes::Vector{Name}; prob_fmt="%f")
-    node_indices = [findfirst(j -> j ==node, diagram.Names) for node in nodes]
+    node_indices = [findfirst(j -> j==node, diagram.Names) for node in nodes]
 
     probs = state_probabilities.probs
     fixed = state_probabilities.fixed
@@ -87,13 +87,13 @@ function print_state_probabilities(diagram::InfluenceDiagram, state_probabilitie
 end
 
 """
-function print_statistics(udist::UtilityDistribution; fmt = "%f")
+    print_statistics(U_distribution::UtilityDistribution; fmt = "%f")
 
 Print statistics about utility distribution.
 """
-function print_statistics(udist::UtilityDistribution; fmt = "%f")
-    u = udist.u
-    w = ProbabilityWeights(udist.p)
+function print_statistics(U_distribution::UtilityDistribution; fmt = "%f")
+    u = U_distribution.u
+    w = ProbabilityWeights(U_distribution.p)
     names = ["Mean", "Std", "Skewness", "Kurtosis"]
     statistics = [mean(u, w), std(u, w, corrected=false), skewness(u, w), kurtosis(u, w)]
     df = DataFrame(Name = names, Statistics = statistics)
@@ -101,12 +101,12 @@ function print_statistics(udist::UtilityDistribution; fmt = "%f")
 end
 
 """
-    function print_risk_measures(udist::UtilityDistribution, αs::Vector{Float64}; fmt = "%f")
+    print_risk_measures(U_distribution::UtilityDistribution, αs::Vector{Float64}; fmt = "%f")
 
 Print risk measures.
 """
-function print_risk_measures(udist::UtilityDistribution, αs::Vector{Float64}; fmt = "%f")
-    u, p = udist.u, udist.p
+function print_risk_measures(U_distribution::UtilityDistribution, αs::Vector{Float64}; fmt = "%f")
+    u, p = U_distribution.u, U_distribution.p
     VaR = [value_at_risk(u, p, α) for α in αs]
     CVaR = [conditional_value_at_risk(u, p, α) for α in αs]
     df = DataFrame(α = αs, VaR = VaR, CVaR = CVaR)
