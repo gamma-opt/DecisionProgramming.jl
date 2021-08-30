@@ -1,25 +1,27 @@
 # API Reference
 `DecisionProgramming.jl` API reference.
 
+
 ## `influence_diagram.jl`
 ### Nodes
 ```@docs
 Node
+Name
+AbstractNode
 ChanceNode
 DecisionNode
 ValueNode
 State
 States
-States(::Vector{Tuple{State, Vector{Node}}})
-validate_influence_diagram
 ```
 
 ### Paths
 ```@docs
 Path
-paths(::AbstractVector{State})
-paths(::AbstractVector{State}, ::Dict{Node, State})
 ForbiddenPath
+FixedPath
+paths(::AbstractVector{State})
+paths(::AbstractVector{State}, FixedPath)
 ```
 
 ### Probabilities
@@ -33,9 +35,10 @@ AbstractPathProbability
 DefaultPathProbability
 ```
 
-### Consequences
+### Utilities
 ```@docs
-Consequences
+Utility
+Utilities
 ```
 
 ### Path Utility
@@ -43,6 +46,18 @@ Consequences
 AbstractPathUtility
 DefaultPathUtility
 ```
+
+### InfluenceDiagram
+InfluenceDiagram
+generate_arcs!
+generate_diagram!
+add_node!
+ProbabilityMatrix
+set_probability!
+add_probabilities!
+UtilityMatrix
+set_utility!
+add_utilities!
 
 ### Decision Strategy
 ```@docs
@@ -61,10 +76,8 @@ lazy_probability_cut(::Model, ::PathCompatibilityVariables, ::AbstractPathProbab
 
 ### Objective Functions
 ```@docs
-PositivePathUtility
-NegativePathUtility
-expected_value(::Model, ::PathCompatibilityVariables, ::AbstractPathUtility, ::AbstractPathProbability; ::Float64)
-conditional_value_at_risk(::Model, ::PathCompatibilityVariables{N}, ::AbstractPathUtility, ::AbstractPathProbability, ::Float64; ::Float64) where N
+expected_value(::Model, ::InfluenceDiagram, ::PathCompatibilityVariables; ::Float64)
+conditional_value_at_risk(::Model, ::InfluenceDiagram, ::PathCompatibilityVariables{N}, ::Float64; ::Float64) where N
 ```
 
 ### Decision Strategy from Variables
@@ -76,13 +89,14 @@ DecisionStrategy(::DecisionVariables)
 ## `analysis.jl`
 ```@docs
 CompatiblePaths
+CompatiblePaths(::InfluenceDiagram, ::DecisionStrategy, ::FixedPath)
 UtilityDistribution
-UtilityDistribution(::States, ::AbstractPathProbability, ::AbstractPathUtility, ::DecisionStrategy)
+UtilityDistribution(::InfluenceDiagram, ::DecisionStrategy)
 StateProbabilities
-StateProbabilities(::States, ::AbstractPathProbability, ::DecisionStrategy)
-StateProbabilities(::States, ::AbstractPathProbability, ::DecisionStrategy, ::Node, ::State, ::StateProbabilities)
-value_at_risk(::Vector{Float64}, ::Vector{Float64}, ::Float64)
-conditional_value_at_risk(::Vector{Float64}, ::Vector{Float64}, ::Float64)
+StateProbabilities(::InfluenceDiagram, ::DecisionStrategy)
+StateProbabilities(::InfluenceDiagram, ::DecisionStrategy, ::Name, ::Name, ::StateProbabilities)
+value_at_risk(::UtilityDistribution, ::Float64)
+conditional_value_at_risk(::UtilityDistribution, ::Float64)
 ```
 
 ## `printing.jl`
