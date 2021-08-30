@@ -484,7 +484,7 @@ end
 
 Base.size(PM::ProbabilityMatrix) = size(PM.matrix)
 Base.getindex(PM::ProbabilityMatrix, I::Vararg{Int,N}) where N = getindex(PM.matrix, I...)
-Base.setindex!(PM::ProbabilityMatrix, p::Float64, I::Vararg{Int,N}) where N = (PM.matrix[I...] = p)
+Base.setindex!(PM::ProbabilityMatrix, p::T, I::Vararg{Int,N}) where {N, T<:Real} = (PM.matrix[I...] = p)
 Base.setindex!(PM::ProbabilityMatrix{N}, X, I::Vararg{Any, N}) where N = (PM.matrix[I...] .= X)
 
 """
@@ -534,7 +534,7 @@ julia> set_probability!(X_O, ["peach"], 0.8)
 julia> set_probability!(X_O, ["lemon"], 0.2)
 ```
 """
-function set_probability!(probability_matrix::ProbabilityMatrix, scenario::Array{String}, probability::Float64)
+function set_probability!(probability_matrix::ProbabilityMatrix, scenario::Array{String}, probability::Real)
     index = Vector{Int}()
     for (i, s) in enumerate(scenario)
         if get(probability_matrix.indices[i], s, 0) == 0
@@ -558,7 +558,7 @@ julia> X_O = ProbabilityMatrix(diagram, "O")
 julia> set_probability!(X_O, ["lemon", "peach"], [0.2, 0.8])
 ```
 """
-function set_probability!(probability_matrix::ProbabilityMatrix, scenario::Array{Any}, probabilities::Array{Float64})
+function set_probability!(probability_matrix::ProbabilityMatrix, scenario::Array{Any}, probabilities::Array{T}) where T<:Real
     index = Vector{Any}()
     for (i, s) in enumerate(scenario)
         if isa(s, Colon)
