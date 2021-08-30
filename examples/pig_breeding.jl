@@ -18,7 +18,7 @@ for i in 1:N-1
     # Health of next period
     add_node!(diagram, ChanceNode("H$(i+1)", ["H$(i)", "D$(i)"], ["ill", "healthy"]))
 end
-add_node!(diagram, ValueNode("SP", ["H$N"]))
+add_node!(diagram, ValueNode("MP", ["H$N"]))
 
 generate_arcs!(diagram)
 
@@ -41,11 +41,14 @@ set_probability!(X_T, ["healthy", "positive"], 0.1)
 
 for i in 1:N-1
     add_probabilities!(diagram, "T$i", X_T)
-    add_utilities!(diagram, "C$i", [-100.0, 0.0])
     add_probabilities!(diagram, "H$(i+1)", X_H)
 end
 
-add_utilities!(diagram, "SP", [300.0, 1000.0])
+for i in 1:N-1
+    add_utilities!(diagram, "C$i", [-100.0, 0.0])
+end
+
+add_utilities!(diagram, "MP", [300.0, 1000.0])
 
 generate_diagram!(diagram, positive_path_utility = true)
 
