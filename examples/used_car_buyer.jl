@@ -7,9 +7,8 @@ using DecisionProgramming
 diagram = InfluenceDiagram()
 
 add_node!(diagram, ChanceNode("O", [], ["lemon", "peach"]))
-add_node!(diagram, ChanceNode("R", ["O", "T"], ["no test", "lemon", "peach"]))
-
 add_node!(diagram, DecisionNode("T", [], ["no test", "test"]))
+add_node!(diagram, ChanceNode("R", ["O", "T"], ["no test", "lemon", "peach"]))
 add_node!(diagram, DecisionNode("A", ["R"], ["buy without guarantee", "buy with guarantee", "don't buy"]))
 
 add_node!(diagram, ValueNode("V1", ["T"]))
@@ -25,14 +24,23 @@ add_probabilities!(diagram, "O", X_O)
 
 
 X_R = ProbabilityMatrix(diagram, "R")
-X_R[1, 1, :] = [1,0,0]
-X_R[1, 2, :] = [0,1,0]
-X_R[2, 1, :] = [1,0,0]
-X_R[2, 2, :] = [0,0,1]
+set_probability!(X_R, ["lemon", "no test", :], [1,0,0])
+set_probability!(X_R, ["lemon", "test", :], [0,1,0])
+set_probability!(X_R, ["peach", "no test", :], [1,0,0])
+set_probability!(X_R, ["peach", "test", :], [0,0,1])
 add_probabilities!(diagram, "R", X_R)
 
-add_utilities!(diagram, "V1", [0, -25])
-add_utilities!(diagram, "V2", [100, 40, 0])
+Y_V1 = UtilityMatrix(diagram, "V1")
+set_utility!(Y_V1, ["test"], -25)
+set_utility!(Y_V1, ["no test"], 0)
+add_utilities!(diagram, "V1", Y_V1)
+
+
+Y_V2 = UtilityMatrix(diagram, "V2")
+set_utility!(Y_V2, ["buy without guarantee"], 100)
+set_utility!(Y_V2, ["buy with guarantee"], 40)
+set_utility!(Y_V2, ["don't buy"], 0)
+add_utilities!(diagram, "V2", Y_V2)
 
 Y_V3 = UtilityMatrix(diagram, "V3")
 set_utility!(Y_V3, ["lemon", "buy without guarantee"], -200)
