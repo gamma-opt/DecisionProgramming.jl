@@ -63,7 +63,7 @@ add_node!(diagram, ValueNode("V3", ["O", "A"]))
 ```
 
 ### Generate arcs
-Now that all of the nodes have been added to our influence diagram we must generate the arcs. This step orders the nodes, gives them indices and reorganises the information into the appropriate form.
+Now that all of the nodes have been added to our influence diagram we generate the arcs between the nodes. This step automatically orders the nodes, gives them indices and reorganises the information into the appropriate form.
 ```julia
 generate_arcs!(diagram)
 ```
@@ -90,7 +90,7 @@ add_probabilities!(diagram, "R", X_R)
 ```
 
 
-### Testing Cost
+### Utilities 
 We continue by defining the utilities associated with value nodes. The utilities $Y_j(𝐬_{I(j)})$ are defined and added similarly to the probabilities.
 
 Value node $V1$ has only node $T$ in its information set and node $T$ only has two states. Therefore, node $V1$ needs to map exactly two utility values, on for state $tes$ and the other for $no test$.
@@ -102,7 +102,7 @@ set_utility!(Y_V1, ["no test"], 0)
 add_utilities!(diagram, "V1", Y_V1)
 ```
 
-### Base Profit of Purchase
+We then define the utilities describing the base profit of of the purchase.
 ```julia
 Y_V2 = UtilityMatrix(diagram, "V2")
 set_utility!(Y_V2, ["buy without guarantee"], 100)
@@ -111,8 +111,7 @@ set_utility!(Y_V2, ["don't buy"], 0)
 add_utilities!(diagram, "V2", Y_V2)
 ```
 
-### Repair Cost
-The rows of the utilities matrix `Y_V3` correspond to the state of the car, while the columns correspond to the decision made in node $A$. The utilities can be added as follows. Notice that the utility values for the second row are added in one line, in this case it is important to give the utility values in the right order. The order of the columns is determined by the order in which the states are given when declaring node $A$. See the [usage page](../usage.md) for more on this more compact syntax.
+Finally, we add the utilities corresponding to the repair costs. The rows of the utilities matrix `Y_V3` correspond to the state of the car, while the columns correspond to the decision made in node $A$. The utilities can be added as follows. Notice that the utility values for the second row are added in one line, in this case it is important to give the utility values in the right order. The order of the columns is determined by the order in which the states are given when declaring node $A$. See the [usage page](../usage.md) for more on this more compact syntax.
 ```julia
 Y_V3 = UtilityMatrix(diagram, "V3")
 set_utility!(Y_V3, ["lemon", "buy without guarantee"], -200)
@@ -153,7 +152,6 @@ optimize!(model)
 
 
 ## Analyzing Results
-### Decision Strategy
 Once the model is solved, we extract the results. The results are the decision strategy, state probabilities and utility distribution.
 
 ```julia
@@ -162,9 +160,11 @@ S_probabilities = StateProbabilities(diagram, Z)
 U_distribution = UtilityDistribution(diagram, Z)
 ```
 
+### Decision Strategy
+
 We obtain the following optimal decision strategy:
 ```julia-repl
-julia> print_decision_strategy(S, Z)
+julia> print_decision_strategy(diagram, Z, S_probabilities)
 ┌───────────────┐
 │ Decision in T │
 ├───────────────┤
@@ -193,7 +193,7 @@ julia> print_utility_distribution(U_distribution)
 From the utility distribution, we can see that Joe's profit with this strategy is 15 USD, with a 20% probability (the car is a lemon) and 35 USD with an 80% probability (the car is a peach).
 
 ```julia-repl
-julia> print_statistics(udist)
+julia> print_statistics(U_distribution)
 ┌──────────┬────────────┐
 │     Name │ Statistics │
 │   String │    Float64 │
