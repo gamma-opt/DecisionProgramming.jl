@@ -80,19 +80,15 @@ print_utility_distribution(U_distribution)
 @info("Printing statistics")
 print_statistics(U_distribution)
 
-#=
 @info("State probabilities:")
-sprobs = StateProbabilities(diagram.S, diagram.P, Z)
-print_state_probabilities(sprobs, health)
-print_state_probabilities(sprobs, test)
-print_state_probabilities(sprobs, treat)
+print_state_probabilities(diagram, S_probabilities, [["H$i" for i in 1:N]...])
+print_state_probabilities(diagram, S_probabilities, [["T$i" for i in 1:N-1]...])
+print_state_probabilities(diagram, S_probabilities, [["D$i" for i in 1:N-1]...])
 
 @info("Conditional state probabilities")
-node = 1
-for state in 1:2
-    sprobs2 = StateProbabilities(diagram.S, diagram.P, Z, node, state, sprobs)
-    print_state_probabilities(sprobs2, health)
-    print_state_probabilities(sprobs2, test)
-    print_state_probabilities(sprobs2, treat)
+for state in ["ill", "healthy"]
+    S_probabilities2 = StateProbabilities(diagram, Z, "H1", state, S_probabilities)
+    print_state_probabilities(diagram, S_probabilities2, [["H$i" for i in 1:N]...])
+    print_state_probabilities(diagram, S_probabilities2, [["T$i" for i in 1:N-1]...])
+    print_state_probabilities(diagram, S_probabilities2, [["D$i" for i in 1:N-1]...])
 end
-=#
