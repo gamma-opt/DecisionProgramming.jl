@@ -485,7 +485,7 @@ end
 Base.size(PM::ProbabilityMatrix) = size(PM.matrix)
 Base.getindex(PM::ProbabilityMatrix, I::Vararg{Int,N}) where N = getindex(PM.matrix, I...)
 Base.setindex!(PM::ProbabilityMatrix, p::T, I::Vararg{Int,N}) where {N, T<:Real} = (PM.matrix[I...] = p)
-Base.setindex!(PM::ProbabilityMatrix{N}, X, I::Vararg{Any, N}) where N = (PM.matrix[I...] .= X)
+Base.setindex!(PM::ProbabilityMatrix{N}, X::Array{T}, I::Vararg{Any, N}) where {N, T<:Real} = (PM.matrix[I...] .= X)
 
 """
     function ProbabilityMatrix(diagram::InfluenceDiagram, node::Name)
@@ -630,7 +630,7 @@ end
 Base.size(UM::UtilityMatrix) = size(UM.matrix)
 Base.getindex(UM::UtilityMatrix, I::Vararg{Int,N}) where N = getindex(UM.matrix, I...)
 Base.setindex!(UM::UtilityMatrix, y::T, I::Vararg{Int,N}) where {N, T<:Real} = (UM.matrix[I...] = y)
-Base.setindex!(UM::UtilityMatrix{N}, Y, I::Vararg{Any, N}) where N = (UM.matrix[I...] .= Y)
+Base.setindex!(UM::UtilityMatrix{N}, Y::Array{T}, I::Vararg{Any, N}) where {N, T<:Real} = (UM.matrix[I...] .= Y)
 
 """
     function UtilityMatrix(diagram::InfluenceDiagram, node::Name)
