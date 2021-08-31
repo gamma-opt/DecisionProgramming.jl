@@ -57,9 +57,9 @@ end
 """
     const State = Int
 
-Primitive type for the number of states. Alias for `Int`.
+Primitive type for the number of states. Alias for `Int16`.
 """
-const State = Int
+const State = Int16
 
 
 """
@@ -585,6 +585,9 @@ julia> set_probability!(X_O, ["lemon", "peach"], [0.2, 0.8])
 julia> add_probabilities!(diagram, "O", X_O)
 
 julia> add_probabilities!(diagram, "O", [0.2, 0.8])
+
+!!! note
+The arcs must be generated before probabilities or utilities can be added to the influence diagram.
 ```
 """
 function add_probabilities!(diagram::InfluenceDiagram, node::Name, probabilities::AbstractArray{Float64, N}) where N
@@ -729,6 +732,8 @@ julia> add_utilities!(diagram, "V3", Y_V3)
 
 julia> add_utilities!(diagram, "V1", [0, -25])
 ```
+!!! note
+The arcs must be generated before probabilities or utilities can be added to the influence diagram.
 """
 function add_utilities!(diagram::InfluenceDiagram, node::Name, utilities::AbstractArray{T, N}) where {N,T<:Real}
     v = findfirst(x -> x==node, diagram.Names)
@@ -780,16 +785,15 @@ end
 """
     function generate_arcs!(diagram::InfluenceDiagram)
 
-Generate arc structures using nodes added to influence diagram, by generating correct
-values for the vectors Names, I_j, states, S, C, D, V in the influence digram.
+Generate arc structures using nodes added to influence diagram, by ordering nodes,
+giving them indices and generating correct values for the vectors Names, I_j, states,
+S, C, D, V in the influence digram. Abstraction is created and the names of the nodes
+and states are only used in the user interface from here on.
 
 # Examples
 ```julia
 julia> generate_arcs!(diagram)
 ```
-
-!!! note
-The arcs must be generated before probabilities or utilities can be added to the influence diagram.
 """
 function generate_arcs!(diagram::InfluenceDiagram)
 
