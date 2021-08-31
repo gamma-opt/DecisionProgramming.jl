@@ -6,12 +6,11 @@ using CSV, DataFrames, PrettyTables
 
 
 # Setting subproblem specific parameters
-const chosen_risk_level = 13
+const chosen_risk_level = "12%"
 
 
 # Reading tests' technical performance data (dummy data in this case)
-data = CSV.read("CHD_preventative_care_data.csv", DataFrame)
-
+data = CSV.read("examples/CHD_preventative_care_data.csv", DataFrame)
 
 
 # Bayes posterior risk probabilities calculation function
@@ -73,13 +72,13 @@ function state_probabilities(risk_p::Array{Float64}, t::Int64, h::Int64, prior::
 
     #if no test is performed, then the probabilities of moving to states (other than the prior risk level) are 0 and to the prior risk element is 1
     if t == 3
-        state_probabilites = zeros(101, 1)
+        state_probabilites = zeros(101)
         state_probabilites[prior] = 1.0
         return state_probabilites
     end
 
     # return vector
-    state_probabilites = zeros(101,1)
+    state_probabilites = zeros(101)
 
     # copying the probabilities of the scores for ease of readability
     if h == 1 && t == 1    # CHD and TRS
@@ -108,157 +107,84 @@ function state_probabilities(risk_p::Array{Float64}, t::Int64, h::Int64, prior::
 end
 
 
-function analysing_results(Z::DecisionStrategy, sprobs::StateProbabilities)
-
-    d = Z.D[1] #taking one of the decision nodes to retrieve the information_set_R
-    information_set_R = vec(collect(paths(S[d.I_j])))
-    results = DataFrame(Information_set = map( x -> string(x) * "%", [0:1:100;]))
-    # T1
-    Z_j = Z.Z_j[1]
-    probs =  map(x -> x > 0 ? 1 : 0, get(sprobs.probs, 1,0)) #these are zeros and ones
-    dec = [Z_j(s_I) for s_I in information_set_R]
-    results[!, "T1"] = map(x -> x == 0 ? "" : "$x", probs.*dec)
-
-    # T2
-    Z_j = Z.Z_j[2]
-    probs = map(x -> x > 0 ? 1 : 0, (get(sprobs.probs, 4,0))) #these are zeros and ones
-    dec = [Z_j(s_I) for s_I in information_set_R]
-    results[!, "T2"] = map(x -> x == 0 ? "" : "$x", probs.*dec)
-
-    # TD
-    Z_j = Z.Z_j[3]
-    probs = map(x -> x > 0 ? 1 : 0, (get(sprobs.probs, 6,0))) #these are zeros and ones
-    dec = [Z_j(s_I) for s_I in information_set_R]
-    results[!, "TD"] = map(x -> x == 0 ? "" : "$x", probs.*dec)
-
-    pretty_table(results)
-end
-
-
-const R0 = 1
-const H = 2
-const T1 = 3
-const R1 = 4
-const T2 = 5
-const R2 = 6
-const TD = 7
-const TC = 8
-const HB = 9
-
+@info("Creating the influence diagram.")
+diagram = InfluenceDiagram()
 
 const H_states = ["CHD", "no CHD"]
 const T_states = ["TRS", "GRS", "no test"]
 const TD_states = ["treatment", "no treatment"]
-const R_states = map( x -> string(x) * "%", [0:1:100;])
-const TC_states = ["TRS", "GRS", "TRS & GRS", "no tests"]
-const HB_states = ["CHD & treatment", "CHD & no treatment", "no CHD & treatment", "no CHD & no treatment"]
-
-@info("Creating the influence diagram.")
-S = States([
-    (length(R_states), [R0, R1, R2]),
-    (length(H_states), [H]),
-    (length(T_states), [T1, T2]),
-    (length(TD_states), [TD])
-])
-
-C = Vector{ChanceNode}()
-D = Vector{DecisionNode}()
-V = Vector{ValueNode}()
-X = Vector{Probabilities}()
-Y = Vector{Consequences}()
+const R_states = [string(x) * "%" for x in [0:1:100;]]
 
 
-I_R0 = Vector{Node}()
-X_R0 = zeros(S[R0])
-X_R0[chosen_risk_level] = 1
-push!(C, ChanceNode(R0, I_R0))
-push!(X, Probabilities(R0, X_R0))
+add_node!(diagram, ChanceNode("R0", [], R_states))
+add_node!(diagram, ChanceNode("R1", ["R0", "H", "T1"], R_states))
+add_node!(diagram, ChanceNode("R2", ["R1", "H", "T2"], R_states))
+add_node!(diagram, ChanceNode("H", ["R0"], H_states))
+
+add_node!(diagram, DecisionNode("T1", ["R0"], T_states))
+add_node!(diagram, DecisionNode("T2", ["R1"], T_states))
+add_node!(diagram, DecisionNode("TD", ["R2"], TD_states))
+
+add_node!(diagram, ValueNode("TC", ["T1", "T2"]))
+add_node!(diagram, ValueNode("HB", ["H", "TD"]))
 
 
-I_H = [R0]
-X_H = zeros(S[R0], S[H])
-X_H[:, 1] = data.risk_levels     # 1 = "CHD"
-X_H[:, 2] = 1 .- X_H[:, 1]  # 2 = "no CHD"
-push!(C, ChanceNode(H, I_H))
-push!(X, Probabilities(H, X_H))
+generate_arcs!(diagram)
+
+X_R0 = ProbabilityMatrix(diagram, "R0")
+set_probability!(X_R0, [chosen_risk_level], 1)
+add_probabilities!(diagram, "R0", X_R0)
 
 
-I_T1 = [R0]
-push!(D, DecisionNode(T1, I_T1))
+X_H = ProbabilityMatrix(diagram, "H")
+set_probability!(X_H, [:, "CHD"], data.risk_levels)
+set_probability!(X_H, [:, "no CHD"], 1 .- data.risk_levels)
+add_probabilities!(diagram, "H", X_H)
 
-
-I_R1 = [R0, H, T1]
-X_R1 = zeros(S[I_R1]..., S[R1])
+X_R = ProbabilityMatrix(diagram, "R1")
 for s_R0 = 1:101, s_H = 1:2, s_T1 = 1:3
-    X_R1[s_R0, s_H, s_T1, :] =  state_probabilities(update_risk_distribution(s_R0, s_T1), s_T1, s_H, s_R0)
+    X_R[s_R0, s_H,  s_T1, :] =  state_probabilities(update_risk_distribution(s_R0, s_T1), s_T1, s_H, s_R0)
 end
-push!(C, ChanceNode(R1, I_R1))
-push!(X, Probabilities(R1, X_R1))
+add_probabilities!(diagram, "R1", X_R)
+add_probabilities!(diagram, "R2", X_R)
 
 
-I_T2 = [R1]
-push!(D, DecisionNode(T2, I_T2))
-
-
-I_R2 = [H, R1, T2]
-X_R2 = zeros(S[I_R2]..., S[R2])
-for s_R1 = 1:101, s_H = 1:2, s_T2 = 1:3
-    X_R2[s_H, s_R1, s_T2, :] =  state_probabilities(update_risk_distribution(s_R1, s_T2), s_T2, s_H, s_R1)
-end
-push!(C, ChanceNode(R2, I_R2))
-push!(X, Probabilities(R2, X_R2))
-
-
-I_TD = [R2]
-push!(D, DecisionNode(TD, I_TD))
-
-
-I_TC = [T1, T2]
-Y_TC = zeros(S[I_TC]...)
 cost_TRS = -0.0034645
 cost_GRS = -0.004
-cost_forbidden = 0     #the cost of forbidden test combinations is negligible
-Y_TC[1 , 1] = cost_forbidden
-Y_TC[1 , 2] = cost_TRS + cost_GRS
-Y_TC[1, 3] = cost_TRS
-Y_TC[2, 1] =  cost_GRS + cost_TRS
-Y_TC[2, 2] = cost_forbidden
-Y_TC[2, 3] = cost_GRS
-Y_TC[3, 1] = cost_TRS
-Y_TC[3, 2] = cost_GRS
-Y_TC[3, 3] = 0
-push!(V, ValueNode(TC, I_TC))
-push!(Y, Consequences(TC, Y_TC))
+forbidden = 0     #the cost of forbidden test combinations is negligible
+Y_TC = UtilityMatrix(diagram, "TC")
+set_utility!(Y_TC, ["TRS", "TRS"], forbidden)
+set_utility!(Y_TC, ["TRS", "GRS"], cost_TRS + cost_GRS)
+set_utility!(Y_TC, ["TRS", "no test"], cost_TRS)
+set_utility!(Y_TC, ["GRS", "TRS"], cost_TRS + cost_GRS)
+set_utility!(Y_TC, ["GRS", "GRS"], forbidden)
+set_utility!(Y_TC, ["GRS", "no test"], cost_GRS)
+set_utility!(Y_TC, ["no test", "TRS"], cost_TRS)
+set_utility!(Y_TC, ["no test", "GRS"], cost_GRS)
+set_utility!(Y_TC, ["no test", "no test"], 0)
+add_utilities!(diagram, "TC", Y_TC)
 
+Y_HB = UtilityMatrix(diagram, "HB")
+set_utility!(Y_HB, ["CHD", "treatment"], 6.89713671259061)
+set_utility!(Y_HB, ["CHD", "no treatment"], 6.65436854256236 )
+set_utility!(Y_HB, ["no CHD", "treatment"], 7.64528451705134)
+set_utility!(Y_HB, ["no CHD", "no treatment"], 7.70088349200034)
+add_utilities!(diagram, "HB", Y_HB)
 
-I_HB = [H, TD]
-Y_HB = zeros(S[I_HB]...)
-Y_HB[1 , 1] = 6.89713671259061  # sick & treat
-Y_HB[1 , 2] = 6.65436854256236  # sick & don't treat
-Y_HB[2, 1] = 7.64528451705134   # healthy & treat
-Y_HB[2, 2] =  7.70088349200034  # healthy & don't treat
-push!(V, ValueNode(HB, I_HB))
-push!(Y, Consequences(HB, Y_HB))
-
-
-@info("Validate influence diagram.")
-validate_influence_diagram(S, C, D, V)
-sort!.((C, D, V, X, Y), by = x -> x.j)
-
-P = DefaultPathProbability(C, X)
-U = DefaultPathUtility(V, Y)
+generate_diagram!(diagram)
 
 
 @info("Creating the decision model.")
 model = Model()
-z = DecisionVariables(model, S, D)
+z = DecisionVariables(model, diagram)
 
 # Defining forbidden paths to include all those where a test is repeated twice
-forbidden_tests = ForbiddenPath[([T1,T2], Set([(1,1),(2,2),(3,1), (3,2)]))]
+forbidden_tests = ForbiddenPath(diagram, ["T1","T2"], [("TRS", "TRS"),("GRS", "GRS"),("no test", "TRS"), ("no test", "GRS")])
+fixed_R0 = FixedPath(diagram, Dict("R0" => chosen_risk_level))
 scale_factor = 10000.0
-x_s = PathCompatibilityVariables(model, z, S, P; fixed = Dict(1 => chosen_risk_level), forbidden_paths = forbidden_tests, probability_cut=false)
+x_s = PathCompatibilityVariables(model, diagram, z; fixed = fixed_R0, forbidden_paths = [forbidden_tests], probability_cut=false)
 
-EV = expected_value(model, x_s, U, P, probability_scale_factor = scale_factor)
+EV = expected_value(model, diagram, x_s, probability_scale_factor = scale_factor)
 @objective(model, Max, EV)
 
 @info("Starting the optimization process.")
@@ -268,25 +194,24 @@ optimizer = optimizer_with_attributes(
     "MIPGap" => 1e-6,
 )
 set_optimizer(model, optimizer)
+GC.enable(false)
 optimize!(model)
+GC.enable(true)
 
 
 @info("Extracting results.")
 Z = DecisionStrategy(z)
+S_probabilities = StateProbabilities(diagram, Z)
+U_distribution = UtilityDistribution(diagram, Z)
 
 @info("Printing decision strategy using tailor made function:")
-sprobs = StateProbabilities(S, P, Z)
-analysing_results(Z, sprobs)
+print_decision_strategy(diagram, Z, S_probabilities)
 
 @info("Printing state probabilities:")
 # Here we can see that the probability of having a CHD event is exactly that of the chosen risk level
-print_state_probabilities(sprobs, [R0, R1, R2])
-
-@info("Computing utility distribution.")
-udist = UtilityDistribution(S, P, U, Z)
+print_state_probabilities(diagram, S_probabilities, ["R0", "R1", "R2"])
 
 @info("Printing utility distribution.")
-print_utility_distribution(udist)
+print_utility_distribution(U_distribution)
 
-@info("Printing statistics")
-print_statistics(udist)
+print_statistics(U_distribution)
