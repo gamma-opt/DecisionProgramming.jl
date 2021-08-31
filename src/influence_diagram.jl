@@ -490,7 +490,7 @@ Base.setindex!(PM::ProbabilityMatrix{N}, X, I::Vararg{Any, N}) where N = (PM.mat
 """
     function ProbabilityMatrix(diagram::InfluenceDiagram, node::Name)
 
-Initialise a probability matrix for a given chance node.
+Initialise a probability matrix for a given chance node. The matrix is initialised with zeros.
 
 # Examples
 ```julia
@@ -632,7 +632,7 @@ Base.setindex!(UM::UtilityMatrix{N}, Y, I::Vararg{Any, N}) where N = (UM.matrix[
 """
     function UtilityMatrix(diagram::InfluenceDiagram, node::Name)
 
-Initialise a utility matrix for a value node.
+Initialise a utility matrix for a value node. The matrix is initialised with `Inf` values.
 
 # Examples
 ```julia
@@ -979,7 +979,7 @@ function ForbiddenPath(diagram::InfluenceDiagram, nodes::Vector{Name}, paths::Ve
 end
 
 """
-    function ForbiddenPath(diagram::InfluenceDiagram, nodes::Vector{Name}, paths::Vector{NTuple{N, Name}}) where N
+    function FixedPath(diagram::InfluenceDiagram, fixed::Dict{Name, Name})
 
 FixedPath outer construction function. Create FixedPath variable.
 
