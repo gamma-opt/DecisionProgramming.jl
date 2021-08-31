@@ -165,7 +165,7 @@ generate_diagram!(diagram, positive_path_utility = true)
 
 ## Decision Model
 
-Next we initialise the JuMP model and add the decision variables. Then we addd the path compatibility variables. Since we applied an affine transformation to the utility function, making all path utilities positive, the probability cut can be excluded from the model. The purpose of this is discussed in the [theoretical section](../decision-programming/decision-model.md) of this documentation. 
+Next we initialise the JuMP model and add the decision variables. Then we add the path compatibility variables. Since we applied an affine transformation to the utility function, making all path utilities positive, the probability cut can be excluded from the model. The purpose of this is discussed in the [theoretical section](../decision-programming/decision-model.md) of this documentation. 
 
 ```julia
 model = Model()

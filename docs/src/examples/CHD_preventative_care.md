@@ -66,7 +66,7 @@ add_node!(diagram, DecisionNode("T2", ["R1"], T_states))
 add_node!(diagram, DecisionNode("TD", ["R2"], TD_states))
 ```
 
-The value nodes are added in a similar fashion. However, value nodes do not have states because their purpose is to map their information states to utility values. Thus, value nodes are only given a name and their information set.
+The value nodes are added in a similar fashion. However, value nodes do not have states because they map their information states to utility values instead of states.
 
 ```julia
 add_node!(diagram, ValueNode("TC", ["T1", "T2"]))
@@ -120,7 +120,7 @@ $$\textit{risk estimate} = P(\text{CHD} \mid \text{test result}) = \frac{P(\text
 
 The probabilities $P(\text{test result} \mid \text{CHD})$ are test specific and these are read from the CSV data file. The updated risk estimates are aggregated according to the risk levels. These aggregated probabilities are then the state probabilities of node $R1$. The aggregating is done using function ```state_probabilities```.
 
-In Decision Programming the probability distribution over the states of node $R1$ is defined into a $(101,2,3,101)$ probability matrix. This is because its information set consists of ($R0, H, T$) which have 101, 2 and 3 states respectively and the node $R1$ itself has 101 states. Here, one must know that in Decision Programming the states of the nodes are mapped to indices in the back-end. For instance, the health states $\text{CHD}$ and $\text{no CHD}$  are indexed 1 and 2. The testing decision states TRS,n GRS and no test are 1, 2 and 3. The order of the states is determined by the order in which they are defined when adding the nodes. Knowing this, we can declare the probability values straight into the probability matrix using a very compact syntax. Notice that we add 101 probability values at a time into the matrix.
+In Decision Programming the probability distribution over the states of node $R1$ is defined into a $(101,2,3,101)$ probability matrix. This is because its information set consists of ($R0, H, T$) which have 101, 2 and 3 states respectively and the node $R1$ itself has 101 states. Here, one must know that in Decision Programming the states of the nodes are mapped to numbers in the back-end. For instance, the health states $\text{CHD}$ and $\text{no CHD}$  are indexed 1 and 2. The testing decision states TRS, GRS and no test are 1, 2 and 3. The order of the states is determined by the order in which they are defined when adding the nodes. Knowing this, we can declare the probability values straight into the probability matrix using a very compact syntax. Notice that we add 101 probability values at a time into the matrix.
 
 ```julia
 X_R = ProbabilityMatrix(diagram, "R1")
