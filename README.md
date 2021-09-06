@@ -14,16 +14,22 @@ We can create an influence diagram as follows:
 
 ```julia
 using DecisionProgramming
-S = States([2, 2, 2, 2])
-C = [ChanceNode(2, [1]), ChanceNode(3, [1])]
-D = [DecisionNode(1, Node[]), DecisionNode(4, [2, 3])]
-V = [ValueNode(5, [4])]
-X = [Probabilities(2, [0.4 0.6; 0.6 0.4]), Probabilities(3, [0.7 0.3; 0.3 0.7])]
-Y = [Consequences(5, [1.5, 1.7])]
-validate_influence_diagram(S, C, D, V)
-sort!.((C, D, V, X, Y), by = x -> x.j)
-P = DefaultPathProbability(C, X)
-U = DefaultPathUtility(V, Y)
+
+diagram = InfluenceDiagram()
+
+add_node!(diagram, DecisionNode("A", [], ["a", "b"]))
+add_node!(diagram, DecisionNode("D", ["B", "C"], ["k", "l"]))
+add_node!(diagram, ChanceNode("B", ["A"], ["x", "y"]))
+add_node!(diagram, ChanceNode("C", ["A"], ["v", "w"]))
+add_node!(diagram, ValueNode("V", ["D"]))
+
+generate_arcs!(diagram)
+
+add_probabilities!(diagram, "B", [0.4 0.6; 0.6 0.4])
+add_probabilities!(diagram, "C", [0.7 0.3; 0.3 0.7])
+add_utilities!(diagram, "V", [1.5, 1.7])
+
+generate_diagram!(diagram)
 ```
 
 Using the influence diagram, we create the decision model as follow:
@@ -31,13 +37,13 @@ Using the influence diagram, we create the decision model as follow:
 ```julia
 using JuMP
 model = Model()
-z = DecisionVariables(model, S, D)
-x_s = PathCompatibilityVariables(model, z, S, P)
-EV = expected_value(model, x_s, U, P)
+z = DecisionVariables(model, diagram)
+x_s = PathCompatibilityVariables(model, diagram, z)
+EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
 ```
 
-Finally, we can optimize the model using MILP solver.
+We can optimize the model using MILP solver.
 
 ```julia
 using Gurobi
