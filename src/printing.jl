@@ -2,16 +2,22 @@ using DataFrames, PrettyTables
 using StatsBase, StatsBase.Statistics
 
 """
-    print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy, state_probabilities::StateProbabilities; show_incompatible_states = false)
+    print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy, state_probabilities::StateProbabilities; show_incompatible_states::Bool = false)
 
 Print decision strategy.
+
+# Arguments
+- `diagram::InfluenceDiagram`: Influence diagram structure.
+- `Z::DecisionStrategy`: Decision strategy structure with optimal decision strategy.
+- `state_probabilities::StateProbabilities`: State probabilities structure corresponding to optimal decision strategy.
+- `show_incompatible_states::Bool`: Choice to print rows also for incompatible states.
 
 # Examples
 ```julia
 >julia print_decision_strategy(diagram, Z, S_probabilities)
 ```
 """
-function print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy, state_probabilities::StateProbabilities; show_incompatible_states = false)
+function print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy, state_probabilities::StateProbabilities; show_incompatible_states::Bool = false)
     probs = state_probabilities.probs
 
     for (d, I_d, Z_d) in zip(Z.D, Z.I_d, Z.Z_d)
