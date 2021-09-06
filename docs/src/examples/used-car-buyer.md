@@ -24,7 +24,7 @@ using DecisionProgramming
 diagram = InfluenceDiagram()
 ```
 
-### Car's State
+### Car's state
 
 The chance node $O$ is defined by its name, its information set $I(O)$ and its states $lemon$ and $peach$. As seen in the influence diagram, the information set is empty and the node is a root node.
 
@@ -32,7 +32,7 @@ The chance node $O$ is defined by its name, its information set $I(O)$ and its s
 add_node!(diagram, ChanceNode("O", [], ["lemon", "peach"]))
 ```
 
-### Stranger's Offer Decision
+### Stranger's offer decision
 
 A decision node is also defined by its name, its information set and its states.
 
@@ -40,15 +40,15 @@ A decision node is also defined by its name, its information set and its states.
 add_node!(diagram, DecisionNode("T", [], ["no test", "test"]))
 ```
 
-### Test's Outcome
+### Test's outcome
 
-The second chance node, $R$, has nodes $O$ and $T$ in its information set, and three states describing the situations of no test being done, and the test declaring the car to be a lemon or a peach.
+The second chance node $R$ has nodes $O$ and $T$ in its information set, and three states describing the situations of no test being done, and the test declaring the car to be a lemon or a peach.
 
 ```julia
 add_node!(diagram, ChanceNode("R", ["O", "T"], ["no test", "lemon", "peach"]))
 ```
 
-### Purchace Decision
+### Purchace decision
 The purchase decision represented by node $A$ is added as follows.
 ```julia
 add_node!(diagram, DecisionNode("A", ["R"], ["buy without guarantee", "buy with guarantee", "don't buy"]))
@@ -63,15 +63,15 @@ add_node!(diagram, ValueNode("V3", ["O", "A"]))
 ```
 
 ### Generate arcs
-Now that all of the nodes have been added to our influence diagram we generate the arcs between the nodes. This step automatically orders the nodes, gives them indices and reorganises the information into the appropriate form.
+Now that all of the nodes have been added to our influence diagram we generate the arcs between the nodes. This step automatically orders the nodes, gives them indices and reorganises the information into the appropriate form in the influence diagram structure.
 ```julia
 generate_arcs!(diagram)
 ```
 
 ### Probabilities
-We continue by defining the probability distributions for each chance node. 
+We continue by defining probability distributions for each chance node. 
 
-Node $O$ is a root node and has two states thus, its probability distribution is simply defined over the two states. We can use the `ProbabilityMatrix` structure in creating the probability matrix easily without having to worry about the matrix dimentions. Then we add the probabilities to the influence diagram.
+Node $O$ is a root node and has two states thus, its probability distribution is simply defined over the two states. We can use the `ProbabilityMatrix` structure in creating the probability matrix easily without having to worry about the matrix dimensions. We then set the probability values and add the probabililty matrix to the influence diagram.
 ```julia
 X_O = ProbabilityMatrix(diagram, "O")
 set_probability!(X_O, ["peach"], 0.8)
@@ -79,7 +79,7 @@ set_probability!(X_O, ["lemon"], 0.2)
 add_probabilities!(diagram, "O", X_O)
 ```
 
-Node $R$ has two nodes in its information set and three states. the probabilities $P(s_j \mid s_{I(j)})$ must thus be defined for all combinations of states in $O$, $T$ and $R$. Since these nodes have 2, 3, and 3 states respectively, the probability matrix has 12 elements. We will set 3 probability values at a time to make this feat more swift.
+Node $R$ has two nodes in its information set and three states. The probabilities $P(s_j \mid s_{I(j)})$ must thus be defined for all combinations of states in $O$, $T$ and $R$. We declare the probability distribution over the states of node $R$ for each information state in the following way. More information on defining probability matrices can be found on the [usage page](../usage.md).
 ```julia
 X_R = ProbabilityMatrix(diagram, "R")
 set_probability!(X_R, ["lemon", "no test", :], [1,0,0])
@@ -91,9 +91,9 @@ add_probabilities!(diagram, "R", X_R)
 
 
 ### Utilities 
-We continue by defining the utilities associated with value nodes. The utilities $Y_j(𝐬_{I(j)})$ are defined and added similarly to the probabilities.
+We continue by defining the utilities associated with the information states of the value nodes. The utilities $Y_j(𝐬_{I(j)})$ are defined and added similarly to the probabilities.
 
-Value node $V1$ has only node $T$ in its information set and node $T$ only has two states. Therefore, node $V1$ needs to map exactly two utility values, on for state $tes$ and the other for $no test$.
+Value node $V1$ has only node $T$ in its information set and node $T$ only has two states. Therefore, the utility matrix of node $V1$ should hold utility values corresponding to states $test$ and $no \ test$.
 
 ```julia
 Y_V1 = UtilityMatrix(diagram, "V1")
@@ -102,7 +102,7 @@ set_utility!(Y_V1, ["no test"], 0)
 add_utilities!(diagram, "V1", Y_V1)
 ```
 
-We then define the utilities describing the base profit of of the purchase.
+We then define the utilities associated with the base profit of the purchase in different scenarios.
 ```julia
 Y_V2 = UtilityMatrix(diagram, "V2")
 set_utility!(Y_V2, ["buy without guarantee"], 100)
@@ -111,7 +111,7 @@ set_utility!(Y_V2, ["don't buy"], 0)
 add_utilities!(diagram, "V2", Y_V2)
 ```
 
-Finally, we add the utilities corresponding to the repair costs. The rows of the utilities matrix `Y_V3` correspond to the state of the car, while the columns correspond to the decision made in node $A$. The utilities can be added as follows. Notice that the utility values for the second row are added in one line, in this case it is important to give the utility values in the right order. The order of the columns is determined by the order in which the states are given when declaring node $A$. See the [usage page](../usage.md) for more on this more compact syntax.
+Finally, we define the utilities corresponding to the repair costs. The rows of the utilities matrix `Y_V3` correspond to the state of the car, while the columns correspond to the decision made in node $A$. Notice that the utility values for the second row are added as a vector, in this case it is important to give the utility values in the correct order. The order of the columns is determined by the order in which the states are given when declaring node $A$. See the [usage page](../usage.md) for more information on the syntax.
 ```julia
 Y_V3 = UtilityMatrix(diagram, "V3")
 set_utility!(Y_V3, ["lemon", "buy without guarantee"], -200)
@@ -121,15 +121,15 @@ set_utility!(Y_V3, ["peach", :], [-40, -20, 0])
 add_utilities!(diagram, "V3", Y_V3)
 ```
 
-### Generate Influence Diagram
+### Generate influence diagram
 Finally, generate the full influence diagram before defining the decision model. By default this function uses the default path probabilities and utilities, which are defined as the joint probability of all chance events in the diagram and the sum of utilities in value nodes, respectively. In the [Contingent Portfolio Programming](contingent-portfolio-programming.md) example, we show how to use a user-defined custom path utility function.
 
 ```julia
 generate_diagram!(diagram)
 ```
 
-## Decision Model
-We then construct the decision model using the DecisionProgramming.jl package, using the expected value as the objective.
+## Decision model
+We then construct the decision model by declaring a JuMP model and adding decision variables and path compatibility variables to the model. We define the objective function to be the expected value.
 
 ```julia
 model = Model()
@@ -151,8 +151,8 @@ optimize!(model)
 ```
 
 
-## Analyzing Results
-Once the model is solved, we extract the results. The results are the decision strategy, state probabilities and utility distribution.
+## Analyzing results
+Once the model is solved, we extract the results.
 
 ```julia
 Z = DecisionStrategy(z)
@@ -160,7 +160,7 @@ S_probabilities = StateProbabilities(diagram, Z)
 U_distribution = UtilityDistribution(diagram, Z)
 ```
 
-### Decision Strategy
+### Decision strategy
 
 We obtain the following optimal decision strategy:
 ```julia-repl
@@ -178,7 +178,7 @@ julia> print_decision_strategy(diagram, Z, S_probabilities)
 └───────────────┴───────────────────────┘
 ```
 
-### Utility Distribution
+### Utility distribution
 ```julia-repl
 julia> print_utility_distribution(U_distribution)
 ┌───────────┬─────────────┐

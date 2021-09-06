@@ -27,21 +27,21 @@ const b = 0.03
 fortification(k, a) = [c_k[k], 0][a]
 ```
 
-### Initialise Influence Diagram
+### Initialising the influence diagram
 We initialise the influence diagram before adding nodes to it.
 
 ```julia
 diagram = InfluenceDiagram
 ```
 
-### Add Nodes
+### Adding nodes
 Add node $L$ which represents the load on the structure. This node is the root node and thus, has an empty information set. Its states describe the state of the load, they are $high$ and $low$.
 
 ```julia
 add_node!(diagram, ChanceNode("L", [], ["high", "low"]))
 ```
 
-The report nodes $R_k$ and action nodes $A_k$ are easily added with a for-loop. The report nodes have node $L$ in their information sets and their states are $high$ and $low$. The actions are made based on these report, which is represented by the $R_k$ nodes forming the information sets of the $A_k$ nodes. The action nodes have states $yes$ and $no$, which represents decisions to either fortify the structure or not.
+The report nodes $R_k$ and action nodes $A_k$ are easily added with a for-loop. The report nodes have node $L$ in their information sets and their states are $high$ and $low$. The actions are made based on these reports, which is represented by the action nodes $A_k$ having the report nodes $R_k$ in their information sets. The action nodes have states $yes$ and $no$, which represents decisions whether to fortify the structure or not.
 
 ```julia
 for i in 1:N
@@ -60,7 +60,7 @@ The value node $T$ is added as follows.
 add_node!(diagram, ValueNode("T", ["F", ["A$i" for i in 1:N]...]))
 ```
 
-### Generate arcs
+### Generating arcs
 Now that all of the nodes have been added to the influence diagram we generate the arcs between the nodes. This step automatically orders the nodes, gives them indices and reorganises the information into the appropriate form.
 ```julia
 generate_arcs!(diagram)
@@ -87,7 +87,7 @@ $$ℙ(R_k=low∣L=low)=\max\{y,1-y\}$$
 
 The probability of a correct report is thus in the range [0.5,1]. (This reflects the fact that a probability under 50% would not even make sense, since we would notice that if the test suggests a high load, the load is more likely to be low, resulting in that a low report "turns into" a high report and vice versa.)
 
-In Decision Programming we add these probabilities in the following way. The probability matrix of an $R$ node is of dimensions (2,2), where the rows correspond to the states $high$ and $low$ of its predecessor node $L$ and the columns to its states $high$ and $low$. The probability matrix is declared and added in the following way.
+In Decision Programming we add these probabilities by declaring probabilty matrices for nodes $R_k$. The probability matrix of a report node $R_k$ has dimensions (2,2), where the rows correspond to the states $high$ and $low$ of its predecessor node $L$ and the columns to its own states $high$ and $low$.
 
 ```julia
 for i in 1:N
@@ -113,9 +113,9 @@ First we initialise the probability matrix for node $F$.
 X_F = ProbabilityMatrix(diagram, "F")
 ```
 
-This matrix has dimensions $(2, \textcolor{orange}{2, 2, 2, 2}, 2)$. This is because its information set consists of node $L$ and nodes $A_k$ all of which have 2 states and the node $F$ itself has 2 states. The orange colored dimensions correspond to the $A_k$ states, there are four of them because in this case $N = 4$.
+This matrix has dimensions $(2, \textcolor{orange}{2, 2, 2, 2}, 2)$ because node $L$ and nodes $A_k$, which form the information set of $F$, all have 2 states and node $F$ itself also has 2 states. The orange colored dimensions correspond to the states of the action nodes $A_k$.
 
-To set the probabilities we have to iterate over the information states. Here it helps to know that in Decision Programming the states of each node are mapped to numbers in the back-end. For instance, the load states $high$ and $low$ are referred to as 1 and 2. The same applies for the action states $yes$ and $no$, they are states 1 and 2. The `paths` function allows us to iterate over the paths of a specific nodes. In these paths, the states are refer to by their indices. Now we can iterate over the information states and set the probabilities into the probability matrix in the following way.
+To set the probabilities we have to iterate over the information states. Here it helps to know that in Decision Programming the states of each node are mapped to numbers in the back-end. For instance, the load states $high$ and $low$ are referred to as 1 and 2. The same applies for the action states $yes$ and $no$, they are states 1 and 2. The `paths` function allows us to iterate over the subpaths of specific nodes. In these paths, the states are refer to by their indices. Using this information, we can easily iterate over the information states using the `paths` function and set the probability values into the probability matrix.
 
 
 ```julia
@@ -129,7 +129,7 @@ for s in paths([State(2) for i in 1:N])
 end
 ```
 
-We add the probability matrix to the influence diagram.
+After declaring the probability matrix, we add it to the influence diagram.
 ```julia
 add_probabilities!(diagram, "F", X_F)
 ```
@@ -141,21 +141,21 @@ $$g(F=failure) = 0$$
 
 $$g(F=success) = 100$$.
 
-Utilities from the action states $A_k$  at target $T$ from are
+Utilities from the action states $A_k$  at target $T$ are
 
 $$f(A_k=yes) = c_k$$
 
-$$f(A_k=no) = 0$$.
+$$f(A_k=no) = 0.$$
 
 The total cost is thus
 
-$$Y(F, A_N, ..., A_1) = g(F) + (-f(A_N)) + ... + (-f(A_1))$$.
+$$Y(F, A_N, ..., A_1) = g(F) + (-f(A_N)) + ... + (-f(A_1)).$$
 
 We first declare the utility matrix for node $T$.
 ```julia
 Y_T = UtilityMatrix(diagram, "T")
 ```
-This matrix has dimensions $(2, \textcolor{orange}{2, 2, 2, 2})$, where again the twos correspond to the numbers of states the nodes in the information set have. Similarly as before, the first dimension corresponds to the states of node $F$ and the other 4 dimensions (in oragne) correspond to the states of the $A_k$ nodes. The utilities are set and added in the following way.
+This matrix has dimensions $(2, \textcolor{orange}{2, 2, 2, 2})$, where the dimensions correspond to the numbers of states the nodes in the information set have. Similarly as before, the first dimension corresponds to the states of node $F$ and the other 4 dimensions (in oragne) correspond to the states of the $A_k$ nodes. The utilities are set and added similarly to how the probabilities were added above.
 
 ```julia
 for s in paths([State(2) for i in 1:N])
@@ -241,7 +241,7 @@ julia> print_decision_strategy(diagram, Z, S_probabilities)
 ```
 
 
-The state probabilities for the strategy $Z$ can also be obtained. These tell the probability of each state in each node, given the strategy $Z$.
+The state probabilities for strategy $Z$ are also obtained. These tell the probability of each state in each node, given strategy $Z$.
 
 ```julia-repl
 julia> print_state_probabilities(sprobs, L)

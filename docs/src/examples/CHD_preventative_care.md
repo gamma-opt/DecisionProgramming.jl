@@ -6,12 +6,12 @@
 
 In this example, we will showcase the subproblem, which optimises the decision strategy given a single prior risk level. The chosen risk level in this example is 12%. The solution to the main problem is found in [^1].
 
-## Influence Diagram
+## Influence diagram
 ![](figures/CHD_preventative_care.svg)
 
 The influence diagram representation of the problem is seen above. The chance nodes $R$ represent the patient's risk estimate – the prior risk estimate being $R0$. The risk estimate nodes $R0$, $R1$ and $R2$ have 101 states $R = \{0\%, 1\%, ..., 100\%\}$, which are the discretised risk levels for the risk estimates.
 
-The risk estimate is updated according to the first and second test decisions, which are represented by decision nodes $T1$ and $T2$. These nodes have states $T = \{\text{TRS, GRS, no test}\}$. The health of the patient represented by chance node $H$ also affects the update of the risk estimate. In this model, the health of the patient indicates whether they will have a CHD event in the next ten years or not. Thus, the node has states $H = \{\text{CHD, no CHD}\}$. The treatment decision is represented by node $TD$ and it has states $TD = \{\text{treatment, no treatment}\}$.
+The risk estimate is updated according to the first and second testing decisions, which are represented by decision nodes $T1$ and $T2$. These nodes have states $T = \{\text{TRS, GRS, no test}\}$. The health of the patient, represented by chance node $H$, also affects the update of the risk estimate. In this model, the health of the patient indicates whether they will have a CHD event in the next ten years or not. Thus, the node has states $H = \{\text{CHD, no CHD}\}$. The treatment decision is represented by node $TD$ and it has states $TD = \{\text{treatment, no treatment}\}$.
 
 
 The prior risk estimate represented by node $R0$ influences the health node $H$, because in the model we make the assumption that the prior risk estimate accurately describes the probability of having a CHD event.
@@ -38,14 +38,14 @@ end
 ```
 
 ### Initialise influence diagram
-We start defining the decision programming model by initialising the influence diagram.
+We start defining the Decision Programming model by initialising the influence diagram.
 
 ```julia
 diagram = InfluenceDiagram()
 ```
 
 
-For brevity in the following, we define the states of the nodes to be readily available. Notice, that $R_{states}$ is a vector with values $0\%, 1\%,..., 100\%$.
+For brevity in the next sections, we define the states of the nodes to be readily available. Notice, that $R_{states}$ is a vector with values $0\%, 1\%,..., 100\%$.
 
 ```julia
 const H_states = ["CHD", "no CHD"]
@@ -54,7 +54,7 @@ const TD_states = ["treatment", "no treatment"]
 const R_states = [string(x) * "%" for x in [0:1:100;]]
 ```
  
- Then we add the nodes. The chance and decision nodes are identified by their names. When declaring the nodes, they are also given information sets and states. Notice that nodes $R0$ and $H$ are root nodes, meaning that their information sets are empty. In Decision Programming, we add the chance and decision nodes in the follwoing way.
+ We then add the nodes. The chance and decision nodes are identified by their names. When declaring the nodes, they are also given information sets and states. Notice that nodes $R0$ and $H$ are root nodes, meaning that their information sets are empty. In Decision Programming, we add the chance and decision nodes in the follwoing way.
  ```julia
 add_node!(diagram, ChanceNode("R0", [], R_states))
 add_node!(diagram, ChanceNode("R1", ["R0", "H", "T1"], R_states))
@@ -66,7 +66,7 @@ add_node!(diagram, DecisionNode("T2", ["R1"], T_states))
 add_node!(diagram, DecisionNode("TD", ["R2"], TD_states))
 ```
 
-The value nodes are added in a similar fashion. However, value nodes do not have states because they map their information states to utility values instead of states.
+The value nodes are added in a similar fashion. However, value nodes do not have states because they map their information states to utility values instead.
 
 ```julia
 add_node!(diagram, ValueNode("TC", ["T1", "T2"]))
@@ -81,7 +81,7 @@ generate_arcs!(diagram)
 
 ### Probabilities of the prior risk estimate and health of the patient
 
-In this subproblem, the prior risk estimate is given and therefore the node $R0$ is in effect a deterministic node. In decision programming a deterministic node is added as a chance node for which the probability of one state is set to one and the probabilities of the rest of the states are set to zero. In this case
+In this subproblem, the prior risk estimate is given and therefore the node $R0$ is in effect a deterministic node. In Decision Programming a deterministic node is added as a chance node for which the probability of one state is set to one and the probabilities of the rest of the states are set to zero. In this case
 
 $$ℙ(R0 = 12\%)=1$$
 and
@@ -104,7 +104,7 @@ $$ℙ(H = \text{no CHD} | R0 = \alpha) = 1 - \alpha$$
 
 Since node $R0$ is deterministic and the health node $H$ is defined in this way, in our model the patient has a 12% chance of experiencing a CHD event and 88% chance of remaining healthy.
 
-In Decision Programming the probability matrix of node $H$ has dimensions (101, 2) because its information set consisting of node $R0$ has 101 states and node $H$ has 2 states. We first set the column related to the state $CHD$ with values from `data.risk_levels` which are $0.00, 0.01, ..., 0.99, 1.00$ and the other column as it s complement event.
+In Decision Programming the probability matrix of node $H$ has dimensions (101, 2) because its information set consisting of node $R0$ has 101 states and node $H$ has 2 states. We first set the column related to the state $CHD$ with values from `data.risk_levels` which are $0.00, 0.01, ..., 0.99, 1.00$ and the other column as its complement event.
 ```julia
 X_H = ProbabilityMatrix(diagram, "H")
 set_probability!(X_H, [:, "CHD"], data.risk_levels)
@@ -114,13 +114,13 @@ add_probabilities!(diagram, "H", X_H)
 
 ### Probabilities of the updated the risk estimates
 
-For node $R1%$, the probabilities of the states are calculated by aggregating the updated risk estimates, after a test is performed, into the risk levels. The updated risk estimates are calculated using the function ```update_risk_distribution```, which calculates the posterior probability distribution for a given health state, test and prior risk estimate.
+For node $R1%$, the probabilities of the states are calculated by aggregating the updated risk estimates into the risk levels after a test is performed. The updated risk estimates are calculated using the function ```update_risk_distribution```, which calculates the posterior probability distribution for a given health state, test and prior risk estimate.
 
 $$\textit{risk estimate} = P(\text{CHD} \mid \text{test result}) = \frac{P(\text{test result} \mid \text{CHD})P(\text{CHD})}{P(\text{test result})}$$
 
 The probabilities $P(\text{test result} \mid \text{CHD})$ are test specific and these are read from the CSV data file. The updated risk estimates are aggregated according to the risk levels. These aggregated probabilities are then the state probabilities of node $R1$. The aggregating is done using function ```state_probabilities```.
 
-In Decision Programming the probability distribution over the states of node $R1$ is defined into a $(101,2,3,101)$ probability matrix. This is because its information set consists of ($R0, H, T$) which have 101, 2 and 3 states respectively and the node $R1$ itself has 101 states. Here, one must know that in Decision Programming the states of the nodes are mapped to numbers in the back-end. For instance, the health states $\text{CHD}$ and $\text{no CHD}$  are indexed 1 and 2. The testing decision states TRS, GRS and no test are 1, 2 and 3. The order of the states is determined by the order in which they are defined when adding the nodes. Knowing this, we can declare the probability values straight into the probability matrix using a very compact syntax. Notice that we add 101 probability values at a time into the matrix.
+In Decision Programming the probability distribution over the states of node $R1$ is defined into a probability matrix with dimensions $(101,2,3,101)$. This is because its information set consists of nodes $R0, H$ and, $T$ which have 101, 2 and 3 states respectively and the node $R1$ itself has 101 states. Here, one must know that in Decision Programming the states of the nodes are mapped to numbers in the back-end. For instance, the health states $\text{CHD}$ and $\text{no CHD}$  are indexed 1 and 2. The testing decision states TRS, GRS and no test are 1, 2 and 3. The order of the states is determined by the order in which they are defined when adding the nodes. Knowing this, we can set the probability values into the probability matrix using a very compact syntax. Notice that we add 101 probability values at a time into the matrix.
 
 ```julia
 X_R = ProbabilityMatrix(diagram, "R1")
@@ -135,7 +135,7 @@ We notice that the probability distrubtion is identical in $R1$ and $R2$ because
 add_probabilities!(diagram, "R2", X_R)
 ```
 
-### Utilities of test costs and health benefits
+### Utilities of testing costs and health benefits
 
 We define a utility matrix for node $TC$, which maps all its information states to testing
 costs. The unit in which the testing costs are added is quality-adjusted life-year (QALYs). The utility matrix is defined and added in the following way.
@@ -170,13 +170,13 @@ set_utility!(Y_HB, ["no CHD", "no treatment"], 7.70088349200034)
 add_utilities!(diagram, "HB", Y_HB)
 ```
 
-### Generate Influence Diagram
+### Generate influence diagram
 Finally, we generate the full influence diagram before defining the decision model. By default this function uses the default path probabilities and utilities, which are defined as the joint probability of all chance events in the diagram and the sum of utilities in value nodes, respectively. In the [Contingent Portfolio Programming](contingent-portfolio-programming.md) example, we show how to use a user-defined custom path utility function.
 
 
 
 ## Decision Model
-We define our JuMP model and declare the decision variables.
+We define the JuMP model and declare the decision variables.
 ```julia
 model = Model()
 z = DecisionVariables(model, diagram)
@@ -196,7 +196,7 @@ fixed_R0 = FixedPath(diagram, Dict("R0" => chosen_risk_level))
 
 We also choose a scale factor of 10000, which will be used to scale the path probabilities. The probabilities need to be scaled because in this specific problem they are very small since the $R$ nodes have a large number of states. Scaling the probabilities helps the solver find an optimal solution.
 
-We declare the path compatibility variables. We fix the state of the deterministic $R0$ node , forbid the unwanted testing strategies and scale the probabilities by giving them as parameters in the function call.  
+We then declare the path compatibility variables. We fix the state of the deterministic $R0$ node , forbid the unwanted testing strategies and scale the probabilities by giving them as parameters in the function call.  
 
 ```julia
 scale_factor = 10000.0
@@ -225,8 +225,8 @@ optimize!(model)
 
 
 
-## Analyzing Results
-We obtain the results in the following way.
+## Analyzing results
+We extract the results in the following way.
 ```julia
 Z = DecisionStrategy(z)
 S_probabilities = StateProbabilities(diagram, Z)
@@ -234,8 +234,8 @@ U_distribution = UtilityDistribution(diagram, Z)
 
 ```
 
-### Decision Strategy
-We inspect the decision strategy. From the printout, we can see that when the prior risk level is 12% the optimal decision strategy is to first perform TRS testing. At the second decision stage, GRS should be conducted if the updated risk estimate is between 16% and 28% and otherwise no further testing should be conducted. Treatment should be provided to those who have a final risk estimate greater than 18%. Notice that the blank spaces in the table are states which have a probability of zero, which means that given this data it is impossible for the patient to have their risk estimate updated to those risk levels.
+### Decision strategy
+We inspect the decision strategy. From the printout, we can see that when the prior risk level is 12% the optimal decision strategy is to first perform TRS testing. At the second decision stage, GRS should be conducted if the updated risk estimate is between 16% and 28% and otherwise no further testing should be conducted. Treatment should be provided to those who have a final risk estimate greater than 18%. Notice that the incompatible states are not included in the printout. The incompatible states are those that have a state probability of zero, which means that given this data it is impossible for the patient to have their risk estimate updated to those risk levels.
 
 ```julia
 julia> print_decision_strategy(diagram, Z, S_probabilities)
@@ -298,7 +298,7 @@ julia> print_decision_strategy(diagram, Z, S_probabilities)
 ```
 
 
-### Utility Distribution
+### Utility distribution
 
 We can also print the utility distribution for the optimal strategy and some basic statistics for the distribution.
 
