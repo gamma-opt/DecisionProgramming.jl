@@ -741,7 +741,10 @@ function add_utilities!(diagram::InfluenceDiagram, node::Name, utilities::Abstra
     if v ∈ [j.v for j in diagram.Y]
         throw(DomainError("Utilities should be added only once for each node."))
     end
-
+    if any(u ==Inf for u in utilities)
+        throw(DomainError("Utility values should be less than infinity."))
+    end
+    
     if size(utilities) == Tuple((diagram.S[j] for j in diagram.I_j[v]))
         if isa(utilities, UtilityMatrix)
             push!(diagram.Y, Utilities(Node(v), utilities.matrix))
