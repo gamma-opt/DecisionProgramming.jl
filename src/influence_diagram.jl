@@ -744,7 +744,7 @@ function add_utilities!(diagram::InfluenceDiagram, node::Name, utilities::Abstra
     if any(u ==Inf for u in utilities)
         throw(DomainError("Utility values should be less than infinity."))
     end
-    
+
     if size(utilities) == Tuple((diagram.S[j] for j in diagram.I_j[v]))
         if isa(utilities, UtilityMatrix)
             push!(diagram.Y, Utilities(Node(v), utilities.matrix))
@@ -765,7 +765,7 @@ function validate_structure(Nodes::Vector{AbstractNode}, C_and_D::Vector{Abstrac
     if n_CD == 0
         throw(DomainError("The influence diagram must have chance or decision nodes."))
     end
-    if !(union((n.I_j for n in Nodes)...) ⊊ Set(n.name for n in Nodes))
+    if !(union((n.I_j for n in Nodes)...) ⊆ Set(n.name for n in Nodes)) 
         throw(DomainError("Each node that is part of an information set should be added as a node."))
     end
     # Checking the information sets of C and D nodes
