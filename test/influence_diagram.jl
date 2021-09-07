@@ -103,6 +103,28 @@ generate_arcs!(diagram)
 @test diagram.X == Probabilities[]
 @test diagram.Y == Utilities[]
 
+#Non-existent node B
+diagram = InfluenceDiagram()
+add_node!(diagram, ChanceNode("A", [], ["a", "b"]))
+add_node!(diagram, ChanceNode("C", ["B"], ["a", "b", "c"]))
+add_node!(diagram, ValueNode("V", ["A", "C"]))
+@test_throws DomainError generate_arcs!(diagram)
+
+#Cylic
+diagram = InfluenceDiagram()
+add_node!(diagram, ChanceNode("A", ["R"], ["a", "b"]))
+add_node!(diagram, ChanceNode("R", ["C", "A"], ["a", "b", "c"]))
+add_node!(diagram, ChanceNode("C", ["A"], ["a", "b", "c"]))
+add_node!(diagram, ValueNode("V", ["A", "C"]))
+@test_throws DomainError generate_arcs!(diagram)
+
+#Value node in I_j
+diagram = InfluenceDiagram()
+add_node!(diagram, ChanceNode("A", ["R"], ["a", "b"]))
+add_node!(diagram, ChanceNode("R", ["C", "A"], ["a", "b", "c"]))
+add_node!(diagram, ChanceNode("C", ["A", "V"], ["a", "b", "c"]))
+add_node!(diagram, ValueNode("V", ["A"]))
+@test_throws DomainError generate_arcs!(diagram)
 
 @info "Testing ProbabilityMatrix"
 diagram = InfluenceDiagram()
