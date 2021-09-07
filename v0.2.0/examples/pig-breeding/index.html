@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Pig Breeding · DecisionProgramming.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="DecisionProgramming.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">DecisionProgramming.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Decision Programming</span><ul><li><a class="tocitem" href="../../decision-programming/influence-diagram/">Influence Diagram</a></li><li><a class="tocitem" href="../../decision-programming/paths/">Paths</a></li><li><a class="tocitem" href="../../decision-programming/decision-model/">Decision Model</a></li><li><a class="tocitem" href="../../decision-programming/analyzing-decision-strategies/">Analyzing Decision Strategies</a></li><li><a class="tocitem" href="../../decision-programming/computational-complexity/">Computational Complexity</a></li></ul></li><li><a class="tocitem" href="../../usage/">Usage</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../used-car-buyer/">Used Car Buyer</a></li><li class="is-active"><a class="tocitem" href>Pig Breeding</a><ul class="internal"><li><a class="tocitem" href="#Description"><span>Description</span></a></li><li><a class="tocitem" href="#Influence-Diagram"><span>Influence Diagram</span></a></li><li><a class="tocitem" href="#Decision-Model"><span>Decision Model</span></a></li><li><a class="tocitem" href="#Analyzing-Results"><span>Analyzing Results</span></a></li><li><a class="tocitem" href="#References"><span>References</span></a></li></ul></li><li><a class="tocitem" href="../n-monitoring/">N-Monitoring</a></li><li><a class="tocitem" href="../contingent-portfolio-programming/">Contingent Portfolio Programming</a></li><li><a class="tocitem" href="../CHD_preventative_care/">CHD preventative care allocation</a></li></ul></li><li><a class="tocitem" href="../../api/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Pig Breeding</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Pig Breeding</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/gamma-opt/DecisionProgramming.jl/blob/master/docs/src/examples/pig-breeding.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Pig-Breeding"><a class="docs-heading-anchor" href="#Pig-Breeding">Pig Breeding</a><a id="Pig-Breeding-1"></a><a class="docs-heading-anchor-permalink" href="#Pig-Breeding" title="Permalink"></a></h1><h2 id="Description"><a class="docs-heading-anchor" href="#Description">Description</a><a id="Description-1"></a><a class="docs-heading-anchor-permalink" href="#Description" title="Permalink"></a></h2><p>The pig breeding problem as described in <sup class="footnote-reference"><a id="citeref-1" href="#footnote-1">[1]</a></sup>.</p><p>&quot;A pig breeder is growing pigs for a period of four months and subsequently selling them. During this period the pig may or may not develop a certain disease. If the pig has the disease at the time it must be sold, the pig must be sold for slaughtering, and its expected market price is then 300 DKK (Danish kroner). If it is disease free, its expected market price as a breeding animal is 1000 DKK</p><p>Once a month, a veterinary doctor sees the pig and makes a test for presence of the disease. If the pig is ill, the test will indicate this with probability 0.80, and if the pig is healthy, the test will indicate this with probability 0.90. At each monthly visit, the doctor may or may not treat the pig for the disease by injecting a certain drug. The cost of an injection is 100 DKK.</p><p>A pig has the disease in the first month with probability 0.10. A healthy pig develops the disease in the subsequent month with probability 0.20 without injection, whereas a healthy and treated pig develops the disease with probability 0.10, so the injection has some preventive effect. An untreated pig that is unhealthy will remain so in the subsequent month with probability 0.90, whereas the similar probability is 0.50 for an unhealthy pig that is treated. Thus spontaneous cure is possible, but treatment is beneficial on average.&quot;</p><h2 id="Influence-Diagram"><a class="docs-heading-anchor" href="#Influence-Diagram">Influence Diagram</a><a id="Influence-Diagram-1"></a><a class="docs-heading-anchor-permalink" href="#Influence-Diagram" title="Permalink"></a></h2><p><img src="../figures/n-month-pig-breeding.svg" alt/></p><p>The influence diagram for the the generalized <span>$N$</span>-month pig breeding. The nodes are associated with the following states. <strong>Health states</strong> <span>$h_k=\{ill,healthy\}$</span> represent the health of the pig at month <span>$k=1,...,N$</span>. <strong>Test states</strong> <span>$t_k=\{positive,negative\}$</span> represent the result from testing the pig at month <span>$k=1,...,N-1$</span>. <strong>Treat states</strong> <span>$d_k=\{treat, pass\}$</span> represent the decision to treat the pig with an injection at month <span>$k=1,...,N-1$</span>.</p><blockquote><p>The dashed arcs represent the no-forgetting principle and we can toggle them on and off in the formulation.</p></blockquote><p>In decision programming, we start by defining the node indices and states, as follows:</p><pre><code class="language-julia hljs">using JuMP, Gurobi
+using DecisionProgramming
+
+const N = 4
+const health = [3*k - 2 for k in 1:N]
+const test = [3*k - 1 for k in 1:(N-1)]
+const treat = [3*k for k in 1:(N-1)]
+const cost = [(3*N - 2) + k for k in 1:(N-1)]
+const price = [(3*N - 2) + N]
+const health_states = [&quot;ill&quot;, &quot;healthy&quot;]
+const test_states = [&quot;positive&quot;, &quot;negative&quot;]
+const treat_states = [&quot;treat&quot;, &quot;pass&quot;]
+
+S = States([
+    (length(health_states), health),
+    (length(test_states), test),
+    (length(treat_states), treat),
+])
+C = Vector{ChanceNode}()
+D = Vector{DecisionNode}()
+V = Vector{ValueNode}()
+X = Vector{Probabilities}()
+Y = Vector{Consequences}()</code></pre><p>Next, we define the nodes with their information sets and corresponding probabilities or consequences.</p><h3 id="Health-at-First-Month"><a class="docs-heading-anchor" href="#Health-at-First-Month">Health at First Month</a><a id="Health-at-First-Month-1"></a><a class="docs-heading-anchor-permalink" href="#Health-at-First-Month" title="Permalink"></a></h3><p>As seen in the influence diagram, the node <span>$h_1$</span> has no arcs into it, making it a root node. Therefore, the information set <span>$I(h_1)$</span> is empty.</p><p>The probability that pig is ill in the first month is</p><p class="math-container">\[ℙ(h_1 = ill)=0.1.\]</p><p>We obtain the complement probabilities for binary states by subtracting from one</p><p class="math-container">\[ℙ(h_1 = healthy)=1-ℙ(h_1 = ill).\]</p><p>In decision programming, we add the nodes and probabilities as follows:</p><pre><code class="language-julia hljs">for j in health[[1]]
+    I_j = Vector{Node}()
+    X_j = zeros(S[I_j]..., S[j])
+    X_j[1] = 0.1
+    X_j[2] = 1.0 - X_j[1]
+    push!(C, ChanceNode(j, I_j))
+    push!(X, Probabilities(j, X_j))
+end</code></pre><h3 id="Health-at-Subsequent-Months"><a class="docs-heading-anchor" href="#Health-at-Subsequent-Months">Health at Subsequent Months</a><a id="Health-at-Subsequent-Months-1"></a><a class="docs-heading-anchor-permalink" href="#Health-at-Subsequent-Months" title="Permalink"></a></h3><p>The probability that the pig is ill in the subsequent months <span>$k=2,...,N$</span> depends on the treatment decision and state of health in the previous month <span>$k-1$</span>. The nodes <span>$h_{k-1}$</span> and <span>$d_{k-1}$</span> are thus in the information set <span>$I(h_k)$</span>, meaning that the probability distribution of <span>$h_k$</span> is conditional on these nodes:</p><p class="math-container">\[ℙ(h_k = ill ∣ d_{k-1} = pass, h_{k-1} = healthy)=0.2,\]</p><p class="math-container">\[ℙ(h_k = ill ∣ d_{k-1} = treat, h_{k-1} = healthy)=0.1,\]</p><p class="math-container">\[ℙ(h_k = ill ∣ d_{k-1} = pass, h_{k-1} = ill)=0.9,\]</p><p class="math-container">\[ℙ(h_k = ill ∣ d_{k-1} = treat, h_{k-1} = ill)=0.5.\]</p><p>In decision programming:</p><pre><code class="language-julia hljs">for (i, k, j) in zip(health[1:end-1], treat, health[2:end])
+    I_j = [i, k]
+    X_j = zeros(S[I_j]..., S[j])
+    X_j[2, 2, 1] = 0.2
+    X_j[2, 2, 2] = 1.0 - X_j[2, 2, 1]
+    X_j[2, 1, 1] = 0.1
+    X_j[2, 1, 2] = 1.0 - X_j[2, 1, 1]
+    X_j[1, 2, 1] = 0.9
+    X_j[1, 2, 2] = 1.0 - X_j[1, 2, 1]
+    X_j[1, 1, 1] = 0.5
+    X_j[1, 1, 2] = 1.0 - X_j[1, 1, 1]
+    push!(C, ChanceNode(j, I_j))
+    push!(X, Probabilities(j, X_j))
+end</code></pre><p>Note that the order of states indexing the probabilities is reversed compared to the mathematical definition.</p><h3 id="Health-Test"><a class="docs-heading-anchor" href="#Health-Test">Health Test</a><a id="Health-Test-1"></a><a class="docs-heading-anchor-permalink" href="#Health-Test" title="Permalink"></a></h3><p>For the probabilities that the test indicates a pig&#39;s health correctly at month <span>$k=1,...,N-1$</span>, we have</p><p class="math-container">\[ℙ(t_k = positive ∣ h_k = ill) = 0.8,\]</p><p class="math-container">\[ℙ(t_k = negative ∣ h_k = healthy) = 0.9.\]</p><p>In decision programming:</p><pre><code class="language-julia hljs">for (i, j) in zip(health, test)
+    I_j = [i]
+    X_j = zeros(S[I_j]..., S[j])
+    X_j[1, 1] = 0.8
+    X_j[1, 2] = 1.0 - X_j[1, 1]
+    X_j[2, 2] = 0.9
+    X_j[2, 1] = 1.0 - X_j[2, 2]
+    push!(C, ChanceNode(j, I_j))
+    push!(X, Probabilities(j, X_j))
+end</code></pre><h3 id="Decision-to-Treat"><a class="docs-heading-anchor" href="#Decision-to-Treat">Decision to Treat</a><a id="Decision-to-Treat-1"></a><a class="docs-heading-anchor-permalink" href="#Decision-to-Treat" title="Permalink"></a></h3><p>In decision programing, we add the decision nodes for decision to treat the pig as follows:</p><pre><code class="language-julia hljs">for (i, j) in zip(test, treat)
+    I_j = [i]
+    push!(D, DecisionNode(j, I_j))
+end</code></pre><p>The no-forgetting assumption does not hold, and the information set <span>$I(d_k)$</span> only comprises the previous test result.</p><h3 id="Cost-of-Treatment"><a class="docs-heading-anchor" href="#Cost-of-Treatment">Cost of Treatment</a><a id="Cost-of-Treatment-1"></a><a class="docs-heading-anchor-permalink" href="#Cost-of-Treatment" title="Permalink"></a></h3><p>The cost of treatment decision for the pig at month <span>$k=1,...,N-1$</span> is defined</p><p class="math-container">\[Y(d_k=treat) = -100,\]</p><p class="math-container">\[Y(d_k=pass) = 0.\]</p><p>In decision programming:</p><pre><code class="language-julia hljs">for (i, j) in zip(treat, cost)
+    I_j = [i]
+    Y_j = zeros(S[I_j]...)
+    Y_j[1] = -100
+    Y_j[2] = 0
+    push!(V, ValueNode(j, I_j))
+    push!(Y, Consequences(j, Y_j))
+end</code></pre><h3 id="Selling-Price"><a class="docs-heading-anchor" href="#Selling-Price">Selling Price</a><a id="Selling-Price-1"></a><a class="docs-heading-anchor-permalink" href="#Selling-Price" title="Permalink"></a></h3><p>The price of given the pig health at month <span>$N$</span> is defined</p><p class="math-container">\[Y(h_N=ill) = 300,\]</p><p class="math-container">\[Y(h_N=healthy) = 1000.\]</p><p>In decision programming:</p><pre><code class="language-julia hljs">for (i, j) in zip(health[end], price)
+    I_j = [i]
+    Y_j = zeros(S[I_j]...)
+    Y_j[1] = 300
+    Y_j[2] = 1000
+    push!(V, ValueNode(j, I_j))
+    push!(Y, Consequences(j, Y_j))
+end</code></pre><h3 id="Validating-Influence-Diagram"><a class="docs-heading-anchor" href="#Validating-Influence-Diagram">Validating Influence Diagram</a><a id="Validating-Influence-Diagram-1"></a><a class="docs-heading-anchor-permalink" href="#Validating-Influence-Diagram" title="Permalink"></a></h3><p>Finally, we need to validate the influence diagram and sort the nodes, probabilities and consequences in increasing order by the node indices.</p><pre><code class="language-julia hljs">validate_influence_diagram(S, C, D, V)
+sort!.((C, D, V, X, Y), by = x -&gt; x.j)</code></pre><p>We define the path probability.</p><pre><code class="language-julia hljs">P = DefaultPathProbability(C, X)</code></pre><p>As the path utility, we use the default, which is the sum of the consequences given the path.</p><pre><code class="language-julia hljs">U = DefaultPathUtility(V, Y)</code></pre><h2 id="Decision-Model"><a class="docs-heading-anchor" href="#Decision-Model">Decision Model</a><a id="Decision-Model-1"></a><a class="docs-heading-anchor-permalink" href="#Decision-Model" title="Permalink"></a></h2><p>We apply an affine transformation to the utility function, making all path utilities positive. Now that all path utilities are positive, the probability cut can be excluded from the model. The purpose of this is discussed in the <a href="../../decision-programming/decision-model/">theoretical section</a> of this documentation. </p><pre><code class="language-julia hljs">U⁺ = PositivePathUtility(S, U)
+model = Model()
+z = DecisionVariables(model, S, D)
+x_s = PathCompatibilityVariables(model, z, S, P, probability_cut = false)</code></pre><p>We create the objective function</p><pre><code class="language-julia hljs">EV = expected_value(model, x_s, U⁺, P)
+@objective(model, Max, EV)</code></pre><p>and set up the solver and solve the problem.</p><pre><code class="language-julia hljs">optimizer = optimizer_with_attributes(
+    () -&gt; Gurobi.Optimizer(Gurobi.Env()),
+    &quot;IntFeasTol&quot;      =&gt; 1e-9,
+)
+set_optimizer(model, optimizer)
+optimize!(model)</code></pre><h2 id="Analyzing-Results"><a class="docs-heading-anchor" href="#Analyzing-Results">Analyzing Results</a><a id="Analyzing-Results-1"></a><a class="docs-heading-anchor-permalink" href="#Analyzing-Results" title="Permalink"></a></h2><h3 id="Decision-Strategy"><a class="docs-heading-anchor" href="#Decision-Strategy">Decision Strategy</a><a id="Decision-Strategy-1"></a><a class="docs-heading-anchor-permalink" href="#Decision-Strategy" title="Permalink"></a></h3><p>We obtain the optimal decision strategy:</p><pre><code class="language-julia hljs">Z = DecisionStrategy(z)</code></pre><pre><code class="language-julia-repl hljs">julia&gt; print_decision_strategy(S, Z)
+┌────────┬──────┬───┐
+│  Nodes │ (2,) │ 3 │
+├────────┼──────┼───┤
+│ States │ (1,) │ 2 │
+│ States │ (2,) │ 2 │
+└────────┴──────┴───┘
+┌────────┬──────┬───┐
+│  Nodes │ (5,) │ 6 │
+├────────┼──────┼───┤
+│ States │ (1,) │ 1 │
+│ States │ (2,) │ 2 │
+└────────┴──────┴───┘
+┌────────┬──────┬───┐
+│  Nodes │ (8,) │ 9 │
+├────────┼──────┼───┤
+│ States │ (1,) │ 1 │
+│ States │ (2,) │ 2 │
+└────────┴──────┴───┘</code></pre><p>The optimal strategy is as follows. In the first period, state 2 (no treatment) is chosen in node 3 (<span>$d_1$</span>) regardless of the state of node 2 (<span>$t_1$</span>). In other words, the pig is not treated in the first month. In the two subsequent months, state 1 (treat) is chosen if the corresponding test result is 1 (positive).</p><h3 id="State-Probabilities"><a class="docs-heading-anchor" href="#State-Probabilities">State Probabilities</a><a id="State-Probabilities-1"></a><a class="docs-heading-anchor-permalink" href="#State-Probabilities" title="Permalink"></a></h3><p>The state probabilities for the strategy <span>$Z$</span> can also be obtained. These tell the probability of each state in each node, given the strategy <span>$Z$</span>.</p><pre><code class="language-julia hljs">sprobs = StateProbabilities(S, P, Z)</code></pre><pre><code class="language-julia-repl hljs">julia&gt; print_state_probabilities(sprobs, health)
+┌───────┬──────────┬──────────┬─────────────┐
+│  Node │  State 1 │  State 2 │ Fixed state │
+│ Int64 │  Float64 │  Float64 │      String │
+├───────┼──────────┼──────────┼─────────────┤
+│     1 │ 0.100000 │ 0.900000 │             │
+│     4 │ 0.270000 │ 0.730000 │             │
+│     7 │ 0.295300 │ 0.704700 │             │
+│    10 │ 0.305167 │ 0.694833 │             │
+└───────┴──────────┴──────────┴─────────────┘
+julia&gt; print_state_probabilities(sprobs, test)
+┌───────┬──────────┬──────────┬─────────────┐
+│  Node │  State 1 │  State 2 │ Fixed state │
+│ Int64 │  Float64 │  Float64 │      String │
+├───────┼──────────┼──────────┼─────────────┤
+│     2 │ 0.170000 │ 0.830000 │             │
+│     5 │ 0.289000 │ 0.711000 │             │
+│     8 │ 0.306710 │ 0.693290 │             │
+└───────┴──────────┴──────────┴─────────────┘
+julia&gt; print_state_probabilities(sprobs, treat)
+┌───────┬──────────┬──────────┬─────────────┐
+│  Node │  State 1 │  State 2 │ Fixed state │
+│ Int64 │  Float64 │  Float64 │      String │
+├───────┼──────────┼──────────┼─────────────┤
+│     3 │ 0.000000 │ 1.000000 │             │
+│     6 │ 0.289000 │ 0.711000 │             │
+│     9 │ 0.306710 │ 0.693290 │             │
+└───────┴──────────┴──────────┴─────────────┘</code></pre><h3 id="Utility-Distribution"><a class="docs-heading-anchor" href="#Utility-Distribution">Utility Distribution</a><a id="Utility-Distribution-1"></a><a class="docs-heading-anchor-permalink" href="#Utility-Distribution" title="Permalink"></a></h3><p>We can also print the utility distribution for the optimal strategy. The selling prices for a healthy and an ill pig are 1000DKK and 300DKK, respectively, while the cost of treatment is 100DKK. We can see that the probability of the pig being ill in the end is the sum of three first probabilities, approximately 30.5%. This matches the probability of state 1 in node 10 in the state probabilities shown above.</p><pre><code class="language-julia hljs">udist = UtilityDistribution(S, P, U, Z)</code></pre><pre><code class="language-julia-repl hljs">julia&gt; print_utility_distribution(udist)
+┌─────────────┬─────────────┐
+│     Utility │ Probability │
+│     Float64 │     Float64 │
+├─────────────┼─────────────┤
+│  100.000000 │    0.047857 │
+│  200.000000 │    0.129330 │
+│  300.000000 │    0.127980 │
+│  800.000000 │    0.061753 │
+│  900.000000 │    0.247160 │
+│ 1000.000000 │    0.385920 │
+└─────────────┴─────────────┘</code></pre><p>Finally, we print some statistics for the utility distribution. The expected value of the utility is 727DKK, the same as in <sup class="footnote-reference"><a id="citeref-1" href="#footnote-1">[1]</a></sup>.</p><pre><code class="language-julia-repl hljs">julia&gt; print_statistics(udist)
+┌──────────┬────────────┐
+│     Name │ Statistics │
+│   String │    Float64 │
+├──────────┼────────────┤
+│     Mean │ 726.812100 │
+│      Std │ 338.460723 │
+│ Skewness │  -0.811628 │
+│ Kurtosis │  -1.173465 │
+└──────────┴────────────┘</code></pre><h2 id="References"><a class="docs-heading-anchor" href="#References">References</a><a id="References-1"></a><a class="docs-heading-anchor-permalink" href="#References" title="Permalink"></a></h2><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>Lauritzen, S. L., &amp; Nilsson, D. (2001). Representing and solving decision problems with limited information. Management Science, 47(9), 1235–1251. https://doi.org/10.1287/mnsc.47.9.1235.9779</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../used-car-buyer/">« Used Car Buyer</a><a class="docs-footer-nextpage" href="../n-monitoring/">N-Monitoring »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.6 on <span class="colophon-date" title="Tuesday 7 September 2021 14:10">Tuesday 7 September 2021</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
