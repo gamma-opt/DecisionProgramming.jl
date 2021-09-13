@@ -45,7 +45,10 @@ export DecisionVariables,
     expected_value,
     conditional_value_at_risk
 
-export random_diagram
+export random_diagram!,
+    random_probabilities!,
+    random_utilities!,
+    LocalDecisionStrategy
 
 export CompatiblePaths,
     UtilityDistribution,

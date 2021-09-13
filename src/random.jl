@@ -5,9 +5,10 @@ using Random
 
 Generates random information sets for chance and decision nodes.
 """
-function information_set(rng::AbstractRNG, j::Int, n_I::Int)
+function information_set(rng::AbstractRNG, j::Node, n_I::Int)
     m = min(rand(rng, 0:n_I), j-1)
-    return shuffle(rng, 1:(j-1))[1:m]
+    I_j = shuffle(rng, 1:(j-1))[1:m]
+    return sort(I_j)
 end
 
 """
@@ -24,22 +25,35 @@ function information_set(rng::AbstractRNG, leaf_nodes::Vector{Node}, n::Int)
     else
         m = rand(rng, 0:l)
     end
-    return [leaf_nodes; non_leaf_nodes[1:m]]
+    I_v = [leaf_nodes; non_leaf_nodes[1:m]]
+    return sort(I_v)
 end
 
+
 """
-    function random_diagram(rng::AbstractRNG, n_C::Int, n_D::Int, n_V::Int, m_C::Int, m_D::Int)
+    function random_diagram!(rng::AbstractRNG, n_C::Int, n_D::Int, n_V::Int, m_C::Int, m_D::Int, states::Vector{Int})
 
 Generate random decision diagram with `n_C` chance nodes, `n_D` decision nodes, and `n_V` value nodes.
 Parameter `m_C` and `m_D` are the upper bounds for the size of the information set.
 
+# Arguments
+- `rng::AbstractRNG`: Random number generator.
+- `n_C::Int`: Number of chance nodes.
+- `n_D::Int`: Number of decision nodes.
+- `m_C::Int`: Upper bound for size of information set for chance nodes.
+- `m_D::Int`: Upper bound for size of information set for decision nodes.
+- `states::Vector{State}`: The number of states for each chance and decision node
+    is randomly chosen from this set of numbers.
+
+
 # Examples
 ```julia
 rng = MersenneTwister(3)
-random_diagram(rng, 5, 2, 3, 2)
+diagram = InfluenceDiagram()
+random_diagram!(rng, diagram, 5, 2, 3, 2, [2, 4, 5])
 ```
 """
-function random_diagram(rng::AbstractRNG, n_C::Int, n_D::Int, n_V::Int, m_C::Int, m_D::Int)
+function random_diagram!(rng::AbstractRNG, diagram::InfluenceDiagram, n_C::Int, n_D::Int, n_V::Int, m_C::Int, m_D::Int, states::Vector{Int})
     n = n_C + n_D
     n_C ≥ 0 || throw(DomainError("There should be `n_C ≥ 0` chance nodes."))
     n_D ≥ 0 || throw(DomainError("There should be `n_D ≥ 0` decision nodes"))
@@ -47,44 +61,43 @@ function random_diagram(rng::AbstractRNG, n_C::Int, n_D::Int, n_V::Int, m_C::Int
     n_V ≥ 1 || throw(DomainError("There should be `n_V ≥ 1` value nodes."))
     m_C ≥ 1 || throw(DomainError("Maximum size of information set should be `m_C ≥ 1`."))
     m_D ≥ 1 || throw(DomainError("Maximum size of information set should be `m_D ≥ 1`."))
+    all(s > 1 for s in states) || throw(DomainError("Minimum number of states possible should be 2."))
 
     # Create node indices
     U = shuffle(rng, 1:n)
-    C_j = sort(U[1:n_C])
-    D_j = sort(U[(n_C+1):n])
-    V_j = collect((n+1):(n+n_V))
+    diagram.C = [Node(c) for c in sort(U[1:n_C])]
+    diagram.D = [Node(d) for d in sort(U[(n_C+1):n])]
+    diagram.V = [Node(v) for v in collect((n+1):(n+n_V))]
 
+    diagram.I_j = Vector{Vector{Node}}(undef, n+n_V)
     # Create chance and decision nodes
-    C = [ChanceNode(j, information_set(rng, j, m_C)) for j in C_j]
-    D = [DecisionNode(j, information_set(rng, j, m_D)) for j in D_j]
+    for c in diagram.C
+        diagram.I_j[c] = information_set(rng, c, m_C)
+    end
+    for d in diagram.D
+        diagram.I_j[d] = information_set(rng, d, m_D)
+    end
+
 
     # Assign each leaf node to a random value node
-    leaf_nodes = setdiff(1:n, (c.I_j for c in C)..., (d.I_j for d in D)...)
-    leaf_nodes_j = Dict(j=>Node[] for j in V_j)
-    for i in leaf_nodes
-        k = rand(rng, V_j)
-        push!(leaf_nodes_j[k], i)
+    leaf_nodes = setdiff(1:n, (diagram.I_j[c] for c in diagram.C)..., (diagram.I_j[d] for d in diagram.D)...)
+    leaf_nodes_v = Dict(v=>Node[] for v in diagram.V)
+    for j in leaf_nodes
+        v = rand(rng, diagram.V)
+        push!(leaf_nodes_v[v], j)
     end
 
     # Create values nodes
-    V = [ValueNode(j, information_set(rng, leaf_nodes_j[j], n)) for j in V_j]
+    for v in diagram.V
+        diagram.I_j[v] = information_set(rng, leaf_nodes_v[v], n)
+    end
 
-    return C, D, V
-end
 
-"""
-    function States(rng::AbstractRNG, states::Vector{State}, n::Int)
+    diagram.S = States(State[rand(rng, states, n)...])
+    diagram.X = Vector{Probabilities}(undef, n_C)
+    diagram.Y = Vector{Utilities}(undef, n_V)
 
-Generate `n` random states from `states`.
-
-# Examples
-```julia
-rng = MersenneTwister(3)
-S = States(rng, [2, 3], 10)
-```
-"""
-function States(rng::AbstractRNG, states::Vector{State}, n::Int)
-    States(rand(rng, states, n))
+    return diagram
 end
 
 """
@@ -95,14 +108,16 @@ Generate random probabilities for chance node `c` with `S` states.
 # Examples
 ```julia
 rng = MersenneTwister(3)
-c = ChanceNode(2, [1])
-S = States([2, 2])
-Probabilities(rng, c, S)
+diagram = InfluenceDiagram()
+random_diagram!(rng, diagram, 5, 2, 3, 2, [2, 4, 5])
+c = diagram.C[1]
+Probabilities!(rng, diagram, c)
 ```
 """
-function Probabilities(rng::AbstractRNG, c::ChanceNode, S::States; n_inactive::Int=0)
-    states = S[c.I_j]
-    state = S[c.j]
+function random_probabilities!(rng::AbstractRNG, diagram::InfluenceDiagram, c::Node; n_inactive::Int=0)
+    I_c = diagram.I_j[c]
+    states = diagram.S[I_c]
+    state = diagram.S[c]
     if !(0 ≤ n_inactive ≤ prod([states...; (state - 1)]))
         throw(DomainError("Number of inactive states must be < prod([S[I_j]...;, S[j]-1])"))
     end
@@ -133,37 +148,45 @@ function Probabilities(rng::AbstractRNG, c::ChanceNode, S::States; n_inactive::I
         data[s, :] /= sum(data[s, :])
     end
 
-    Probabilities(c.j, data)
+    index_c = findfirst(j -> j==c, diagram.C)
+    diagram.X[index_c] = Probabilities(c, data)
 end
 
-scale(x::Float64, low::Float64, high::Float64) = x * (high - low) + low
+scale(x::Utility, low::Utility, high::Utility) = x * (high - low) + low
 
 """
-    function Consequences(rng::AbstractRNG, v::ValueNode, S::States; low::Float64=-1.0, high::Float64=1.0)
+    function Utilities!(rng::AbstractRNG, diagram::InfluenceDiagram, v::Node; low::Float64=-1.0, high::Float64=1.0)
 
-Generate random consequences between `low` and `high` for value node `v` with `S` states.
+Generate random utilities between `low` and `high` for value node `v`.
 
 # Examples
 ```julia
 rng = MersenneTwister(3)
-v = ValueNode(3, [1])
-S = States([2, 2])
-Consequences(rng, v, S; low=-1.0, high=1.0)
+diagram = InfluenceDiagram()
+random_diagram!(rng, diagram, 5, 2, 3, 2, [2, 4, 5])
+v = diagram.V[1]
+Utilities!(rng, diagram, v)
 ```
 """
-function Consequences(rng::AbstractRNG, v::ValueNode, S::States; low::Float64=-1.0, high::Float64=1.0)
+function random_utilities!(rng::AbstractRNG, diagram::InfluenceDiagram, v::Node; low::Float64=-1.0, high::Float64=1.0)
     if !(high > low)
         throw(DomainError("high should be greater than low"))
     end
-    data = rand(rng, S[v.I_j]...)
-    data = scale.(data, low, high)
-    Consequences(v.j, data)
+    I_v = diagram.I_j[v]
+    data = rand(rng, Utility, diagram.S[I_v]...)
+    data = scale.(data, Utility(low), Utility(high))
+
+    index_v = findfirst(j -> j==v, diagram.V)
+    diagram.Y[index_v] = Utilities(v, data)
 end
+
+
+
 
 """
     function LocalDecisionStrategy(rng::AbstractRNG, d::DecisionNode, S::States)
 
-Generate random decision strategy for decision node `d` with `S` states.
+Generate random decision strategy for decision node `d`.
 
 # Examples
 ```julia
@@ -173,13 +196,14 @@ S = States([2, 2])
 LocalDecisionStrategy(rng, d, S)
 ```
 """
-function LocalDecisionStrategy(rng::AbstractRNG, d::DecisionNode, S::States)
-    states = S[d.I_j]
-    state = S[d.j]
+function LocalDecisionStrategy(rng::AbstractRNG, diagram::InfluenceDiagram, d::Node)
+    I_d = diagram.I_j[d]
+    states = diagram.S[I_d]
+    state = diagram.S[d]
     data = zeros(Int, states..., state)
     for s in CartesianIndices((states...,))
         s_j = rand(rng, 1:state)
         data[s, s_j] = 1
     end
-    LocalDecisionStrategy(d.j, data)
+    LocalDecisionStrategy(d, data)
 end
