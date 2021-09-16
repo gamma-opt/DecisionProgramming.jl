@@ -40,6 +40,7 @@ Parameter `m_C` and `m_D` are the upper bounds for the size of the information s
 - `rng::AbstractRNG`: Random number generator.
 - `n_C::Int`: Number of chance nodes.
 - `n_D::Int`: Number of decision nodes.
+- `n_V::Int`: Number of value nodes.
 - `m_C::Int`: Upper bound for size of information set for chance nodes.
 - `m_D::Int`: Upper bound for size of information set for decision nodes.
 - `states::Vector{State}`: The number of states for each chance and decision node
@@ -115,6 +116,9 @@ Probabilities!(rng, diagram, c)
 ```
 """
 function random_probabilities!(rng::AbstractRNG, diagram::InfluenceDiagram, c::Node; n_inactive::Int=0)
+    if !(c in diagram.C)
+        throw(DomainError("Probabilities can only be added for chance nodes."))
+    end
     I_c = diagram.I_j[c]
     states = diagram.S[I_c]
     state = diagram.S[c]
@@ -169,6 +173,9 @@ Utilities!(rng, diagram, v)
 ```
 """
 function random_utilities!(rng::AbstractRNG, diagram::InfluenceDiagram, v::Node; low::Float64=-1.0, high::Float64=1.0)
+    if !(v in diagram.V)
+        throw(DomainError("Utilities can only be added for value nodes."))
+    end
     if !(high > low)
         throw(DomainError("high should be greater than low"))
     end
