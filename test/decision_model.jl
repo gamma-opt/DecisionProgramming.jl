@@ -71,7 +71,7 @@ function test_analysis_and_printing(diagram)
     @info "Testing conditional StateProbabilities"
     S_probabilities2 = StateProbabilities(diagram, Z, node, state, S_probabilities)
 
-    @info "Testing "
+    @info "Testing printing functions"
     print_decision_strategy(diagram, Z, S_probabilities)
     print_decision_strategy(diagram, Z, S_probabilities, show_incompatible_states=true)
     print_utility_distribution(U_distribution)
