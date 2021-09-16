@@ -112,9 +112,8 @@ end
 Print risk measures.
 """
 function print_risk_measures(U_distribution::UtilityDistribution, αs::Vector{Float64}; fmt = "%f")
-    u, p = U_distribution.u, U_distribution.p
-    VaR = [value_at_risk(u, p, α) for α in αs]
-    CVaR = [conditional_value_at_risk(u, p, α) for α in αs]
+    VaR = [value_at_risk(U_distribution, α) for α in αs]
+    CVaR = [conditional_value_at_risk(U_distribution, α) for α in αs]
     df = DataFrame(α = αs, VaR = VaR, CVaR = CVaR)
     pretty_table(df, formatters = ft_printf(fmt))
 end
