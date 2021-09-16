@@ -177,5 +177,11 @@ add_utilities!(diagram, "V", [-1 2 3; 5 6 4])
 add_probabilities!(diagram, "A", [0.2, 0.8])
 generate_diagram!(diagram)
 @test diagram.translation == Utility(0)
+
+@info "Testing positive and negative path utility translations"
 generate_diagram!(diagram, positive_path_utility=true)
 @test diagram.translation == Utility(2)
+@test all(diagram.U(s, diagram.translation) > 0 for s in paths(diagram.S))
+generate_diagram!(diagram, negative_path_utility=true)
+@test diagram.translation == Utility(-7)
+@test all(diagram.U(s, diagram.translation) < 0 for s in paths(diagram.S))
