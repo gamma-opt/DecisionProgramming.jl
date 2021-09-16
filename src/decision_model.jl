@@ -60,6 +60,7 @@ struct PathCompatibilityVariables{N} <: AbstractDict{Path{N}, VariableRef}
     data::Dict{Path{N}, VariableRef}
 end
 
+Base.length(x_s::PathCompatibilityVariables) = length(x_s.data)
 Base.getindex(x_s::PathCompatibilityVariables, key) = getindex(x_s.data, key)
 Base.get(x_s::PathCompatibilityVariables, key, default) = get(x_s.data, key, default)
 Base.keys(x_s::PathCompatibilityVariables) = keys(x_s.data)
