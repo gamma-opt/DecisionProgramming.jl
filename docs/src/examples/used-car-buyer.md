@@ -15,130 +15,127 @@ We now add two new features to the problem. A stranger approaches Joe and offers
 
 We present the new influence diagram above. The decision node $T$ denotes the decision to accept or decline the stranger's offer, and $R$ is the outcome of the test. We introduce new value nodes $V_1$ and $V_2$ to represent the testing costs and the base profit from purchasing the car. Additionally, the decision node $A$ now can choose to buy with a guarantee.
 
+We start by defining the influence diagram structure. The nodes, as well as their information sets and states, are defined in the first block. Next, the influence diagram parameters consisting of the probabilities and utilities are defined.
+
+
 ```julia
 using JuMP, Gurobi
 using DecisionProgramming
-
-const O = 1  # Chance node: lemon or peach
-const T = 2  # Decision node: pay stranger for advice
-const R = 3  # Chance node: observation of state of the car
-const A = 4  # Decision node: purchase alternative
-const O_states = ["lemon", "peach"]
-const T_states = ["no test", "test"]
-const R_states = ["no test", "lemon", "peach"]
-const A_states = ["buy without guarantee", "buy with guarantee", "don't buy"]
-
-S = States([
-    (length(O_states), [O]),
-    (length(T_states), [T]),
-    (length(R_states), [R]),
-    (length(A_states), [A]),
-])
-C = Vector{ChanceNode}()
-D = Vector{DecisionNode}()
-V = Vector{ValueNode}()
-X = Vector{Probabilities}()
-Y = Vector{Consequences}()
+diagram = InfluenceDiagram()
 ```
 
-We start by defining the influence diagram structure. The decision and chance nodes, as well as their states, are defined in the first block. Next, the influence diagram parameters consisting of the node sets, probabilities, consequences and the state spaces of the nodes are defined.
+### Car's state
 
-### Car's State
-
-The chance node $O$ is defined by its information set $I(O)$ and probability distribution $X_O$. As seen in the influence diagram, the information set is empty and the node is a root node. The probability distribution is thus simply defined over the two states of $O$.
+The chance node $O$ is defined by its name, its information set $I(O)$ and its states $lemon$ and $peach$. As seen in the influence diagram, the information set is empty and the node is a root node.
 
 ```julia
-I_O = Vector{Node}()
-X_O = [0.2, 0.8]
-push!(C, ChanceNode(O, I_O))
-push!(X, Probabilities(O, X_O))
+add_node!(diagram, ChanceNode("O", [], ["lemon", "peach"]))
 ```
 
-### Stranger's Offer Decision
+### Stranger's offer decision
 
-A decision node is simply defined by its information state.
+A decision node is also defined by its name, its information set and its states.
 
 ```julia
-I_T = Vector{Node}()
-push!(D, DecisionNode(T, I_T))
+add_node!(diagram, DecisionNode("T", [], ["no test", "test"]))
 ```
 
-### Test's Outcome
+### Test's outcome
 
-The second chance node, $R$, has nodes $O$ and $T$ in its information set, and the probabilities $ℙ(s_j∣𝐬_{I(j)})$ must thus be defined for all combinations of states in $O$, $T$ and $R$.
+The second chance node $R$ has nodes $O$ and $T$ in its information set, and three states describing the situations of no test being done, and the test declaring the car to be a lemon or a peach.
 
 ```julia
-I_R = [O, T]
-X_R = zeros(S[O], S[T], S[R])
-X_R[1, 1, :] = [1,0,0]
-X_R[1, 2, :] = [0,1,0]
-X_R[2, 1, :] = [1,0,0]
-X_R[2, 2, :] = [0,0,1]
-push!(C, ChanceNode(R, I_R))
-push!(X, Probabilities(R, X_R))
+add_node!(diagram, ChanceNode("R", ["O", "T"], ["no test", "lemon", "peach"]))
 ```
 
-### Purchace Decision
+### Purchace decision
+The purchase decision represented by node $A$ is added as follows.
 ```julia
-I_A = [R]
-push!(D, DecisionNode(A, I_A))
+add_node!(diagram, DecisionNode("A", ["R"], ["buy without guarantee", "buy with guarantee", "don't buy"]))
 ```
+### Testing fee, base profit and repair costs
 
-### Testing Cost
-
-We continue by defining the utilities (consequences) associated with value nodes. The value nodes are defined similarly as the chance nodes, except that instead of probabilities, we define consequences $Y_j(𝐬_{I(j)})$. Value nodes can be named just like the other nodes, e.g. $V1 = 5$, but considering that the index of value nodes is not needed elsewhere (value nodes can't be in information sets), we choose to simply use the index number when creating the node.
-
+Value nodes are defined by only their names and information sets because they do not have states. Instead, value nodes map their information states to utility values which will be added later on.
 ```julia
-I_V1 = [T]
-Y_V1 = [0.0, -25.0]
-push!(V, ValueNode(5, I_V1))
-push!(Y, Consequences(5, Y_V1))
+add_node!(diagram, ValueNode("V1", ["T"]))
+add_node!(diagram, ValueNode("V2", ["A"]))
+add_node!(diagram, ValueNode("V3", ["O", "A"]))
 ```
 
-### Base Profit of Purchase
+### Generate arcs
+Now that all of the nodes have been added to our influence diagram we generate the arcs between the nodes. This step automatically orders the nodes, gives them indices and reorganises the information into the appropriate form in the influence diagram structure.
 ```julia
-I_V2 = [A]
-Y_V2 = [100.0, 40.0, 0.0]
-push!(V, ValueNode(6, I_V2))
-push!(Y, Consequences(6, Y_V2))
+generate_arcs!(diagram)
 ```
 
-### Repairing Cost
+### Probabilities
+We continue by defining probability distributions for each chance node. 
 
-The rows of the consequence matrix Y_V3 correspond to the state of the car, while the columns correspond to the decision made in node $A$.
-
+Node $O$ is a root node and has two states thus, its probability distribution is simply defined over the two states. We can use the `ProbabilityMatrix` structure in creating the probability matrix easily without having to worry about the matrix dimensions. We then set the probability values and add the probabililty matrix to the influence diagram.
 ```julia
-I_V3 = [O, A]
-Y_V3 = [-200.0 0.0 0.0;
-        -40.0 -20.0 0.0]
-push!(V, ValueNode(7, I_V3))
-push!(Y, Consequences(7, Y_V3))
+X_O = ProbabilityMatrix(diagram, "O")
+set_probability!(X_O, ["peach"], 0.8)
+set_probability!(X_O, ["lemon"], 0.2)
+add_probabilities!(diagram, "O", X_O)
 ```
 
-### Validating the Influence Diagram
-Validate influence diagram and sort nodes, probabilities and consequences
-
+Node $R$ has two nodes in its information set and three states. The probabilities $P(s_j \mid s_{I(j)})$ must thus be defined for all combinations of states in $O$, $T$ and $R$. We declare the probability distribution over the states of node $R$ for each information state in the following way. More information on defining probability matrices can be found on the [usage page](../usage.md).
 ```julia
-validate_influence_diagram(S, C, D, V)
-sort!.((C, D, V, X, Y), by = x -> x.j)
+X_R = ProbabilityMatrix(diagram, "R")
+set_probability!(X_R, ["lemon", "no test", :], [1,0,0])
+set_probability!(X_R, ["lemon", "test", :], [0,1,0])
+set_probability!(X_R, ["peach", "no test", :], [1,0,0])
+set_probability!(X_R, ["peach", "test", :], [0,0,1])
+add_probabilities!(diagram, "R", X_R)
 ```
 
-Default path probabilities and utilities are defined as the joint probability of all chance events in the diagram and the sum of utilities in value nodes, respectively. In the [Contingent Portfolio Programming](contingent-portfolio-programming.md) example, we show how to use a user-defined custom path utility function.
+
+### Utilities 
+We continue by defining the utilities associated with the information states of the value nodes. The utilities $Y_j(𝐬_{I(j)})$ are defined and added similarly to the probabilities.
+
+Value node $V1$ has only node $T$ in its information set and node $T$ only has two states. Therefore, the utility matrix of node $V1$ should hold utility values corresponding to states $test$ and $no \ test$.
 
 ```julia
-P = DefaultPathProbability(C, X)
-U = DefaultPathUtility(V, Y)
+Y_V1 = UtilityMatrix(diagram, "V1")
+set_utility!(Y_V1, ["test"], -25)
+set_utility!(Y_V1, ["no test"], 0)
+add_utilities!(diagram, "V1", Y_V1)
 ```
 
+We then define the utilities associated with the base profit of the purchase in different scenarios.
+```julia
+Y_V2 = UtilityMatrix(diagram, "V2")
+set_utility!(Y_V2, ["buy without guarantee"], 100)
+set_utility!(Y_V2, ["buy with guarantee"], 40)
+set_utility!(Y_V2, ["don't buy"], 0)
+add_utilities!(diagram, "V2", Y_V2)
+```
 
-## Decision Model
-We then construct the decision model using the DecisionProgramming.jl package, using the expected value as the objective.
+Finally, we define the utilities corresponding to the repair costs. The rows of the utilities matrix `Y_V3` correspond to the state of the car, while the columns correspond to the decision made in node $A$. Notice that the utility values for the second row are added as a vector, in this case it is important to give the utility values in the correct order. The order of the columns is determined by the order in which the states are given when declaring node $A$. See the [usage page](../usage.md) for more information on the syntax.
+```julia
+Y_V3 = UtilityMatrix(diagram, "V3")
+set_utility!(Y_V3, ["lemon", "buy without guarantee"], -200)
+set_utility!(Y_V3, ["lemon", "buy with guarantee"], 0)
+set_utility!(Y_V3, ["lemon", "don't buy"], 0)
+set_utility!(Y_V3, ["peach", :], [-40, -20, 0])
+add_utilities!(diagram, "V3", Y_V3)
+```
+
+### Generate influence diagram
+Finally, generate the full influence diagram before defining the decision model. By default this function uses the default path probabilities and utilities, which are defined as the joint probability of all chance events in the diagram and the sum of utilities in value nodes, respectively. In the [Contingent Portfolio Programming](contingent-portfolio-programming.md) example, we show how to use a user-defined custom path utility function.
+
+```julia
+generate_diagram!(diagram)
+```
+
+## Decision model
+We then construct the decision model by declaring a JuMP model and adding decision variables and path compatibility variables to the model. We define the objective function to be the expected value.
 
 ```julia
 model = Model()
-z = DecisionVariables(model, S, D)
-x_s = PathCompatibilityVariables(model, z, S, P)
-EV = expected_value(model, x_s, U, P)
+z = DecisionVariables(model, diagram)
+x_s = PathCompatibilityVariables(model, diagram, z)
+EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
 ```
 
@@ -154,41 +151,36 @@ optimize!(model)
 ```
 
 
-## Analyzing Results
-### Decision Strategy
-Once the model is solved, we obtain the following decision strategy:
+## Analyzing results
+Once the model is solved, we extract the results.
 
 ```julia
 Z = DecisionStrategy(z)
+S_probabilities = StateProbabilities(diagram, Z)
+U_distribution = UtilityDistribution(diagram, Z)
 ```
 
+### Decision strategy
+
+We obtain the following optimal decision strategy:
 ```julia-repl
-julia> print_decision_strategy(S, Z)
-┌────────┬────┬───┐
-│  Nodes │ () │ 2 │
-├────────┼────┼───┤
-│ States │ () │ 2 │
-└────────┴────┴───┘
-┌────────┬──────┬───┐
-│  Nodes │ (3,) │ 4 │
-├────────┼──────┼───┤
-│ States │ (1,) │ 3 │
-│ States │ (2,) │ 2 │
-│ States │ (3,) │ 1 │
-└────────┴──────┴───┘
+julia> print_decision_strategy(diagram, Z, S_probabilities)
+┌───────────────┐
+│ Decision in T │
+├───────────────┤
+│ test          │
+└───────────────┘
+┌───────────────┬───────────────────────┐
+│ State(s) of R │ Decision in A         │
+├───────────────┼───────────────────────┤
+│ lemon         │ buy with guarantee    │
+│ peach         │ buy without guarantee │
+└───────────────┴───────────────────────┘
 ```
 
-To start explaining this output, let's take a look at the top table. On the right, we have the decision node 2. We defined earlier that the node $T$ is node number 2. On the left, we have the information set of that decision node, which is empty. The strategy in the first decision node is to choose alternative 2, which we defined to be testing the car.
-
-In the bottom table, we have node number 4 (node $A$) and its predecessor, node number 3 (node $R$). The first row, where we obtain no test result, is invalid for this strategy since we tested the car. If the car is a lemon, Joe should buy the car with a guarantee (alternative 2), and if it is a peach, buy the car without guarantee (alternative 1).
-
-### Utility Distribution
-```julia
-udist = UtilityDistribution(S, P, U, Z)
-```
-
+### Utility distribution
 ```julia-repl
-julia> print_utility_distribution(udist)
+julia> print_utility_distribution(U_distribution)
 ┌───────────┬─────────────┐
 │   Utility │ Probability │
 │   Float64 │     Float64 │
@@ -201,7 +193,7 @@ julia> print_utility_distribution(udist)
 From the utility distribution, we can see that Joe's profit with this strategy is 15 USD, with a 20% probability (the car is a lemon) and 35 USD with an 80% probability (the car is a peach).
 
 ```julia-repl
-julia> print_statistics(udist)
+julia> print_statistics(U_distribution)
 ┌──────────┬────────────┐
 │     Name │ Statistics │
 │   String │    Float64 │

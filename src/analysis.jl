@@ -1,12 +1,20 @@
+"""
+    struct CompatiblePaths
+        S::States
+        C::Vector{Node}
+        Z::DecisionStrategy
+        fixed::FixedPath
+    end
 
+CompatiblePaths type.
+"""
 struct CompatiblePaths
     S::States
-    C::Vector{ChanceNode}
+    C::Vector{Node}
     Z::DecisionStrategy
-    fixed::Dict{Node, State}
+    fixed::FixedPath
     function CompatiblePaths(S, C, Z, fixed)
-        C_j = Set([c.j for c in C])
-        if !all(k∈C_j for k in keys(fixed))
+        if !all(k∈Set(C) for k in keys(fixed))
             throw(DomainError("You can only fix chance states."))
         end
         new(S, C, Z, fixed)
@@ -14,9 +22,9 @@ struct CompatiblePaths
 end
 
 """
-    CompatiblePaths(S::States, C::Vector{ChanceNode}, Z::DecisionStrategy)
+    CompatiblePaths(diagram::InfluenceDiagram, Z::DecisionStrategy, fixed::FixedPath=Dict{Node, State}())
 
-Interface for iterating over paths that are compatible and active given influence diagram and decision strategy.
+CompatiblePaths outer construction function. Interface for iterating over paths that are compatible and active given influence diagram and decision strategy.
 
 1) Initialize path `s` of length `n`
 2) Fill chance states `s[C]` by generating subpaths `paths(C)`
@@ -24,57 +32,58 @@ Interface for iterating over paths that are compatible and active given influenc
 
 # Examples
 ```julia
-for s in CompatiblePaths(S, C, Z)
+julia> for s in CompatiblePaths(diagram, Z)
     ...
 end
 ```
 """
-
-function CompatiblePaths(S::States, C::Vector{ChanceNode}, Z::DecisionStrategy)
-    CompatiblePaths(S, C, Z, Dict{Node, State}())
+function CompatiblePaths(diagram::InfluenceDiagram, Z::DecisionStrategy, fixed::FixedPath=Dict{Node, State}())
+    CompatiblePaths(diagram.S, diagram.C, Z, fixed)
 end
 
-function compatible_path(S::States, C::Vector{ChanceNode}, Z::DecisionStrategy, s_C::Path)
-    s = Array{Int}(undef, length(S))
+function compatible_path(S::States, C::Vector{Node}, Z::DecisionStrategy, s_C::Path)
+    s = Array{State}(undef, length(S))
     for (c, s_C_j) in zip(C, s_C)
-        s[c.j] = s_C_j
+        s[c] = s_C_j
     end
-    for (d, Z_j) in zip(Z.D, Z.Z_j)
-        s[d.j] = Z_j((s[d.I_j]...,))
+    for (d, I_d, Z_d) in zip(Z.D, Z.I_d, Z.Z_d)
+        s[d] = Z_d((s[I_d]...,))
     end
     return (s...,)
 end
 
-function Base.iterate(a::CompatiblePaths)
-    C_j = [c.j for c in a.C]
-    if isempty(a.fixed)
-        iter = paths(a.S[C_j])
+function Base.iterate(S_Z::CompatiblePaths)
+    if isempty(S_Z.fixed)
+        iter = paths(S_Z.S[S_Z.C])
     else
-        ks = sort(collect(keys(a.fixed)))
-        fixed = Dict{Int, Int}(i => a.fixed[k] for (i, k) in enumerate(ks))
-        iter = paths(a.S[C_j], fixed)
+        ks = sort(collect(keys(S_Z.fixed)))
+        fixed = Dict{Node, State}(Node(i) => S_Z.fixed[k] for (i, k) in enumerate(S_Z.C) if k in ks)
+        iter = paths(S_Z.S[S_Z.C], fixed)
     end
     next = iterate(iter)
     if next !== nothing
         s_C, state = next
-        return (compatible_path(a.S, a.C, a.Z, s_C), (iter, state))
+        return (compatible_path(S_Z.S, S_Z.C, S_Z.Z, s_C), (iter, state))
     end
 end
 
-function Base.iterate(a::CompatiblePaths, gen)
+function Base.iterate(S_Z::CompatiblePaths, gen)
     iter, state = gen
     next = iterate(iter, state)
     if next !== nothing
         s_C, state = next
-        return (compatible_path(a.S, a.C, a.Z, s_C), (iter, state))
+        return (compatible_path(S_Z.S, S_Z.C, S_Z.Z, s_C), (iter, state))
     end
 end
 
 Base.eltype(::Type{CompatiblePaths}) = Path
-Base.length(a::CompatiblePaths) = prod(a.S[c.j] for c in a.C)
+Base.length(S_Z::CompatiblePaths) = prod(S_Z.S[c] for c in S_Z.C)
 
 """
-     UtilityDistribution
+    struct UtilityDistribution
+        u::Vector{Float64}
+        p::Vector{Float64}
+    end
 
 UtilityDistribution type.
 
@@ -85,23 +94,23 @@ struct UtilityDistribution
 end
 
 """
-    UtilityDistribution(S::States, P::AbstractPathProbability, U::AbstractPathUtility, Z::DecisionStrategy)
+    UtilityDistribution(diagram::InfluenceDiagram, Z::DecisionStrategy)
 
-Constructs the probability mass function for path utilities on paths that are compatible and active.
+Construct the probability mass function for path utilities on paths that are compatible with given decision strategy.
 
 # Examples
 ```julia
-UtilityDistribution(S, P, U, Z)
+julia> UtilityDistribution(diagram, Z)
 ```
 """
-function UtilityDistribution(S::States, P::AbstractPathProbability, U::AbstractPathUtility, Z::DecisionStrategy)
+function UtilityDistribution(diagram::InfluenceDiagram, Z::DecisionStrategy)
     # Extract utilities and probabilities of active paths
-    S_Z = CompatiblePaths(S, P.C, Z)
+    S_Z = CompatiblePaths(diagram, Z)
     utilities = Vector{Float64}(undef, length(S_Z))
     probabilities = Vector{Float64}(undef, length(S_Z))
     for (i, s) in enumerate(S_Z)
-        utilities[i] = U(s)
-        probabilities[i] = P(s)
+        utilities[i] = diagram.U(s)
+        probabilities[i] = diagram.P(s)
     end
 
     # Filter zero probabilities
@@ -132,84 +141,112 @@ function UtilityDistribution(S::States, P::AbstractPathProbability, U::AbstractP
 end
 
 """
-    StateProbabilities
+    struct StateProbabilities
+        probs::Dict{Node, Vector{Float64}}
+        fixed::FixedPath
+    end
 
 StateProbabilities type.
 """
 struct StateProbabilities
     probs::Dict{Node, Vector{Float64}}
-    fixed::Dict{Node, State}
+    fixed::FixedPath
 end
 
 """
-    function StateProbabilities(S::States, P::AbstractPathProbability, Z::DecisionStrategy, node::Node, state::State, prev::StateProbabilities)
+    StateProbabilities(diagram::InfluenceDiagram, Z::DecisionStrategy, node::Node, state::State, prior_probabilities::StateProbabilities)
 
-Associates each node with array of conditional probabilities for each of its states occuring in active paths given fixed states and prior probability.
+Associate each node with array of conditional probabilities for each of its states occuring in compatible paths given
+    fixed states and prior probability. Fix node and state using their indices.
 
 # Examples
 ```julia
 # Prior probabilities
-prev = StateProbabilities(S, P, Z)
-
-# Select node and fix its state
-node = 1
-state = 2
-StateProbabilities(S, P, Z, node, state, prev)
+julia> prior_probabilities = StateProbabilities(diagram, Z)
+julia> StateProbabilities(diagram, Z, Node(2), State(1), prior_probabilities)
 ```
 """
-function StateProbabilities(S::States, P::AbstractPathProbability, Z::DecisionStrategy, node::Node, state::State, prev::StateProbabilities)
-    prior = prev.probs[node][state]
-    fixed = prev.fixed
+function StateProbabilities(diagram::InfluenceDiagram, Z::DecisionStrategy, node::Node, state::State, prior_probabilities::StateProbabilities)
+    prior = prior_probabilities.probs[node][state]
+    fixed = deepcopy(prior_probabilities.fixed)
+
     push!(fixed, node => state)
-    probs = Dict(i => zeros(S[i]) for i in 1:length(S))
-    for s in CompatiblePaths(S, P.C, Z, fixed), i in 1:length(S)
-        probs[i][s[i]] += P(s) / prior
+    probs = Dict(i => zeros(diagram.S[i]) for i in 1:length(diagram.S))
+    for s in CompatiblePaths(diagram, Z, fixed), i in 1:length(diagram.S)
+        probs[i][s[i]] += diagram.P(s) / prior
     end
     StateProbabilities(probs, fixed)
 end
 
 """
-    function StateProbabilities(S::States, P::AbstractPathProbability, Z::DecisionStrategy)
+    StateProbabilities(diagram::InfluenceDiagram, Z::DecisionStrategy, node::Name, state::Name, prior_probabilities::StateProbabilities)
 
-Associates each node with array of probabilities for each of its states occuring in active paths.
+Associate each node with array of conditional probabilities for each of its states occuring in compatible paths given
+    fixed states and prior probability. Fix node and state using their names.
 
 # Examples
 ```julia
-StateProbabilities(S, P, Z)
+# Prior probabilities
+julia> prior_probabilities = StateProbabilities(diagram, Z)
+
+# Select node and fix its state
+julia> node = "R"
+julia> state = "no test"
+julia> StateProbabilities(diagram, Z, node, state, prior_probabilities)
 ```
 """
-function StateProbabilities(S::States, P::AbstractPathProbability, Z::DecisionStrategy)
-    probs = Dict(i => zeros(S[i]) for i in 1:length(S))
-    for s in CompatiblePaths(S, P.C, Z), i in 1:length(S)
-        probs[i][s[i]] += P(s)
+function StateProbabilities(diagram::InfluenceDiagram, Z::DecisionStrategy, node::Name, state::Name, prior_probabilities::StateProbabilities)
+    node_index = findfirst(j -> j ==node, diagram.Names)
+    state_index = findfirst(j -> j == state, diagram.States[node_index])
+
+    return StateProbabilities(diagram, Z, Node(node_index), State(state_index), prior_probabilities)
+end
+
+
+
+
+"""
+    StateProbabilities(diagram::InfluenceDiagram, Z::DecisionStrategy)
+
+Associate each node with array of probabilities for each of its states occuring in compatible paths.
+
+# Examples
+```julia
+julia> StateProbabilities(diagram, Z)
+```
+"""
+function StateProbabilities(diagram::InfluenceDiagram, Z::DecisionStrategy)
+    probs = Dict(i => zeros(diagram.S[i]) for i in 1:length(diagram.S))
+    for s in CompatiblePaths(diagram, Z), i in 1:length(diagram.S)
+        probs[i][s[i]] += diagram.P(s)
     end
     StateProbabilities(probs, Dict{Node, State}())
 end
 
 """
-    function value_at_risk(u::Vector{Float64}, p::Vector{Float64}, α::Float64)
+    value_at_risk(U_distribution::UtilityDistribution, α::Float64)
 
-Value-at-risk.
+Calculate value-at-risk.
 """
-function value_at_risk(u::Vector{Float64}, p::Vector{Float64}, α::Float64)
+function value_at_risk(U_distribution::UtilityDistribution, α::Float64)
     @assert 0 ≤ α ≤ 1 "We should have 0 ≤ α ≤ 1."
-    i = sortperm(u)
-    u, p = u[i], p[i]
+    perm = sortperm(U_distribution.u)
+    u, p = U_distribution.u[perm], U_distribution.p[perm]
     index = findfirst(x -> x≥α, cumsum(p))
     return if index === nothing; u[end] else u[index] end
 end
 
 """
-    function conditional_value_at_risk(u::Vector{Float64}, p::Vector{Float64}, α::Float64)
+    conditional_value_at_risk(u::Vector{Float64}, p::Vector{Float64}, α::Float64)
 
-Conditional value-at-risk.
+Calculate conditional value-at-risk.
 """
-function conditional_value_at_risk(u::Vector{Float64}, p::Vector{Float64}, α::Float64)
-    x_α = value_at_risk(u, p, α)
+function conditional_value_at_risk(U_distribution::UtilityDistribution, α::Float64)
+    x_α = value_at_risk(U_distribution, α)
     if iszero(α)
         return x_α
     else
-        tail = u .≤ x_α
-        return (sum(u[tail] .* p[tail]) - (sum(p[tail]) - α) * x_α) / α
+        tail = U_distribution.u .≤ x_α
+        return (sum(U_distribution.u[tail] .* U_distribution.p[tail]) - (sum(U_distribution.p[tail]) - α) * x_α) / α
     end
 end

@@ -3,97 +3,61 @@ using JuMP, Gurobi
 using DecisionProgramming
 
 const N = 4
-const health = [3*k - 2 for k in 1:N]
-const test = [3*k - 1 for k in 1:(N-1)]
-const treat = [3*k for k in 1:(N-1)]
-const cost = [(3*N - 2) + k for k in 1:(N-1)]
-const price = [(3*N - 2) + N]
-const health_states = ["ill", "healthy"]
-const test_states = ["positive", "negative"]
-const treat_states = ["treat", "pass"]
 
 @info("Creating the influence diagram.")
-S = States([
-    (length(health_states), health),
-    (length(test_states), test),
-    (length(treat_states), treat),
-])
-C = Vector{ChanceNode}()
-D = Vector{DecisionNode}()
-V = Vector{ValueNode}()
-X = Vector{Probabilities}()
-Y = Vector{Consequences}()
+diagram = InfluenceDiagram()
 
-for j in health[[1]]
-    I_j = Vector{Node}()
-    X_j = zeros(S[I_j]..., S[j])
-    X_j[1] = 0.1
-    X_j[2] = 1.0 - X_j[1]
-    push!(C, ChanceNode(j, I_j))
-    push!(X, Probabilities(j, X_j))
+add_node!(diagram, ChanceNode("H1", [], ["ill", "healthy"]))
+for i in 1:N-1
+    # Testing result
+    add_node!(diagram, ChanceNode("T$i", ["H$i"], ["positive", "negative"]))
+    # Decision to treat
+    add_node!(diagram, DecisionNode("D$i", ["T$i"], ["treat", "pass"]))
+    # Cost of treatment
+    add_node!(diagram, ValueNode("C$i", ["D$i"]))
+    # Health of next period
+    add_node!(diagram, ChanceNode("H$(i+1)", ["H$(i)", "D$(i)"], ["ill", "healthy"]))
+end
+add_node!(diagram, ValueNode("MP", ["H$N"]))
+
+generate_arcs!(diagram)
+
+# Add probabilities for node H1
+add_probabilities!(diagram, "H1", [0.1, 0.9])
+
+# Declare proability matrix for health nodes H_2, ... H_N-1, which have identical information sets and states
+X_H = ProbabilityMatrix(diagram, "H2")
+set_probability!(X_H, ["healthy", "pass", :], [0.2, 0.8])
+set_probability!(X_H, ["healthy", "treat", :], [0.1, 0.9])
+set_probability!(X_H, ["ill", "pass", :], [0.9, 0.1])
+set_probability!(X_H, ["ill", "treat", :], [0.5, 0.5])
+
+# Declare proability matrix for test result nodes T_1...T_N
+X_T = ProbabilityMatrix(diagram, "T1")
+set_probability!(X_T, ["ill", "positive"], 0.8)
+set_probability!(X_T, ["ill", "negative"], 0.2)
+set_probability!(X_T, ["healthy", "negative"], 0.9)
+set_probability!(X_T, ["healthy", "positive"], 0.1)
+
+for i in 1:N-1
+    add_probabilities!(diagram, "T$i", X_T)
+    add_probabilities!(diagram, "H$(i+1)", X_H)
 end
 
-for (i, k, j) in zip(health[1:end-1], treat, health[2:end])
-    I_j = [i, k]
-    X_j = zeros(S[I_j]..., S[j])
-    X_j[2, 2, 1] = 0.2
-    X_j[2, 2, 2] = 1.0 - X_j[2, 2, 1]
-    X_j[2, 1, 1] = 0.1
-    X_j[2, 1, 2] = 1.0 - X_j[2, 1, 1]
-    X_j[1, 2, 1] = 0.9
-    X_j[1, 2, 2] = 1.0 - X_j[1, 2, 1]
-    X_j[1, 1, 1] = 0.5
-    X_j[1, 1, 2] = 1.0 - X_j[1, 1, 1]
-    push!(C, ChanceNode(j, I_j))
-    push!(X, Probabilities(j, X_j))
+for i in 1:N-1
+    add_utilities!(diagram, "C$i", [-100.0, 0.0])
 end
 
-for (i, j) in zip(health, test)
-    I_j = [i]
-    X_j = zeros(S[I_j]..., S[j])
-    X_j[1, 1] = 0.8
-    X_j[1, 2] = 1.0 - X_j[1, 1]
-    X_j[2, 2] = 0.9
-    X_j[2, 1] = 1.0 - X_j[2, 2]
-    push!(C, ChanceNode(j, I_j))
-    push!(X, Probabilities(j, X_j))
-end
+add_utilities!(diagram, "MP", [300.0, 1000.0])
 
-for (i, j) in zip(test, treat)
-    I_j = [i]
-    push!(D, DecisionNode(j, I_j))
-end
+generate_diagram!(diagram, positive_path_utility = true)
 
-for (i, j) in zip(treat, cost)
-    I_j = [i]
-    Y_j = zeros(S[I_j]...)
-    Y_j[1] = -100
-    Y_j[2] = 0
-    push!(V, ValueNode(j, I_j))
-    push!(Y, Consequences(j, Y_j))
-end
-
-for (i, j) in zip(health[end], price)
-    I_j = [i]
-    Y_j = zeros(S[I_j]...)
-    Y_j[1] = 300
-    Y_j[2] = 1000
-    push!(V, ValueNode(j, I_j))
-    push!(Y, Consequences(j, Y_j))
-end
-
-validate_influence_diagram(S, C, D, V)
-sort!.((C, D, V, X, Y), by = x -> x.j)
-
-P = DefaultPathProbability(C, X)
-U = DefaultPathUtility(V, Y)
 
 @info("Creating the decision model.")
-U⁺ = PositivePathUtility(S, U)
 model = Model()
-z = DecisionVariables(model, S, D)
-x_s = PathCompatibilityVariables(model, z, S, P, probability_cut = false)
-EV = expected_value(model, x_s, U⁺, P)
+z = DecisionVariables(model, diagram)
+x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
+EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
 
 @info("Starting the optimization process.")
@@ -106,30 +70,28 @@ optimize!(model)
 
 @info("Extracting results.")
 Z = DecisionStrategy(z)
+S_probabilities = StateProbabilities(diagram, Z)
+U_distribution = UtilityDistribution(diagram, Z)
+
 
 @info("Printing decision strategy:")
-print_decision_strategy(S, Z)
-
-@info("State probabilities:")
-sprobs = StateProbabilities(S, P, Z)
-print_state_probabilities(sprobs, health)
-print_state_probabilities(sprobs, test)
-print_state_probabilities(sprobs, treat)
-
-@info("Conditional state probabilities")
-node = 1
-for state in 1:2
-    sprobs2 = StateProbabilities(S, P, Z, node, state, sprobs)
-    print_state_probabilities(sprobs2, health)
-    print_state_probabilities(sprobs2, test)
-    print_state_probabilities(sprobs2, treat)
-end
-
-@info("Computing utility distribution.")
-udist = UtilityDistribution(S, P, U, Z)
+print_decision_strategy(diagram, Z, S_probabilities)
 
 @info("Printing utility distribution.")
-print_utility_distribution(udist)
+print_utility_distribution(U_distribution)
 
 @info("Printing statistics")
-print_statistics(udist)
+print_statistics(U_distribution)
+
+@info("State probabilities:")
+print_state_probabilities(diagram, S_probabilities, [["H$i" for i in 1:N]...])
+print_state_probabilities(diagram, S_probabilities, [["T$i" for i in 1:N-1]...])
+print_state_probabilities(diagram, S_probabilities, [["D$i" for i in 1:N-1]...])
+
+@info("Conditional state probabilities")
+for state in ["ill", "healthy"]
+    S_probabilities2 = StateProbabilities(diagram, Z, "H1", state, S_probabilities)
+    print_state_probabilities(diagram, S_probabilities2, [["H$i" for i in 1:N]...])
+    print_state_probabilities(diagram, S_probabilities2, [["T$i" for i in 1:N-1]...])
+    print_state_probabilities(diagram, S_probabilities2, [["D$i" for i in 1:N-1]...])
+end
