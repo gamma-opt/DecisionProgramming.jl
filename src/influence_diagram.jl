@@ -765,7 +765,7 @@ function validate_structure(Nodes::Vector{AbstractNode}, C_and_D::Vector{Abstrac
     if n_CD == 0
         throw(DomainError("The influence diagram must have chance or decision nodes."))
     end
-    if !(union((n.I_j for n in Nodes)...) ⊆ Set(n.name for n in Nodes)) 
+    if !(union((n.I_j for n in Nodes)...) ⊆ Set(n.name for n in Nodes))
         throw(DomainError("Each node that is part of an information set should be added as a node."))
     end
     # Checking the information sets of C and D nodes
@@ -940,6 +940,38 @@ function generate_diagram!(diagram::InfluenceDiagram;
         end
     end
 
+end
+
+"""
+    function index_of(diagram::InfluenceDiagram, node::Name)
+
+Get the index of a given node.
+
+# Example
+```julia
+julia> idx_O = index_of(diagram, "O")
+```
+"""
+function index_of(diagram::InfluenceDiagram, node::Name)
+    idx = findfirst(isequal(node), diagram.Names)
+    if isnothing(idx)
+        throw(DomainError("Name $node not found in the diagram."))
+    end
+    return idx
+end
+
+"""
+    function num_states(diagram::InfluenceDiagram, node::Name)
+
+Get the number of states in a given node.
+
+# Example
+```julia
+julia> NS_O = num_states(diagram, "O")
+```
+"""
+function num_states(diagram::InfluenceDiagram, node::Name)
+    return diagram.S[index_of(diagram, node)]
 end
 
 # --- ForbiddenPath and FixedPath outer construction functions ---
