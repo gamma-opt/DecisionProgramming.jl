@@ -1,6 +1,7 @@
 # API Reference
 `DecisionProgramming.jl` API reference.
 
+include("influence_diagram.jl")
 
 ## `influence_diagram.jl`
 ### Nodes
@@ -48,6 +49,7 @@ DefaultPathUtility
 ```
 
 ### InfluenceDiagram
+```@docs
 InfluenceDiagram
 generate_arcs!
 generate_diagram!
@@ -58,6 +60,9 @@ add_probabilities!
 UtilityMatrix
 set_utility!
 add_utilities!
+index_of
+num_states
+```
 
 ### Decision Strategy
 ```@docs
@@ -71,7 +76,7 @@ DecisionStrategy
 ```@docs
 DecisionVariables
 PathCompatibilityVariables
-lazy_probability_cut(::Model, ::PathCompatibilityVariables, ::AbstractPathProbability)
+lazy_probability_cut
 ```
 
 ### Objective Functions
@@ -110,9 +115,10 @@ print_risk_measures
 
 ## `random.jl`
 ```@docs
-random_diagram(::AbstractRNG, ::Int, ::Int, ::Int, ::Int, ::Int)
-States(::AbstractRNG, ::Vector{State}, ::Int)
-Probabilities(::AbstractRNG, ::ChanceNode, ::States; ::Int)
-Consequences(::AbstractRNG, ::ValueNode, ::States; ::Float64, ::Float64)
-LocalDecisionStrategy(::AbstractRNG, ::DecisionNode, ::States)
+information_set(::AbstractRNG, ::Node, ::Int)
+information_set(::AbstractRNG, ::Vector{Node}, ::Int)
+random_diagram!
+random_probabilities!
+random_utilities!
+LocalDecisionStrategy(::AbstractRNG, ::InfluenceDiagram, ::Node)
 ```

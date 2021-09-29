@@ -24,7 +24,11 @@ Node type for directed, acyclic graph.
 """
 abstract type AbstractNode end
 
+"""
+    struct ChanceNode <: AbstractNode
 
+A struct for chance nodes, includes the name, information set and states of the node
+"""
 struct ChanceNode <: AbstractNode
     name::Name
     I_j::Vector{Name}
@@ -35,6 +39,11 @@ struct ChanceNode <: AbstractNode
 
 end
 
+"""
+    struct DecisionNode <: AbstractNode
+
+A struct for decision nodes, includes the name, information set and states of the node
+"""
 struct DecisionNode <: AbstractNode
     name::Name
     I_j::Vector{Name}
@@ -44,6 +53,11 @@ struct DecisionNode <: AbstractNode
     end
 end
 
+"""
+    struct ValueNode <: AbstractNode
+
+A struct for value nodes, includes the name and information set of the node
+"""
 struct ValueNode <: AbstractNode
     name::Name
     I_j::Vector{Name}
