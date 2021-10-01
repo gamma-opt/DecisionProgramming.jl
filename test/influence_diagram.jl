@@ -137,12 +137,12 @@ generate_arcs!(diagram)
 @test_throws DomainError ProbabilityMatrix(diagram, "C")
 @test_throws DomainError ProbabilityMatrix(diagram, "D")
 X_A = ProbabilityMatrix(diagram, "A")
-set_probability!(X_A, ["a"], 0.2)
+X_A["a"] = 0.2
 @test X_A  == [0.2, 0]
-set_probability!(X_A, ["b"], 0.9)
+X_A["b"] = 0.9
 @test X_A  == [0.2, 0.9]
 @test_throws DomainError add_probabilities!(diagram, "A", X_A)
-set_probability!(X_A, ["b"], 0.8)
+X_A["b"] = 0.8
 @test add_probabilities!(diagram, "A", X_A) == [[0.2, 0.8]]
 @test_throws DomainError add_probabilities!(diagram, "A", X_A)
 
@@ -157,10 +157,10 @@ generate_arcs!(diagram)
 @test_throws DomainError UtilityMatrix(diagram, "D")
 Y_V = UtilityMatrix(diagram, "V")
 @test_throws DomainError add_utilities!(diagram, "V", Y_V)
-set_utility!(Y_V, ["a", :], [1, 2, 3])
-set_utility!(Y_V, ["b", "c"], 4)
-set_utility!(Y_V, ["b", "a"], 5)
-set_utility!(Y_V, ["b", "b"], 6)
+Y_V["a", :] = [1, 2, 3]
+Y_V["b", "c"] = 4
+Y_V["b", "a"] = 5
+Y_V["b", "b"] = 6
 @test Y_V  == [1 2 3; 5 6 4]
 add_utilities!(diagram, "V", Y_V)
 @test diagram.Y == [[1 2 3; 5 6 4]]
