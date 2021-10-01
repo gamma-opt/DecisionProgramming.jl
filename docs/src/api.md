@@ -1,8 +1,6 @@
 # API Reference
 `DecisionProgramming.jl` API reference.
 
-include("influence_diagram.jl")
-
 ## `influence_diagram.jl`
 ### Nodes
 ```@docs
@@ -22,7 +20,7 @@ Path
 ForbiddenPath
 FixedPath
 paths(::AbstractVector{State})
-paths(::AbstractVector{State}, FixedPath)
+paths(::AbstractVector{State}, ::FixedPath)
 ```
 
 ### Probabilities
@@ -115,10 +113,10 @@ print_risk_measures
 
 ## `random.jl`
 ```@docs
-information_set(::AbstractRNG, ::Node, ::Int)
-information_set(::AbstractRNG, ::Vector{Node}, ::Int)
 random_diagram!
 random_probabilities!
 random_utilities!
 LocalDecisionStrategy(::AbstractRNG, ::InfluenceDiagram, ::Node)
+DecisionProgramming.information_set(::AbstractRNG, ::Node, ::Int64)
+DecisionProgramming.information_set(::AbstractRNG, ::Vector{Node}, ::Int64)
 ```

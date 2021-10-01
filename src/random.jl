@@ -1,7 +1,7 @@
 using Random
 
 """
-    function information_set(rng::AbstractRNG, j::Int, n_I::Int)
+    function information_set(rng::AbstractRNG, j::Node, n_I::Int)
 
 Generates random information sets for chance and decision nodes.
 """

@@ -158,7 +158,7 @@ add_utilities!(diagram, "MP", [300.0, 1000.0])
 ### Generate influence diagram
 After adding nodes, generating arcs and defining probability and utility values, we generate the full influence diagram. By default this function uses the default path probabilities and utilities, which are defined as the joint probability of all chance events in the diagram and the sum of utilities in value nodes, respectively. In the [Contingent Portfolio Programming](contingent-portfolio-programming.md) example, we show how to use a user-defined custom path utility function.
 
-In the pig breeding problem, when the $N$ is large some of the path utilities become negative. In this case, we choose to use the [positive path utility](../decision-programming/decision_model.md) transformation, which allows us to exclude the probability cut in the next section.
+In the pig breeding problem, when the $N$ is large some of the path utilities become negative. In this case, we choose to use the [positive path utility](../decision-programming/decision-model.md) transformation, which allows us to exclude the probability cut in the next section.
 
 ```julia
 generate_diagram!(diagram, positive_path_utility = true)
@@ -166,7 +166,7 @@ generate_diagram!(diagram, positive_path_utility = true)
 
 ## Decision model
 
-Next we initialise the JuMP model and add the decision variables. Then we add the path compatibility variables. Since we applied an affine transformation to the utility function, making all path utilities positive, the probability cut can be excluded from the model. The purpose of this is discussed in the [theoretical section](../decision-programming/decision-model.md) of this documentation. 
+Next we initialise the JuMP model and add the decision variables. Then we add the path compatibility variables. Since we applied an affine transformation to the utility function, making all path utilities positive, the probability cut can be excluded from the model. The purpose of this is discussed in the [theoretical section](../decision-programming/decision-model.md) of this documentation.
 
 ```julia
 model = Model()
