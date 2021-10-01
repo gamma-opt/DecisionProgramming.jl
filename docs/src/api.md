@@ -53,10 +53,8 @@ generate_arcs!
 generate_diagram!
 add_node!
 ProbabilityMatrix
-set_probability!
 add_probabilities!
 UtilityMatrix
-set_utility!
 add_utilities!
 index_of
 num_states

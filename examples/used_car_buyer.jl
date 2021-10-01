@@ -18,35 +18,33 @@ add_node!(diagram, ValueNode("V3", ["O", "A"]))
 generate_arcs!(diagram)
 
 X_O = ProbabilityMatrix(diagram, "O")
-set_probability!(X_O, ["peach"], 0.8)
-set_probability!(X_O, ["lemon"], 0.2)
+X_O["peach"] = 0.8
+X_O["lemon"] = 0.2
 add_probabilities!(diagram, "O", X_O)
 
-
 X_R = ProbabilityMatrix(diagram, "R")
-set_probability!(X_R, ["lemon", "no test", :], [1,0,0])
-set_probability!(X_R, ["lemon", "test", :], [0,1,0])
-set_probability!(X_R, ["peach", "no test", :], [1,0,0])
-set_probability!(X_R, ["peach", "test", :], [0,0,1])
+X_R["lemon", "no test", :] = [1,0,0]
+X_R["lemon", "test", :] = [0,1,0]
+X_R["peach", "no test", :] = [1,0,0]
+X_R["peach", "test", :] = [0,0,1]
 add_probabilities!(diagram, "R", X_R)
 
 Y_V1 = UtilityMatrix(diagram, "V1")
-set_utility!(Y_V1, ["test"], -25)
-set_utility!(Y_V1, ["no test"], 0)
+Y_V1["test"] = -25
+Y_V1["no test"] = 0
 add_utilities!(diagram, "V1", Y_V1)
 
-
 Y_V2 = UtilityMatrix(diagram, "V2")
-set_utility!(Y_V2, ["buy without guarantee"], 100)
-set_utility!(Y_V2, ["buy with guarantee"], 40)
-set_utility!(Y_V2, ["don't buy"], 0)
+Y_V2["buy without guarantee"] = 100
+Y_V2["buy with guarantee"] = 40
+Y_V2["don't buy"] = 0
 add_utilities!(diagram, "V2", Y_V2)
 
 Y_V3 = UtilityMatrix(diagram, "V3")
-set_utility!(Y_V3, ["lemon", "buy without guarantee"], -200)
-set_utility!(Y_V3, ["lemon", "buy with guarantee"], 0)
-set_utility!(Y_V3, ["lemon", "don't buy"], 0)
-set_utility!(Y_V3, ["peach", :], [-40, -20, 0])
+Y_V3["lemon", "buy without guarantee"] = -200
+Y_V3["lemon", "buy with guarantee"] = 0
+Y_V3["lemon", "don't buy"] = 0
+Y_V3["peach", :] = [-40, -20, 0]
 add_utilities!(diagram, "V3", Y_V3)
 
 generate_diagram!(diagram)

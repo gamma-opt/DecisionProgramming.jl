@@ -32,10 +32,10 @@ add_probabilities!(diagram, "L", X_L)
 for i in 1:N
     x_R, y_R = rand(2)
     X_R = ProbabilityMatrix(diagram, "R$i")
-    set_probability!(X_R, ["high", "high"], max(x_R, 1-x_R))
-    set_probability!(X_R, ["high", "low"], 1 - max(x_R, 1-x_R))
-    set_probability!(X_R, ["low", "low"], max(y_R, 1-y_R))
-    set_probability!(X_R, ["low", "high"], 1-max(y_R, 1-y_R))
+    X_R["high", "high"] = max(x_R, 1-x_R)
+    X_R["high", "low"] = 1 - max(x_R, 1-x_R)
+    X_R["low", "low"] = max(y_R, 1-y_R)
+    X_R["low", "high"] = 1-max(y_R, 1-y_R)
     add_probabilities!(diagram, "R$i", X_R)
 end
 

@@ -69,55 +69,55 @@ generate_arcs!(diagram)
 ```
 
 ### Probabilities
-We continue by defining probability distributions for each chance node. 
+We continue by defining probability distributions for each chance node.
 
 Node $O$ is a root node and has two states thus, its probability distribution is simply defined over the two states. We can use the `ProbabilityMatrix` structure in creating the probability matrix easily without having to worry about the matrix dimensions. We then set the probability values and add the probabililty matrix to the influence diagram.
 ```julia
 X_O = ProbabilityMatrix(diagram, "O")
-set_probability!(X_O, ["peach"], 0.8)
-set_probability!(X_O, ["lemon"], 0.2)
+X_O["peach"] = 0.8
+X_O["lemon"] = 0.2
 add_probabilities!(diagram, "O", X_O)
 ```
 
 Node $R$ has two nodes in its information set and three states. The probabilities $P(s_j \mid s_{I(j)})$ must thus be defined for all combinations of states in $O$, $T$ and $R$. We declare the probability distribution over the states of node $R$ for each information state in the following way. More information on defining probability matrices can be found on the [usage page](../usage.md).
 ```julia
 X_R = ProbabilityMatrix(diagram, "R")
-set_probability!(X_R, ["lemon", "no test", :], [1,0,0])
-set_probability!(X_R, ["lemon", "test", :], [0,1,0])
-set_probability!(X_R, ["peach", "no test", :], [1,0,0])
-set_probability!(X_R, ["peach", "test", :], [0,0,1])
+X_R["lemon", "no test", :] = [1,0,0]
+X_R["lemon", "test", :] = [0,1,0]
+X_R["peach", "no test", :] = [1,0,0]
+X_R["peach", "test", :] = [0,0,1]
 add_probabilities!(diagram, "R", X_R)
 ```
 
 
-### Utilities 
+### Utilities
 We continue by defining the utilities associated with the information states of the value nodes. The utilities $Y_j(𝐬_{I(j)})$ are defined and added similarly to the probabilities.
 
 Value node $V1$ has only node $T$ in its information set and node $T$ only has two states. Therefore, the utility matrix of node $V1$ should hold utility values corresponding to states $test$ and $no \ test$.
 
 ```julia
 Y_V1 = UtilityMatrix(diagram, "V1")
-set_utility!(Y_V1, ["test"], -25)
-set_utility!(Y_V1, ["no test"], 0)
+Y_V1["test"] = -25
+Y_V1["no test"] = 0
 add_utilities!(diagram, "V1", Y_V1)
 ```
 
 We then define the utilities associated with the base profit of the purchase in different scenarios.
 ```julia
 Y_V2 = UtilityMatrix(diagram, "V2")
-set_utility!(Y_V2, ["buy without guarantee"], 100)
-set_utility!(Y_V2, ["buy with guarantee"], 40)
-set_utility!(Y_V2, ["don't buy"], 0)
+Y_V2["buy without guarantee"] = 100
+Y_V2["buy with guarantee"] = 40
+Y_V2["don't buy"] = 0
 add_utilities!(diagram, "V2", Y_V2)
 ```
 
 Finally, we define the utilities corresponding to the repair costs. The rows of the utilities matrix `Y_V3` correspond to the state of the car, while the columns correspond to the decision made in node $A$. Notice that the utility values for the second row are added as a vector, in this case it is important to give the utility values in the correct order. The order of the columns is determined by the order in which the states are given when declaring node $A$. See the [usage page](../usage.md) for more information on the syntax.
 ```julia
 Y_V3 = UtilityMatrix(diagram, "V3")
-set_utility!(Y_V3, ["lemon", "buy without guarantee"], -200)
-set_utility!(Y_V3, ["lemon", "buy with guarantee"], 0)
-set_utility!(Y_V3, ["lemon", "don't buy"], 0)
-set_utility!(Y_V3, ["peach", :], [-40, -20, 0])
+Y_V3["lemon", "buy without guarantee"] = -200
+Y_V3["lemon", "buy with guarantee"] = 0
+Y_V3["lemon", "don't buy"] = 0
+Y_V3["peach", :] = [-40, -20, 0]
 add_utilities!(diagram, "V3", Y_V3)
 ```
 

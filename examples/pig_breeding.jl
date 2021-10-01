@@ -27,17 +27,17 @@ add_probabilities!(diagram, "H1", [0.1, 0.9])
 
 # Declare proability matrix for health nodes H_2, ... H_N-1, which have identical information sets and states
 X_H = ProbabilityMatrix(diagram, "H2")
-set_probability!(X_H, ["healthy", "pass", :], [0.2, 0.8])
-set_probability!(X_H, ["healthy", "treat", :], [0.1, 0.9])
-set_probability!(X_H, ["ill", "pass", :], [0.9, 0.1])
-set_probability!(X_H, ["ill", "treat", :], [0.5, 0.5])
+X_H["healthy", "pass", :] = [0.2, 0.8]
+X_H["healthy", "treat", :] = [0.1, 0.9]
+X_H["ill", "pass", :] = [0.9, 0.1]
+X_H["ill", "treat", :] = [0.5, 0.5]
 
 # Declare proability matrix for test result nodes T_1...T_N
 X_T = ProbabilityMatrix(diagram, "T1")
-set_probability!(X_T, ["ill", "positive"], 0.8)
-set_probability!(X_T, ["ill", "negative"], 0.2)
-set_probability!(X_T, ["healthy", "negative"], 0.9)
-set_probability!(X_T, ["healthy", "positive"], 0.1)
+X_T["ill", "positive"] = 0.8
+X_T["ill", "negative"] = 0.2
+X_T["healthy", "negative"] = 0.9
+X_T["healthy", "positive"] = 0.1
 
 for i in 1:N-1
     add_probabilities!(diagram, "T$i", X_T)

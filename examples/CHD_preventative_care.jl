@@ -10,7 +10,7 @@ const chosen_risk_level = "12%"
 
 
 # Reading tests' technical performance data (dummy data in this case)
-data = CSV.read("examples/CHD_preventative_care_data.csv", DataFrame)
+data = CSV.read("CHD_preventative_care_data.csv", DataFrame)
 
 
 # Bayes posterior risk probabilities calculation function
@@ -132,13 +132,13 @@ add_node!(diagram, ValueNode("HB", ["H", "TD"]))
 generate_arcs!(diagram)
 
 X_R0 = ProbabilityMatrix(diagram, "R0")
-set_probability!(X_R0, [chosen_risk_level], 1)
+X_R0[chosen_risk_level] = 1
 add_probabilities!(diagram, "R0", X_R0)
 
 
 X_H = ProbabilityMatrix(diagram, "H")
-set_probability!(X_H, [:, "CHD"], data.risk_levels)
-set_probability!(X_H, [:, "no CHD"], 1 .- data.risk_levels)
+X_H[:, "CHD"] = data.risk_levels
+X_H[:, "no CHD"] = 1 .- data.risk_levels
 add_probabilities!(diagram, "H", X_H)
 
 X_R = ProbabilityMatrix(diagram, "R1")
@@ -153,22 +153,22 @@ cost_TRS = -0.0034645
 cost_GRS = -0.004
 forbidden = 0     #the cost of forbidden test combinations is negligible
 Y_TC = UtilityMatrix(diagram, "TC")
-set_utility!(Y_TC, ["TRS", "TRS"], forbidden)
-set_utility!(Y_TC, ["TRS", "GRS"], cost_TRS + cost_GRS)
-set_utility!(Y_TC, ["TRS", "no test"], cost_TRS)
-set_utility!(Y_TC, ["GRS", "TRS"], cost_TRS + cost_GRS)
-set_utility!(Y_TC, ["GRS", "GRS"], forbidden)
-set_utility!(Y_TC, ["GRS", "no test"], cost_GRS)
-set_utility!(Y_TC, ["no test", "TRS"], cost_TRS)
-set_utility!(Y_TC, ["no test", "GRS"], cost_GRS)
-set_utility!(Y_TC, ["no test", "no test"], 0)
+Y_TC["TRS", "TRS"] = forbidden
+Y_TC["TRS", "GRS"] = cost_TRS + cost_GRS
+Y_TC["TRS", "no test"] = cost_TRS
+Y_TC["GRS", "TRS"] = cost_TRS + cost_GRS
+Y_TC["GRS", "GRS"] = forbidden
+Y_TC["GRS", "no test"] = cost_GRS
+Y_TC["no test", "TRS"] = cost_TRS
+Y_TC["no test", "GRS"] = cost_GRS
+Y_TC["no test", "no test"] = 0
 add_utilities!(diagram, "TC", Y_TC)
 
 Y_HB = UtilityMatrix(diagram, "HB")
-set_utility!(Y_HB, ["CHD", "treatment"], 6.89713671259061)
-set_utility!(Y_HB, ["CHD", "no treatment"], 6.65436854256236 )
-set_utility!(Y_HB, ["no CHD", "treatment"], 7.64528451705134)
-set_utility!(Y_HB, ["no CHD", "no treatment"], 7.70088349200034)
+Y_HB["CHD", "treatment"] = 6.89713671259061
+Y_HB["CHD", "no treatment"] = 6.65436854256236
+Y_HB["no CHD", "treatment"] = 7.64528451705134
+Y_HB["no CHD", "no treatment"] = 7.70088349200034
 add_utilities!(diagram, "HB", Y_HB)
 
 generate_diagram!(diagram)
@@ -194,10 +194,8 @@ optimizer = optimizer_with_attributes(
     "MIPGap" => 1e-6,
 )
 set_optimizer(model, optimizer)
-GC.enable(false)
-optimize!(model)
-GC.enable(true)
 
+optimize!(model)
 
 @info("Extracting results.")
 Z = DecisionStrategy(z)

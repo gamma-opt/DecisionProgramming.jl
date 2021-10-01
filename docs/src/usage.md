@@ -72,7 +72,7 @@ julia> diagram.V
 ```
 
 ## Probability Matrices
-Each chance node needs a probability matrix which describes the probability distribution over its states given an information state. It holds probability values 
+Each chance node needs a probability matrix which describes the probability distribution over its states given an information state. It holds probability values
 $$ℙ(X_j=s_j∣X_{I(j)}=𝐬_{I(j)})$$
 
 for all $s_j \in S_j$ and $𝐬_{I(j)} \in 𝐒_{I(j)}$.
@@ -120,7 +120,7 @@ julia> diagram.Names
  2
 ```
 
-Therefore, the probability matrix of node C2 should have dimensions $(|S_{D1}|, |\ S_{C1}|, \ |S_{C2}|) = (2, 3, 2)$. The probability matrix can be added by declaring the matrix and then filling in the probability values as shown below. 
+Therefore, the probability matrix of node C2 should have dimensions $(|S_{D1}|, |\ S_{C1}|, \ |S_{C2}|) = (2, 3, 2)$. The probability matrix can be added by declaring the matrix and then filling in the probability values as shown below.
 ```julia
 X_C2 = zeros(2, 3, 2)
 X_C2[1, 1, 1] = ...
@@ -157,16 +157,16 @@ julia> size(X_C2)
 ```
 A matrix of type `ProbabilityMatrix` can be filled using the names of the states. The states must however be given in the correct order, according to the order of the nodes in the information set vector `I_j`. Notice that if we use the `Colon` (`:`) to indicate several elements of the matrix, the probability values have to be given in the correct order of the states in `States`.
 ```julia
-julia> set_probability!(X_C2, ["a", "z", "w"], 0.25)
+julia> X_C2["a", "z", "w"] = 0.25
 0.25
 
-julia> set_probability!(X_C2, ["z", "a", "v"], 0.75)
+julia> X_C2["z", "a", "v"] = 0.75
 ERROR: DomainError with Node D1 does not have a state called z.:
 
-julia> set_probability!(X_C2, ["a", "z", "v"], 0.75)
+julia> X_C2["a", "z", "v"] = 0.75
 0.75
 
-julia> set_probability!(X_C2, ["a", "x", :], [0.3, 0.7])
+julia> X_C2["a", "x", :] = [0.3, 0.7]
 2-element Array{Float64,1}:
  0.3
  0.7
@@ -184,7 +184,7 @@ julia> X_C2[1, 1, :] = [0.3, 0.7]
 2-element Array{Float64,1}:
  0.3
  0.7
-````
+```
 
 Now, the probability matrix X_C2 is partially filled.
 ```julia
@@ -234,10 +234,10 @@ julia> Y_V = UtilityMatrix(diagram, "V")
  Inf
  Inf
 
-julia> set_utility!(Y_V, ["w"], 400)
+julia> Y_V["w"] = 400
 400
 
-julia> set_utility!(Y_V, ["v"], -100)
+julia> Y_V["v"] = -100
 -100
 
 julia> add_utilities!(diagram, "V", Y_V)
@@ -259,7 +259,3 @@ generate_diagram!(diagram)
 In this function, first, the probability and utility matrices in fields `X` and `Y` are sorted according to the chance and value nodes' indices.
 
 Second, the path probability and path utility types are declared and added into fields `P` and `U` respectively. These types define how the path probability $p(𝐬)$ and path utility $\mathcal{U}(𝐬)$ are defined in the model. By default, the function will set them to default path probability and default path utility. See the [influence diagram](decision-programming/influence-diagram.md) for more information on default path probability and utility.
-
-
-
-

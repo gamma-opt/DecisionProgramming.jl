@@ -53,7 +53,7 @@ const T_states = ["TRS", "GRS", "no test"]
 const TD_states = ["treatment", "no treatment"]
 const R_states = [string(x) * "%" for x in [0:1:100;]]
 ```
- 
+
  We then add the nodes. The chance and decision nodes are identified by their names. When declaring the nodes, they are also given information sets and states. Notice that nodes $R0$ and $H$ are root nodes, meaning that their information sets are empty. In Decision Programming, we add the chance and decision nodes in the follwoing way.
  ```julia
 add_node!(diagram, ChanceNode("R0", [], R_states))
@@ -74,7 +74,7 @@ add_node!(diagram, ValueNode("HB", ["H", "TD"]))
 ```
 
 ### Generate arcs
-Now that all of the nodes have been added to the influence diagram we generate the arcs between the nodes. This step automatically orders the nodes, gives them indices and reorganises the information into the appropriate form. 
+Now that all of the nodes have been added to the influence diagram we generate the arcs between the nodes. This step automatically orders the nodes, gives them indices and reorganises the information into the appropriate form.
 ```julia
 generate_arcs!(diagram)
 ```
@@ -90,7 +90,7 @@ $$ℙ(R0 \neq 12\%)= 0. $$
 The probability matrix of node $R0$ is added in the following way. Remember that the `ProbabilityMatrix` function initialises the matrix with zeros.
 ```julia
 X_R0 = ProbabilityMatrix(diagram, "R0")
-set_probability!(X_R0, [chosen_risk_level], 1)
+X_R0[chosen_risk_level] = 1
 add_probabilities!(diagram, "R0", X_R0)
 ```
 
@@ -104,11 +104,11 @@ $$ℙ(H = \text{no CHD} | R0 = \alpha) = 1 - \alpha$$
 
 Since node $R0$ is deterministic and the health node $H$ is defined in this way, in our model the patient has a 12% chance of experiencing a CHD event and 88% chance of remaining healthy.
 
-In Decision Programming the probability matrix of node $H$ has dimensions (101, 2) because its information set consisting of node $R0$ has 101 states and node $H$ has 2 states. We first set the column related to the state $CHD$ with values from `data.risk_levels` which are $0.00, 0.01, ..., 0.99, 1.00$ and the other column as its complement event.
+In this Decision Programming model, the probability matrix of node $H$ has dimensions (101, 2) because its information set consisting of node $R0$ has 101 states and node $H$ has 2 states. We first set the column related to the state $CHD$ with values from `data.risk_levels` which are $0.00, 0.01, ..., 0.99, 1.00$ and the other column as its complement event.
 ```julia
 X_H = ProbabilityMatrix(diagram, "H")
-set_probability!(X_H, [:, "CHD"], data.risk_levels)
-set_probability!(X_H, [:, "no CHD"], 1 .- data.risk_levels)
+X_H[:, "CHD"] = data.risk_levels
+X_H[:, "no CHD"] = 1 .- data.risk_levels
 add_probabilities!(diagram, "H", X_H)
 ```
 
@@ -146,15 +146,15 @@ cost_GRS = -0.004
 forbidden = 0     #the cost of forbidden test combinations is negligible
 
 Y_TC = UtilityMatrix(diagram, "TC")
-set_utility!(Y_TC, ["TRS", "TRS"], forbidden)
-set_utility!(Y_TC, ["TRS", "GRS"], cost_TRS + cost_GRS)
-set_utility!(Y_TC, ["TRS", "no test"], cost_TRS)
-set_utility!(Y_TC, ["GRS", "TRS"], cost_TRS + cost_GRS)
-set_utility!(Y_TC, ["GRS", "GRS"], forbidden)
-set_utility!(Y_TC, ["GRS", "no test"], cost_GRS)
-set_utility!(Y_TC, ["no test", "TRS"], cost_TRS)
-set_utility!(Y_TC, ["no test", "GRS"], cost_GRS)
-set_utility!(Y_TC, ["no test", "no test"], 0)
+Y_TC["TRS", "TRS"] = forbidden
+Y_TC["TRS", "GRS"] = cost_TRS + cost_GRS
+Y_TC["TRS", "no test"] = cost_TRS
+Y_TC["GRS", "TRS"] = cost_TRS + cost_GRS
+Y_TC["GRS", "GRS"] = forbidden
+Y_TC["GRS", "no test"] = cost_GRS
+Y_TC["no test", "TRS"] = cost_TRS
+Y_TC["no test", "GRS"] = cost_GRS
+Y_TC["no test", "no test"] = 0
 add_utilities!(diagram, "TC", Y_TC)
 
 ```
@@ -163,10 +163,10 @@ The health benefits that are achieved are determined by whether treatment is adm
 
 ```julia
 Y_HB = UtilityMatrix(diagram, "HB")
-set_utility!(Y_HB, ["CHD", "treatment"], 6.89713671259061)
-set_utility!(Y_HB, ["CHD", "no treatment"], 6.65436854256236 )
-set_utility!(Y_HB, ["no CHD", "treatment"], 7.64528451705134)
-set_utility!(Y_HB, ["no CHD", "no treatment"], 7.70088349200034)
+Y_HB["CHD", "treatment"] = 6.89713671259061
+Y_HB["CHD", "no treatment"] = 6.65436854256236
+Y_HB["no CHD", "treatment"] = 7.64528451705134
+Y_HB["no CHD", "no treatment"] = 7.70088349200034
 add_utilities!(diagram, "HB", Y_HB)
 ```
 
@@ -196,7 +196,7 @@ fixed_R0 = FixedPath(diagram, Dict("R0" => chosen_risk_level))
 
 We also choose a scale factor of 10000, which will be used to scale the path probabilities. The probabilities need to be scaled because in this specific problem they are very small since the $R$ nodes have a large number of states. Scaling the probabilities helps the solver find an optimal solution.
 
-We then declare the path compatibility variables. We fix the state of the deterministic $R0$ node , forbid the unwanted testing strategies and scale the probabilities by giving them as parameters in the function call.  
+We then declare the path compatibility variables. We fix the state of the deterministic $R0$ node , forbid the unwanted testing strategies and scale the probabilities by giving them as parameters in the function call.
 
 ```julia
 scale_factor = 10000.0

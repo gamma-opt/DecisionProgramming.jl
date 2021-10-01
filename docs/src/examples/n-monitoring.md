@@ -93,10 +93,10 @@ In Decision Programming we add these probabilities by declaring probabilty matri
 for i in 1:N
     x, y = rand(2)
     X_R = ProbabilityMatrix(diagram, "R$i")
-    set_probability!(X_R, ["high", "high"], max(x, 1-x))
-    set_probability!(X_R, ["high", "low"], 1-max(x, 1-x))
-    set_probability!(X_R, ["low", "low"], max(y, 1-y))
-    set_probability!(X_R, ["low", "high"], 1-max(y, 1-y))
+    X_R["high", "high"] = max(x_R, 1-x_R)
+    X_R["high", "low"] = 1 - max(x_R, 1-x_R)
+    X_R["low", "low"] = max(y_R, 1-y_R)
+    X_R["low", "high"] = 1-max(y_R, 1-y_R)
     add_probabilities!(diagram, "R$i", X_R)
 end
 ```
@@ -108,7 +108,7 @@ $$ℙ(F=failure∣A_N,...,A_1,L=high)=\frac{\max{\{x, 1-x\}}}{\exp{(b ∑_{k=1,.
 
 $$ℙ(F=failure∣A_N,...,A_1,L=low)=\frac{\min{\{y, 1-y\}}}{\exp{(b ∑_{k=1,...,N} f(A_k))}}$$
 
-First we initialise the probability matrix for node $F$. 
+First we initialise the probability matrix for node $F$.
 ```julia
 X_F = ProbabilityMatrix(diagram, "F")
 ```
@@ -155,7 +155,7 @@ We first declare the utility matrix for node $T$.
 ```julia
 Y_T = UtilityMatrix(diagram, "T")
 ```
-This matrix has dimensions $(2, \textcolor{orange}{2, 2, 2, 2})$, where the dimensions correspond to the numbers of states the nodes in the information set have. Similarly as before, the first dimension corresponds to the states of node $F$ and the other 4 dimensions (in oragne) correspond to the states of the $A_k$ nodes. The utilities are set and added similarly to how the probabilities were added above.
+This matrix has dimensions $(2, \textcolor{orange}{2, 2, 2, 2})$, where the dimensions correspond to the numbers of states the nodes in the information set have. Similarly as before, the first dimension corresponds to the states of node $F$ and the other 4 dimensions (in orange) correspond to the states of the $A_k$ nodes. The utilities are set and added similarly to how the probabilities were added above.
 
 ```julia
 for s in paths([State(2) for i in 1:N])

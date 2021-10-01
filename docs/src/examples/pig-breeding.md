@@ -96,10 +96,10 @@ $$ℙ(h_k = ill ∣ h_{k-1} = ill, \ d_{k-1} = treat)=0.5.$$
 In Decision Programming, the probability matrix is define in the following way. Notice, that the ordering of the information state corresponds to the order in which the information set was defined when adding the health nodes.
 ```julia
 X_H = ProbabilityMatrix(diagram, "H2")
-set_probability!(X_H, ["healthy", "pass", :], [0.2, 0.8])
-set_probability!(X_H, ["healthy", "treat", :], [0.1, 0.9])
-set_probability!(X_H, ["ill", "pass", :], [0.9, 0.1])
-set_probability!(X_H, ["ill", "treat", :], [0.5, 0.5])
+X_H["healthy", "pass", :] = [0.2, 0.8]
+X_H["healthy", "treat", :] = [0.1, 0.9]
+X_H["ill", "pass", :] = [0.9, 0.1]
+X_H["ill", "treat", :] = [0.5, 0.5]
 ```
 
 Next we define the probability matrix for the test results. Here again, we note that the probability distributions for all test results are identical, and thus we only define the probability matrix once. For the probabilities that the test indicates a pig's health correctly at month $k=1,...,N-1$, we have
@@ -112,10 +112,10 @@ In Decision Programming:
 
 ```julia
 X_T = ProbabilityMatrix(diagram, "T1")
-set_probability!(X_T, ["ill", "positive"], 0.8)
-set_probability!(X_T, ["ill", "negative"], 0.2)
-set_probability!(X_T, ["healthy", "negative"], 0.9)
-set_probability!(X_T, ["healthy", "positive"], 0.1)
+X_T["ill", "positive"] = 0.8
+X_T["ill", "negative"] = 0.2
+X_T["healthy", "negative"] = 0.9
+X_T["healthy", "positive"] = 0.1
 ```
 
 We add the probability matrices into the influence diagram using a for-loop.

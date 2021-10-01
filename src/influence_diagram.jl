@@ -498,8 +498,36 @@ end
 
 Base.size(PM::ProbabilityMatrix) = size(PM.matrix)
 Base.getindex(PM::ProbabilityMatrix, I::Vararg{Int,N}) where N = getindex(PM.matrix, I...)
-Base.setindex!(PM::ProbabilityMatrix, p::T, I::Vararg{Int,N}) where {N, T<:Real} = (PM.matrix[I...] = p)
-Base.setindex!(PM::ProbabilityMatrix{N}, X::Array{T}, I::Vararg{Any, N}) where {N, T<:Real} = (PM.matrix[I...] .= X)
+function Base.setindex!(PM::ProbabilityMatrix, p::T, I::Vararg{Union{String, Int},N}) where {N, T<:Real}
+    I2 = []
+    for i in 1:N
+        if isa(I[i], String)
+            if get(PM.indices[i], I[i], 0) == 0
+                throw(DomainError("Node $(probability_matrix.nodes[i]) does not have state $(I[i])."))
+            end
+            push!(I2, PM.indices[i][I[i]])
+        else
+            push!(I2, I[i])
+        end
+    end
+    PM.matrix[I2...] = p
+end
+function Base.setindex!(PM::ProbabilityMatrix{N}, P::Array{T}, I::Vararg{Union{String, Int, Colon}, N}) where {N, T<:Real}
+    I2 = []
+    for i in 1:N
+        if isa(I[i], Colon)
+            push!(I2, :)
+        elseif isa(I[i], String)
+            if get(PM.indices[i], I[i], 0) == 0
+                throw(DomainError("Node $(probability_matrix.nodes[i]) does not have state $(I[i])."))
+            end
+            push!(I2, PM.indices[i][I[i]])
+        else
+            push!(I2, I[i])
+        end
+    end
+    PM.matrix[I2...] = P
+end
 
 """
     function ProbabilityMatrix(diagram::InfluenceDiagram, node::Name)
@@ -534,57 +562,6 @@ function ProbabilityMatrix(diagram::InfluenceDiagram, node::Name)
     matrix = fill(0.0, diagram.S[nodes]...)
 
     return ProbabilityMatrix(names, indices, matrix)
-end
-
-"""
-    function set_probability!(probability_matrix::ProbabilityMatrix, scenario::Array{String}, probability::Float64)
-
-Set a single probability value into probability matrix.
-
-# Examples
-```julia
-julia> X_O = ProbabilityMatrix(diagram, "O")
-julia> set_probability!(X_O, ["peach"], 0.8)
-julia> set_probability!(X_O, ["lemon"], 0.2)
-```
-"""
-function set_probability!(probability_matrix::ProbabilityMatrix, scenario::Array{String}, probability::Real)
-    index = Vector{Int}()
-    for (i, s) in enumerate(scenario)
-        if get(probability_matrix.indices[i], s, 0) == 0
-            throw(DomainError("Node $(probability_matrix.nodes[i]) does not have a state called $s."))
-        else
-            push!(index, get(probability_matrix.indices[i], s, 0))
-        end
-    end
-
-    probability_matrix[index...] = probability
-end
-
-"""
-    function set_probability!(probability_matrix::ProbabilityMatrix, scenario::Array{Any}, probabilities::Array{Float64})
-
-Set multiple probability values into probability matrix.
-
-# Examples
-```julia
-julia> X_O = ProbabilityMatrix(diagram, "O")
-julia> set_probability!(X_O, ["lemon", "peach"], [0.2, 0.8])
-```
-"""
-function set_probability!(probability_matrix::ProbabilityMatrix, scenario::Array{Any}, probabilities::Array{T}) where T<:Real
-    index = Vector{Any}()
-    for (i, s) in enumerate(scenario)
-        if isa(s, Colon)
-            push!(index, s)
-        elseif get(probability_matrix.indices[i], s, 0) == 0
-            throw(DomainError("Node $(probability_matrix.nodes[i]) does not have state $s."))
-        else
-            push!(index, get(probability_matrix.indices[i], s, 0))
-        end
-    end
-
-    probability_matrix[index...] = probabilities
 end
 
 """
@@ -643,8 +620,36 @@ end
 
 Base.size(UM::UtilityMatrix) = size(UM.matrix)
 Base.getindex(UM::UtilityMatrix, I::Vararg{Int,N}) where N = getindex(UM.matrix, I...)
-Base.setindex!(UM::UtilityMatrix, y::T, I::Vararg{Int,N}) where {N, T<:Real} = (UM.matrix[I...] = y)
-Base.setindex!(UM::UtilityMatrix{N}, Y::Array{T}, I::Vararg{Any, N}) where {N, T<:Real} = (UM.matrix[I...] .= Y)
+function Base.setindex!(UM::UtilityMatrix{N}, y::T, I::Vararg{Union{String, Int},N}) where {N, T<:Real}
+    I2 = []
+    for i in 1:N
+        if isa(I[i], String)
+            if get(UM.indices[i], I[i], 0) == 0
+                throw(DomainError("Node $(probability_matrix.nodes[i]) does not have state $(I[i])."))
+            end
+            push!(I2, UM.indices[i][I[i]])
+        else
+            push!(I2, I[i])
+        end
+    end
+    UM.matrix[I2...] = y
+end
+function Base.setindex!(UM::UtilityMatrix{N}, Y::Array{T}, I::Vararg{Union{String, Int, Colon}, N}) where {N, T<:Real}
+    I2 = []
+    for i in 1:N
+        if isa(I[i], Colon)
+            push!(I2, :)
+        elseif isa(I[i], String)
+            if get(UM.indices[i], I[i], 0) == 0
+                throw(DomainError("Node $(probability_matrix.nodes[i]) does not have state $(I[i])."))
+            end
+            push!(I2, UM.indices[i][I[i]])
+        else
+            push!(I2, I[i])
+        end
+    end
+    UM.matrix[I2...] = Y
+end
 
 """
     function UtilityMatrix(diagram::InfluenceDiagram, node::Name)
@@ -681,55 +686,6 @@ function UtilityMatrix(diagram::InfluenceDiagram, node::Name)
     return UtilityMatrix(names, indices, matrix)
 end
 
-"""
-    function set_utility!(utility_matrix::UtilityMatrix, scenario::Array{String}, utility::Real)
-
-Set a single utility value into utility matrix.
-
-# Examples
-```julia
-julia> Y_V3 = UtilityMatrix(diagram, "V3")
-julia> set_utility!(Y_V3, ["lemon", "buy without guarantee"], -200)
-```
-"""
-function set_utility!(utility_matrix::UtilityMatrix, scenario::Array{String}, utility::Real)
-    index = Vector{Int}()
-    for (i, s) in enumerate(scenario)
-        if get(utility_matrix.indices[i], s, 0) == 0
-            throw(DomainError("Node $(utility_matrix.I_v[i]) does not have a state called $s."))
-        else
-            push!(index, get(utility_matrix.indices[i], s, 0))
-        end
-    end
-
-    utility_matrix[index...] = utility
-end
-
-"""
-    function set_utility!(utility_matrix::UtilityMatrix, scenario::Array{Any}, utility::Array{T}) where T<:Real
-
-Set multiple utility values into utility matrix.
-
-# Examples
-```julia
-julia> Y_V3 = UtilityMatrix(diagram, "V3")
-julia> set_utility!(Y_V3, ["peach", :], [-40, -20, 0])
-```
-"""
-function set_utility!(utility_matrix::UtilityMatrix, scenario::Array{Any}, utility::Array{T}) where T<:Real
-    index = Vector{Any}()
-    for (i, s) in enumerate(scenario)
-        if isa(s, Colon)
-            push!(index, s)
-        elseif get(utility_matrix.indices[i], s, 0) == 0
-            throw(DomainError("Node $(utility_matrix.I_v[i]) does not have state $s."))
-        else
-            push!(index, get(utility_matrix.indices[i], s, 0))
-        end
-    end
-
-    utility_matrix[index...] = utility
-end
 
 
 """
