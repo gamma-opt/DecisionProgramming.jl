@@ -32,10 +32,10 @@ function print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy,
             if !show_incompatible_states
                  filter!(row -> row.decisions != "--", df)
             end
-            pretty_table(df, ["State(s) of $(join([diagram.Names[i] for i in I_d], ", "))", "Decision in $(diagram.Names[d])"], alignment=:l)
+            pretty_table(df, header = ["State(s) of $(join([diagram.Names[i] for i in I_d], ", "))", "Decision in $(diagram.Names[d])"], alignment=:l)
         else
             df = DataFrame(decisions = diagram.States[d][s_d])
-            pretty_table(df, ["Decision in $(diagram.Names[d])"], alignment=:l)
+            pretty_table(df, header = ["Decision in $(diagram.Names[d])"], alignment=:l)
         end
     end
 end
