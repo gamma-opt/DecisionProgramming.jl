@@ -31,13 +31,14 @@ end
 
 
 """
-    function random_diagram!(rng::AbstractRNG, n_C::Int, n_D::Int, n_V::Int, m_C::Int, m_D::Int, states::Vector{Int})
+    random_diagram!(rng::AbstractRNG, diagram::InfluenceDiagram, n_C::Int, n_D::Int, n_V::Int, m_C::Int, m_D::Int, states::Vector{Int})
 
 Generate random decision diagram with `n_C` chance nodes, `n_D` decision nodes, and `n_V` value nodes.
 Parameter `m_C` and `m_D` are the upper bounds for the size of the information set.
 
 # Arguments
 - `rng::AbstractRNG`: Random number generator.
+- `diagram::InfluenceDiagram`: The (empty) influence diagram structure that is filled by this function
 - `n_C::Int`: Number of chance nodes.
 - `n_D::Int`: Number of decision nodes.
 - `n_V::Int`: Number of value nodes.
@@ -51,7 +52,7 @@ Parameter `m_C` and `m_D` are the upper bounds for the size of the information s
 ```julia
 rng = MersenneTwister(3)
 diagram = InfluenceDiagram()
-random_diagram!(rng, diagram, 5, 2, 3, 2, [2, 4, 5])
+random_diagram!(rng, diagram, 5, 2, 3, 2, 2, [2,3])
 ```
 """
 function random_diagram!(rng::AbstractRNG, diagram::InfluenceDiagram, n_C::Int, n_D::Int, n_V::Int, m_C::Int, m_D::Int, states::Vector{Int})
@@ -98,21 +99,39 @@ function random_diagram!(rng::AbstractRNG, diagram::InfluenceDiagram, n_C::Int, 
     diagram.X = Vector{Probabilities}(undef, n_C)
     diagram.Y = Vector{Utilities}(undef, n_V)
 
+    diagram.Names = ["$(i)" for i in 1:(n+n_V)]
+    statelist = []
+    for i in 1:n
+        push!(statelist, ["$(j)" for j in 1:diagram.S[i]])
+    end
+    diagram.States = statelist
+
+    for c in diagram.C
+        random_probabilities!(rng, diagram, c)
+    end
+
+    for v in diagram.V
+        random_utilities!(rng, diagram, v)
+    end
+
+    diagram.P = DefaultPathProbability(diagram.C, diagram.I_j[diagram.C], diagram.X)
+    diagram.U = DefaultPathUtility(diagram.I_j[diagram.V], diagram.Y)
+
     return diagram
 end
 
 """
-    function Probabilities(rng::AbstractRNG, c::ChanceNode, S::States; n_inactive::Int=0)
+    function random_probabilities!(rng::AbstractRNG, diagram::InfluenceDiagram, c::Node; n_inactive::Int=0)
 
-Generate random probabilities for chance node `c` with `S` states.
+Generate random probabilities for chance node `c`.
 
 # Examples
 ```julia
 rng = MersenneTwister(3)
 diagram = InfluenceDiagram()
-random_diagram!(rng, diagram, 5, 2, 3, 2, [2, 4, 5])
+random_diagram!(rng, diagram, 5, 2, 3, 2, 2, [2,3])
 c = diagram.C[1]
-Probabilities!(rng, diagram, c)
+random_probabilities!(rng, diagram, c)
 ```
 """
 function random_probabilities!(rng::AbstractRNG, diagram::InfluenceDiagram, c::Node; n_inactive::Int=0)
@@ -159,7 +178,7 @@ end
 scale(x::Utility, low::Utility, high::Utility) = x * (high - low) + low
 
 """
-    function Utilities!(rng::AbstractRNG, diagram::InfluenceDiagram, v::Node; low::Float64=-1.0, high::Float64=1.0)
+    function random_utilities!(rng::AbstractRNG, diagram::InfluenceDiagram, v::Node; low::Float64=-1.0, high::Float64=1.0)
 
 Generate random utilities between `low` and `high` for value node `v`.
 
@@ -167,9 +186,9 @@ Generate random utilities between `low` and `high` for value node `v`.
 ```julia
 rng = MersenneTwister(3)
 diagram = InfluenceDiagram()
-random_diagram!(rng, diagram, 5, 2, 3, 2, [2, 4, 5])
+random_diagram!(rng, diagram, 5, 2, 3, 2, 2, [2,3])
 v = diagram.V[1]
-Utilities!(rng, diagram, v)
+random_utilities!(rng, diagram, v)
 ```
 """
 function random_utilities!(rng::AbstractRNG, diagram::InfluenceDiagram, v::Node; low::Float64=-1.0, high::Float64=1.0)
@@ -191,16 +210,16 @@ end
 
 
 """
-    function LocalDecisionStrategy(rng::AbstractRNG, d::DecisionNode, S::States)
+    function LocalDecisionStrategy(rng::AbstractRNG, diagram::InfluenceDiagram, d::Node)
 
 Generate random decision strategy for decision node `d`.
 
 # Examples
 ```julia
 rng = MersenneTwister(3)
-d = DecisionNode(2, [1])
-S = States([2, 2])
-LocalDecisionStrategy(rng, d, S)
+diagram = InfluenceDiagram()
+random_diagram!(rng, diagram, 5, 2, 3, 2, 2, rand(rng, [2,3], 5))
+LocalDecisionStrategy(rng, diagram, diagram.D[1])
 ```
 """
 function LocalDecisionStrategy(rng::AbstractRNG, diagram::InfluenceDiagram, d::Node)
