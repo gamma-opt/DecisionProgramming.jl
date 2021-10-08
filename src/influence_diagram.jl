@@ -956,7 +956,7 @@ end
 
 # --- Generating Diagram ---
 """
-function generate_diagram!(diagram::InfluenceDiagram;
+    function generate_diagram!(diagram::InfluenceDiagram;
     default_probability::Bool=true,
     default_utility::Bool=true,
     positive_path_utility::Bool=false,

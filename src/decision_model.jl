@@ -133,6 +133,10 @@ function PathCompatibilityVariables(model::Model,
     probability_cut::Bool=true,
     probability_scale_factor::Float64=1.0)
 
+    if probability_scale_factor ≤ 0
+        throw(DomainError("The probability_scale_factor must be greater than 0."))
+    end
+
     if !isempty(forbidden_paths)
         @warn("Forbidden paths is still an experimental feature.")
     end

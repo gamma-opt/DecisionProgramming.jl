@@ -14,7 +14,7 @@ Print decision strategy.
 
 # Examples
 ```julia
->julia print_decision_strategy(diagram, Z, S_probabilities)
+print_decision_strategy(diagram, Z, S_probabilities)
 ```
 """
 function print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy, state_probabilities::StateProbabilities; show_incompatible_states::Bool = false)
@@ -47,8 +47,8 @@ Print utility distribution.
 
 # Examples
 ```julia
->julia U_distribution = UtilityDistribution(diagram, Z)
->julia print_utility_distribution(U_distribution)
+U_distribution = UtilityDistribution(diagram, Z)
+print_utility_distribution(U_distribution)
 ```
 """
 function print_utility_distribution(U_distribution::UtilityDistribution; util_fmt="%f", prob_fmt="%f")
@@ -60,15 +60,15 @@ function print_utility_distribution(U_distribution::UtilityDistribution; util_fm
 end
 
 """
-    print_state_probabilities(sprobs::StateProbabilities, nodes::Vector{Node}; prob_fmt="%f")
+    print_state_probabilities(diagram::InfluenceDiagram, state_probabilities::StateProbabilities, nodes::Vector{Name}; prob_fmt="%f")
 
 Print state probabilities with fixed states.
 
 # Examples
 ```julia
->julia S_probabilities = StateProbabilities(diagram, Z)
->julia print_state_probabilities(S_probabilities, ["R"])
->julia print_state_probabilities(S_probabilities, ["A"])
+S_probabilities = StateProbabilities(diagram, Z)
+print_state_probabilities(S_probabilities, ["R"])
+print_state_probabilities(S_probabilities, ["A"])
 ```
 """
 function print_state_probabilities(diagram::InfluenceDiagram, state_probabilities::StateProbabilities, nodes::Vector{Name}; prob_fmt="%f")

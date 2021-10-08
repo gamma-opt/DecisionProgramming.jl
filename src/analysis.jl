@@ -32,7 +32,7 @@ CompatiblePaths outer construction function. Interface for iterating over paths 
 
 # Examples
 ```julia
-julia> for s in CompatiblePaths(diagram, Z)
+for s in CompatiblePaths(diagram, Z)
     ...
 end
 ```
@@ -100,7 +100,7 @@ Construct the probability mass function for path utilities on paths that are com
 
 # Examples
 ```julia
-julia> UtilityDistribution(diagram, Z)
+UtilityDistribution(diagram, Z)
 ```
 """
 function UtilityDistribution(diagram::InfluenceDiagram, Z::DecisionStrategy)
@@ -162,8 +162,8 @@ Associate each node with array of conditional probabilities for each of its stat
 # Examples
 ```julia
 # Prior probabilities
-julia> prior_probabilities = StateProbabilities(diagram, Z)
-julia> StateProbabilities(diagram, Z, Node(2), State(1), prior_probabilities)
+prior_probabilities = StateProbabilities(diagram, Z)
+StateProbabilities(diagram, Z, Node(2), State(1), prior_probabilities)
 ```
 """
 function StateProbabilities(diagram::InfluenceDiagram, Z::DecisionStrategy, node::Node, state::State, prior_probabilities::StateProbabilities)
@@ -187,12 +187,12 @@ Associate each node with array of conditional probabilities for each of its stat
 # Examples
 ```julia
 # Prior probabilities
-julia> prior_probabilities = StateProbabilities(diagram, Z)
+prior_probabilities = StateProbabilities(diagram, Z)
 
 # Select node and fix its state
-julia> node = "R"
-julia> state = "no test"
-julia> StateProbabilities(diagram, Z, node, state, prior_probabilities)
+node = "R"
+state = "no test"
+StateProbabilities(diagram, Z, node, state, prior_probabilities)
 ```
 """
 function StateProbabilities(diagram::InfluenceDiagram, Z::DecisionStrategy, node::Name, state::Name, prior_probabilities::StateProbabilities)
@@ -212,7 +212,7 @@ Associate each node with array of probabilities for each of its states occuring 
 
 # Examples
 ```julia
-julia> StateProbabilities(diagram, Z)
+StateProbabilities(diagram, Z)
 ```
 """
 function StateProbabilities(diagram::InfluenceDiagram, Z::DecisionStrategy)
@@ -237,7 +237,7 @@ function value_at_risk(U_distribution::UtilityDistribution, α::Float64)
 end
 
 """
-    conditional_value_at_risk(u::Vector{Float64}, p::Vector{Float64}, α::Float64)
+    conditional_value_at_risk(U_distribution::UtilityDistribution, α::Float64)
 
 Calculate conditional value-at-risk.
 """
