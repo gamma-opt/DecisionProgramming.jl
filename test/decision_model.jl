@@ -29,17 +29,17 @@ function test_decision_model(diagram, n_inactive, probability_scale_factor, prob
     z = DecisionVariables(model, diagram)
 
     @info "Testing PathCompatibilityVariables"
-    x_s = PathCompatibilityVariables(model, diagram, z; probability_cut = probability_cut)
+    if probability_scale_factor > 0
+        x_s = PathCompatibilityVariables(model, diagram, z; probability_cut = probability_cut, probability_scale_factor = probability_scale_factor)
+    else
+        @test_throws DomainError x_s = PathCompatibilityVariables(model, diagram, z; probability_cut = probability_cut, probability_scale_factor = probability_scale_factor)
+    end
 
     @info "Testing probability_cut"
     lazy_probability_cut(model, diagram, x_s)
 
     @info "Testing expected_value"
-    if probability_scale_factor > 0
-        EV = expected_value(model, diagram, x_s; probability_scale_factor = probability_scale_factor)
-    else
-        @test_throws DomainError expected_value(model, diagram, x_s; probability_scale_factor = probability_scale_factor)
-    end
+    EV = expected_value(model, diagram, x_s)
 
     @info "Testing conditional_value_at_risk"
     if probability_scale_factor > 0

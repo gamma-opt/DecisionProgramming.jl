@@ -34,7 +34,7 @@ Create decision variables and constraints.
 
 # Examples
 ```julia
-julia> z = DecisionVariables(model, diagram)
+z = DecisionVariables(model, diagram)
 ```
 """
 function DecisionVariables(model::Model, diagram::InfluenceDiagram; names::Bool=false, name::String="z")
@@ -98,7 +98,8 @@ end
         name::String="x",
         forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
         fixed::FixedPath=Dict{Node, State}(),
-        probability_cut::Bool=true)
+        probability_cut::Bool=true,
+        probability_scale_factor::Float64=1.0)
 
 Create path compatibility variables and constraints.
 
@@ -114,10 +115,12 @@ Create path compatibility variables and constraints.
 - `fixed::FixedPath`: Path compatibility variable will not be generated
     for paths which do not include these fixed subpaths.
 - `probability_cut` Includes probability cut constraint in the optimisation model.
+- `probability_scale_factor::Float64`: Adjusts conditional value at risk model to
+   be compatible with the expected value expression if the probabilities were scaled there.
 
 # Examples
 ```julia
-julia> x_s = PathCompatibilityVariables(model, diagram; probability_cut = false)
+x_s = PathCompatibilityVariables(model, diagram; probability_cut = false)
 ```
 """
 function PathCompatibilityVariables(model::Model,
@@ -127,7 +130,8 @@ function PathCompatibilityVariables(model::Model,
     name::String="x",
     forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
     fixed::FixedPath=Dict{Node, State}(),
-    probability_cut::Bool=true)
+    probability_cut::Bool=true,
+    probability_scale_factor::Float64=1.0)
 
     if !isempty(forbidden_paths)
         @warn("Forbidden paths is still an experimental feature.")
@@ -149,7 +153,7 @@ function PathCompatibilityVariables(model::Model,
     end
 
     if probability_cut
-        @constraint(model, sum(x * diagram.P(s) for (s, x) in x_s) == 1.0)
+        @constraint(model, sum(x * diagram.P(s) * probability_scale_factor for (s, x) in x_s) == 1.0 * probability_scale_factor)
     end
 
     x_s
@@ -162,7 +166,7 @@ Add a probability cut to the model as a lazy constraint.
 
 # Examples
 ```julia
-julia> lazy_probability_cut(model, diagram, x_s)
+lazy_probability_cut(model, diagram, x_s)
 ```
 
 !!! note
@@ -188,8 +192,7 @@ end
 """
     expected_value(model::Model,
         diagram::InfluenceDiagram,
-        x_s::PathCompatibilityVariables;
-        probability_scale_factor::Float64=1.0)
+        x_s::PathCompatibilityVariables)
 
 Create an expected value objective.
 
@@ -197,24 +200,17 @@ Create an expected value objective.
 - `model::Model`: JuMP model into which variables are added.
 - `diagram::InfluenceDiagram`: Influence diagram structure.
 - `x_s::PathCompatibilityVariables`: Path compatibility variables.
-- `probability_scale_factor::Float64`: Multiplies the path probabilities by this factor.
 
 # Examples
 ```julia
-julia> EV = expected_value(model, diagram, x_s)
-julia> EV = expected_value(model, diagram, x_s; probability_scale_factor = 10.0)
+EV = expected_value(model, diagram, x_s)
 ```
 """
 function expected_value(model::Model,
     diagram::InfluenceDiagram,
-    x_s::PathCompatibilityVariables;
-    probability_scale_factor::Float64=1.0)
+    x_s::PathCompatibilityVariables)
 
-    if probability_scale_factor ≤ 0
-        throw(DomainError("The probability_scale_factor must be greater than 0."))
-    end
-
-    @expression(model, sum(diagram.P(s) * x * diagram.U(s, diagram.translation) * probability_scale_factor for (s, x) in x_s))
+    @expression(model, sum(diagram.P(s) * x * diagram.U(s, diagram.translation) for (s, x) in x_s))
 end
 
 """
@@ -238,9 +234,9 @@ Create a conditional value-at-risk (CVaR) objective.
 
 # Examples
 ```julia
-julia> α = 0.05  # Parameter such that 0 ≤ α ≤ 1
-julia> CVaR = conditional_value_at_risk(model, x_s, U, P, α)
-julia> CVaR = conditional_value_at_risk(model, x_s, U, P, α; probability_scale_factor = 10.0)
+α = 0.05  # Parameter such that 0 ≤ α ≤ 1
+CVaR = conditional_value_at_risk(model, x_s, U, P, α)
+CVaR = conditional_value_at_risk(model, x_s, U, P, α; probability_scale_factor = 10.0)
 ```
 """
 function conditional_value_at_risk(model::Model,
@@ -254,10 +250,6 @@ function conditional_value_at_risk(model::Model,
     end
     if !(0 < α ≤ 1)
         throw(DomainError("α should be 0 < α ≤ 1"))
-    end
-
-    if !(probability_scale_factor == 1.0)
-        @warn("The conditional value at risk is scaled by the probability_scale_factor. Make sure other terms of the objective function are also scaled.")
     end
 
     # Pre-computed parameters
@@ -296,7 +288,7 @@ function conditional_value_at_risk(model::Model,
     @constraint(model, sum(values(ρ′_s)) == α * probability_scale_factor)
 
     # Return CVaR as an expression
-    CVaR = @expression(model, sum(ρ_bar * diagram.U(s, diagram.translation) for (s, ρ_bar) in ρ′_s) / α)
+    CVaR = @expression(model, sum(ρ_bar * diagram.U(s, diagram.translation) for (s, ρ_bar) in ρ′_s) / (α * probability_scale_factor))
 
     return CVaR
 end

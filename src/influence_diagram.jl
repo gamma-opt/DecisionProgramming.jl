@@ -650,7 +650,7 @@ julia> X_O["lemon"] = 0.2
 0.2
 
 julia> add_probabilities!(diagram, "O", X_O)
-printstyled("ERROR: DomainError with Probabilities should sum to one.:"; color=:red)
+ERROR: DomainError with Probabilities should sum to one.:
 
 julia> X_O["peach"] = 0.8
 0.2
