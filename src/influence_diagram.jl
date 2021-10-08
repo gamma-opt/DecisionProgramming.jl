@@ -82,8 +82,13 @@ const State = Int16
 States type. Works like `Vector{State}`.
 
 # Examples
-```julia
-julia> S = States([2, 3, 2, 4])
+```julia-repl
+julia> S = States(State.([2, 3, 2, 4]))
+4-element States:
+ 2
+ 3
+ 2
+ 4
 ```
 """
 struct States <: AbstractArray{State, 1}
@@ -120,12 +125,17 @@ const Path{N} = NTuple{N, State} where N
 ForbiddenPath type.
 
 # Examples
-```julia
+```julia-repl
 julia> ForbiddenPath(([1, 2], Set([(1, 2)])))
+(Int16[1, 2], Set(Tuple{Vararg{Int16,N}} where N[(1, 2)])
+
 julia> ForbiddenPath[
     ([1, 2], Set([(1, 2)])),
     ([3, 4, 5], Set([(1, 2, 3), (3, 4, 5)]))
 ]
+2-element Array{Tuple{Array{Int16,1},Set{Tuple{Vararg{Int16,N}} where N}},1}:
+ ([1, 2], Set([(1, 2)]))
+ ([3, 4, 5], Set([(1, 2, 3), (3, 4, 5)]))
 ```
 """
 const ForbiddenPath = Tuple{Vector{Node}, Set{Path}}
@@ -137,8 +147,11 @@ const ForbiddenPath = Tuple{Vector{Node}, Set{Path}}
 FixedPath type.
 
 # Examples
-```julia
+```julia-repl
 julia> FixedPath(Dict(1=>1, 2=>3))
+Dict{Int16,Int16} with 2 entries:
+  2 => 3
+  1 => 1
 ```
 """
 const FixedPath = Dict{Node, State}
@@ -151,9 +164,19 @@ Iterate over paths in lexicographical order.
 
 # Examples
 ```julia-repl
-julia> states = States([2, 3])
+julia> states = States(State.([2, 3]))
+2-element States:
+ 2
+ 3
+
 julia> vec(collect(paths(states)))
-[(1, 1), (2, 1), (1, 2), (2, 2), (1, 3), (2, 3)]
+6-element Array{Tuple{Int16,Int16},1}:
+ (1, 1)
+ (2, 1)
+ (1, 2)
+ (2, 2)
+ (1, 3)
+ (2, 3)
 ```
 """
 function paths(states::AbstractVector{State})
@@ -167,11 +190,16 @@ Iterate over paths with fixed states in lexicographical order.
 
 # Examples
 ```julia-repl
-julia> states = States([2, 3])
-julia> vec(collect(paths(states, Dict(Node(1) => State(2)))))
-[(2, 1), (2, 2), (2, 3)]
+julia> states = States(State.([2, 3]))
+2-element States:
+ 2
+ 3
 
-julia> vec(collect(paths(states, FixedPath(diagram, Dict("O" => "lemon")))))
+julia> vec(collect(paths(states, Dict(Node(1) => State(2)))))
+3-element Array{Tuple{Int16,Int16},1}:
+ (2, 1)
+ (2, 2)
+ (2, 3)
 ```
 """
 function paths(states::AbstractVector{State}, fixed::FixedPath)
@@ -188,13 +216,23 @@ end
 """
     struct Probabilities{N} <: AbstractArray{Float64, N}
 
-Construct and validate stage probabilities.
+Construct and validate stage probabilities (probabilities for a single node).
 
 # Examples
 ```julia-repl
 julia> data = [0.5 0.5 ; 0.2 0.8]
+2×2 Array{Float64,2}:
+ 0.5  0.5
+ 0.2  0.8
+
 julia> X = Probabilities(Node(2), data)
+2×2 Probabilities{2}:
+ 0.5  0.5
+ 0.2  0.8
+
 julia> s = (1, 2)
+(1, 2)
+
 julia> X(s)
 0.5
 ```
@@ -226,29 +264,36 @@ Base.getindex(P::Probabilities, I::Vararg{Int,N}) where N = getindex(P.data, I..
     abstract type AbstractPathProbability end
 
 Abstract path probability type.
-
-# Examples
-```julia
-julia> struct PathProbability <: AbstractPathProbability
-        C::Vector{ChanceNode}
-        # ...
-end
-
-julia> (P::PathProbability)(s::Path) = ...
-```
 """
 abstract type AbstractPathProbability end
 
 """
     struct DefaultPathProbability <: AbstractPathProbability
 
-Path probability.
+Path probability obtained as a product of the probability values corresponding to path s in each chance node.
 
 # Examples
-```julia
-julia> P = DefaultPathProbability(diagram.C, diagram.X)
-julia> s = (1, 2)
+```julia-repl
+julia> C = [2]
+1-element Array{Int64,1}:
+ 2
+
+julia> I_j = [[1]]
+1-element Array{Array{Int64,1},1}:
+ [1]
+
+julia> X = [Probabilities(Node(2), [0.5 0.5; 0.2 0.8])]
+1-element Array{Probabilities{2},1}:
+ [0.5 0.5; 0.2 0.8]
+
+julia> P = DefaultPathProbability(C, I_j, X)
+DefaultPathProbability(Int16[2], Array{Int16,1}[[1]], Probabilities[[0.5 0.5; 0.2 0.8]])
+
+julia> s = Path((1, 2))
+(1, 2)
+
 julia> P(s)
+0.5
 ```
 """
 struct DefaultPathProbability <: AbstractPathProbability
@@ -286,11 +331,21 @@ State utilities.
 
 # Examples
 ```julia-repl
-julia> vals = [1.0 -2.0; 3.0 4.0]
-julia> Y = Utilities(3, vals)
-julia> s = (1, 2)
+julia> vals = Utility.([1.0 -2.0; 3.0 4.0])
+2×2 Array{Float32,2}:
+ 1.0  -2.0
+ 3.0   4.0
+
+julia> Y = Utilities(Node(3), vals)
+2×2 Utilities{2}:
+ 1.0  -2.0
+ 3.0   4.0
+
+julia> s = Path((1, 2))
+ (1, 2)
+
 julia> Y(s)
--2.0
+-2.0f0
 ```
 """
 struct Utilities{N} <: AbstractArray{Utility, N}
@@ -318,33 +373,43 @@ Base.getindex(Y::Utilities, I::Vararg{Int,N}) where N = getindex(Y.data, I...)
     abstract type AbstractPathUtility end
 
 Abstract path utility type.
-
-# Examples
-```julia
-julia> struct PathUtility <: AbstractPathUtility
-        V::Vector{ValueNode}
-        # ...
-    end
-
-julia> (U::PathUtility)(s::Path) = ...
-julia> (U::PathUtility)(s::Path, translation::Utility) = ...
-```
 """
 abstract type AbstractPathUtility end
 
 """
     struct DefaultPathUtility <: AbstractPathUtility
 
-Default path utility.
+Default path utility obtained as a sum of the utility values corresponding to path s in each value node.
 
 # Examples
-```julia
-julia> U = DefaultPathUtility(V, Y)
-julia> s = (1, 2)
-julia> U(s)
+```julia-repl
+julia> vals = Utility.([1.0 -2.0; 3.0 4.0])
+2×2 Array{Float32,2}:
+ 1.0  -2.0
+ 3.0   4.0
 
-julia> t = -100.0
+julia> Y = [Utilities(Node(3), vals)]
+1-element Array{Utilities{2},1}:
+ [1.0 -2.0; 3.0 4.0]
+
+julia> I_3 = [[1,2]]
+1-element Array{Array{Int64,1},1}:
+ [1, 2]
+
+julia> U = DefaultPathUtility(I_3, Y)
+DefaultPathUtility(Array{Int16,1}[[1, 2]], Utilities[[1.0 -2.0; 3.0 4.0]])
+
+julia> s = Path((1, 2))
+(1, 2)
+
+julia> U(s)
+-2.0f0
+
+julia> t = Utility(-100.0)
+
+
 julia> U(s, t)
+-102.0f0
 ```
 """
 struct DefaultPathUtility <: AbstractPathUtility
@@ -404,7 +469,7 @@ Hold all information related to the influence diagram.
 
 # Examples
 ```julia
-julia> diagram = InfluenceDiagram()
+diagram = InfluenceDiagram()
 ```
 """
 mutable struct InfluenceDiagram
@@ -466,8 +531,10 @@ end
 Add node to influence diagram structure.
 
 # Examples
-```julia
+```julia-repl
 julia> add_node!(diagram, ChanceNode("O", [], ["lemon", "peach"]))
+1-element Array{AbstractNode,1}:
+ ChanceNode("O", String[], ["lemon", "peach"])
 ```
 """
 function add_node!(diagram::InfluenceDiagram, node::AbstractNode)
@@ -535,8 +602,11 @@ end
 Initialise a probability matrix for a given chance node. The matrix is initialised with zeros.
 
 # Examples
-```julia
+```julia-repl
 julia> X_O = ProbabilityMatrix(diagram, "O")
+2-element ProbabilityMatrix{1}:
+ 0.0
+ 0.0
 ```
 """
 function ProbabilityMatrix(diagram::InfluenceDiagram, node::Name)
@@ -567,19 +637,30 @@ end
 """
     function add_probabilities!(diagram::InfluenceDiagram, node::Name, probabilities::AbstractArray{Float64, N}) where N
 
-Add probability matrix to influence diagram, specifically to its X vector.
+Add probability matrix to influence diagram, specifically to its `X` vector.
 
 # Examples
 ```julia
 julia> X_O = ProbabilityMatrix(diagram, "O")
-julia> set_probability!(X_O, ["lemon", "peach"], [0.2, 0.8])
+2-element ProbabilityMatrix{1}:
+ 0.0
+ 0.0
+
+julia> X_O["lemon"] = 0.2
+0.2
+
 julia> add_probabilities!(diagram, "O", X_O)
+printstyled("ERROR: DomainError with Probabilities should sum to one.:"; color=:red)
 
-julia> add_probabilities!(diagram, "O", [0.2, 0.8])
+julia> X_O["peach"] = 0.8
+0.2
 
-!!! note
-The arcs must be generated before probabilities or utilities can be added to the influence diagram.
+julia> add_probabilities!(diagram, "O", X_O)
+1-element Array{Probabilities,1}:
+ [0.2, 0.8]
 ```
+!!! note
+    The function `generate_arcs!` must be called before probabilities or utilities can be added to the influence diagram.
 """
 function add_probabilities!(diagram::InfluenceDiagram, node::Name, probabilities::AbstractArray{Float64, N}) where N
     c = findfirst(x -> x==node, diagram.Names)
@@ -657,8 +738,11 @@ end
 Initialise a utility matrix for a value node. The matrix is initialised with `Inf` values.
 
 # Examples
-```julia
+```julia-repl
 julia> Y_V3 = UtilityMatrix(diagram, "V3")
+2×3 UtilityMatrix{2}:
+ Inf  Inf  Inf
+ Inf  Inf  Inf
 ```
 """
 function UtilityMatrix(diagram::InfluenceDiagram, node::Name)
@@ -691,19 +775,38 @@ end
 """
     function add_utilities!(diagram::InfluenceDiagram, node::Name, utilities::AbstractArray{T, N}) where {N,T<:Real}
 
-Add utility matrix to influence diagram, specifically to its Y vector.
+Add utility matrix to influence diagram, specifically to its `Y` vector.
 
 # Examples
-```julia
+```julia-repl
 julia> Y_V3 = UtilityMatrix(diagram, "V3")
-julia> set_utility!(Y_V3, ["peach", :], [-40, -20, 0])
-julia> set_utility!(Y_V3, ["lemon", :], [-200, 0, 0])
+2×3 UtilityMatrix{2}:
+ Inf  Inf  Inf
+ Inf  Inf  Inf
+
+julia> Y_V3["peach", :] = [-40, -20, 0]
+3-element Array{Int64,1}:
+ -40
+ -20
+   0
+
+julia> Y_V3["lemon", :] = [-200, 0, 0]
+3-element Array{Int64,1}:
+ -200
+    0
+    0
+
 julia> add_utilities!(diagram, "V3", Y_V3)
+1-element Array{Utilities,1}:
+ [-200.0 0.0 0.0; -40.0 -20.0 0.0]
 
 julia> add_utilities!(diagram, "V1", [0, -25])
+2-element Array{Utilities,1}:
+ [-200.0 0.0 0.0; -40.0 -20.0 0.0]
+ [0.0, -25.0]
 ```
 !!! note
-The arcs must be generated before probabilities or utilities can be added to the influence diagram.
+    The function `generate_arcs!` must be called before probabilities or utilities can be added to the influence diagram.
 """
 function add_utilities!(diagram::InfluenceDiagram, node::Name, utilities::AbstractArray{T, N}) where {N,T<:Real}
     v = findfirst(x -> x==node, diagram.Names)
@@ -765,7 +868,7 @@ and states are only used in the user interface from here on.
 
 # Examples
 ```julia
-julia> generate_arcs!(diagram)
+generate_arcs!(diagram)
 ```
 """
 function generate_arcs!(diagram::InfluenceDiagram)
@@ -869,18 +972,18 @@ Generate complete influence diagram with probabilities and utilities as well.
 
 # Examples
 ```julia
-julia> generate_diagram!(diagram)
+generate_diagram!(diagram)
 ```
 
 !!! note
-The influence diagram must be generated after probabilities and utilities are added
-but before creating the decision model.
+    The influence diagram must be generated after probabilities and utilities are added
+    but before creating the decision model.
 
 !!! note
-If the default probabilities and utilities are not used, define `AbstractPathProbability`
-and `AbstractPathUtility` structures and define P(s), U(s) and U(s, t) functions
-for them. Add the `AbstractPathProbability` and `AbstractPathUtility` structures
-to the influence diagram fields P and U.
+    If the default probabilities and utilities are not used, define `AbstractPathProbability`
+    and `AbstractPathUtility` structures and define P(s), U(s) and U(s, t) functions
+    for them. Add the `AbstractPathProbability` and `AbstractPathUtility` structures
+    to the influence diagram fields P and U.
 """
 function generate_diagram!(diagram::InfluenceDiagram;
     default_probability::Bool=true,
@@ -918,8 +1021,9 @@ end
 Get the index of a given node.
 
 # Example
-```julia
+```julia-repl
 julia> idx_O = index_of(diagram, "O")
+1
 ```
 """
 function index_of(diagram::InfluenceDiagram, node::Name)
@@ -936,8 +1040,9 @@ end
 Get the number of states in a given node.
 
 # Example
-```julia
+```julia-repl
 julia> NS_O = num_states(diagram, "O")
+2
 ```
 """
 function num_states(diagram::InfluenceDiagram, node::Name)
@@ -957,7 +1062,7 @@ ForbiddenPath outer construction function. Create ForbiddenPath variable.
 
 # Example
 ```julia
-julia> ForbiddenPath(diagram, ["R1", "R2"], [("high", "low"), ("low", "high")])
+ForbiddenPath(diagram, ["R1", "R2"], [("high", "low"), ("low", "high")])
 ```
 """
 function ForbiddenPath(diagram::InfluenceDiagram, nodes::Vector{Name}, paths::Vector{NTuple{N, Name}}) where N
@@ -997,8 +1102,17 @@ FixedPath outer construction function. Create FixedPath variable.
 - `fixed::Dict{Name, Name}`: Dictionary of nodes and their fixed states. Order is node=>state, and both are idefied with their names.
 
 # Example
-```julia
-julia> FixedPath(diagram, Dict("R1"=>"high", "R2"=>"high"))
+```julia-repl
+julia> fixedpath = FixedPath(diagram, Dict("O" => "lemon"))
+Dict{Int16,Int16} with 1 entry:
+  1 => 1
+
+julia> vec(collect(paths(states, fixedpath)))
+3-element Array{Tuple{Int16,Int16},1}:
+ (1, 1)
+ (1, 2)
+ (1, 3)
+
 ```
 """
 function FixedPath(diagram::InfluenceDiagram, fixed::Dict{Name, Name})
@@ -1027,12 +1141,6 @@ end
     LocalDecisionStrategy{N} <: AbstractArray{Int, N}
 
 Local decision strategy type.
-
-# Examples
-```julia
-Z = LocalDecisionStrategy(1, data)
-Z(s_I)
-```
 """
 struct LocalDecisionStrategy{N} <: AbstractArray{Int, N}
     d::Node
