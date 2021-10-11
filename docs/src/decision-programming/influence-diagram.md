@@ -6,15 +6,17 @@ Decision programming uses influence diagrams, a generalization of Bayesian netwo
 ## Definition
 ![](figures/linear-graph.svg)
 
-We define the **influence diagram** as a directed, acyclic graph $G=(C,D,V,I,S).$ We describe the nodes $N=C∪D∪V$ with $C∪D=\{1,...,n\}$ and $n=|C|+|D|$ as follows:
+We define the **influence diagram** as a directed, acyclic graph $G=(C,D,V,A,S).$ We describe the nodes $N=C∪D∪V$ with $C∪D=\{1,...,n\}$ and $n=|C|+|D|$ as follows:
 
 1) **Chance nodes** $C⊆\{1,...,n\}$ (circles) represent uncertain events associated with random variables.
 2) **Decision nodes** $D⊆\{1,...,n\}$ (squares) correspond to decisions among discrete alternatives.
 3) **Value nodes** $V=\{n+1,...,n+|V|\}$ (diamonds) represent consequences that result from the realizations of random variables at chance nodes and the decisions made at decision nodes.
 
+The connections between different nodes (arrows) are called **arcs** $a \in A$. The arcs represent different dependencies between the nodes.
+
 We define the **information set** $I$ of node $j∈N$ as
 
-$$I(j)⊆\{i∈C∪D∣i<j\}$$
+$$I(j)⊆\{i∈C∪D ∣ (i,j) \in A\, i<j}$$
 
 Practically, the information set is a collection of arcs in the reverse direction in the graph. The conditions enforce that the graph is acyclic, and there are no arcs from value nodes to other nodes.
 
