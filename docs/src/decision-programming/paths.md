@@ -8,9 +8,9 @@ Formally, the path $𝐬$ is **ineffective** if and only if $𝐬_A∈𝐒_A^′
 
 $$𝐒^∗=\{𝐬∈𝐒∣𝐬_{A}∉𝐒_{A}^′\}⊆𝐒.$$
 
-The [Decision Model](@ref decision-model) size depends on the number of effective paths, rather than the number of paths or size of the influence diagram directly. If effective paths is empty, the influence diagram has no solutions.
+The [Decision Model](@ref decision-model) size depends on the number of effective paths, rather than the number of paths or size of the influence diagram directly.
 
-In Decision Programming, one can declare certain subpaths to be effective or ineffective using the *fixed path* and *forbidden paths* sets.
+In Decision Programming, one can declare certain subpaths to be ineffective using the *fixed path* and *forbidden paths* sets.
 
 ### Fixed Path
 **Fixed path** refers to a subpath which must be realized. If the fixed path is $s_Y = S_Y^f$ for all nodes $Y⊆C∪D$, then the effective paths in the model are

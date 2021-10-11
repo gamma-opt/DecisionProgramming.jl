@@ -1,6 +1,6 @@
 # [Analyzing Decision Strategies](@id analyzing-decision-strategies)
 ## Introduction
-This section focuses on how we can analyze fixed decision strategies $Z$ on an influence diagram $G$, such as ones resulting from the optimization. We can rule out all incompatible and inactive paths from the analysis because they do not influence the outcomes of the strategy. This means that we only consider paths $𝐬$ that are compatible and active $𝐬 \in 𝐒(X) \cap 𝐒(Z)$.
+This section focuses on how we can analyze fixed decision strategies $Z$ on an influence diagram $G$, such as ones obtained by solving the Decision Programming model described in [the previous section](@ref decision-model). We can rule out all incompatible and inactive paths from the analysis because they do not influence the outcomes of the strategy. This means that we only consider paths $𝐬$ that are compatible and active $𝐬 \in 𝐒(X) \cap 𝐒(Z)$.
 
 
 ## Generating Compatible Paths
@@ -20,7 +20,7 @@ The probability mass function of the **utility distribution** associates each un
 
 $$ℙ(X=u)=∑_{𝐬∈𝐒(Z)∣\mathcal{U}(𝐬)=u} p(𝐬),\quad ∀u∈\mathcal{U}^∗.$$
 
-From the utility distribution, we can calculate the cumulative distribution, statistics, and risk measures. The relevant statistics are expected value, standard deviation, skewness and kurtosis. Risk measures focus on the conditional value-at-risk (CVaR), also known as, expected shortfall.
+From the utility distribution, we can calculate the cumulative distribution, statistics, and risk measures. The relevant statistics are expected value, standard deviation, skewness and kurtosis. Risk measures focus on the conditional value-at-risk (CVaR), also known as expected shortfall.
 
 
 ## Measuring Risk
@@ -56,7 +56,7 @@ The above figure demonstrates these values on a discrete probability distributio
 
 
 ## State Probabilities
-We denote **paths with fixed states** where $ϵ$ denotes an empty state using a recursive definition.
+We use a recursive definition where $ϵ$ denotes an empty state to denote **paths with fixed states**.
 
 $$\begin{aligned}
 𝐒_{ϵ} &= 𝐒(Z) \\

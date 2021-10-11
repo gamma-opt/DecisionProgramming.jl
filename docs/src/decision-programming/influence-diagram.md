@@ -105,13 +105,13 @@ Otherwise, it is **inactive**.
 
 
 ## Decision Strategies
-Each decision strategy models how the decision maker chooses a state $s_j∈S_j$ given an information state $𝐬_{I(j)}$ at decision node $j∈D.$ A decision node is a special type of chance node, such that the probability of the chosen state given an information state is fixed to one
+Each decision strategy models how the decision maker chooses a state $s_j∈S_j$ given an information state $𝐬_{I(j)}$ at decision node $j∈D.$ A decision node can be seen as a special type of chance node, such that the probability of the chosen state given an information state is fixed to one
 
 $$ℙ(X_j=s_j∣X_{I(j)}=𝐬_{I(j)})=1.$$
 
 By definition, the probabilities for other states are zero.
 
-Formally, for each decision node $j∈D,$ a **local decision strategy** is function that maps an information state $𝐬_{I(j)}$ to a state $s_j$
+Formally, for each decision node $j∈D,$ a **local decision strategy** is a function that maps an information state $𝐬_{I(j)}$ to a state $s_j$
 
 $$Z_j:𝐒_{I(j)}↦S_j.$$
 
@@ -142,7 +142,7 @@ $$q(𝐬∣Z) = ∏_{j∈D} ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)}).$$
 Because the probabilities of decision nodes are defined as one or zero depending on the decision strategy, we can simplify the second part to an indicator function
 
 $$q(𝐬∣Z)=\begin{cases}
-1, & x(𝐬) \\
+1, & x(𝐬) = 1 \\
 0, & \text{otherwise}
 \end{cases}.$$
 
@@ -207,7 +207,7 @@ Two nodes are **sequential** if there exists a directed path from one node to th
 
 **Repeated subdiagram** refers to a recurring pattern within an influence diagram. Often, influence diagrams do not have a unique structure, but they consist of a repeated pattern due to the underlying problem's properties.
 
-**Limited-memory** influence diagram refers to an influence diagram where an upper bound limits the size of the information set for decision nodes. That is, $I(j)≤m$ for all $j∈D$ where the limit $m$ is less than $|C∪D|.$ Smaller limits of $m$ are desirable because they reduce the decision model size, as discussed on the [Computational Complexity](@ref computational-complexity) page.
+**Limited-memory** influence diagram refers to an influence diagram where an upper bound limits the size of the information set for decision nodes. That is, $\mid I(j) \mid ≤m$ for all $j∈D$ where the limit $m$ is less than $|C∪D|.$ Smaller limits of $m$ are desirable because they reduce the decision model size, as discussed on the [Computational Complexity](@ref computational-complexity) page.
 
 **Isolated subdiagrams** refer to unconnected diagrams within an influence diagram. That is, there are no undirected connections between the diagrams. Therefore, one isolated subdiagram's decisions affect decisions on the other isolated subdiagrams only through the utility function.
 
