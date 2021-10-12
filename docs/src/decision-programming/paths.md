@@ -56,7 +56,7 @@ Notice that, the number of active paths affects the size of the [Decision Model]
 
 
 ## Compatible Paths
-Each decision strategy $Z∈ℤ$ determines a set of **compatible paths**. Formally, we denote the set of compatible paths as
+Each decision strategy $Z∈ℤ$ determines a set of **compatible paths**. We use the shorthand $Z(s) ↔ (q(𝐬 \mid Z) = 1)$, where q is as defined in [Path Probability](@ref path-probability-doc). Formally, we denote the set of compatible paths as
 
 $$𝐒(Z)=\{𝐬∈𝐒 ∣ Z(𝐬)\}.$$
 
@@ -64,7 +64,7 @@ Since each local decision strategy $Z_j∈Z$ is deterministic, it can choose onl
 
 $$|𝐒(Z)|=|𝐒|/|𝐒_D|=|𝐒_C|.$$
 
-The compatible paths of all distinct pairs of decision strategies are disjoint. Formally, for all $Z,Z^′∈ℤ$ where $Z≠Z^′$, we have $Z(𝐬)∧Z^′(𝐬)↔⊥,$ which gives as
+The compatible paths of all distinct pairs of decision strategies are disjoint. Formally, for all $Z,Z^′∈ℤ$ where $Z≠Z^′$, we have
 
 $$𝐒(Z)∩𝐒(Z^′)=\{𝐬∈𝐒∣Z(𝐬)∧Z^′(𝐬)\}=∅.$$
 
@@ -84,7 +84,7 @@ An influence diagram is **symmetric** if the number of active and compatible pat
 
 $$|𝐒(X)∩𝐒(Z)|=|𝐒(X)∩𝐒(Z^′)|.$$
 
-For example, if all paths are active $X(𝐬)↔⊤,$ we have $|𝐒(X)∩𝐒(Z)|=|𝐒(Z)|,$ which is a constant. Otherwise, the influence diagram is **asymmetric**. The figures below demonstrate symmetric and asymmetric influence diagrams.
+For example, if all paths are active, we have $|𝐒(X)∩𝐒(Z)|=|𝐒(Z)|,$ which is a constant. Otherwise, the influence diagram is **asymmetric**. The figures below demonstrate symmetric and asymmetric influence diagrams.
 
 ### Example 1
 

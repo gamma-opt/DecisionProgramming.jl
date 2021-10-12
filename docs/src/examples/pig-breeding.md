@@ -1,4 +1,4 @@
-# Pig Breeding
+# [Pig Breeding](@id pig-breeding)
 ## Description
 The pig breeding problem as described in [^1].
 
