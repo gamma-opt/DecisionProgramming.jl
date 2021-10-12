@@ -14,11 +14,11 @@ We define the **influence diagram** as a directed, acyclic graph $G=(C,D,V,A,S).
 
 The connections between different nodes (arrows) are called **arcs** $a \in A$. The arcs represent different dependencies between the nodes.
 
-We define the **information set** $I$ of node $j∈N$ as
+We define the **information set** $I$ of node $j∈N$ as the set of predecessors of $j$ in the graph:
 
 $$I(j)⊆\{i∈C∪D ∣ (i,j) \in A\, i<j}$$
 
-Practically, the information set is a collection of arcs in the reverse direction in the graph. The conditions enforce that the graph is acyclic, and there are no arcs from value nodes to other nodes.
+Practically, the information set is a collection of arcs in the reverse direction in the graph. Informally, it tells us which node's information is available to the current node. The conditions enforce that the graph is acyclic, and there are no arcs from value nodes to other nodes.
 
 In an influence diagram, each chance and decision node $j∈C∪D$ is associates with a finite number of **states** $S_j$ that we encode using integers $S_j=\{1,...,|S_j|\}$ from one to number of states $|S_j|≥1.$ A node $j$ is **trivial** if it has only one state, $|S_j|=1.$ We refer to the collection of all states $S=\{S_1,...,S_n\}$ as the **state space**.
 

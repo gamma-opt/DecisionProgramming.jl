@@ -24,7 +24,7 @@ Value nodes are added by simply giving it a name and its information set. Value 
 add_node!(diagram, ValueNode("V", ["C2"]))
 ```
 
-Once all the nodes are added, we generate the arcs. This orders the nodes and gives each one a number, so that their predecessors have numbers less than theirs. In effect, the chance and decision nodes are numbered such that $C \cup D = \{1,...,n\}$, where $n = \mid C\mid + \mid D\mid$. The value nodes are numbered $V = \{n+1,..., N\}$, where $N = \mid C\mid + \mid D\mid + \mid V \mid$. For more details on influence diagrams see page [influence diagram](decision-programming/influence-diagram.md).
+Once all the nodes are added, we generate the arcs. This orders the nodes and numbers them such that each node's predecessors have smaller numbers than the node itself. In effect, the chance and decision nodes are numbered such that $C \cup D = \{1,...,n\}$, where $n = \mid C\mid + \mid D\mid$. The value nodes are numbered $V = \{n+1,..., N\}$, where $N = \mid C\mid + \mid D\mid + \mid V \mid$. For more details on influence diagrams see page [influence diagram](decision-programming/influence-diagram.md).
 ```julia
 generate_arcs!(diagram)
 ```
@@ -97,7 +97,7 @@ julia> diagram.X
 ```
 
 
-As another example, we will add the probability matrix of node C2. It has two nodes in its information set: C1 and D1. These nodes have 3 and 2 state respectively. Node C2 itself has 2 states. The question is should the dimensions of the probability matrix be $(|S_{C1}|, |\ S_{D1}|, |\ S_{C2}|) = (3, 2, 2)$ or $(|S_{D1}|, |\ S_{C1}|, \ |S_{C2}|) = (2, 3, 2)$? The answer is that the dimensions should be in ascending order of the nodes' numbers that they correspond to. This is also the order that the information set is in in the field `I_j`. In this case the influence diagram looks like this:
+As another example, we will add the probability matrix of node C2. It has two nodes in its information set: C1 and D1. These nodes have 3 and 2 states, respectively. Node C2 itself has 2 states. Now, the question is: should the dimensions of the probability matrix be $(|S_{C1}|, |\ S_{D1}|, |\ S_{C2}|) = (3, 2, 2)$ or $(|S_{D1}|, |\ S_{C1}|, \ |S_{C2}|) = (2, 3, 2)$? The answer is that the dimensions should be in ascending order of the nodes' numbers that they correspond to. This is also the order that the information set is in in the field `I_j`. In this case the influence diagram looks like this:
 ```julia
 julia> diagram.Names
 4-element Array{String,1}:
