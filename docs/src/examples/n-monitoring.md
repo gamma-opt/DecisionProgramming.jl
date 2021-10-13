@@ -244,40 +244,40 @@ julia> print_decision_strategy(diagram, Z, S_probabilities)
 The state probabilities for strategy $Z$ are also obtained. These tell the probability of each state in each node, given strategy $Z$.
 
 ```julia-repl
-julia> print_state_probabilities(sprobs, L)
-┌───────┬──────────┬──────────┬─────────────┐
-│  Node │  State 1 │  State 2 │ Fixed state │
-│ Int64 │  Float64 │  Float64 │      String │
-├───────┼──────────┼──────────┼─────────────┤
-│     1 │ 0.564449 │ 0.435551 │             │
-└───────┴──────────┴──────────┴─────────────┘
-julia> print_state_probabilities(sprobs, R_k)
-┌───────┬──────────┬──────────┬─────────────┐
-│  Node │  State 1 │  State 2 │ Fixed state │
-│ Int64 │  Float64 │  Float64 │      String │
-├───────┼──────────┼──────────┼─────────────┤
-│     2 │ 0.515575 │ 0.484425 │             │
-│     3 │ 0.442444 │ 0.557556 │             │
-│     4 │ 0.543724 │ 0.456276 │             │
-│     5 │ 0.552515 │ 0.447485 │             │
-└───────┴──────────┴──────────┴─────────────┘
-julia> print_state_probabilities(sprobs, A_k)
-┌───────┬──────────┬──────────┬─────────────┐
-│  Node │  State 1 │  State 2 │ Fixed state │
-│ Int64 │  Float64 │  Float64 │      String │
-├───────┼──────────┼──────────┼─────────────┤
-│     6 │ 1.000000 │ 0.000000 │             │
-│     7 │ 1.000000 │ 0.000000 │             │
-│     8 │ 1.000000 │ 0.000000 │             │
-│     9 │ 1.000000 │ 0.000000 │             │
-└───────┴──────────┴──────────┴─────────────┘
-julia> print_state_probabilities(sprobs, F)
-┌───────┬──────────┬──────────┬─────────────┐
-│  Node │  State 1 │  State 2 │ Fixed state │
-│ Int64 │  Float64 │  Float64 │      String │
-├───────┼──────────┼──────────┼─────────────┤
-│    10 │ 0.633125 │ 0.366875 │             │
-└───────┴──────────┴──────────┴─────────────┘
+julia> print_state_probabilities(diagram, S_probabilities, ["L"])
+┌────────┬──────────┬──────────┬─────────────┐
+│   Node │     high │      low │ Fixed state │
+│ String │  Float64 │  Float64 │      String │
+├────────┼──────────┼──────────┼─────────────┤
+│      L │ 0.564449 │ 0.435551 │             │
+└────────┴──────────┴──────────┴─────────────┘
+julia> print_state_probabilities(diagram, S_probabilities, [["R$i" for i in 1:N]...])
+┌────────┬──────────┬──────────┬─────────────┐
+│   Node │     high │      low │ Fixed state │
+│ String │  Float64 │  Float64 │      String │
+├────────┼──────────┼──────────┼─────────────┤
+│     R1 │ 0.515575 │ 0.484425 │             │
+│     R2 │ 0.442444 │ 0.557556 │             │
+│     R3 │ 0.543724 │ 0.456276 │             │
+│     R4 │ 0.552515 │ 0.447485 │             │
+└────────┴──────────┴──────────┴─────────────┘
+julia> print_state_probabilities(diagram, S_probabilities, [["A$i" for i in 1:N]...])
+┌────────┬──────────┬──────────┬─────────────┐
+│   Node │      yes │       no │ Fixed state │
+│ String │  Float64 │  Float64 │      String │
+├────────┼──────────┼──────────┼─────────────┤
+│     A1 │ 1.000000 │ 0.000000 │             │
+│     A2 │ 1.000000 │ 0.000000 │             │
+│     A3 │ 1.000000 │ 0.000000 │             │
+│     A4 │ 1.000000 │ 0.000000 │             │
+└────────┴──────────┴──────────┴─────────────┘
+julia> print_state_probabilities(diagram, S_probabilities, ["F"])
+┌────────┬──────────┬──────────┬─────────────┐
+│   Node │  failure │  success │ Fixed state │
+│ String │  Float64 │  Float64 │      String │
+├────────┼──────────┼──────────┼─────────────┤
+│      F │ 0.633125 │ 0.366875 │             │
+└────────┴──────────┴──────────┴─────────────┘
 ```
 
 We can also print the utility distribution for the optimal strategy and some basic statistics for the distribution.

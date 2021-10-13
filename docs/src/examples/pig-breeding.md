@@ -241,7 +241,7 @@ julia>  health_nodes = [["H$i" for i in 1:N]...]
 julia> print_state_probabilities(diagram, S_probabilities, health_nodes)
 
 ┌────────┬──────────┬──────────┬─────────────┐
-│   Node │  State 1 │  State 2 │ Fixed state │
+│   Node │      ill │  healthy │ Fixed state │
 │ String │  Float64 │  Float64 │      String │
 ├────────┼──────────┼──────────┼─────────────┤
 │     H1 │ 0.100000 │ 0.900000 │             │
@@ -253,7 +253,7 @@ julia> print_state_probabilities(diagram, S_probabilities, health_nodes)
 julia> test_nodes = [["T$i" for i in 1:N-1]...]
 julia> print_state_probabilities(diagram, S_probabilities, test_nodes)
 ┌────────┬──────────┬──────────┬─────────────┐
-│   Node │  State 1 │  State 2 │ Fixed state │
+│   Node │ positive │ negative │ Fixed state │
 │ String │  Float64 │  Float64 │      String │
 ├────────┼──────────┼──────────┼─────────────┤
 │     T1 │ 0.170000 │ 0.830000 │             │
@@ -264,7 +264,7 @@ julia> print_state_probabilities(diagram, S_probabilities, test_nodes)
 julia> treatment_nodes = [["D$i" for i in 1:N-1]...]
 julia> print_state_probabilities(diagram, S_probabilities, treatment_nodes)
 ┌────────┬──────────┬──────────┬─────────────┐
-│   Node │  State 1 │  State 2 │ Fixed state │
+│   Node │    treat │     pass │ Fixed state │
 │ String │  Float64 │  Float64 │      String │
 ├────────┼──────────┼──────────┼─────────────┤
 │     D1 │ 0.000000 │ 1.000000 │             │
