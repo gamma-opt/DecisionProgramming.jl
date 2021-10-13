@@ -56,7 +56,7 @@ U_distribution = UtilityDistribution(diagram, Z)</code></pre><h3 id="Decision-st
 julia&gt; print_state_probabilities(diagram, S_probabilities, health_nodes)
 
 ┌────────┬──────────┬──────────┬─────────────┐
-│   Node │  State 1 │  State 2 │ Fixed state │
+│   Node │      ill │  healthy │ Fixed state │
 │ String │  Float64 │  Float64 │      String │
 ├────────┼──────────┼──────────┼─────────────┤
 │     H1 │ 0.100000 │ 0.900000 │             │
@@ -68,7 +68,7 @@ julia&gt; print_state_probabilities(diagram, S_probabilities, health_nodes)
 julia&gt; test_nodes = [[&quot;T$i&quot; for i in 1:N-1]...]
 julia&gt; print_state_probabilities(diagram, S_probabilities, test_nodes)
 ┌────────┬──────────┬──────────┬─────────────┐
-│   Node │  State 1 │  State 2 │ Fixed state │
+│   Node │ positive │ negative │ Fixed state │
 │ String │  Float64 │  Float64 │      String │
 ├────────┼──────────┼──────────┼─────────────┤
 │     T1 │ 0.170000 │ 0.830000 │             │
@@ -79,7 +79,7 @@ julia&gt; print_state_probabilities(diagram, S_probabilities, test_nodes)
 julia&gt; treatment_nodes = [[&quot;D$i&quot; for i in 1:N-1]...]
 julia&gt; print_state_probabilities(diagram, S_probabilities, treatment_nodes)
 ┌────────┬──────────┬──────────┬─────────────┐
-│   Node │  State 1 │  State 2 │ Fixed state │
+│   Node │    treat │     pass │ Fixed state │
 │ String │  Float64 │  Float64 │      String │
 ├────────┼──────────┼──────────┼─────────────┤
 │     D1 │ 0.000000 │ 1.000000 │             │
@@ -105,4 +105,4 @@ julia&gt; print_state_probabilities(diagram, S_probabilities, treatment_nodes)
 │      Std │ 338.460723 │
 │ Skewness │  -0.811628 │
 │ Kurtosis │  -1.173465 │
-└──────────┴────────────┘</code></pre><h2 id="References"><a class="docs-heading-anchor" href="#References">References</a><a id="References-1"></a><a class="docs-heading-anchor-permalink" href="#References" title="Permalink"></a></h2><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>Lauritzen, S. L., &amp; Nilsson, D. (2001). Representing and solving decision problems with limited information. Management Science, 47(9), 1235–1251. https://doi.org/10.1287/mnsc.47.9.1235.9779</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../used-car-buyer/">« Used Car Buyer</a><a class="docs-footer-nextpage" href="../n-monitoring/">N-Monitoring »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.7 on <span class="colophon-date" title="Tuesday 12 October 2021 08:08">Tuesday 12 October 2021</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+└──────────┴────────────┘</code></pre><h2 id="References"><a class="docs-heading-anchor" href="#References">References</a><a id="References-1"></a><a class="docs-heading-anchor-permalink" href="#References" title="Permalink"></a></h2><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>Lauritzen, S. L., &amp; Nilsson, D. (2001). Representing and solving decision problems with limited information. Management Science, 47(9), 1235–1251. https://doi.org/10.1287/mnsc.47.9.1235.9779</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../used-car-buyer/">« Used Car Buyer</a><a class="docs-footer-nextpage" href="../n-monitoring/">N-Monitoring »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.7 on <span class="colophon-date" title="Wednesday 13 October 2021 08:39">Wednesday 13 October 2021</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
