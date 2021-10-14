@@ -48,7 +48,7 @@ The second chance node $R$ has nodes $O$ and $T$ in its information set, and thr
 add_node!(diagram, ChanceNode("R", ["O", "T"], ["no test", "lemon", "peach"]))
 ```
 
-### Purchace decision
+### Purchase decision
 The purchase decision represented by node $A$ is added as follows.
 ```julia
 add_node!(diagram, DecisionNode("A", ["R"], ["buy without guarantee", "buy with guarantee", "don't buy"]))
