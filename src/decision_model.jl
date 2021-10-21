@@ -263,7 +263,11 @@ function conditional_value_at_risk(model::Model,
     u_max = u_sorted[end]
     M = u_max - u_min
     u_diff = diff(u_sorted)
-    ϵ = if isempty(u_diff) 0.0 else minimum(filter(!iszero, abs.(u_diff))) / 2 end
+    if isempty(filter(!iszero, u_diff))
+        return u_min    # All utilities are the same, CVaR is equal to that constant utility value
+    else
+        ϵ = minimum(filter(!iszero, abs.(u_diff))) / 2 
+    end
 
     # Variables and constraints
     η = @variable(model)

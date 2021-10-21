@@ -87,7 +87,7 @@ $$𝐒_{α}^{=}=\{𝐬∈𝐒∣\mathcal{U}(𝐬)=u_α\}.$$
 
 We define **conditional value-at-risk** as
 
-$$\operatorname{CVaR}_α(Z)=\frac{1}{α}\left(∑_{𝐬∈𝐒_α^{<}} x(𝐬) \ p(𝐬) \ \mathcal{U}(𝐬) + ∑_{𝐬∈𝐒_α^{=}} \left(α - ∑_{𝐬'∈𝐒_α^{<}} x(𝐬') \ p(𝐬') \right) \mathcal{U}(𝐬) \right).$$
+$$\operatorname{CVaR}_α(Z)=\frac{1}{α}\left(∑_{𝐬∈𝐒_α^{<}} x(𝐬) \ p(𝐬) \ \mathcal{U}(𝐬) + \left(α - ∑_{𝐬'∈𝐒_α^{<}} x(𝐬') \ p(𝐬') \right) u_α \right).$$
 
 We can form the conditional value-at-risk as an optimization problem. We have the following pre-computed parameters.
 
