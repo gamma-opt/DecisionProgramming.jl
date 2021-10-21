@@ -1,4 +1,8 @@
 # Contingent Portfolio Programming
+
+!!! warning
+    This example discusses adding constraints and decision variables to the Decision Programming formulation, as well as custom path utility calculation. Because of this, it is quite advanced compared to the earlier ones. 
+
 ## Description
 [^1], section 4.2
 

@@ -14,7 +14,7 @@ The pig breeding problem as described in [^1].
 
 The influence diagram for the generalized $N$-month pig breeding problem. The nodes are associated with the following states. **Health states** $h_k=\{ill,healthy\}$ represent the health of the pig at month $k=1,...,N$. **Test states** $t_k=\{positive,negative\}$ represent the result from testing the pig at month $k=1,...,N-1$. **Treatment states** $d_k=\{treat, pass\}$ represent the decision to treat the pig with an injection at month $k=1,...,N-1$.
 
-> The dashed arcs represent the no-forgetting principle and we can toggle them on and off in the formulation.
+> The dashed arcs represent the no-forgetting principle. The no-forgetting assumption does not hold without them and they are tnot included in the following model. They could be included by changing the information sets of nodes.
 
 In this example, we solve the 4 month pig breeding problem and thus, declare $N = 4$.
 
@@ -70,7 +70,7 @@ generate_arcs!(diagram)
 
 ### Probabilities
 
-We define probability distributions for all chance nodes. For the first health node, the probability distribution is defined over its two states $ill$ and $healthy$. The probability that pig is ill in the first month is
+We define probability distributions for all chance nodes. For the first health node, the probability distribution is defined over its two states $ill$ and $healthy$. The probability that the pig is ill in the first month is
 
 $$ℙ(h_1 = ill)=0.1.$$
 
