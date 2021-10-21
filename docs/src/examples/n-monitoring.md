@@ -6,7 +6,7 @@ The $N$-monitoring problem is described in [^1], sections 4.1 and 6.1.
 ## Influence Diagram
 ![](figures/n-monitoring.svg)
 
-The influence diagram of the generalized $N$-monitoring problem where $N≥1$ and indices $k=1,...,N.$ The nodes are associated with states as follows. **Load state** $L=\{high, low\}$ denotes the load on a structure, **report states** $R_k=\{high, low\}$ report the load state to the **action states** $A_k=\{yes, no\}$ which represent different decisions to fortify the structure. The **failure state** $F=\{failure, success\}$ represents whether or not the (fortified) structure fails under the load $L$. Finally, the utility at target $T$ depends on the whether $F$ fails and the fortification costs.
+The influence diagram of the generalized $N$-monitoring problem where $N≥1$ and indices $k=1,...,N.$ The nodes are associated with states as follows. **Load state** $L=\{high, low\}$ denotes the load on a structure, **report states** $R_k=\{high, low\}$ report the load state to the **action states** $A_k=\{yes, no\}$ which represent different decisions to fortify the structure. The **failure state** $F=\{failure, success\}$ represents whether or not the (fortified) structure fails under the load $L$. Finally, the utility at target $T$ depends on the fortification costs and whether F fails.
 
 We begin by choosing $N$ and defining our fortification cost function. We draw the cost of fortification $c_k∼U(0,1)$ from a uniform distribution, and the magnitude of fortification is directly proportional to the cost. Fortification is defined as
 
@@ -115,7 +115,7 @@ X_F = ProbabilityMatrix(diagram, "F")
 
 This matrix has dimensions $(2, \textcolor{orange}{2, 2, 2, 2}, 2)$ because node $L$ and nodes $A_k$, which form the information set of $F$, all have 2 states and node $F$ itself also has 2 states. The orange colored dimensions correspond to the states of the action nodes $A_k$.
 
-To set the probabilities we have to iterate over the information states. Here it helps to know that in Decision Programming the states of each node are mapped to numbers in the back-end. For instance, the load states $high$ and $low$ are referred to as 1 and 2. The same applies for the action states $yes$ and $no$, they are states 1 and 2. The `paths` function allows us to iterate over the subpaths of specific nodes. In these paths, the states are refer to by their indices. Using this information, we can easily iterate over the information states using the `paths` function and set the probability values into the probability matrix.
+To set the probabilities we have to iterate over the information states. Here it helps to know that in Decision Programming the states of each node are mapped to numbers in the back-end. For instance, the load states $high$ and $low$ are referred to as 1 and 2. The same applies for the action states $yes$ and $no$, they are states 1 and 2. The `paths` function allows us to iterate over the subpaths of specific nodes. In these paths, the states are referred to by their indices. Using this information, we can easily iterate over the information states using the `paths` function and enter the probability values into the probability matrix.
 
 
 ```julia
@@ -139,7 +139,7 @@ The utility from the different scenarios of the failure state at target $T$ are
 
 $$g(F=failure) = 0$$
 
-$$g(F=success) = 100$$.
+$$g(F=success) = 100.$$
 
 Utilities from the action states $A_k$  at target $T$ are
 

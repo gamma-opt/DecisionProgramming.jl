@@ -93,7 +93,7 @@ $$ℙ(h_k = ill ∣ h_{k-1} = ill, \ d_{k-1} = pass)=0.9,$$
 
 $$ℙ(h_k = ill ∣ h_{k-1} = ill, \ d_{k-1} = treat)=0.5.$$
 
-In Decision Programming, the probability matrix is define in the following way. Notice, that the ordering of the information state corresponds to the order in which the information set was defined when adding the health nodes.
+In Decision Programming, the probability matrix is defined in the following way. Notice, that the ordering of the information state corresponds to the order in which the information set was defined when adding the health nodes.
 ```julia
 X_H = ProbabilityMatrix(diagram, "H2")
 X_H["healthy", "pass", :] = [0.2, 0.8]
