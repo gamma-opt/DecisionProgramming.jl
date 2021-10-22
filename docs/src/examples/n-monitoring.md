@@ -6,9 +6,9 @@ The $N$-monitoring problem is described in [^1], sections 4.1 and 6.1.
 ## Influence Diagram
 ![](figures/n-monitoring.svg)
 
-The influence diagram of the generalized $N$-monitoring problem where $N≥1$ and indices $k=1,...,N.$ The nodes are associated with states as follows. **Load state** $L=\{high, low\}$ denotes the load on a structure, **report states** $R_k=\{high, low\}$ report the load state to the **action states** $A_k=\{yes, no\}$ which represent different decisions to fortify the structure. The **failure state** $F=\{failure, success\}$ represents whether or not the (fortified) structure fails under the load $L$. Finally, the utility at target $T$ depends on the whether $F$ fails and the fortification costs.
+The influence diagram of the generalized $N$-monitoring problem where $N≥1$ and indices $k=1,...,N.$ The nodes are associated with states as follows. **Load state** $L=\{high, low\}$ denotes the load on a structure, **report states** $R_k=\{high, low\}$ report the load state to the **action states** $A_k=\{yes, no\}$ which represent different decisions to fortify the structure. The **failure state** $F=\{failure, success\}$ represents whether or not the (fortified) structure fails under the load $L$. Finally, the utility at target $T$ depends on the fortification costs and whether F fails.
 
-We draw the cost of fortification $c_k∼U(0,1)$ from a uniform distribution, and the magnitude of fortification is directly proportional to the cost. Fortification is defined as
+We begin by choosing $N$ and defining our fortification cost function. We draw the cost of fortification $c_k∼U(0,1)$ from a uniform distribution, and the magnitude of fortification is directly proportional to the cost. Fortification is defined as
 
 $$f(A_k=yes) = c_k$$
 
@@ -19,53 +19,67 @@ using Logging, Random
 using JuMP, Gurobi
 using DecisionProgramming
 
-Random.seed!(13)
-
 const N = 4
-const L = [1]
-const R_k = [k + 1 for k in 1:N]
-const A_k = [(N + 1) + k for k in 1:N]
-const F = [2*N + 2]
-const T = [2*N + 3]
-const L_states = ["high", "low"]
-const R_k_states = ["high", "low"]
-const A_k_states = ["yes", "no"]
-const F_states = ["failure", "success"]
+
+Random.seed!(13)
 const c_k = rand(N)
 const b = 0.03
 fortification(k, a) = [c_k[k], 0][a]
-
-S = States([
-    (length(L_states), L),
-    (length(R_k_states), R_k),
-    (length(A_k_states), A_k),
-    (length(F_states), F)
-])
-C = Vector{ChanceNode}()
-D = Vector{DecisionNode}()
-V = Vector{ValueNode}()
-X = Vector{Probabilities}()
-Y = Vector{Consequences}()
 ```
 
-### Load State Probability
-The probability that the load is high, $ℙ(L=high)$, is drawn from a uniform distribution.
+### Initialising the influence diagram
+We initialise the influence diagram before adding nodes to it.
+
+```julia
+diagram = InfluenceDiagram
+```
+
+### Adding nodes
+Add node $L$ which represents the load on the structure. This node is the root node and thus, has an empty information set. Its states describe the state of the load, they are $high$ and $low$.
+
+```julia
+add_node!(diagram, ChanceNode("L", [], ["high", "low"]))
+```
+
+The report nodes $R_k$ and action nodes $A_k$ are easily added with a for-loop. The report nodes have node $L$ in their information sets and their states are $high$ and $low$. The actions are made based on these reports, which is represented by the action nodes $A_k$ having the report nodes $R_k$ in their information sets. The action nodes have states $yes$ and $no$, which represents decisions whether to fortify the structure or not.
+
+```julia
+for i in 1:N
+    add_node!(diagram, ChanceNode("R$i", ["L"], ["high", "low"]))
+    add_node!(diagram, DecisionNode("A$i", ["R$i"], ["yes", "no"]))
+end
+```
+
+The failure node $F$ has the load node $L$ and all of the action nodes $A_k$ in its information set. The failure node has states $failure$ and $success$.
+```julia
+add_node!(diagram, ChanceNode("F", ["L", ["A$i" for i in 1:N]...], ["failure", "success"]))
+```
+
+The value node $T$ is added as follows.
+```julia
+add_node!(diagram, ValueNode("T", ["F", ["A$i" for i in 1:N]...]))
+```
+
+### Generating arcs
+Now that all of the nodes have been added to the influence diagram we generate the arcs between the nodes. This step automatically orders the nodes, gives them indices and reorganises the information into the appropriate form.
+```julia
+generate_arcs!(diagram)
+```
+
+
+### Load State Probabilities
+After generating the arcs, the probabilities and utilities can be added. The probability that the load is high, $ℙ(L=high)$, is drawn from a uniform distribution. For different syntax options for adding probabilities and utilities, see the [usage page](../usage.md).
 
 $$ℙ(L=high)∼U(0,1)$$
 
 ```julia
-for j in L
-    I_j = Vector{Node}()
-    X_j = zeros(S[I_j]..., S[j])
-    X_j[1] = rand()
-    X_j[2] = 1.0 - X_j[1]
-    push!(C, ChanceNode(j, I_j))
-    push!(X, Probabilities(j, X_j))
-end
+X_L = [rand(), 0]
+X_L[2] = 1.0 - X_L[1]
+add_probabilities!(diagram, "L", X_L)
 ```
 
-### Reporting Probability
-The probabilities of the report states correspond to the load state. We draw the values $x∼U(0,1)$ and $y∼U(0,1)$ from uniform distribution.
+### Reporting Probabilities
+The probabilities of the report states correspond to the load state. We draw the values $x∼U(0,1)$ and $y∼U(0,1)$ from uniform distributions.
 
 $$ℙ(R_k=high∣L=high)=\max\{x,1-x\}$$
 
@@ -73,123 +87,109 @@ $$ℙ(R_k=low∣L=low)=\max\{y,1-y\}$$
 
 The probability of a correct report is thus in the range [0.5,1]. (This reflects the fact that a probability under 50% would not even make sense, since we would notice that if the test suggests a high load, the load is more likely to be low, resulting in that a low report "turns into" a high report and vice versa.)
 
+In Decision Programming we add these probabilities by declaring probabilty matrices for nodes $R_k$. The probability matrix of a report node $R_k$ has dimensions (2,2), where the rows correspond to the states $high$ and $low$ of its predecessor node $L$ and the columns to its own states $high$ and $low$.
+
 ```julia
-for j in R_k
-    I_j = L
+for i in 1:N
     x, y = rand(2)
-    X_j = zeros(S[I_j]..., S[j])
-    X_j[1, 1] = max(x, 1-x)
-    X_j[1, 2] = 1.0 - X_j[1, 1]
-    X_j[2, 2] = max(y, 1-y)
-    X_j[2, 1] = 1.0 - X_j[2, 2]
-    push!(C, ChanceNode(j, I_j))
-    push!(X, Probabilities(j, X_j))
-end
-```
-
-### Decision to Fortify
-
-Only the corresponding load report is known when making the fortification decision, thus $I(A_k)=R_k$.
-
-```julia
-for (i, j) in zip(R_k, A_k)
-    I_j = [i]
-    push!(D, DecisionNode(j, I_j))
+    X_R = ProbabilityMatrix(diagram, "R$i")
+    X_R["high", "high"] = max(x_R, 1-x_R)
+    X_R["high", "low"] = 1 - max(x_R, 1-x_R)
+    X_R["low", "low"] = max(y_R, 1-y_R)
+    X_R["low", "high"] = 1-max(y_R, 1-y_R)
+    add_probabilities!(diagram, "R$i", X_R)
 end
 ```
 
 ### Probability of Failure
-The probabilities of failure which are decresead by fortifications. We draw the values $x∼U(0,1)$ and $y∼U(0,1)$ from uniform distribution.
+The probability of failure is decresead by fortification actions. We draw the values $x∼U(0,1)$ and $y∼U(0,1)$ from uniform distribution.
 
 $$ℙ(F=failure∣A_N,...,A_1,L=high)=\frac{\max{\{x, 1-x\}}}{\exp{(b ∑_{k=1,...,N} f(A_k))}}$$
 
 $$ℙ(F=failure∣A_N,...,A_1,L=low)=\frac{\min{\{y, 1-y\}}}{\exp{(b ∑_{k=1,...,N} f(A_k))}}$$
 
+First we initialise the probability matrix for node $F$.
 ```julia
-for j in F
-    I_j = L ∪ A_k
-    x, y = rand(2)
-    X_j = zeros(S[I_j]..., S[j])
-    for s in paths(S[A_k])
-        d = exp(b * sum(fortification(k, a) for (k, a) in enumerate(s)))
-        X_j[1, s..., 1] = max(x, 1-x) / d
-        X_j[1, s..., 2] = 1.0 - X_j[1, s..., 1]
-        X_j[2, s..., 1] = min(y, 1-y) / d
-        X_j[2, s..., 2] = 1.0 - X_j[2, s..., 1]
-    end
-    push!(C, ChanceNode(j, I_j))
-    push!(X, Probabilities(j, X_j))
+X_F = ProbabilityMatrix(diagram, "F")
+```
+
+This matrix has dimensions $(2, \textcolor{orange}{2, 2, 2, 2}, 2)$ because node $L$ and nodes $A_k$, which form the information set of $F$, all have 2 states and node $F$ itself also has 2 states. The orange colored dimensions correspond to the states of the action nodes $A_k$.
+
+To set the probabilities we have to iterate over the information states. Here it helps to know that in Decision Programming the states of each node are mapped to numbers in the back-end. For instance, the load states $high$ and $low$ are referred to as 1 and 2. The same applies for the action states $yes$ and $no$, they are states 1 and 2. The `paths` function allows us to iterate over the subpaths of specific nodes. In these paths, the states are referred to by their indices. Using this information, we can easily iterate over the information states using the `paths` function and enter the probability values into the probability matrix.
+
+
+```julia
+x_F, y_F = rand(2)
+for s in paths([State(2) for i in 1:N])
+    denominator = exp(b * sum(fortification(k, a) for (k, a) in enumerate(s)))
+    X_F[1, s..., 1] = max(x_F, 1-x_F) / denominator
+    X_F[1, s..., 2] = 1.0 - X_F[1, s..., 1]
+    X_F[2, s..., 1] = min(y_F, 1-y_F) / denominator
+    X_F[2, s..., 2] = 1.0 - X_F[2, s..., 1]
 end
 ```
 
-### Consequences
-Utility from consequences at target $T$ from failure state $F$
+After declaring the probability matrix, we add it to the influence diagram.
+```julia
+add_probabilities!(diagram, "F", X_F)
+```
+
+### Utility
+The utility from the different scenarios of the failure state at target $T$ are
 
 $$g(F=failure) = 0$$
 
-$$g(F=success) = 100$$
+$$g(F=success) = 100.$$
 
-Utility from consequences at target $T$ from action states $A_k$ is
+Utilities from the action states $A_k$  at target $T$ are
 
 $$f(A_k=yes) = c_k$$
 
-$$f(A_k=no) = 0$$
+$$f(A_k=no) = 0.$$
 
-Total cost
+The total cost is thus
 
-$$Y(F, A_N, ..., A_1) = g(F) + (-f(A_N)) + ... + (-f(A_1))$$
+$$Y(F, A_N, ..., A_1) = g(F) + (-f(A_N)) + ... + (-f(A_1)).$$
+
+We first declare the utility matrix for node $T$.
+```julia
+Y_T = UtilityMatrix(diagram, "T")
+```
+This matrix has dimensions $(2, \textcolor{orange}{2, 2, 2, 2})$, where the dimensions correspond to the numbers of states the nodes in the information set have. Similarly as before, the first dimension corresponds to the states of node $F$ and the other 4 dimensions (in orange) correspond to the states of the $A_k$ nodes. The utilities are set and added similarly to how the probabilities were added above.
 
 ```julia
-for j in T
-    I_j = A_k ∪ F
-    Y_j = zeros(S[I_j]...)
-    for s in paths(S[A_k])
-        cost = sum(-fortification(k, a) for (k, a) in enumerate(s))
-        Y_j[s..., 1] = cost + 0
-        Y_j[s..., 2] = cost + 100
-    end
-    push!(V, ValueNode(j, I_j))
-    push!(Y, Consequences(j, Y_j))
+for s in paths([State(2) for i in 1:N])
+    cost = sum(-fortification(k, a) for (k, a) in enumerate(s))
+    Y_T[1, s...] = 0 + cost
+    Y_T[2, s...] = 100 + cost
 end
+add_utilities!(diagram, "T", Y_T)
 ```
 
-### Validating the Influence Diagram
+### Generate Influence Diagram
+The full influence diagram can now be generated. We use the default path probabilities and utilities, which are the default setting in this function. In the [Contingent Portfolio Programming](contingent-portfolio-programming.md) example, we show how to use a user-defined custom path utility function.
 
-Finally, we need to validate the influence diagram and sort the nodes, probabilities and consequences in increasing order by the node indices.
+In this particular problem, some of the path utilities are negative. In this case, we choose to use the [positive path utility](../decision-programming/decision-model.md) transformation, which translates the path utilities to positive values. This allows us to exclude the probability cut in the next section.
 
 ```julia
-validate_influence_diagram(S, C, D, V)
-sort!.((C, D, V, X, Y), by = x -> x.j)
+generate_diagram!(diagram, positive_path_utility = true)
 ```
-
-We define the path probability.
-```julia
-P = DefaultPathProbability(C, X)
-```
-
-As the path utility, we use the default, which is the sum of the consequences given the path.
-```julia
-U = DefaultPathUtility(V, Y)
-```
-
 
 ## Decision Model
-
-An affine transformation is applied to the path utility, making all utilities positive. See the [section](../decision-programming/decision-model.md) on positive path utilities for details.
+We initialise the JuMP model and declare the decision and path compatibility variables. Since we applied an affine transformation to the utility function, the probability cut can be excluded from the model formulation.
 
 ```julia
-U⁺ = PositivePathUtility(S, U)
 model = Model()
-z = DecisionVariables(model, S, D)
-x_s = PathCompatibilityVariables(model, z, S, P, probability_cut = false)
+z = DecisionVariables(model, diagram)
+x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
 ```
-`
 
 The expected utility is used as the objective and the problem is solved using Gurobi.
 
 ```julia
-EV = expected_value(model, π_s, U⁺)
+EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
+
 
 optimizer = optimizer_with_attributes(
     () -> Gurobi.Optimizer(Gurobi.Env()),
@@ -202,93 +202,88 @@ optimize!(model)
 
 ## Analyzing Results
 
-The decision strategy shows us that the optimal strategy is to make all four fortifications regardless of the reports (state 1 in fortification nodes corresponds to the option "yes").
+We obtain the decision strategy, state probabilities and utility distribution from the solution.
 
 ```julia
 Z = DecisionStrategy(z)
+U_distribution = UtilityDistribution(diagram, Z)
+S_probabilities = StateProbabilities(diagram, Z)
 ```
+
+The decision strategy shows us that the optimal strategy is to make all four fortifications regardless of the reports.
 
 ```julia-repl
-julia> print_decision_strategy(S, Z)
-┌────────┬──────┬───┐
-│  Nodes │ (2,) │ 6 │
-├────────┼──────┼───┤
-│ States │ (1,) │ 1 │
-│ States │ (2,) │ 1 │
-└────────┴──────┴───┘
-┌────────┬──────┬───┐
-│  Nodes │ (3,) │ 7 │
-├────────┼──────┼───┤
-│ States │ (1,) │ 1 │
-│ States │ (2,) │ 1 │
-└────────┴──────┴───┘
-┌────────┬──────┬───┐
-│  Nodes │ (4,) │ 8 │
-├────────┼──────┼───┤
-│ States │ (1,) │ 1 │
-│ States │ (2,) │ 1 │
-└────────┴──────┴───┘
-┌────────┬──────┬───┐
-│  Nodes │ (5,) │ 9 │
-├────────┼──────┼───┤
-│ States │ (1,) │ 1 │
-│ States │ (2,) │ 1 │
-└────────┴──────┴───┘
+julia> print_decision_strategy(diagram, Z, S_probabilities)
+┌────────────────┬────────────────┐
+│ State(s) of R1 │ Decision in A1 │
+├────────────────┼────────────────┤
+│ high           │ yes            │
+│ low            │ yes            │
+└────────────────┴────────────────┘
+┌────────────────┬────────────────┐
+│ State(s) of R2 │ Decision in A2 │
+├────────────────┼────────────────┤
+│ high           │ yes            │
+│ low            │ yes            │
+└────────────────┴────────────────┘
+┌────────────────┬────────────────┐
+│ State(s) of R3 │ Decision in A3 │
+├────────────────┼────────────────┤
+│ high           │ yes            │
+│ low            │ yes            │
+└────────────────┴────────────────┘
+┌────────────────┬────────────────┐
+│ State(s) of R4 │ Decision in A4 │
+├────────────────┼────────────────┤
+│ high           │ yes            │
+│ low            │ yes            │
+└────────────────┴────────────────┘
 ```
 
 
-The state probabilities for the strategy $Z$ can also be obtained. These tell the probability of each state in each node, given the strategy $Z$.
-
-
-```julia
-sprobs = StateProbabilities(S, P, Z)
-```
+The state probabilities for strategy $Z$ are also obtained. These tell the probability of each state in each node, given strategy $Z$.
 
 ```julia-repl
-julia> print_state_probabilities(sprobs, L)
-┌───────┬──────────┬──────────┬─────────────┐
-│  Node │  State 1 │  State 2 │ Fixed state │
-│ Int64 │  Float64 │  Float64 │      String │
-├───────┼──────────┼──────────┼─────────────┤
-│     1 │ 0.564449 │ 0.435551 │             │
-└───────┴──────────┴──────────┴─────────────┘
-julia> print_state_probabilities(sprobs, R_k)
-┌───────┬──────────┬──────────┬─────────────┐
-│  Node │  State 1 │  State 2 │ Fixed state │
-│ Int64 │  Float64 │  Float64 │      String │
-├───────┼──────────┼──────────┼─────────────┤
-│     2 │ 0.515575 │ 0.484425 │             │
-│     3 │ 0.442444 │ 0.557556 │             │
-│     4 │ 0.543724 │ 0.456276 │             │
-│     5 │ 0.552515 │ 0.447485 │             │
-└───────┴──────────┴──────────┴─────────────┘
-julia> print_state_probabilities(sprobs, A_k)
-┌───────┬──────────┬──────────┬─────────────┐
-│  Node │  State 1 │  State 2 │ Fixed state │
-│ Int64 │  Float64 │  Float64 │      String │
-├───────┼──────────┼──────────┼─────────────┤
-│     6 │ 1.000000 │ 0.000000 │             │
-│     7 │ 1.000000 │ 0.000000 │             │
-│     8 │ 1.000000 │ 0.000000 │             │
-│     9 │ 1.000000 │ 0.000000 │             │
-└───────┴──────────┴──────────┴─────────────┘
-julia> print_state_probabilities(sprobs, F)
-┌───────┬──────────┬──────────┬─────────────┐
-│  Node │  State 1 │  State 2 │ Fixed state │
-│ Int64 │  Float64 │  Float64 │      String │
-├───────┼──────────┼──────────┼─────────────┤
-│    10 │ 0.633125 │ 0.366875 │             │
-└───────┴──────────┴──────────┴─────────────┘
+julia> print_state_probabilities(diagram, S_probabilities, ["L"])
+┌────────┬──────────┬──────────┬─────────────┐
+│   Node │     high │      low │ Fixed state │
+│ String │  Float64 │  Float64 │      String │
+├────────┼──────────┼──────────┼─────────────┤
+│      L │ 0.564449 │ 0.435551 │             │
+└────────┴──────────┴──────────┴─────────────┘
+julia> print_state_probabilities(diagram, S_probabilities, [["R$i" for i in 1:N]...])
+┌────────┬──────────┬──────────┬─────────────┐
+│   Node │     high │      low │ Fixed state │
+│ String │  Float64 │  Float64 │      String │
+├────────┼──────────┼──────────┼─────────────┤
+│     R1 │ 0.515575 │ 0.484425 │             │
+│     R2 │ 0.442444 │ 0.557556 │             │
+│     R3 │ 0.543724 │ 0.456276 │             │
+│     R4 │ 0.552515 │ 0.447485 │             │
+└────────┴──────────┴──────────┴─────────────┘
+julia> print_state_probabilities(diagram, S_probabilities, [["A$i" for i in 1:N]...])
+┌────────┬──────────┬──────────┬─────────────┐
+│   Node │      yes │       no │ Fixed state │
+│ String │  Float64 │  Float64 │      String │
+├────────┼──────────┼──────────┼─────────────┤
+│     A1 │ 1.000000 │ 0.000000 │             │
+│     A2 │ 1.000000 │ 0.000000 │             │
+│     A3 │ 1.000000 │ 0.000000 │             │
+│     A4 │ 1.000000 │ 0.000000 │             │
+└────────┴──────────┴──────────┴─────────────┘
+julia> print_state_probabilities(diagram, S_probabilities, ["F"])
+┌────────┬──────────┬──────────┬─────────────┐
+│   Node │  failure │  success │ Fixed state │
+│ String │  Float64 │  Float64 │      String │
+├────────┼──────────┼──────────┼─────────────┤
+│      F │ 0.633125 │ 0.366875 │             │
+└────────┴──────────┴──────────┴─────────────┘
 ```
 
 We can also print the utility distribution for the optimal strategy and some basic statistics for the distribution.
 
-```julia
-udist = UtilityDistribution(S, P, U, Z)
-```
-
 ```julia-repl
-julia> print_utility_distribution(udist)
+julia> print_utility_distribution(U_distribution)
 ┌───────────┬─────────────┐
 │   Utility │ Probability │
 │   Float64 │     Float64 │
@@ -299,7 +294,7 @@ julia> print_utility_distribution(udist)
 ```
 
 ```julia-repl
-julia> print_statistics(udist)
+julia> print_statistics(U_distribution)
 ┌──────────┬────────────┐
 │     Name │ Statistics │
 │   String │    Float64 │

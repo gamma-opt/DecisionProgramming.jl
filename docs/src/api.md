@@ -5,21 +5,22 @@
 ### Nodes
 ```@docs
 Node
+Name
+AbstractNode
 ChanceNode
 DecisionNode
 ValueNode
 State
 States
-States(::Vector{Tuple{State, Vector{Node}}})
-validate_influence_diagram
 ```
 
 ### Paths
 ```@docs
 Path
-paths(::AbstractVector{State})
-paths(::AbstractVector{State}, ::Dict{Node, State})
 ForbiddenPath
+FixedPath
+paths(::AbstractVector{State})
+paths(::AbstractVector{State}, ::FixedPath)
 ```
 
 ### Probabilities
@@ -33,15 +34,30 @@ AbstractPathProbability
 DefaultPathProbability
 ```
 
-### Consequences
+### Utilities
 ```@docs
-Consequences
+Utility
+Utilities
 ```
 
 ### Path Utility
 ```@docs
 AbstractPathUtility
 DefaultPathUtility
+```
+
+### InfluenceDiagram
+```@docs
+InfluenceDiagram
+generate_arcs!
+generate_diagram!
+add_node!
+ProbabilityMatrix
+add_probabilities!
+UtilityMatrix
+add_utilities!
+index_of
+num_states
 ```
 
 ### Decision Strategy
@@ -56,15 +72,13 @@ DecisionStrategy
 ```@docs
 DecisionVariables
 PathCompatibilityVariables
-lazy_probability_cut(::Model, ::PathCompatibilityVariables, ::AbstractPathProbability)
+lazy_probability_cut
 ```
 
 ### Objective Functions
 ```@docs
-PositivePathUtility
-NegativePathUtility
-expected_value(::Model, ::PathCompatibilityVariables, ::AbstractPathUtility, ::AbstractPathProbability; ::Float64)
-conditional_value_at_risk(::Model, ::PathCompatibilityVariables{N}, ::AbstractPathUtility, ::AbstractPathProbability, ::Float64; ::Float64) where N
+expected_value(::Model, ::InfluenceDiagram, ::PathCompatibilityVariables; ::Float64)
+conditional_value_at_risk(::Model, ::InfluenceDiagram, ::PathCompatibilityVariables{N}, ::Float64; ::Float64) where N
 ```
 
 ### Decision Strategy from Variables
@@ -76,13 +90,14 @@ DecisionStrategy(::DecisionVariables)
 ## `analysis.jl`
 ```@docs
 CompatiblePaths
+CompatiblePaths(::InfluenceDiagram, ::DecisionStrategy, ::FixedPath)
 UtilityDistribution
-UtilityDistribution(::States, ::AbstractPathProbability, ::AbstractPathUtility, ::DecisionStrategy)
+UtilityDistribution(::InfluenceDiagram, ::DecisionStrategy)
 StateProbabilities
-StateProbabilities(::States, ::AbstractPathProbability, ::DecisionStrategy)
-StateProbabilities(::States, ::AbstractPathProbability, ::DecisionStrategy, ::Node, ::State, ::StateProbabilities)
-value_at_risk(::Vector{Float64}, ::Vector{Float64}, ::Float64)
-conditional_value_at_risk(::Vector{Float64}, ::Vector{Float64}, ::Float64)
+StateProbabilities(::InfluenceDiagram, ::DecisionStrategy)
+StateProbabilities(::InfluenceDiagram, ::DecisionStrategy, ::Name, ::Name, ::StateProbabilities)
+value_at_risk(::UtilityDistribution, ::Float64)
+conditional_value_at_risk(::UtilityDistribution, ::Float64)
 ```
 
 ## `printing.jl`
@@ -96,9 +111,10 @@ print_risk_measures
 
 ## `random.jl`
 ```@docs
-random_diagram(::AbstractRNG, ::Int, ::Int, ::Int, ::Int, ::Int)
-States(::AbstractRNG, ::Vector{State}, ::Int)
-Probabilities(::AbstractRNG, ::ChanceNode, ::States; ::Int)
-Consequences(::AbstractRNG, ::ValueNode, ::States; ::Float64, ::Float64)
-LocalDecisionStrategy(::AbstractRNG, ::DecisionNode, ::States)
+random_diagram!
+random_probabilities!
+random_utilities!
+LocalDecisionStrategy(::AbstractRNG, ::InfluenceDiagram, ::Node)
+DecisionProgramming.information_set(::AbstractRNG, ::Node, ::Int64)
+DecisionProgramming.information_set(::AbstractRNG, ::Vector{Node}, ::Int64)
 ```

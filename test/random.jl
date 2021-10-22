@@ -4,44 +4,58 @@ using DecisionProgramming
 rng = MersenneTwister(4)
 
 @info "Testing random_diagram"
-@test_throws DomainError random_diagram(rng, -1, 1, 1, 1, 1)
-@test_throws DomainError random_diagram(rng, 1, -1, 1, 1, 1)
-@test_throws DomainError random_diagram(rng, 0, 0, 1, 1, 1)
-@test_throws DomainError random_diagram(rng, 1, 1, 0, 1, 1)
-@test_throws DomainError random_diagram(rng, 1, 1, 1, 0, 1)
-@test_throws DomainError random_diagram(rng, 1, 1, 1, 1, 0)
+diagram = InfluenceDiagram()
+@test_throws DomainError random_diagram!(rng, diagram, -1, 1, 1, 1, 1, [2])
+@test_throws DomainError random_diagram!(rng, diagram, 1, -1, 1, 1, 1, [2])
+@test_throws DomainError random_diagram!(rng, diagram, 0, 0, 1, 1, 1, [2])
+@test_throws DomainError random_diagram!(rng, diagram, 1, 1, 0, 1, 1, [2])
+@test_throws DomainError random_diagram!(rng, diagram, 1, 1, 1, 0, 1, [2])
+@test_throws DomainError random_diagram!(rng, diagram, 1, 1, 1, 1, 0, [2])
+@test_throws DomainError random_diagram!(rng, diagram, 1, 1, 1, 1, 1, [1])
 
 for (n_C, n_D) in [(1, 0), (0, 1)]
     rng = RandomDevice()
-    C, D, V = random_diagram(rng, n_C, n_D, 1, 1, 1)
-    @test isa(C, Vector{ChanceNode})
-    @test isa(D, Vector{DecisionNode})
-    @test isa(V, Vector{ValueNode})
-    @test length(C) == n_C
-    @test length(D) == n_D
-    @test length(V) == 1
-    @test all(!isempty(v.I_j) for v in V)
+    diagram = InfluenceDiagram()
+    random_diagram!(rng, diagram, n_C, n_D, 1, 1, 1, [2])
+    @test isa(diagram.C, Vector{Node})
+    @test isa(diagram.D, Vector{Node})
+    @test isa(diagram.V, Vector{Node})
+    @test length(diagram.C) == n_C
+    @test length(diagram.D) == n_D
+    @test length(diagram.V) == 1
+    @test all(!isempty(I_v) for I_v in diagram.I_j[diagram.V])
+    @test isa(diagram.S, States)
 end
 
-@info "Testing random States"
-@test_throws DomainError States(rng, [0], 10)
-@test isa(States(rng, [2, 3], 10), States)
-
 @info "Testing random Probabilities"
-S = States([2, 3, 2])
-c = ChanceNode(3, [1, 2])
-@test isa(Probabilities(rng, c, S; n_inactive=0), Probabilities)
-@test isa(Probabilities(rng, c, S; n_inactive=1), Probabilities)
-@test isa(Probabilities(rng, c, S; n_inactive=2*3*(2-1)), Probabilities)
-@test_throws DomainError Probabilities(rng, c, S; n_inactive=2*3*(2-1)+1)
+diagram = InfluenceDiagram()
+random_diagram!(rng, diagram, 2, 2, 1, 1, 1, [2])
+@test_throws DomainError random_probabilities!(rng, diagram, diagram.D[1]; n_inactive=0)
+random_probabilities!(rng, diagram, diagram.C[1]; n_inactive=0)
+@test isa(diagram.X[1], Probabilities)
+random_probabilities!(rng, diagram, diagram.C[2]; n_inactive=1)
+@test isa(diagram.X[2], Probabilities)
 
-@info "Testing random Consequences"
-S = States([2, 3])
-v = ValueNode(3, [1, 2])
-@test isa(Consequences(rng, v, S; low=-1.0, high=1.0), Consequences)
-@test_throws DomainError Consequences(rng, v, S; low=1.1, high=1.0)
+diagram = InfluenceDiagram()
+diagram.C = Node[1,3]
+diagram.D = Node[2]
+diagram.I_j = [Node[], Node[], Node[1,2]]
+diagram.S = States(State[2, 3, 2])
+diagram.X = Vector{Probabilities}(undef, 2)
+random_probabilities!(rng, diagram, diagram.C[2]; n_inactive=2*3*(2-1))
+@test isa(diagram.X[2], Probabilities)
+@test_throws DomainError random_probabilities!(rng, diagram, diagram.C[2]; n_inactive=2*3*(2-1)+1)
+
+
+@info "Testing random Utilities"
+diagram = InfluenceDiagram()
+random_diagram!(rng, diagram, 1, 1, 2, 1, 1, [2])
+random_utilities!(rng, diagram, diagram.V[1], low=-1.0, high=1.0)
+@test isa(diagram.Y[1], Utilities)
+@test_throws DomainError random_utilities!(rng, diagram, diagram.V[1], low=1.1, high=1.0)
+@test_throws DomainError random_utilities!(rng, diagram, diagram.C[1], low=-1.0, high=1.0)
 
 @info "Testing random LocalDecisionStrategy"
-S = States([2, 3, 2])
-d = DecisionNode(3, [1, 2])
-@test isa(LocalDecisionStrategy(rng, d, S), LocalDecisionStrategy)
+diagram = InfluenceDiagram()
+random_diagram!(rng, diagram, 2, 2, 2, 2, 2, [2])
+@test isa(LocalDecisionStrategy(rng, diagram, diagram.D[1]), LocalDecisionStrategy)

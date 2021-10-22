@@ -32,15 +32,15 @@ $$0 ≤ ∑_{i∈D}|𝐒_{I(i)∪\{i\}}| ≤ |D| \left(\max_{i∈C∪D} |S_j|\ri
 
 In the worst case, $m=n$, a decision node is influenced by every other chance and decision node. However, in most practical cases, we have $m < n,$ where decision nodes are influenced only by a limited number of other chance and decision nodes, making models easier to solve.
 
-## Numerical challenges 
+## Numerical challenges
 
-As has become evident above, in Decision Programming the size of the [Decision Model](@ref decision-model) may become large if the influence diagram has a large number of nodes or nodes with a large number of states. In practice, this results in having a large number of path compatibility and decision variables. This may results in numerical challenges.
+As has become evident above, in Decision Programming the size of the [Decision Model](@ref decision-model) may become large if the influence diagram has a large number of nodes or nodes with a large number of states. In practice, this results in having a large number of path compatibility and decision variables. This may result in numerical challenges.
 
 ### Probability Scaling Factor
-In an influence diagram a large number of nodes or some nodes having a large set of states, causes the path probabilities $p(𝐬)$ to become increasingly small. This may cause numerical issues with the solver or inable it from finding a solution. This issue is showcased in the [CHD preventative care example](../examples/CHD_preventative_care.md).
+If an influence diagram has a large number of nodes or some nodes have a large set of states, the path probabilities $p(𝐬)$ become increasingly small. This may cause numerical issues with the solver, even prevent it from finding a solution. This issue is showcased in the [CHD preventative care example](../examples/CHD_preventative_care.md).
 
-The issue may be helped by multiplying the path probabilities with a scaling factor $\gamma > 0$ in the objective function.
+The issue may be helped by multiplying the path probabilities with a scaling factor $\gamma > 0$. For example, the objective function becomes
 
-$$\operatorname{E}(Z) = ∑_{𝐬∈𝐒} x(𝐬) \ p(𝐬) \ \gamma \ \mathcal{U}(𝐬)$$
+$$\operatorname{E}(Z) = ∑_{𝐬∈𝐒} x(𝐬) \ p(𝐬) \ \gamma \ \mathcal{U}(𝐬).$$
 
-The conditional value-at-risk function can also be scaled so that it is compatible with an expected value objective function that has been scaled.
+The path probabilities should also be scaled in other objective functions or constraints, including the conditional value-at-risk function and the probability cut constraint $∑_{𝐬∈𝐒}x(𝐬) p(𝐬) = 1$.

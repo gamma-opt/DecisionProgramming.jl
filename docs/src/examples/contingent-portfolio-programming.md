@@ -1,4 +1,8 @@
 # Contingent Portfolio Programming
+
+!!! warning
+    This example discusses adding constraints and decision variables to the Decision Programming formulation, as well as custom path utility calculation. Because of this, it is quite advanced compared to the earlier ones. 
+
 ## Description
 [^1], section 4.2
 
@@ -30,33 +34,14 @@ using DecisionProgramming
 
 Random.seed!(42)
 
-const dᴾ = 1    # Decision node: range for number of patents
-const cᵀ = 2    # Chance node:   technical competitiveness
-const dᴬ = 3    # Decision node: range for number of applications
-const cᴹ = 4    # Chance node:   market share
-const DP_states = ["0-3 patents", "3-6 patents", "6-9 patents"]
-const CT_states = ["low", "medium", "high"]
-const DA_states = ["0-5 applications", "5-10 applications", "10-15 applications"]
-const CM_states = ["low", "medium", "high"]
+diagram = InfluenceDiagram()
 
-S = States([
-    (length(DP_states), [dᴾ]),
-    (length(CT_states), [cᵀ]),
-    (length(DA_states), [dᴬ]),
-    (length(CM_states), [cᴹ]),
-])
-C = Vector{ChanceNode}()
-D = Vector{DecisionNode}()
-V = Vector{ValueNode}()
-X = Vector{Probabilities}()
-Y = Vector{Consequences}()
-```
+add_node!(diagram, DecisionNode("DP", [], ["0-3 patents", "3-6 patents", "6-9 patents"]))
+add_node!(diagram, ChanceNode("CT", ["DP"], ["low", "medium", "high"]))
+add_node!(diagram, DecisionNode("DA", ["DP", "CT"], ["0-5 applications", "5-10 applications", "10-15 applications"]))
+add_node!(diagram, ChanceNode("CM", ["CT", "DA"], ["low", "medium", "high"]))
 
-### Decision on range of number of patents
-
-```julia
-I_DP = Vector{Node}()
-push!(D, DecisionNode(dᴾ, I_DP))
+generate_arcs!(diagram)
 ```
 
 ### Technical competitiveness probability
@@ -64,20 +49,11 @@ push!(D, DecisionNode(dᴾ, I_DP))
 Probability of technical competitiveness $c_j^T$ given the range $d_i^P$: $ℙ(c_j^T∣d_i^P)∈[0,1]$. A high number of patents increases probability of high competitiveness and a low number correspondingly increases the probability of low competitiveness.
 
 ```julia
-I_CT = [dᴾ]
-X_CT = zeros(S[dᴾ], S[cᵀ])
+X_CT = ProbabilityMatrix(diagram, "CT")
 X_CT[1, :] = [1/2, 1/3, 1/6]
 X_CT[2, :] = [1/3, 1/3, 1/3]
 X_CT[3, :] = [1/6, 1/3, 1/2]
-push!(C, ChanceNode(cᵀ, I_CT))
-push!(X, Probabilities(cᵀ, X_CT))
-```
-
-### Decision on range of number of applications
-
-```julia
-I_DA = [dᴾ, cᵀ]
-push!(D, DecisionNode(dᴬ, I_DA))
+add_probabilities!(diagram, "CT", X_CT)
 ```
 
 ### Market share probability
@@ -85,8 +61,7 @@ push!(D, DecisionNode(dᴬ, I_DA))
 Probability of market share $c_l^M$ given the technical competitiveness $c_j^T$ and range $d_k^A$: $ℙ(c_l^M∣c_j^T,d_k^A)∈[0,1]$. Higher competitiveness and number of application projects both increase the probability of high market share.
 
 ```julia
-I_CM = [cᵀ, dᴬ]
-X_CM = zeros(S[cᵀ], S[dᴬ], S[cᴹ])
+X_CM = ProbabilityMatrix(diagram, "CM")
 X_CM[1, 1, :] = [2/3, 1/4, 1/12]
 X_CM[1, 2, :] = [1/2, 1/3, 1/6]
 X_CM[1, 3, :] = [1/3, 1/3, 1/3]
@@ -96,26 +71,14 @@ X_CM[2, 3, :] = [1/6, 1/3, 1/2]
 X_CM[3, 1, :] = [1/3, 1/3, 1/3]
 X_CM[3, 2, :] = [1/6, 1/3, 1/2]
 X_CM[3, 3, :] = [1/12, 1/4, 2/3]
-push!(C, ChanceNode(cᴹ, I_CM))
-push!(X, Probabilities(cᴹ, X_CM))
+add_probabilities!(diagram, "CM", X_CM)
 ```
 
-We add a dummy value node to avoid problems with the influence diagram validation. Without this, the final chance node would be seen as redundant.
+### Generating the Influence Diagram
 
+We are going to be using a custom objective function, and don't need the default path utilities for that.
 ```julia
-push!(V, ValueNode(5, [cᴹ]))
-push!(Y,Consequences(5, zeros(S[cᴹ])))
-```
-
-### Validating the Influence Diagram
-
-```julia
-validate_influence_diagram(S, C, D, V)
-sort!.((C, D, V, X, Y), by = x -> x.j)
-```
-
-```julia
-P = DefaultPathProbability(C, X)
+generate_diagram!(diagram, default_utility=false)
 ```
 
 ## Decision Model: Portfolio Selection
@@ -123,7 +86,7 @@ P = DefaultPathProbability(C, X)
 We create the decision variables $z(s_j|s_{I(j)})$ and notice that the activation of paths that are compatible with the decision strategy is handled by the problem specific variables and constraints together with the custom objective function, eliminating the need for separate variables representing path activation.
 ```julia
 model = Model()
-z = DecisionVariables(model, S, D)
+z = DecisionVariables(model, diagram)
 ```
 
 ### Creating problem specific variables
@@ -136,6 +99,13 @@ Technology project $t$ costs $I_t∈ℝ^+$ and generates $O_t∈ℕ$ patents.
 Application project $a$ costs $I_a∈ℝ^+$ and generates $O_a∈ℕ$ applications. If completed, provides cash flow $V(a|c_l^M)∈ℝ^+.$
 
 ```julia
+
+# Number of states in each node
+n_DP = num_states(diagram, "DP")
+n_CT = num_states(diagram, "CT")
+n_DA = num_states(diagram, "DA")
+n_CM = num_states(diagram, "CM")
+
 n_T = 5                     # number of technology projects
 n_A = 5                     # number of application projects
 I_t = rand(n_T)*0.1         # costs of technology projects
@@ -143,7 +113,7 @@ O_t = rand(1:3,n_T)         # number of patents for each tech project
 I_a = rand(n_T)*2           # costs of application projects
 O_a = rand(2:4,n_T)         # number of applications for each appl. project
 
-V_A = rand(S[cᴹ], n_A).+0.5 # Value of an application
+V_A = rand(n_CM, n_A).+0.5 # Value of an application
 V_A[1, :] .+= -0.5          # Low market share: less value
 V_A[3, :] .+= 0.5           # High market share: more value
 ```
@@ -153,8 +123,8 @@ Decision variables $x^T(t)∈\{0, 1\}$ indicate which technologies are selected.
 Decision variables $x^A(a∣d_i^P,c_j^T)∈\{0, 1\}$ indicate which applications are selected.
 
 ```julia
-x_T = variables(model, [S[dᴾ]...,n_T]; binary=true)
-x_A = variables(model, [S[dᴾ]...,S[cᵀ]...,S[dᴬ]..., n_A]; binary=true)
+x_T = variables(model, [n_DP, n_T]; binary=true)
+x_A = variables(model, [n_DP, n_CT, n_DA, n_A]; binary=true)
 ```
 
 Number of patents $x^T(t) = ∑_i x_i^T(t) z(d_i^P)$
@@ -191,36 +161,36 @@ z_dA = z.z[2]
 
 $$∑_t x_i^T(t) \le z(d_i^P)n_T, \quad \forall i$$
 ```julia
-@constraint(model, [i=1:3],
+@constraint(model, [i=1:n_DP],
     sum(x_T[i,t] for t in 1:n_T) <= z_dP[i]*n_T)
 ```
 
 $$∑_a x_k^A(a∣d_i^P,c_j^T) \le z(d_i^P)n_A, \quad \forall i,j,k$$
 ```julia
-@constraint(model, [i=1:3, j=1:3, k=1:3],
+@constraint(model, [i=1:n_DP, j=1:n_CT, k=1:n_DA],
     sum(x_A[i,j,k,a] for a in 1:n_A) <= z_dP[i]*n_A)
 ```
 
 $$∑_a x_k^A(a∣d_i^P,c_j^T) \le z(d_k^A|d_i^P,c_j^T)n_A, \quad \forall i,j,k$$
 ```julia
-@constraint(model, [i=1:3, j=1:3, k=1:3],
+@constraint(model, [i=1:n_DP, j=1:n_CT, k=1:n_DA],
     sum(x_A[i,j,k,a] for a in 1:n_A) <= z_dA[i,j,k]*n_A)
 ```
 
 $$q_i^P - (1-z(d_i^P))M \le \sum_t x_i^T(t)O_t \le q_{i+1}^P + (1-z(d_i^P))M - \varepsilon, \quad \forall i$$
 ```julia
-@constraint(model, [i=1:3],
+@constraint(model, [i=1:n_DP],
     q_P[i] - (1 - z_dP[i])*M <= sum(x_T[i,t]*O_t[t] for t in 1:n_T))
-@constraint(model, [i=1:3],
+@constraint(model, [i=1:n_DP],
     sum(x_T[i,t]*O_t[t] for t in 1:n_T) <= q_P[i+1] + (1 - z_dP[i])*M - ε)
 
 ```
 
 $$q_k^A - (1-z(d_k^A|d_i^P,c_j^T))M \le \sum_a x_k^A(a∣d_i^P,c_j^T)O_a \le q_{k+1}^A + (1-z(d_k^A|d_i^P,c_j^T))M - \varepsilon, \quad \forall i,j,k$$
 ```julia
-@constraint(model, [i=1:3, j=1:3, k=1:3],
+@constraint(model, [i=1:n_DP, j=1:n_CT, k=1:n_DA],
     q_A[k] - (1 - z_dA[i,j,k])*M <= sum(x_A[i,j,k,a]*O_a[a] for a in 1:n_A))
-@constraint(model, [i=1:3, j=1:3, k=1:3],
+@constraint(model, [i=1:n_DP, j=1:n_CT, k=1:n_DA],
     sum(x_A[i,j,k,a]*O_a[a] for a in 1:n_A) <= q_A[k+1] + (1 - z_dA[i,j,k])*M - ε)
 ```
 
@@ -231,9 +201,9 @@ $$x_k^A(a∣d_i^P,c_j^T) \le x_i^T(t), \quad \forall i,j,k$$
 As an example, we state that application projects 1 and 2 require technology project 1, and application project 2 also requires technology project 2.
 
 ```julia
-@constraint(model, [i=1:3, j=1:3, k=1:3], x_A[i,j,k,1] <= x_T[i,1])
-@constraint(model, [i=1:3, j=1:3, k=1:3], x_A[i,j,k,2] <= x_T[i,1])
-@constraint(model, [i=1:3, j=1:3, k=1:3], x_A[i,j,k,2] <= x_T[i,2])
+@constraint(model, [i=1:n_DP, j=1:n_CT, k=1:n_DA], x_A[i,j,k,1] <= x_T[i,1])
+@constraint(model, [i=1:n_DP, j=1:n_CT, k=1:n_DA], x_A[i,j,k,2] <= x_T[i,1])
+@constraint(model, [i=1:n_DP, j=1:n_CT, k=1:n_DA], x_A[i,j,k,2] <= x_T[i,2])
 ```
 
 $$x_i^T(t)∈\{0, 1\}, \quad \forall i$$
@@ -250,10 +220,11 @@ However, using the expected value objective would lead to a quadratic objective 
 $$\sum_i \left\{ \sum_{j,k,l} p(c_j^T \mid d_i^P) p(c_l^M \mid c_j^T, d_k^A) \left[\sum_a x_k^A(a \mid d_i^P,c_j^T) (V(a \mid c_l^M) - I_a)\right] - \sum_t x_i^T(t) I_t \right\}$$
 
 ```julia
-patent_investment_cost = @expression(model, [i=1:S[1]], sum(x_T[i, t] * I_t[t] for t in 1:n_T))
-application_investment_cost = @expression(model, [i=1:S[1], j=1:S[2], k=1:S[3]], sum(x_A[i, j, k, a] * I_a[a] for a in 1:n_A))
-application_value = @expression(model, [i=1:S[1], j=1:S[2], k=1:S[3], l=1:S[4]], sum(x_A[i, j, k, a] * V_A[l, a] for a in 1:n_A))
-@objective(model, Max, sum( sum( P((i,j,k,l)) * (application_value[i,j,k,l] - application_investment_cost[i,j,k]) for j in 1:S[2], k in 1:S[3], l in 1:S[4] ) - patent_investment_cost[i] for i in 1:S[1] ))
+patent_investment_cost = @expression(model, [i=1:n_DP], sum(x_T[i, t] * I_t[t] for t in 1:n_T))
+application_investment_cost = @expression(model, [i=1:n_DP, j=1:n_CT, k=1:n_DA], sum(x_A[i, j, k, a] * I_a[a] for a in 1:n_A))
+application_value = @expression(model, [i=1:n_DP, j=1:n_CT, k=1:n_DA, l=1:n_CM], sum(x_A[i, j, k, a] * V_A[l, a] for a in 1:n_A))
+@objective(model, Max, sum( sum( diagram.P(convert.(State, (i,j,k,l))) * (application_value[i,j,k,l] - application_investment_cost[i,j,k]) for j in 1:n_CT, k in 1:n_DA, l in 1:n_CM ) - patent_investment_cost[i] for i in 1:n_DP ))
+
 
 ```
 
@@ -275,36 +246,47 @@ The optimal decision strategy and the utility distribution are printed. The stra
 
 ```julia
 Z = DecisionStrategy(z)
+S_probabilities = StateProbabilities(diagram, Z)
 ```
 
 ```julia-repl
-julia> print_decision_strategy(S, Z)
-┌────────┬────┬───┐
-│  Nodes │ () │ 1 │
-├────────┼────┼───┤
-│ States │ () │ 3 │
-└────────┴────┴───┘
-┌────────┬────────┬───┐
-│  Nodes │ (1, 2) │ 3 │
-├────────┼────────┼───┤
-│ States │ (1, 1) │ 1 │
-│ States │ (2, 1) │ 1 │
-│ States │ (3, 1) │ 3 │
-│ States │ (1, 2) │ 1 │
-│ States │ (2, 2) │ 1 │
-│ States │ (3, 2) │ 3 │
-│ States │ (1, 3) │ 1 │
-│ States │ (2, 3) │ 1 │
-│ States │ (3, 3) │ 3 │
-└────────┴────────┴───┘
+julia> print_decision_strategy(diagram, Z, S_probabilities)
+┌────────────────┐
+│ Decision in DP │
+├────────────────┤
+│ 6-9 patents    │
+└────────────────┘
+┌─────────────────────┬────────────────────┐
+│ State(s) of DP, CT  │ Decision in DA     │
+├─────────────────────┼────────────────────┤
+│ 6-9 patents, low    │ 10-15 applications │
+│ 6-9 patents, medium │ 10-15 applications │
+│ 6-9 patents, high   │ 10-15 applications │
+└─────────────────────┴────────────────────┘
+```
+
+We use a custom path utility function to obtain the utility distribution.
+
+```julia
+struct PathUtility <: AbstractPathUtility
+    data::Array{AffExpr}
+end
+Base.getindex(U::PathUtility, i::State) = getindex(U.data, i)
+Base.getindex(U::PathUtility, I::Vararg{State,N}) where N = getindex(U.data, I...)
+(U::PathUtility)(s::Path) = value.(U[s...])
+
+path_utility = [@expression(model,
+    sum(x_A[s[index_of(diagram, "DP")], s[index_of(diagram, "CT")], s[index_of(diagram, "DA")], a] * (V_A[s[index_of(diagram, "CM")], a] - I_a[a]) for a in 1:n_A) -
+    sum(x_T[s[index_of(diagram, "DP")], t] * I_t[t] for t in 1:n_T)) for s in paths(diagram.S)]
+diagram.U = PathUtility(path_utility)
 ```
 
 ```julia
-udist = UtilityDistribution(S, P, U, Z)
+U_distribution = UtilityDistribution(diagram, Z)
 ```
 
 ```julia-repl
-julia> print_utility_distribution(udist)
+julia> print_utility_distribution(U_distribution)
 ┌───────────┬─────────────┐
 │   Utility │ Probability │
 │   Float64 │     Float64 │
@@ -316,7 +298,7 @@ julia> print_utility_distribution(udist)
 ```
 
 ```julia-repl
-julia> print_statistics(udist)
+julia> print_statistics(U_distribution)
 ┌──────────┬────────────┐
 │     Name │ Statistics │
 │   String │    Float64 │

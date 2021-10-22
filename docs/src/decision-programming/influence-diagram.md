@@ -6,17 +6,19 @@ Decision programming uses influence diagrams, a generalization of Bayesian netwo
 ## Definition
 ![](figures/linear-graph.svg)
 
-We define the **influence diagram** as a directed, acyclic graph $G=(C,D,V,I,S).$ We describe the nodes $N=C∪D∪V$ with $C∪D=\{1,...,n\}$ and $n=|C|+|D|$ as follows:
+We define the **influence diagram** as a directed, acyclic graph $G=(C,D,V,A,S).$ We describe the nodes $N=C∪D∪V$ with $C∪D=\{1,...,n\}$ and $n=|C|+|D|$ as follows:
 
 1) **Chance nodes** $C⊆\{1,...,n\}$ (circles) represent uncertain events associated with random variables.
 2) **Decision nodes** $D⊆\{1,...,n\}$ (squares) correspond to decisions among discrete alternatives.
 3) **Value nodes** $V=\{n+1,...,n+|V|\}$ (diamonds) represent consequences that result from the realizations of random variables at chance nodes and the decisions made at decision nodes.
 
-We define the **information set** $I$ of node $j∈N$ as
+The connections between different nodes (arrows) are called **arcs** $a \in A$. The arcs represent different dependencies between the nodes.
 
-$$I(j)⊆\{i∈C∪D∣i<j\}$$
+We define the **information set** $I$ of node $j∈N$ as the set of predecessors of $j$ in the graph:
 
-Practically, the information set is a collection of arcs in the reverse direction in the graph. The conditions enforce that the graph is acyclic, and there are no arcs from value nodes to other nodes.
+$$I(j)⊆\{i∈C∪D ∣ (i,j) \in A\, i<j\}$$
+
+Practically, the information set is a collection of arcs in the reverse direction in the graph. Informally, it tells us which node's information is available to the current node. The conditions enforce that the graph is acyclic, and there are no arcs from value nodes to other nodes.
 
 In an influence diagram, each chance and decision node $j∈C∪D$ is associates with a finite number of **states** $S_j$ that we encode using integers $S_j=\{1,...,|S_j|\}$ from one to number of states $|S_j|≥1.$ A node $j$ is **trivial** if it has only one state, $|S_j|=1.$ We refer to the collection of all states $S=\{S_1,...,S_n\}$ as the **state space**.
 
@@ -103,13 +105,13 @@ Otherwise, it is **inactive**.
 
 
 ## Decision Strategies
-Each decision strategy models how the decision maker chooses a state $s_j∈S_j$ given an information state $𝐬_{I(j)}$ at decision node $j∈D.$ A decision node is a special type of chance node, such that the probability of the chosen state given an information state is fixed to one
+Each decision strategy models how the decision maker chooses a state $s_j∈S_j$ given an information state $𝐬_{I(j)}$ at decision node $j∈D.$ A decision node can be seen as a special type of chance node, such that the probability of the chosen state given an information state is fixed to one
 
 $$ℙ(X_j=s_j∣X_{I(j)}=𝐬_{I(j)})=1.$$
 
 By definition, the probabilities for other states are zero.
 
-Formally, for each decision node $j∈D,$ a **local decision strategy** is function that maps an information state $𝐬_{I(j)}$ to a state $s_j$
+Formally, for each decision node $j∈D,$ a **local decision strategy** is a function that maps an information state $𝐬_{I(j)}$ to a state $s_j$
 
 $$Z_j:𝐒_{I(j)}↦S_j.$$
 
@@ -120,7 +122,7 @@ $$Z=\{Z_j∣j∈D\}.$$
 The set of **all decision strategies** is denoted with $ℤ.$
 
 
-## Path Probability
+## [Path Probability](@id path-probability-doc)
 The probability distributions at chance and decision nodes define the probability distribution over all paths $𝐬∈𝐒,$ which depends on the decision strategy $Z∈ℤ.$ We refer to it as the path probability
 
 $$ℙ(X=𝐬∣Z) = ∏_{j∈C∪D} ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)}).$$
@@ -140,19 +142,19 @@ $$q(𝐬∣Z) = ∏_{j∈D} ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)}).$$
 Because the probabilities of decision nodes are defined as one or zero depending on the decision strategy, we can simplify the second part to an indicator function
 
 $$q(𝐬∣Z)=\begin{cases}
-1, & x(𝐬) \\
+1, & x(𝐬) = 1 \\
 0, & \text{otherwise}
 \end{cases}.$$
 
-The expression $x(𝐬)$ indicates whether a decision stategy is **compatible** with the path $𝐬,$ that is, if each local decision strategy chooses a state on the path. Formally, we have
+The binary variable $x(𝐬)$ indicates whether a decision stategy is **compatible** with the path $𝐬,$ that is, if each local decision strategy chooses a state on the path. Using the indicator function $I(.)$ whose value is 1 if the expression inside is *true* and 0 otherwise, we have
 
-$$x(𝐬) ↔ ⋀_{j∈D} (Z_j(𝐬_{I(j)})=𝐬_j).$$
+$$x(𝐬) = \prod_{j∈D} I(Z_j(𝐬_{I(j)})=𝐬_j).$$
 
 Now the **path probability** equals the upper bound if the path is compatible with given decision strategy. Otherwise, the path probability is zero. Formally, we have
 
 $$ℙ(𝐬∣X,Z)=
 \begin{cases}
-p(𝐬), & x(𝐬) \\
+p(𝐬), & x(𝐬) = 1 \\
 0, & \text{otherwise}
 \end{cases}.$$
 
@@ -174,9 +176,9 @@ The **path utility** is defined as the utility function acting on the consequenc
 
 $$\mathcal{U}(𝐬) = U(\{Y_j(𝐬_{I(j)}) ∣ j∈V\}).$$
 
-The **default path utility** is the sum of consequences
+The **default path utility** is the sum of node utilities $U_j$
 
-$$\mathcal{U}(𝐬) = ∑_{j∈V} Y_j(𝐬_{I(j)}).$$
+$$\mathcal{U}(𝐬) = ∑_{j∈V} U_j(Y_j(𝐬_{I(j)})).$$
 
 The utility function affects the objectives discussed on the [Decision Model](@ref decision-model) page. We can choose the utility function such that the path utility function either returns:
 
@@ -205,7 +207,7 @@ Two nodes are **sequential** if there exists a directed path from one node to th
 
 **Repeated subdiagram** refers to a recurring pattern within an influence diagram. Often, influence diagrams do not have a unique structure, but they consist of a repeated pattern due to the underlying problem's properties.
 
-**Limited-memory** influence diagram refers to an influence diagram where an upper bound limits the size of the information set for decision nodes. That is, $I(j)≤m$ for all $j∈D$ where the limit $m$ is less than $|C∪D|.$ Smaller limits of $m$ are desirable because they reduce the decision model size, as discussed on the [Computational Complexity](@ref computational-complexity) page.
+**Limited-memory** influence diagram refers to an influence diagram where the *no-forgetting* assumption does not hold. In practice, this means that the decision maker does not necessarily remember all previous information. For example, the treatment decisions in the [Pig Breeding](@ref pig-breeding) example are made without full information about the treatment history.
 
 **Isolated subdiagrams** refer to unconnected diagrams within an influence diagram. That is, there are no undirected connections between the diagrams. Therefore, one isolated subdiagram's decisions affect decisions on the other isolated subdiagrams only through the utility function.
 

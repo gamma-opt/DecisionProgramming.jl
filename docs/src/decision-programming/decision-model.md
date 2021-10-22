@@ -1,14 +1,14 @@
 # [Decision Model](@id decision-model)
 ## Introduction
-**Decision programming** aims to find an optimal decision strategy $Z$ from all decision strategies $ℤ$ by maximizing an objective function $f$ on the path distribution of an influence diagram
+**Decision Programming** aims to find an optimal decision strategy $Z$ among all decision strategies $ℤ$ by maximizing an objective function $f$ on the path distribution of an influence diagram
 
 $$\underset{Z∈ℤ}{\text{maximize}}\quad f(\{(ℙ(X=𝐬∣Z), \mathcal{U}(𝐬)) ∣ 𝐬∈𝐒\}). \tag{1}$$
 
-**Decision model** refers to the mixed-integer linear programming formulation of this optimization problem. This page explains how to express decision strategies, compatible paths, path utilities and the objective of the model as a mixed-integer linear program. We present two standard objective functions, including expected value and risk measures. The original decision model formulation was described in [^1], sections 3 and 5. We base the decision model on an improved formulation described in [^2] section 3.3. We recommend reading the references for motivation, details, and proofs of the formulation.
+**Decision model** refers to the mixed-integer linear programming formulation of this optimization problem. This page explains how to express decision strategies, compatible paths, path utilities and the objective of the model as a mixed-integer linear program. We present two standard objective functions, including expected value and conditional value-at-risk. The original decision model formulation was described in [^1], sections 3 and 5. We base the decision model on an improved formulation described in [^2] section 3.3. We recommend reading the references for motivation, details, and proofs of the formulation.
 
 
 ## Decision Variables
-**Decision variables** $z(s_j∣𝐬_{I(j)})$ are equivalent to local decision strategies such that $Z_j(𝐬_{I(j)})=s_j$ if and only if $z(s_j∣𝐬_{I(j)})=1$ and $z(s_{j}^′∣𝐬_{I(j)})=0$ for all $s_{j}^′∈S_j∖s_j.$ Constraint $(2)$ defines the decisions to be binary variables and the constraint $(3)$ limits decisions to one per information path.
+**Decision variables** $z(s_j∣𝐬_{I(j)})$ are equivalent to local decision strategies such that $Z_j(𝐬_{I(j)})=s_j$ if and only if $z(s_j∣𝐬_{I(j)})=1$ and $z(s_{j}^′∣𝐬_{I(j)})=0$ for all $s_{j}^′∈S_j∖s_j.$ Constraint $(2)$ defines the decisions to be binary variables and the constraint $(3)$ states that only one decision alternative $s_{j}$ can be chosen for each information set $s_{I(j)}$.
 
 $$z(s_j∣𝐬_{I(j)}) ∈ \{0,1\},\quad ∀j∈D, s_j∈S_j, 𝐬_{I(j)}∈𝐒_{I(j)} \tag{2}$$
 
@@ -16,7 +16,7 @@ $$∑_{s_j∈S_j} z(s_j∣𝐬_{I(j)})=1,\quad ∀j∈D, 𝐬_{I(j)}∈𝐒_{I(j
 
 
 ## Path Compatibility Variables
-**Path compatibility variables** $x(𝐬)$ are indicator variables for whether path $𝐬$ is compatible with decision strategy $Z$ that is defined by the decision variables $z$. These are continous variables but only assume binary values, so that the compatible paths $𝐬 ∈ 𝐒(Z)$ take values $x(𝐬) = 1$ and other paths $𝐬 ∈ 𝐒 \setminus 𝐒(Z)$ take values $x(𝐬) = 0$. Constraint $(4)$ defines the lower and upper bounds for the variables.
+**Path compatibility variables** $x(𝐬)$ are indicator variables for whether path $𝐬$ is compatible with decision strategy $Z$ defined by the decision variables $z$. These are continous variables but only assume binary values, so that the compatible paths $𝐬 ∈ 𝐒(Z)$ take values $x(𝐬) = 1$ and other paths $𝐬 ∈ 𝐒 \setminus 𝐒(Z)$ take values $x(𝐬) = 0$. Constraint $(4)$ defines the lower and upper bounds for the variables.
 
 $$0≤x(𝐬)≤1,\quad ∀𝐬∈𝐒 \tag{4}$$
 
@@ -53,7 +53,7 @@ The motivation for using the minimum of these bounds is that it depends on the p
 
 
 ## Lazy Probability Cut
-Constraint $(6)$ is a complicating constraint and thus adding it directly to the model may slow down the overall solution process. It may be beneficial to instead add it as a *lazy constraint*. In the solver, a lazy constraint is only generated when an incumbent solution violates it. In some instances, this allows the MILP solver to prune nodes of the branch-and-bound tree more efficiently. 
+Constraint $(6)$ is a complicating constraint involving all path compatibility variables $x(s)$ and thus adding it directly to the model may slow down the overall solution process. It may be beneficial to instead add it as a *lazy constraint*. In the solver, a lazy constraint is only generated when an incumbent solution violates it. In some instances, this allows the MILP solver to prune nodes of the branch-and-bound tree more efficiently.
 
 
 ## Expected Value
@@ -61,16 +61,12 @@ The **expected value** objective is defined using the path compatibility variabl
 
 $$\operatorname{E}(Z) = ∑_{𝐬∈𝐒} x(𝐬) \ p(𝐬) \ \mathcal{U}(𝐬). \tag{7}$$
 
-## Positive Path Utility
-We can omit the probability cut defined in constraint $(6)$ from the model if we are maximising expected value of utility and use a **positive path utility** function $\mathcal{U}^+$. The positive path utility function $\mathcal{U}^+$ is an affine transformation of path utility function $\mathcal{U}$ which translates all utility values to positive values. As an example, we can subtract the minimum of the original utility function and then add one as follows.
+## Positive and Negative Path Utilities
+We can omit the probability cut defined in constraint $(6)$ from the model if we are maximising expected value of utility and use a **positive path utility** function $\mathcal{U}^+$. Similarly, we can use a **negative path utility** function $\mathcal{U}^-$ when minimizing expected value. These functions are affine transformations of the path utility function $\mathcal{U}$ which translate all utility values to positive/negative values. As an example of a positive path utility function, we can subtract the minimum of the original utility function and then add one as follows.
 
 $$\mathcal{U}^+(𝐬) = \mathcal{U}(𝐬) - \min_{𝐬∈𝐒} \mathcal{U}(𝐬) + 1. \tag{8}$$
 
-## Negative Path Utility
-We can omit the probability cut defined in constraint $(6)$ from the model if we are minimising expected value of utility and use a **negative path utility** function $\mathcal{U}^-$. This affine transformation of the path utility function $\mathcal{U}$ translates all utility values to negative values. As an example, we can subtract the maximum of the original utility function and then subtract one as follows.
-
 $$\mathcal{U}^-(𝐬) = \mathcal{U}(𝐬) - \max_{𝐬∈𝐒} \mathcal{U}(𝐬) - 1. \tag{9}$$
-
 
 ## Conditional Value-at-Risk
 The section [Measuring Risk](@ref) explains and visualizes the relationships between the formulation of expected value, value-at-risk and conditional value-at-risk for discrete probability distribution.
@@ -91,7 +87,7 @@ $$𝐒_{α}^{=}=\{𝐬∈𝐒∣\mathcal{U}(𝐬)=u_α\}.$$
 
 We define **conditional value-at-risk** as
 
-$$\operatorname{CVaR}_α(Z)=\frac{1}{α}\left(∑_{𝐬∈𝐒_α^{<}} x(𝐬) \ p(𝐬) \ \mathcal{U}(𝐬) + ∑_{𝐬∈𝐒_α^{=}} \left(α - ∑_{𝐬∈𝐒_α^{<}} x(𝐬) \ p(𝐬) \right) \mathcal{U}(𝐬) \right).$$
+$$\operatorname{CVaR}_α(Z)=\frac{1}{α}\left(∑_{𝐬∈𝐒_α^{<}} x(𝐬) \ p(𝐬) \ \mathcal{U}(𝐬) + \left(α - ∑_{𝐬'∈𝐒_α^{<}} x(𝐬') \ p(𝐬') \right) u_α \right).$$
 
 We can form the conditional value-at-risk as an optimization problem. We have the following pre-computed parameters.
 
@@ -101,13 +97,13 @@ $$\operatorname{VaR}_0(Z)=u^-=\min\{\mathcal{U}(𝐬)∣𝐬∈𝐒\}, \tag{11}$
 
 $$\operatorname{VaR}_1(Z)=u^+=\max\{\mathcal{U}(𝐬)∣𝐬∈𝐒\}. \tag{12}$$
 
-Largest difference between path utilities
+A "large number", specifically the largest difference between path utilities
 
 $$M=u^+-u^-. \tag{13}$$
 
-Half of the smallest positive difference between path utilities
+A "small number", specifically half of the smallest positive difference between path utilities
 
-$$ϵ=\frac{1}{2} \min\{|\mathcal{U}(𝐬)-\mathcal{U}(𝐬^′)| ∣ |\mathcal{U}(𝐬)-\mathcal{U}(𝐬^′)| > 0, 𝐬, 𝐬^′∈𝐒\}. \tag{14}$$
+$$ϵ=\frac{1}{2} \min\{|\mathcal{U}(𝐬)-\mathcal{U}(𝐬^′)| \mid |\mathcal{U}(𝐬)-\mathcal{U}(𝐬^′)| > 0, 𝐬, 𝐬^′∈𝐒\}. \tag{14}$$
 
 The objective is to minimize the variable $η$ whose optimal value is equal to the value-at-risk, that is, $\operatorname{VaR}_α(Z)=\min η.$
 
@@ -138,11 +134,6 @@ $$η∈[u^-, u^+] \tag{24}$$
 We can express the conditional value-at-risk objective as
 
 $$\operatorname{CVaR}_α(Z)=\frac{1}{α}∑_{𝐬∈𝐒}\bar{ρ}(𝐬) \mathcal{U}(𝐬)\tag{25}.$$
-
-The values of conditional value-at-risk are limited to the interval between the lower bound of value-at-risk and the expected value
-
-$$\operatorname{VaR}_0(Z)<\operatorname{CVaR}_α(Z)≤E(Z).$$
-
 
 ## Convex Combination
 We can combine expected value and conditional value-at-risk using a convex combination at a fixed probability level $α∈(0, 1]$ as follows
