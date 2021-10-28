@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Oliveira"
+  given-names: "Fabricio"
+  orcid: "https://orcid.org/0000-0003-0300-9337"
+- family-names: "Herrala"
+  given-names: "Olli"
+  orcid: "https://orcid.org/0000-0003-4819-2534"
+- family-names: "Tollander de Balsch"
+  given-names: "Jaan"
+  orcid: "https://orcid.org/0000-0002-4814-5554"
+- family-names: "Hankimaa"
+  given-names: "Helmi"
+  orcid: "https://orcid.org/0000-0001-9531-6080"
+- family-names: "Andelmin"
+  given-names: "Juho"
+  orcid: "https://orcid.org/0000-0003-3874-2029"
+title: "DecisionProgramming.jl"
+version: 1.0.0
+doi: 10.5281/zenodo.5591893
+date-released: 2021-10-22
+url: "https://github.com/gamma-opt/DecisionProgramming.jl"

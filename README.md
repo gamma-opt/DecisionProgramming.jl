@@ -1,7 +1,7 @@
 # DecisionProgramming.jl
 [![Docs Image](https://img.shields.io/badge/docs-latest-blue.svg)](https://gamma-opt.github.io/DecisionProgramming.jl/dev/)
 ![Runtests](https://github.com/gamma-opt/DecisionProgramming.jl/workflows/Runtests/badge.svg)
-
+[![DOI](https://zenodo.org/badge/269314037.svg)](https://zenodo.org/badge/latestdoi/269314037)
 
 ## Description
 `DecisionProgramming.jl` is a [Julia](https://julialang.org/) package for solving multi-stage decision problems under uncertainty, modeled using influence diagrams. Internally, it relies on mathematical optimization. Decision models can be embedded within other optimization models. We designed the package as [JuMP](https://jump.dev/) extension.
