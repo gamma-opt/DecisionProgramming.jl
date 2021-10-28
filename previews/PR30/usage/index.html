@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Usage · DecisionProgramming.jl</title><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script><link href="../assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../"><img src="../assets/logo.svg" alt="DecisionProgramming.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../">DecisionProgramming.jl</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><span class="tocitem">Decision Programming</span><ul><li><a class="tocitem" href="../decision-programming/influence-diagram/">Influence Diagram</a></li><li><a class="tocitem" href="../decision-programming/paths/">Paths</a></li><li><a class="tocitem" href="../decision-programming/decision-model/">Decision Model</a></li><li><a class="tocitem" href="../decision-programming/analyzing-decision-strategies/">Analyzing Decision Strategies</a></li><li><a class="tocitem" href="../decision-programming/computational-complexity/">Computational Complexity</a></li></ul></li><li class="is-active"><a class="tocitem" href>Usage</a><ul class="internal"><li><a class="tocitem" href="#Adding-nodes"><span>Adding nodes</span></a></li><li><a class="tocitem" href="#Probability-Matrices"><span>Probability Matrices</span></a></li><li><a class="tocitem" href="#Utility-Matrices"><span>Utility Matrices</span></a></li><li><a class="tocitem" href="#Generating-the-influence-diagram"><span>Generating the influence diagram</span></a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../examples/used-car-buyer/">Used Car Buyer</a></li><li><a class="tocitem" href="../examples/pig-breeding/">Pig Breeding</a></li><li><a class="tocitem" href="../examples/n-monitoring/">N-Monitoring</a></li><li><a class="tocitem" href="../examples/contingent-portfolio-programming/">Contingent Portfolio Programming</a></li><li><a class="tocitem" href="../examples/CHD_preventative_care/">CHD preventative care allocation</a></li></ul></li><li><a class="tocitem" href="../api/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Usage</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Usage</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/gamma-opt/DecisionProgramming.jl/blob/master/docs/src/usage.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Usage"><a class="docs-heading-anchor" href="#Usage">Usage</a><a id="Usage-1"></a><a class="docs-heading-anchor-permalink" href="#Usage" title="Permalink"></a></h1><p>On this page, we demonstrate common patterns for expressing influence diagrams and creating decision models using <code>DecisionProgramming.jl</code>. We also discuss the abstraction that is created using the influence diagram structure. We can import the package with the <code>using</code> keyword.</p><pre><code class="language-julia hljs">using DecisionProgramming</code></pre><h2 id="Adding-nodes"><a class="docs-heading-anchor" href="#Adding-nodes">Adding nodes</a><a id="Adding-nodes-1"></a><a class="docs-heading-anchor-permalink" href="#Adding-nodes" title="Permalink"></a></h2><p><img src="../figures/2chance_1decision_1value.svg" alt/></p><p>Given the above influence diagram, we express it as a Decision Programming model as follows. We create <code>ChanceNode</code> and <code>DecisionNode</code> instances and add them to the influence diagram. Creating a <code>ChanceNode</code> or <code>DecisionNode</code> requires giving it a unique name, its information set and its states. If the node is a root node, the information set is left empty using square brackets. The order in which nodes are added does not matter.</p><pre><code class="language-julia hljs">diagram = InfluenceDiagram()
+add_node!(diagram, DecisionNode(&quot;D1&quot;, [], [&quot;a&quot;, &quot;b&quot;]))
+add_node!(diagram, ChanceNode(&quot;C2&quot;, [&quot;D1&quot;, &quot;C1&quot;], [&quot;v&quot;, &quot;w&quot;]))
+add_node!(diagram, ChanceNode(&quot;C1&quot;, [], [&quot;x&quot;, &quot;y&quot;, &quot;z&quot;]))</code></pre><p>Value nodes are added by simply giving it a name and its information set. Value nodes do not have states because their purpose is to map their information state to utility values.</p><pre><code class="language-julia hljs">add_node!(diagram, ValueNode(&quot;V&quot;, [&quot;C2&quot;]))</code></pre><p>Once all the nodes are added, we generate the arcs. This orders the nodes and numbers them such that each node&#39;s predecessors have smaller numbers than the node itself. In effect, the chance and decision nodes are numbered such that <span>$C \cup D = \{1,...,n\}$</span>, where <span>$n = \mid C\mid + \mid D\mid$</span>. The value nodes are numbered <span>$V = \{n+1,..., N\}$</span>, where <span>$N = \mid C\mid + \mid D\mid + \mid V \mid$</span>. For more details on influence diagrams see page <a href="../decision-programming/influence-diagram/">influence diagram</a>.</p><pre><code class="language-julia hljs">generate_arcs!(diagram)</code></pre><p>Now the fields <code>Names</code>, <code>I_j</code>, <code>States</code>, <code>S</code>, <code>C</code>, <code>D</code> and <code>V</code> in the influence diagram structure have been properly filled. The <code>Names</code> field holds the names of all nodes in the order of their numbers. From this we can see that node D1 has been numbered 1, node C1 has been numbered 2 and node C2 has been numbered 3. Field <code>I_j</code> holds the information sets of each node. Notice, that the nodes are identified by their numbers. Field <code>States</code> holds the names of the states of each node and field <code>S</code> holds the number of states each node has. Fields <code>C</code>, <code>D</code> and <code>V</code> contain the chance, decision and value nodes respectively.</p><pre><code class="language-julia hljs">julia&gt; diagram.Names
+4-element Array{String,1}:
+ &quot;D1&quot;
+ &quot;C1&quot;
+ &quot;C2&quot;
+ &quot;V&quot;
+
+julia&gt; diagram.I_j
+4-element Array{Array{Int16,1},1}:
+ []
+ []
+ [1, 2]
+ [3]
+
+julia&gt; diagram.States
+3-element Array{Array{String,1},1}:
+ [&quot;a&quot;, &quot;b&quot;]
+ [&quot;x&quot;, &quot;y&quot;, &quot;z&quot;]
+ [&quot;v&quot;, &quot;w&quot;]
+
+julia&gt; diagram.S
+3-element States:
+ 2
+ 3
+ 2
+
+julia&gt; diagram.C
+2-element Array{Int16,1}:
+ 2
+ 3
+
+julia&gt; diagram.D
+1-element Array{Int16,1}:
+ 1
+
+julia&gt; diagram.V
+1-element Array{Int16,1}:
+ 4</code></pre><h2 id="Probability-Matrices"><a class="docs-heading-anchor" href="#Probability-Matrices">Probability Matrices</a><a id="Probability-Matrices-1"></a><a class="docs-heading-anchor-permalink" href="#Probability-Matrices" title="Permalink"></a></h2><p>Each chance node needs a probability matrix which describes the probability distribution over its states given an information state. It holds probability values <span>$ℙ(X_j=s_j∣X_{I(j)}=𝐬_{I(j)})$</span></p><p>for all <span>$s_j \in S_j$</span> and <span>$𝐬_{I(j)} \in 𝐒_{I(j)}$</span>.</p><p>Thus, the probability matrix of a chance node needs to have dimensions that correspond to the number of states of the nodes in its information set and number of state of the node itself.</p><p>For example, the node C1 in the influence diagram above has an empty information set and three states <span>$x, y$</span>, and <span>$z$</span>. Therefore its probability matrix needs dimensions (3,1). If the probabilities of events <span>$x, y$</span>, and <span>$z$</span> occuring are <span>$10\%, 30\%$</span> and <span>$60\%$</span>, then the probability matrix <span>$X_{C1}$</span> should be <span>$[0.1 \quad 0.3 \quad 0.6]$</span>. The order of the probability values is determined by the order in which the states are given when the node is added. The states are also stored in this order in the <code>States</code> vector.</p><p>In Decision Programming the probability matrix of node C1 can be added in the following way. Note, that probability matrices can only be added after the arcs have been generated.</p><pre><code class="language-julia hljs"># How C1 was added: add_node!(diagram, ChanceNode(&quot;C1&quot;, [], [&quot;x&quot;, &quot;y&quot;, &quot;z&quot;]))
+X_C1 = [0.1, 0.3, 0.6]
+add_probabilities!(diagram, &quot;C1&quot;, X_C1)</code></pre><p>The <code>add_probabilities!</code> function adds the probability matrix as a <code>Probabilities</code> structure into the influence diagram&#39;s <code>X</code> field.</p><pre><code class="language-julia hljs">julia&gt; diagram.X
+1-element Array{Probabilities,1}:
+ [0.1, 0.3, 0.6]</code></pre><p>As another example, we will add the probability matrix of node C2. It has two nodes in its information set: C1 and D1. These nodes have 3 and 2 states, respectively. Node C2 itself has 2 states. Now, the question is: should the dimensions of the probability matrix be <span>$(|S_{C1}|, |\ S_{D1}|, |\ S_{C2}|) = (3, 2, 2)$</span> or <span>$(|S_{D1}|, |\ S_{C1}|, \ |S_{C2}|) = (2, 3, 2)$</span>? The answer is that the dimensions should be in ascending order of the nodes&#39; numbers that they correspond to. This is also the order that the information set is in in the field <code>I_j</code>. In this case the influence diagram looks like this:</p><pre><code class="language-julia hljs">julia&gt; diagram.Names
+4-element Array{String,1}:
+ &quot;D1&quot;
+ &quot;C1&quot;
+ &quot;C2&quot;
+ &quot;V&quot;
+
+ julia&gt; diagram.I_j
+4-element Array{Array{Int16,1},1}:
+ []
+ []
+ [1, 2]
+ [3]
+
+ julia&gt; diagram.S
+3-element States:
+ 2
+ 3
+ 2</code></pre><p>Therefore, the probability matrix of node C2 should have dimensions <span>$(|S_{D1}|, |\ S_{C1}|, \ |S_{C2}|) = (2, 3, 2)$</span>. The probability matrix can be added by declaring the matrix and then filling in the probability values as shown below.</p><pre><code class="language-julia hljs">X_C2 = zeros(2, 3, 2)
+X_C2[1, 1, 1] = ...
+X_C2[1, 1, 2] = ...
+X_C2[1, 1, 2] = ...
+⋮
+add_probabilities!(diagram, &quot;C2&quot;, X_C2)</code></pre><p>In order to be able to fill in the probability values, it is crucial to understand what the matrix indices represent. The indices represent a subpath in the influence diagram. The states in the path are referred to with their numbers instead of with their names. The states of a node are numbered according to their positions in the vector of states in field <code>States</code>. The order of the states of each node is seen below. From this, we can deduce that for nodes D1, C1, C2 the subpath <code>(1,1,1)</code> corresponds to subpath <span>$(a, x, v)$</span> and subpath <code>(1, 3, 2)</code> corresponds to subpath <span>$(a, z, w)$</span>. Therefore, the probability value at <code>X_C2[1, 3, 2]</code> should be the probability of the scenario <span>$(a, z, w)$</span> occuring.</p><pre><code class="language-julia hljs">julia&gt; diagram.States
+3-element Array{Array{String,1},1}:
+ [&quot;a&quot;, &quot;b&quot;]
+ [&quot;x&quot;, &quot;y&quot;, &quot;z&quot;]
+ [&quot;v&quot;, &quot;w&quot;]</code></pre><h3 id="Helper-Syntax"><a class="docs-heading-anchor" href="#Helper-Syntax">Helper Syntax</a><a id="Helper-Syntax-1"></a><a class="docs-heading-anchor-permalink" href="#Helper-Syntax" title="Permalink"></a></h3><p>Figuring out the dimensions of a probability matrix and adding the probability values is difficult. Therefore, we have implemented an easier syntax.</p><p>A probability matrix can be initialised with the correct dimensions using the <code>ProbabilityMatrix</code> function. It initiliases the probability matrix with zeros.</p><pre><code class="language-julia hljs">julia&gt; X_C2 = ProbabilityMatrix(diagram, &quot;C2&quot;)
+2×3×2 ProbabilityMatrix{3}:
+[:, :, 1] =
+ 0.0  0.0  0.0
+ 0.0  0.0  0.0
+
+[:, :, 2] =
+ 0.0  0.0  0.0
+ 0.0  0.0  0.0
+
+julia&gt; size(X_C2)
+(2, 3, 2)</code></pre><p>A matrix of type <code>ProbabilityMatrix</code> can be filled using the names of the states. The states must however be given in the correct order, according to the order of the nodes in the information set vector <code>I_j</code>. Notice that if we use the <code>Colon</code> (<code>:</code>) to indicate several elements of the matrix, the probability values have to be given in the correct order of the states in <code>States</code>.</p><pre><code class="language-julia hljs">julia&gt; X_C2[&quot;a&quot;, &quot;z&quot;, &quot;w&quot;] = 0.25
+0.25
+
+julia&gt; X_C2[&quot;z&quot;, &quot;a&quot;, &quot;v&quot;] = 0.75
+ERROR: DomainError with Node D1 does not have a state called z.:
+
+julia&gt; X_C2[&quot;a&quot;, &quot;z&quot;, &quot;v&quot;] = 0.75
+0.75
+
+julia&gt; X_C2[&quot;a&quot;, &quot;x&quot;, :] = [0.3, 0.7]
+2-element Array{Float64,1}:
+ 0.3
+ 0.7</code></pre><p>A matrix of type <code>ProbabilityMatrix</code> can also be filled using the matrix indices if that is more convient. The following achieves the same as what was done above.</p><pre><code class="language-julia hljs">julia&gt; X_C2[1, 3, 2] = 0.25
+0.25
+
+julia&gt; X_C2[1, 3, 1] = 0.75
+0.75
+
+julia&gt; X_C2[1, 1, :] = [0.3, 0.7]
+2-element Array{Float64,1}:
+ 0.3
+ 0.7</code></pre><p>Now, the probability matrix X_C2 is partially filled.</p><pre><code class="language-julia hljs">julia&gt; X_C2
+2×3×2 ProbabilityMatrix{3}:
+[:, :, 1] =
+ 0.3  0.0  0.75
+ 0.0  0.0  0.0
+
+[:, :, 2] =
+ 0.7  0.0  0.25
+ 0.0  0.0  0.0</code></pre><p>The probability matrix can be added to the influence diagram once it has been filled with probability values. The probability matrix of node C2 is added exactly like before, despite X_C2 now being a matrix of type <code>ProbabilityMatrix</code>.</p><pre><code class="language-julia hljs">julia&gt; add_probabilities!(diagram, &quot;C2&quot;, X_C2)</code></pre><h2 id="Utility-Matrices"><a class="docs-heading-anchor" href="#Utility-Matrices">Utility Matrices</a><a id="Utility-Matrices-1"></a><a class="docs-heading-anchor-permalink" href="#Utility-Matrices" title="Permalink"></a></h2><p>Each value node maps its information states to utility values. In Decision Programming the utility values are passed to the influence diagram using utility matrices. Utility matrices are very similar to probability matrices of chance nodes. There are only two important differences. First, the utility matrices hold utility values instead of probabilities, meaning that they do not need to sum to one. Second, since value nodes do not have states, the cardinality of a utility matrix depends only on the number of states of the nodes in the information set.</p><p>As an example, the utility matrix of node V should have dimensions (2,1) because its information set consists of node C2, which has two states. If state <span>$v$</span> of node C2 yields a utility of -100 and state <span>$w$</span> yields utility of 400, then the utility matrix of node V can be added in the following way. Note, that utility matrices can only be added after the arcs have been generated.</p><pre><code class="language-julia hljs">julia&gt; Y_V = zeros(2)
+2-element Array{Float64,1}:
+ 0.0
+ 0.0
+
+julia&gt; Y_V[1] = -100
+-100
+
+julia&gt; Y_V[2] = 400
+400
+
+julia&gt; add_utilities!(diagram, &quot;V&quot;, Y_V)</code></pre><p>The other option is to add the utility matrix using the <code>UtilityMatrix</code> type. This is very similar to the <code>ProbabilityMatrix</code> type. The <code>UtilityMatrix</code> function initialises the values to <code>Inf</code>. Using the <code>UtilityMatrix</code> type&#39;s functionalities, the utility matrix of node V could also be added like shown below. This achieves the exact same result as we did above with the more abstract syntax.</p><pre><code class="language-julia hljs">julia&gt; Y_V = UtilityMatrix(diagram, &quot;V&quot;)
+2-element UtilityMatrix{1}:
+ Inf
+ Inf
+
+julia&gt; Y_V[&quot;w&quot;] = 400
+400
+
+julia&gt; Y_V[&quot;v&quot;] = -100
+-100
+
+julia&gt; add_utilities!(diagram, &quot;V&quot;, Y_V)</code></pre><p>The <code>add_utilities!</code> function adds the utility matrix as a <code>Utilities</code> structure into the influence diagram&#39;s <code>Y</code> field.</p><pre><code class="language-julia hljs">julia&gt; diagram.Y
+1-element Array{Utilities,1}:
+ [-100.0, 400.0]</code></pre><h2 id="Generating-the-influence-diagram"><a class="docs-heading-anchor" href="#Generating-the-influence-diagram">Generating the influence diagram</a><a id="Generating-the-influence-diagram-1"></a><a class="docs-heading-anchor-permalink" href="#Generating-the-influence-diagram" title="Permalink"></a></h2><p>The final part of modeling an influence diagram using the Decision Programming package is generating the full influence diagram. This is done using the <code>generate_diagram!</code> function.</p><pre><code class="language-julia hljs">generate_diagram!(diagram)</code></pre><p>In this function, first, the probability and utility matrices in fields <code>X</code> and <code>Y</code> are sorted according to the chance and value nodes&#39; indices.</p><p>Second, the path probability and path utility types are declared and added into fields <code>P</code> and <code>U</code> respectively. These types define how the path probability <span>$p(𝐬)$</span> and path utility <span>$\mathcal{U}(𝐬)$</span> are defined in the model. By default, the function will set them to default path probability and default path utility. See the <a href="../decision-programming/influence-diagram/">influence diagram</a> for more information on default path probability and utility.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../decision-programming/computational-complexity/">« Computational Complexity</a><a class="docs-footer-nextpage" href="../examples/used-car-buyer/">Used Car Buyer »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.10 on <span class="colophon-date" title="Thursday 28 October 2021 06:58">Thursday 28 October 2021</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
