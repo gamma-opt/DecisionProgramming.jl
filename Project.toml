@@ -1,7 +1,7 @@
 name = "DecisionProgramming"
 uuid = "0e836bf4-a496-11ea-2c13-edcbe498ce6b"
 authors = ["Jaan Tollander de Balsch", "Helmi Hankimaa", "Olli Herrala", "Fabricio Oliveira"]
-version = "1.0.0"
+version = "1.0.1"
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
