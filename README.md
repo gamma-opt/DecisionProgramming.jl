@@ -82,10 +82,10 @@ See the [documentation](https://gamma-opt.github.io/DecisionProgramming.jl/dev/)
 
 
 ## Installation
-Currently `DecisionProgramming.jl` is unregistered. You can add it using directly from GitHub using the command:
+`DecisionProgramming.jl` is registered. You can add it using the command:
 
 ```julia-repl
-pkg> add https://github.com/gamma-opt/DecisionProgramming.jl
+pkg> add DecisionProgramming
 ```
 
 To run examples and develop and solve decision models, you have to install JuMP and a solver capable of solving mixed-integer linear programs (MILP). JuMP documentation contains a list of available solvers.
@@ -107,7 +107,7 @@ Now you are ready to use decision programming.
 Using the package manager, add `DecisionProgramming.jl` package for development using the command:
 
 ```julia-repl
-pkg> develop https://github.com/gamma-opt/DecisionProgramming.jl
+pkg> develop DecisionProgramming
 ```
 
 If you have already cloned `DecisionProgramming` from GitHub, you can use the command:
