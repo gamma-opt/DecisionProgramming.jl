@@ -25,6 +25,14 @@ Node type for directed, acyclic graph.
 abstract type AbstractNode end
 
 """
+    abstract type AbstractCosts end
+
+Cost for an edge.
+"""
+
+abstract type AbstractCosts end
+
+"""
     struct ChanceNode <: AbstractNode
 
 A struct for chance nodes, includes the name, information set and states of the node
@@ -48,8 +56,9 @@ struct DecisionNode <: AbstractNode
     name::Name
     I_j::Vector{Name}
     states::Vector{Name}
-    function DecisionNode(name, I_j, states)
-        return new(name, I_j, states)
+    K_j::Vector{Name}
+    function DecisionNode(name, I_j, states,K_j)
+        return new(name, I_j, states,K_j)
     end
 end
 
@@ -64,6 +73,25 @@ struct ValueNode <: AbstractNode
     function ValueNode(name, I_j)
         return new(name, I_j)
     end
+end
+
+"""
+    struct Vosts <: AbstractCosts
+
+A struct for the cost of edges, includes the edge and the corresponding cost
+"""
+
+struct Costs <: AbstractCosts
+    arc::Tuple{Name,Name}
+    cost::Float64
+    function Costs(arc, cost)
+        return new(arc, cost)
+    end
+end
+
+function (C::Vector{Costs})(arc::Tuple{Name,Name})
+    Costs = filter(x -> x.arc == arc,C)
+    Costs.cost
 end
 
 
@@ -463,6 +491,8 @@ Hold all information related to the influence diagram.
 - `Y::Vector{Utilities}`: Utility matrices of value nodes in order of value nodes in V.
 - `P::AbstractPathProbability`: Path probabilities.
 - `U::AbstractPathUtility`: Path utilities.
+- `K::Vector{Tuple{Node,Node}}`: Conditional edges.
+- `Cost::Vector{AbstractCosts}`: Costs of edges.
 - `translation::Utility`: Utility translation for storing the positive or negative
     utility translation.
 
@@ -485,6 +515,9 @@ mutable struct InfluenceDiagram
     Y::Vector{Utilities}
     P::AbstractPathProbability
     U::AbstractPathUtility
+    K::Vector{Tuple{Node,Node}}
+    Cost::Vector{AbstractCosts}
+    Cs::Dict{Tuple{Node,Node},Float64}
     translation::Utility
     function InfluenceDiagram()
         new(Vector{AbstractNode}())
@@ -544,6 +577,20 @@ function add_node!(diagram::InfluenceDiagram, node::AbstractNode)
         validate_node(diagram, node.name, node.I_j, value_node = true)
     end
     push!(diagram.Nodes, node)
+end
+
+"""
+    function add_costs!(diagram::InfluenceDiagram, costs::Costs)
+
+Add costs for an edge.
+
+# Examples
+```julia-repl
+```
+"""
+
+function add_costs!(diagram::InfluenceDiagram,costs::Costs)
+    push!(diagram.Cost, costs)
 end
 
 
@@ -872,16 +919,13 @@ generate_arcs!(diagram)
 ```
 """
 function generate_arcs!(diagram::InfluenceDiagram)
-
     # Chance and decision nodes
     C_and_D = filter(x -> !isa(x, ValueNode), diagram.Nodes)
     n_CD = length(C_and_D)
     # Value nodes
     V_nodes = filter(x -> isa(x, ValueNode), diagram.Nodes)
     n_V = length(V_nodes)
-
     validate_structure(diagram.Nodes, C_and_D, n_CD, V_nodes, n_V)
-
     # Declare vectors for results (final resting place InfluenceDiagram.Names and InfluenceDiagram.I_j)
     Names = Vector{Name}(undef, n_CD+n_V)
     I_j = Vector{Vector{Node}}(undef, n_CD+n_V)
@@ -890,14 +934,13 @@ function generate_arcs!(diagram::InfluenceDiagram)
     C = Vector{Node}()
     D = Vector{Node}()
     V = Vector{Node}()
-
+    K = Vector{Tuple{Node,Node}}()
+    Cs = Dict{Tuple{Node,Node},Float64}()
     # Declare helper collections
     indices = Dict{Name, Node}()
     indexed_nodes = Set{Name}()
     # Declare index
     index = 1
-
-
     while true
         # Index nodes C and D that don't yet have indices but whose I_j have indices
         new_nodes = filter(j -> (j.name ∉ indexed_nodes && Set(j.I_j) ⊆ indexed_nodes), C_and_D)
@@ -914,11 +957,15 @@ function generate_arcs!(diagram::InfluenceDiagram)
                 push!(C, Node(index))
             else
                 push!(D, Node(index))
+                for k in j.K_j
+                    push!(K,(Node(indices[k]), index))
+                    cost = filter(x -> x.arc[1]==k && x.arc[2] == j.name,diagram.Cost)
+                    Cs[(indices[k],index)] = cost[1].cost
+                end
             end
             # Increase index
             index += 1
         end
-
         # If no new nodes were indexed this iteration, terminate while loop
         if isempty(new_nodes)
             if index < n_CD
@@ -928,8 +975,6 @@ function generate_arcs!(diagram::InfluenceDiagram)
             end
         end
     end
-
-
     # Index value nodes
     for v in V_nodes
         # Update results
@@ -939,7 +984,6 @@ function generate_arcs!(diagram::InfluenceDiagram)
         # Increase index
         index += 1
     end
-
     diagram.Names = Names
     diagram.I_j = I_j
     diagram.States = states
@@ -947,6 +991,8 @@ function generate_arcs!(diagram::InfluenceDiagram)
     diagram.C = C
     diagram.D = D
     diagram.V = V
+    diagram.K = K
+    diagram.Cs = Cs
     # Declaring X and Y
     diagram.X = Vector{Probabilities}()
     diagram.Y = Vector{Utilities}()
