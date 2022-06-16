@@ -231,6 +231,53 @@ function information_constraints(model::Model, S::States, d::Node, I_d::Vector{N
     end
 end
 
+function DecisionConstraintVariables(model::Model,
+    diagram::InfluenceDiagram,
+    z::DecisionVariables,
+    x_s::PathCompatibilityVariables;
+    names::Bool=false,
+    name::String="x",
+    set_sharing_to_one::Bool=false,
+    forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
+    fixed::FixedPath=Dict{Node, State}(),
+    probability_cut::Bool=true,
+    probability_scale_factor::Float64=1.0)
+
+
+    # Create path compatibility variable for each effective path.
+    N = length(diagram.S)
+    variables_x = Dict{Tuple{Node,Node}, VariableRef}(
+        s => information_structure_variable(model, (names ? "$(name)$(s)" : ""),set_sharing_to_one)
+        for s in diagram.K
+    )
+
+
+    # Add information constraints for each decision node
+    for (d, z_d) in zip(z.D, z.z)
+        decision_path_constraints(model, diagram.S, d, diagram.I_j[d], z_d, x_s, diagram.K, variables_x)
+    end
+    return variables_x
+end
+
+function decision_path_constraints(model::Model, S::States, d::Node, I_d::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables, K::Vector{Tuple{Node,Node}}, x_x::Dict{Tuple{Node,Node},VariableRef})
+    # states of nodes in information structure (s_d | s_I(d))
+    for k in filter(tup -> tup[2] == d, K)
+        nodes = [I_d;d]
+        k_index = findall(x -> x == k[1], nodes)
+        Id_without_k = findall(x -> x != k[1], I_d)
+        dims = S[[I_d; d]]
+
+        for s_d_s_Id in paths(dims) # iterate through all information states and states of d
+            # paths with (s_d | s_I(d)) information structure
+            for s_d_s_k in paths(dims)
+                if s_d_s_k[first(k_index)] != s_d_s_Id[first(k_index)] && s_d_s_k[Id_without_k] == s_d_s_Id[Id_without_k] && last(s_d_s_k) == last(s_d_s_Id)
+                    @constraint(model, z[s_d_s_k...]  >=   z[s_d_s_Id...] - x_x[k])
+                end
+            end 
+        end
+    end
+end
+
 """
     lazy_probability_cut(model::Model, diagram::InfluenceDiagram, x_s::PathCompatibilityVariables)
 
