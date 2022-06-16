@@ -207,7 +207,8 @@ function PathCompatibilityVariables(model::Model,
     fixed::FixedPath=Dict{Node, State}(),
     probability_cut::Bool=true,
     probability_scale_factor::Float64=1.0,
-    upper_bound::Bool = false)
+    upper_bound::Bool = false,
+    augmented_states::Bool = false)
 
     if probability_scale_factor ≤ 0
         throw(DomainError("The probability_scale_factor must be greater than 0."))
@@ -229,7 +230,7 @@ function PathCompatibilityVariables(model::Model,
 
     # Add decision strategy constraints for each decision node
     for (d, z_d) in zip(z.D, z.z)
-        decision_strategy_constraint(model, diagram.S, d, diagram.I_j[d], z.D, z_d, x_s,upper_bound)
+        decision_strategy_constraint(model, diagram.S, d, diagram.I_j[d], z.D, z_d, x_s,upper_bound,augmented_states)
     end
 
     if probability_cut
