@@ -112,7 +112,7 @@ function decision_strategy_constraint(model::Model, S::States, d::Node, I_d::Vec
             @constraint(model, sum(get(x_s, s, 0) for s in feasible paths) ≤ z[s_d_s_Id...] * min(length(feasible_paths), theoretical_ub))
         else
             for s in feasible_paths
-                @constraint(model, get(x_s, s, 0) ≤ z[s_d_s_Id...] * min(length(feasible_paths), theoretical_ub))
+                @constraint(model, get(x_s, s, 0) ≤ z[s_d_s_Id...])
             end
         end
     end
