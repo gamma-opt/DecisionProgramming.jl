@@ -144,6 +144,7 @@ x_s = PathCompatibilityVariables(model, diagram; probability_cut = false)
 function PathCompatibilityVariables(model::Model,
     diagram::InfluenceDiagram,
     z::DecisionVariables;
+    is_one::Bool = false,
     names::Bool=false,
     name::String="x",
     forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
