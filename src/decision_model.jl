@@ -1,5 +1,9 @@
 using JuMP
 
+struct InformationStructureVariables{N} <: AbstractDict{Tuple{Node,Node}, VariableRef}
+    data::Dict{Tuple{Node,Node}, VariableRef}
+end
+
 function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node}, base_name::String="")
     # Create decision variables.
     dims = S[[I_d; d]]
@@ -53,6 +57,15 @@ function path_compatibility_variable(model::Model, base_name::String="")
     # Constraint on the lower and upper bounds.
     @constraint(model, 0 ≤ x ≤ 1.0)
 
+    return x
+end
+
+function information_structure_variable(model::Model, base_name::String="",is_one::Bool=false)
+    # Create a path compatiblity variable
+    x = @variable(model, base_name=base_name, binary=true)
+    if is_one
+        @constraint(model, 0.99 ≤ x ≤ 1.01)
+    end
     return x
 end
 
@@ -163,6 +176,55 @@ function PathCompatibilityVariables(model::Model,
     x_s
 end
 
+function InformationConstraintVariables(model::Model,
+    diagram::InfluenceDiagram,
+    z::DecisionVariables,
+    x_s::PathCompatibilityVariables;
+    names::Bool=false,
+    name::String="x",
+    forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
+    fixed::FixedPath=Dict{Node, State}(),
+    probability_cut::Bool=true,
+    probability_scale_factor::Float64=1.0)
+
+
+    # Create information structure variable for each correspondig conditional edge.
+    variables_x = Dict{Tuple{Node,Node}, VariableRef}(
+        s => information_structure_variable(model, (names ? "$(name)$(s)" : ""))
+        for s in diagram.K
+    )
+
+
+    # Add information constraints for each decision node
+    for (d, z_d) in zip(z.D, z.z)
+        information_constraints(model, diagram.S, d, diagram.I_j[d], z_d, x_s, diagram.K,variables_x)
+    end
+    return variables_x
+end
+
+function information_constraints(model::Model, S::States, d::Node, I_d::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables, K::Vector{Tuple{Node,Node}}, x_x::Dict{Tuple{Node,Node},VariableRef})
+    # states of nodes in information structure (s_d | s_I(d))
+    for k in filter(tup -> tup[2] == d, K)
+        nodes = [I_d;d]
+        d_index = findall(x -> x == d, nodes)
+        k_index = findall(x -> x == k[1], nodes)
+        Id_index = findall(x -> x in I_d && x != k[1], nodes)
+        Id_without_k = filter(x -> x != k[1], I_d)
+        dims = S[[I_d; d]]
+
+        # paths that have a corresponding path compatibility variable
+        existing_paths = keys(x_s)
+
+        for s_d_s_Id in paths(dims) # iterate through all information states and states of d
+            # paths with (s_d | s_I(d)) information structure
+            s_prime = filter(s -> s[d] != s_d_s_Id[first(d_index)] && s[Id_without_k] == s_d_s_Id[Id_index] && s[k[1]] != s_d_s_Id[first(k_index)], existing_paths)
+            for s in s_prime
+                @constraint(model, get(x_s, s, 0) <= 1 - z[s_d_s_Id...] + x_x[k])
+            end
+        end
+    end
+end
+
 """
     lazy_probability_cut(model::Model, diagram::InfluenceDiagram, x_s::PathCompatibilityVariables)
 
@@ -212,9 +274,9 @@ EV = expected_value(model, diagram, x_s)
 """
 function expected_value(model::Model,
     diagram::InfluenceDiagram,
-    x_s::PathCompatibilityVariables)
-
-    @expression(model, sum(diagram.P(s) * x * diagram.U(s, diagram.translation) for (s, x) in x_s))
+    x_s::PathCompatibilityVariables,
+    x_x::Dict{Tuple{Node,Node},VariableRef})
+    @expression(model, sum(diagram.P(s) * x * diagram.U(s, diagram.translation)  for (s, x) in x_s) - sum(diagram.Cs[k] * x for (k,x) in x_x )+ sum(0.000001 * x for (k,x) in x_x ))
 end
 
 """
