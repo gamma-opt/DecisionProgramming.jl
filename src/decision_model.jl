@@ -115,7 +115,7 @@ Base.iterate(x_s::PathCompatibilityVariables) = iterate(x_s.data)
 Base.iterate(x_s::PathCompatibilityVariables, i) = iterate(x_s.data, i)
 
 
-function decision_strategy_constraint(model::Model, S::States, d::Node, I_d::Vector{Node}, D::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables, upper_bound::Bool, augmented_states::Bool)
+function decision_strategy_constraint(model::Model, S::States, d::Node, I_d::Vector{Node}, D::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables, upper_bound::Bool,, K::Vector{Tuple{Node,Node}}, augmented_states::Bool)
 
     # states of nodes in information structure (s_d | s_I(d))
     dims = S[[I_d; d]]
@@ -230,7 +230,7 @@ function PathCompatibilityVariables(model::Model,
 
     # Add decision strategy constraints for each decision node
     for (d, z_d) in zip(z.D, z.z)
-        decision_strategy_constraint(model, diagram.S, d, diagram.I_j[d], z.D, z_d, x_s,upper_bound,augmented_states)
+        decision_strategy_constraint(model, diagram.S, d, diagram.I_j[d], z.D, z_d, x_s,upper_bound,diagram.K,augmented_states)
     end
 
     if probability_cut
