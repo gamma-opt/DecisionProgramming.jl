@@ -17,17 +17,37 @@ Print decision strategy.
 print_decision_strategy(diagram, Z, S_probabilities)
 ```
 """
-function print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy, state_probabilities::StateProbabilities; show_incompatible_states::Bool = false)
+function print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy, state_probabilities::StateProbabilities; show_incompatible_states::Bool = false, augmented_states::Bool)
     probs = state_probabilities.probs
 
     for (d, I_d, Z_d) in zip(Z.D, Z.I_d, Z.Z_d)
-        s_I = vec(collect(paths(diagram.S[I_d])))
-        s_d = [Z_d(s) for s in s_I]
+        if augmented_states
+            K_j = filter(x -> x ∈ I_d ,map(x -> x[1] , filter(x -> x[2] == d,diagram.K)))
+            states = diagram.S[I_d]
+            j = 1
+            for i in I_d
+                if i ∈ K_j
+                    states[j] = states[j] + 1
+                end
+                j = j+ 1
+            end
+            s_I = vec(collect(paths(states)))
+            s_d = [(findmax(Z_d[s..., :])[1] > 0 ? findmax(Z_d[s..., :])[2] : 0) for s in s_I]
+        else
+            s_I = vec(collect(paths(diagram.S[I_d])))
+            s_d = [Z_d(s) for s in s_I]
+        end
 
         if !isempty(I_d)
-            informations_states = [join([String(diagram.States[i][s_i]) for (i, s_i) in zip(I_d, s)], ", ") for s in s_I]
-            decision_probs = [ceil(prod(probs[i][s1] for (i, s1) in zip(I_d, s))) for s in s_I]
-            decisions = collect(p == 0 ? "--" : diagram.States[d][s] for (s, p) in zip(s_d, decision_probs))
+            if augmented_states
+                informations_states = [join([(s_i > diagram.S[i] ? "0" : String(diagram.States[i][s_i])) for (i, s_i) in zip(I_d, s)], ", ") for s in s_I]
+                decision_probs = [ceil(prod(s1 > diagram.S[i] ? sum(probs[i]) : probs[i][s1] for (i, s1) in zip(I_d, s))) for s in s_I]
+
+            else
+                informations_states = [join([String(diagram.States[i][s_i]) for (i, s_i) in zip(I_d, s)], ", ") for s in s_I]
+                decision_probs = [ceil(prod(probs[i][s1] for (i, s1) in zip(I_d, s))) for s in s_I]
+            end
+            decisions = collect((p == 0 || s == 0) ? "--" : diagram.States[d][s] for (s, p) in zip(s_d, decision_probs))
             df = DataFrame(informations_states = informations_states, decisions = decisions)
             if !show_incompatible_states
                  filter!(row -> row.decisions != "--", df)

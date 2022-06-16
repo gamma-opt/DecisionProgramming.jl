@@ -4,9 +4,21 @@ struct InformationStructureVariables{N} <: AbstractDict{Tuple{Node,Node}, Variab
     data::Dict{Tuple{Node,Node}, VariableRef}
 end
 
-function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node},binary::Bool, base_name::String="")
+function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node},K::Vector{Tuple{Node,Node}},augmented_states::Bool,binary::Bool, base_name::String="")
     # Create decision variables.
     dims = S[[I_d; d]]
+
+    if augmented_states
+        K_j = filter(x -> x[2] == d,K)
+        # Add 1 to dimensions for each k \in K(j)
+        for i in K_j
+            indices = findall(x->x==i[1], I_d)
+            for j in indices
+                dims[j] = dims[j] +1
+            end
+        end
+    end
+
     z_d = Array{VariableRef}(undef, dims...)
     for s in paths(dims)
         if binary 
@@ -16,9 +28,19 @@ function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node},b
             @constraint(model,0 ≤ z_d[s...] ≤ 1.0)
         end
     end
-    # Constraints to one decision per decision strategy.
-    for s_I in paths(S[I_d])
-        @constraint(model, sum(z_d[s_I..., s_d] for s_d in 1:S[d]) == 1)
+
+    if augmented_states
+        pop!(dims)
+        # Paths that contain a zero state
+        augmented_paths = Iterators.filter(x -> x ∉ paths(S[I_d]), paths(dims))
+        for s_I in paths(S[I_d])
+            zero_extension = Iterators.filter(s -> all((s_I.==s) .| (s .== (dims .+ 1))),augmented_paths)
+            @constraint(model, sum(z_d[s_I..., s_d] + sum(z_d[s..., s_d] for s in zero_extension) for s_d in 1:S[d])  == 1)
+        end
+    else
+        for s_I in paths(S[I_d])
+            @constraint(model, sum(z_d[s_I..., s_d] for s_d in 1:S[d]) == 1)
+        end
     end
     return z_d
 end
@@ -46,8 +68,8 @@ Create decision variables and constraints.
 z = DecisionVariables(model, diagram)
 ```
 """
-function DecisionVariables(model::Model, diagram::InfluenceDiagram; names::Bool=false, name::String="z", binary = true)
-    DecisionVariables(diagram.D, diagram.I_j[diagram.D], [decision_variable(model, diagram.S, d, I_d, binary, (names ? "$(name)_$(d)" : "")) for (d, I_d) in zip(diagram.D, diagram.I_j[diagram.D])])
+function DecisionVariables(model::Model, diagram::InfluenceDiagram; names::Bool=false, name::String="z", binary = true, augmented_states = false)
+    DecisionVariables(diagram.D, diagram.I_j[diagram.D], [decision_variable(model, diagram.S, d, I_d,diagram.K,augmented_states, binary, (names ? "$(name)_$(d)" : "")) for (d, I_d) in zip(diagram.D, diagram.I_j[diagram.D])])
 end
 
 function is_forbidden(s::Path, forbidden_paths::Vector{ForbiddenPath})
@@ -93,7 +115,7 @@ Base.iterate(x_s::PathCompatibilityVariables) = iterate(x_s.data)
 Base.iterate(x_s::PathCompatibilityVariables, i) = iterate(x_s.data, i)
 
 
-function decision_strategy_constraint(model::Model, S::States, d::Node, I_d::Vector{Node}, D::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables, upper_bound::Bool)
+function decision_strategy_constraint(model::Model, S::States, d::Node, I_d::Vector{Node}, D::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables, upper_bound::Bool, augmented_states::Bool)
 
     # states of nodes in information structure (s_d | s_I(d))
     dims = S[[I_d; d]]
@@ -105,14 +127,38 @@ function decision_strategy_constraint(model::Model, S::States, d::Node, I_d::Vec
     # paths that have a corresponding path compatibility variable
     existing_paths = keys(x_s)
 
+    if augmented_states 
+        K_j = map(x -> x[1] , filter(x -> x[2] == d,K))
+        for i in K_j
+            indices = findall(x->x==i, I_d)
+            for j in indices
+                dimensions[j] = dimensions[j] +1
+            end
+        end
+        augmented_paths = Iterators.filter(x -> x ∉ paths(dims), paths(dimensions))
+    end
+
     for s_d_s_Id in paths(dims) # iterate through all information states and states of d
         # paths with (s_d | s_I(d)) information structure
         feasible_paths = filter(s -> s[[I_d; d]] == s_d_s_Id, existing_paths)
         if upper_bound
-            @constraint(model, sum(get(x_s, s, 0) for s in feasible paths) ≤ z[s_d_s_Id...] * min(length(feasible_paths), theoretical_ub))
+            if augmented_states
+                feasible_augmented_paths = Iterators.filter(s -> all((s_d_s_Id.==s) .| (s .== (dims .+ 1))),augmented_paths)
+                @constraint(model, sum(get(x_s, s, 0) for s in feasible paths) +  ≤ (z[s_d_s_Id...] + sum(z[s...] for s in feasible_augmented_paths)) * min(length(feasible_paths), theoretical_ub))
+
+            else
+                @constraint(model, sum(get(x_s, s, 0) for s in feasible paths) ≤ z[s_d_s_Id...] * min(length(feasible_paths), theoretical_ub))
+            end
         else
-            for s in feasible_paths
-                @constraint(model, get(x_s, s, 0) ≤ z[s_d_s_Id...])
+            if augmented_states
+                feasible_augmented_paths = Iterators.filter(s -> all((s_d_s_Id.==s) .| (s .== (dims .+ 1))),augmented_paths)
+                for s in feasible_paths
+                    @constraint(model, get(x_s, s, 0)<= (z[s_d_s_Id...] + sum(z[s...] for s in feasible_augmented_paths)))
+                end
+            else
+                for s in feasible_paths
+                    @constraint(model, get(x_s, s, 0)<= z[s_d_s_Id...])
+                end
             end
         end
     end
@@ -286,6 +332,59 @@ function decision_path_constraints(model::Model, S::States, d::Node, I_d::Vector
                 end
             end 
         end
+    end
+end
+
+function AugmentedStateVariables(model::Model,
+    diagram::InfluenceDiagram,
+    z::DecisionVariables,
+    x_s::PathCompatibilityVariables;
+    names::Bool=false,
+    name::String="x",
+    forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
+    fixed::FixedPath=Dict{Node, State}(),
+    probability_cut::Bool=true,
+    probability_scale_factor::Float64=1.0)
+
+
+    # Create path compatibility variable for each effective path.
+    N = length(diagram.S)
+    variables_x = Dict{Tuple{Node,Node}, VariableRef}(
+        s => information_structure_variable(model, (names ? "$(name)$(s)" : ""))
+        for s in diagram.K
+    )
+
+
+    # Add information constraints for each decision node
+    for (d, z_d) in zip(z.D, z.z)
+        augmented_state_constraints(model, diagram.S, d, diagram.I_j[d], z_d, x_s, diagram.K,variables_x)
+    end
+    return variables_x
+end
+
+function augmented_state_constraints(model::Model, S::States, d::Node, I_d::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables, K::Vector{Tuple{Node,Node}}, x_x::Dict{Tuple{Node,Node},VariableRef})
+
+    # states of nodes in information structure (s_d | s_I(d))
+    dims = S[[I_d; d]]
+    dims_3 = S[[I_d; d]]
+    # paths that have a corresponding path compatibility variable
+    existing_paths = paths(dims)
+    K_j = map(x -> x[1] , filter(x -> x[2] == d,K))
+    for i in K_j
+        indices = findall(x->x==i, I_d)
+        for j in indices
+            dims_3[j] = dims_3[j] +1
+        end
+    end
+    augmented_paths = Iterators.filter(x -> x ∉ existing_paths, paths(dims_3))
+
+    for k in filter(tup -> tup[2] == d, K)
+        indices = findall(y -> y == k[1] ,I_d)
+        dimensions = dims[indices[1]]
+        zero = Iterators.filter(x -> x[indices[1]] == dimensions + 1, augmented_paths)
+        non_zero = Iterators.filter(x -> x[indices[1]] < dimensions + 1, paths(dims_3))
+        @constraint(model,sum(z[s...] for s in non_zero) <= length(paths(dims_3))*x_x[k])
+        @constraint(model,sum(z[s...] for s in zero) <= length(paths(dims_3))*(1-x_x[k]))
     end
 end
 

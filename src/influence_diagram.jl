@@ -1196,7 +1196,7 @@ struct LocalDecisionStrategy{N} <: AbstractArray{Int, N}
             throw(DomainError("All values x must be 0 ≤ x ≤ 1."))
         end
         for s_I in CartesianIndices(size(data)[1:end-1])
-            if !(sum(data[s_I, :]) == 1)
+            if !(sum(data[s_I, :]) <= 1)
                 throw(DomainError("Values should add to one."))
             end
         end
