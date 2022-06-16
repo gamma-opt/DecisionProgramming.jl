@@ -144,7 +144,7 @@ function decision_strategy_constraint(model::Model, S::States, d::Node, I_d::Vec
         if upper_bound
             if augmented_states
                 feasible_augmented_paths = Iterators.filter(s -> all((s_d_s_Id.==s) .| (s .== (dims .+ 1))),augmented_paths)
-                @constraint(model, sum(get(x_s, s, 0) for s in feasible paths) +  ≤ (z[s_d_s_Id...] + sum(z[s...] for s in feasible_augmented_paths)) * min(length(feasible_paths), theoretical_ub))
+                @constraint(model, sum(get(x_s, s, 0) for s in feasible paths)  ≤ (z[s_d_s_Id...] + sum(z[s...] for s in feasible_augmented_paths)) * min(length(feasible_paths), theoretical_ub))
 
             else
                 @constraint(model, sum(get(x_s, s, 0) for s in feasible paths) ≤ z[s_d_s_Id...] * min(length(feasible_paths), theoretical_ub))
