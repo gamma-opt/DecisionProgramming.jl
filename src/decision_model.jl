@@ -115,7 +115,7 @@ Base.iterate(x_s::PathCompatibilityVariables) = iterate(x_s.data)
 Base.iterate(x_s::PathCompatibilityVariables, i) = iterate(x_s.data, i)
 
 
-function decision_strategy_constraint(model::Model, S::States, d::Node, I_d::Vector{Node}, D::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables, upper_bound::Bool,, K::Vector{Tuple{Node,Node}}, augmented_states::Bool)
+function decision_strategy_constraint(model::Model, S::States, d::Node, I_d::Vector{Node}, D::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables, upper_bound::Bool, K::Vector{Tuple{Node,Node}}, augmented_states::Bool)
 
     # states of nodes in information structure (s_d | s_I(d))
     dims = S[[I_d; d]]
