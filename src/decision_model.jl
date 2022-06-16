@@ -132,13 +132,13 @@ function decision_strategy_constraint(model::Model, S::States, d::Node, I_d::Vec
         for i in K_j
             indices = findall(x->x==i, I_d)
             for j in indices
-                dimensions[j] = dimensions[j] +1
+                dims[j] = dims[j] +1
             end
         end
-        augmented_paths = Iterators.filter(x -> x ∉ paths(dims), paths(dimensions))
+        augmented_paths = Iterators.filter(x -> x ∉ paths(S[[I_d; d]]), paths(dims))
     end
 
-    for s_d_s_Id in paths(dims) # iterate through all information states and states of d
+    for s_d_s_Id in paths(S[[I_d; d]]) # iterate through all information states and states of d
         # paths with (s_d | s_I(d)) information structure
         feasible_paths = filter(s -> s[[I_d; d]] == s_d_s_Id, existing_paths)
         if upper_bound
