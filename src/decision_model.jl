@@ -9,7 +9,7 @@ function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node}, 
     dims = S[[I_d; d]]
     z_d = Array{VariableRef}(undef, dims...)
     for s in paths(dims)
-        z_d[s...] = @variable(model, binary=true, base_name=base_name)
+        z_d[s...] = @variable(model, binary=true, base_name="$(base_name)_$(s)")
     end
     # Constraints to one decision per decision strategy.
     for s_I in paths(S[I_d])
@@ -42,7 +42,7 @@ z = DecisionVariables(model, diagram)
 ```
 """
 function DecisionVariables(model::Model, diagram::InfluenceDiagram; names::Bool=false, name::String="z")
-    DecisionVariables(diagram.D, diagram.I_j[diagram.D], [decision_variable(model, diagram.S, d, I_d, (names ? "$(name)_$(d.j)$(s)" : "")) for (d, I_d) in zip(diagram.D, diagram.I_j[diagram.D])])
+    DecisionVariables(diagram.D, diagram.I_j[diagram.D], [decision_variable(model, diagram.S, d, I_d, (names ? "$(name)_$(d)" : "")) for (d, I_d) in zip(diagram.D, diagram.I_j[diagram.D])])
 end
 
 function is_forbidden(s::Path, forbidden_paths::Vector{ForbiddenPath})
