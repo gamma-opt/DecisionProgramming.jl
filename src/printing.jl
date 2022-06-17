@@ -18,7 +18,7 @@ Print decision strategy.
 print_decision_strategy(diagram, Z, S_probabilities)
 ```
 """
-function print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy, state_probabilities::StateProbabilities; show_incompatible_states::Bool = false, augmented_states::Bool)
+function print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy, state_probabilities::StateProbabilities; show_incompatible_states::Bool = false, augmented_states::Bool = false)
     probs = state_probabilities.probs
 
     for (d, I_d, Z_d) in zip(Z.D, Z.I_d, Z.Z_d)
