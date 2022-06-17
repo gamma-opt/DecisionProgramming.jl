@@ -2,7 +2,7 @@ using DataFrames, PrettyTables
 using StatsBase, StatsBase.Statistics
 
 """
-    print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy, state_probabilities::StateProbabilities; show_incompatible_states::Bool = false)
+    print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy, state_probabilities::StateProbabilities; show_incompatible_states::Bool = false, augmented_states::Bool)
 
 Print decision strategy.
 
@@ -11,6 +11,7 @@ Print decision strategy.
 - `Z::DecisionStrategy`: Decision strategy structure with optimal decision strategy.
 - `state_probabilities::StateProbabilities`: State probabilities structure corresponding to optimal decision strategy.
 - `show_incompatible_states::Bool`: Choice to print rows also for incompatible states.
+- `augmented_states::Bool`: If information structure constraints on augmented states are used, this must be true
 
 # Examples
 ```julia

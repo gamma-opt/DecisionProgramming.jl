@@ -94,7 +94,7 @@ struct UtilityDistribution
 end
 
 """
-    UtilityDistribution(diagram::InfluenceDiagram, Z::DecisionStrategy)
+    UtilityDistribution(diagram::InfluenceDiagram, Z::DecisionStrategy, x_x::Dict{Tuple{Node,Node},VariableRef})
 
 Construct the probability mass function for path utilities on paths that are compatible with given decision strategy.
 

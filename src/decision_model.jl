@@ -52,7 +52,7 @@ struct DecisionVariables
 end
 
 """
-    DecisionVariables(model::Model,  diagram::InfluenceDiagram; names::Bool=false, name::String="z")
+    DecisionVariables(model::Model,  diagram::InfluenceDiagram; names::Bool=false, name::String="z", binary::Bool = true, augmented_states::Bool = false)
 
 Create decision variables and constraints.
 
@@ -61,6 +61,8 @@ Create decision variables and constraints.
 - `diagram::InfluenceDiagram`: Influence diagram structure.
 - `names::Bool`: Use names or have JuMP variables be anonymous.
 - `name::String`: Prefix for predefined decision variable naming convention.
+- `binary::Bool`: If true, returns decision variables with binarity constraint. If false, returns decision variables constrained to interval [0,1]
+- `augmented_states::Bool`: Must be true if `AugmentedStateVariables` are used.
 
 
 # Examples
@@ -68,7 +70,7 @@ Create decision variables and constraints.
 z = DecisionVariables(model, diagram)
 ```
 """
-function DecisionVariables(model::Model, diagram::InfluenceDiagram; names::Bool=false, name::String="z", binary = true, augmented_states = false)
+function DecisionVariables(model::Model, diagram::InfluenceDiagram; names::Bool=false, name::String="z", binary::Bool = true, augmented_states::Bool = false)
     DecisionVariables(diagram.D, diagram.I_j[diagram.D], [decision_variable(model, diagram.S, d, I_d,diagram.K,augmented_states, binary, (names ? "$(name)_$(d)" : "")) for (d, I_d) in zip(diagram.D, diagram.I_j[diagram.D])])
 end
 
@@ -240,16 +242,36 @@ function PathCompatibilityVariables(model::Model,
     x_s
 end
 
+"""
+    InformationConstraintVariables(model::Model,
+        diagram::InfluenceDiagram,
+        z::DecisionVariables,
+        x_s::PathCompatibilityVariables;
+        names::Bool=false,
+        name::String="x")
+
+Create information structure constraints for path probabilities.
+
+# Arguments
+- `model::Model`: JuMP model into which variables are added.
+- `diagram::InfluenceDiagram`: Influence diagram structure.
+- `z::DecisionVariables`: Decision variables from `DecisionVariables` function.
+- `x_s::PathCompatibilityVariables`: Path compatibility variables from `PathCompatibilityVariables` function.
+- `names::Bool`: Use names or have JuMP variables be anonymous.
+- `name::String`: Prefix for predefined decision variable naming convention.
+
+# Examples
+```julia
+    x_x = InformationConstraintVariables(model, diagram, z, x_s, names=true, name="x")
+```
+"""
+
 function InformationConstraintVariables(model::Model,
     diagram::InfluenceDiagram,
     z::DecisionVariables,
     x_s::PathCompatibilityVariables;
     names::Bool=false,
-    name::String="x",
-    forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
-    fixed::FixedPath=Dict{Node, State}(),
-    probability_cut::Bool=true,
-    probability_scale_factor::Float64=1.0)
+    name::String="x")
 
 
     # Create information structure variable for each correspondig conditional edge.
@@ -288,6 +310,30 @@ function information_constraints(model::Model, S::States, d::Node, I_d::Vector{N
         end
     end
 end
+
+"""
+DecisionConstraintVariables(model::Model,
+        diagram::InfluenceDiagram,
+        z::DecisionVariables,
+        x_s::PathCompatibilityVariables;
+        names::Bool=false,
+        name::String="x")
+
+Create information structure constraints for local decisions.
+
+# Arguments
+- `model::Model`: JuMP model into which variables are added.
+- `diagram::InfluenceDiagram`: Influence diagram structure.
+- `z::DecisionVariables`: Decision variables from `DecisionVariables` function.
+- `x_s::PathCompatibilityVariables`: Path compatibility variables from `PathCompatibilityVariables` function.
+- `names::Bool`: Use names or have JuMP variables be anonymous.
+- `name::String`: Prefix for predefined decision variable naming convention.
+
+# Examples
+```julia
+    x_x = DecisionConstraintVariables(model, diagram, z, x_s, names=true, name="x")
+```
+"""
 
 function DecisionConstraintVariables(model::Model,
     diagram::InfluenceDiagram,
@@ -336,16 +382,36 @@ function decision_path_constraints(model::Model, S::States, d::Node, I_d::Vector
     end
 end
 
+"""
+    AugmentedStateVariables(model::Model,
+        diagram::InfluenceDiagram,
+        z::DecisionVariables,
+        x_s::PathCompatibilityVariables;
+        names::Bool=false,
+        name::String="x")
+
+Create information structure constraints for augmented states.
+
+# Arguments
+- `model::Model`: JuMP model into which variables are added.
+- `diagram::InfluenceDiagram`: Influence diagram structure.
+- `z::DecisionVariables`: Decision variables from `DecisionVariables` function.
+- `x_s::PathCompatibilityVariables`: Path compatibility variables from `PathCompatibilityVariables` function.
+- `names::Bool`: Use names or have JuMP variables be anonymous.
+- `name::String`: Prefix for predefined decision variable naming convention.
+
+# Examples
+```julia
+    x_x = InformationConstraintVariables(model, diagram, z, x_s, names=true, name="x")
+```
+"""
+
 function AugmentedStateVariables(model::Model,
     diagram::InfluenceDiagram,
     z::DecisionVariables,
     x_s::PathCompatibilityVariables;
     names::Bool=false,
-    name::String="x",
-    forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
-    fixed::FixedPath=Dict{Node, State}(),
-    probability_cut::Bool=true,
-    probability_scale_factor::Float64=1.0)
+    name::String="x")
 
 
     # Create path compatibility variable for each effective path.
@@ -422,7 +488,8 @@ end
 """
     expected_value(model::Model,
         diagram::InfluenceDiagram,
-        x_s::PathCompatibilityVariables)
+        x_s::PathCompatibilityVariables,
+        x_x::Dict{Tuple{Node,Node},VariableRef})
 
 Create an expected value objective.
 
@@ -430,10 +497,11 @@ Create an expected value objective.
 - `model::Model`: JuMP model into which variables are added.
 - `diagram::InfluenceDiagram`: Influence diagram structure.
 - `x_s::PathCompatibilityVariables`: Path compatibility variables.
+- `x_x::InformationStructureVariables`: Information structure variables.
 
 # Examples
 ```julia
-EV = expected_value(model, diagram, x_s)
+EV = expected_value(model, diagram, x_s,x_x)
 ```
 """
 function expected_value(model::Model,
