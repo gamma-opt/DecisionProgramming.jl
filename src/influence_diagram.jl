@@ -60,6 +60,9 @@ struct DecisionNode <: AbstractNode
     function DecisionNode(name, I_j, states,K_j)
         return new(name, I_j, states,K_j)
     end
+    function DecisionNode(name, I_j, states)
+        return new(name, I_j, states,[])
+    end
 end
 
 """
