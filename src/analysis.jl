@@ -109,8 +109,12 @@ function UtilityDistribution(diagram::InfluenceDiagram, Z::DecisionStrategy; x_x
     utilities = Vector{Float64}(undef, length(S_Z))
     probabilities = Vector{Float64}(undef, length(S_Z))
     for (i, s) in enumerate(S_Z)
-        utilities[i] = diagram.U(s)
-        probabilities[i] = diagram.P(s) - sum(diagram.Cs[c] * value.(x_x[c]) for c in keys(x_x))
+        if isempty(x_x)
+            utilities[i] = diagram.U(s)
+        else
+            utilities[i] = diagram.U(s) - sum(diagram.Cs[c] * value.(x_x[c]) for c in keys(x_x))
+        end
+        probabilities[i] = diagram.P(s)
     end
 
     # Filter zero probabilities
