@@ -34,7 +34,7 @@ function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node},K
         # Paths that contain a zero state
         augmented_paths = Iterators.filter(x -> x ∉ paths(S[I_d]), paths(dims))
         for s_I in paths(S[I_d])
-            zero_extension = Iterators.filter(s -> all((s_I.==s) .| (s .== (dims .+ 1))),augmented_paths)
+            zero_extension = Iterators.filter(s -> all((s_I.==s) .| (s .== (S[I_d] .+ 1))),augmented_paths)
             @constraint(model, sum(z_d[s_I..., s_d] + sum(z_d[s..., s_d] for s in zero_extension) for s_d in 1:S[d])  == 1)
         end
     else
@@ -145,7 +145,7 @@ function decision_strategy_constraint(model::Model, S::States, d::Node, I_d::Vec
         feasible_paths = filter(s -> s[[I_d; d]] == s_d_s_Id, existing_paths)
         if upper_bound
             if augmented_states
-                feasible_augmented_paths = Iterators.filter(s -> all((s_d_s_Id.==s) .| (s .== (dims .+ 1))),augmented_paths)
+                feasible_augmented_paths = Iterators.filter(s -> all((s_d_s_Id.==s) .| (s .== (S[[I_d;d]] .+ 1))),augmented_paths)
                 @constraint(model, sum(get(x_s, s, 0) for s in feasible paths)  ≤ (z[s_d_s_Id...] + sum(z[s...] for s in feasible_augmented_paths)) * min(length(feasible_paths), theoretical_ub))
 
             else
@@ -153,7 +153,7 @@ function decision_strategy_constraint(model::Model, S::States, d::Node, I_d::Vec
             end
         else
             if augmented_states
-                feasible_augmented_paths = Iterators.filter(s -> all((s_d_s_Id.==s) .| (s .== (dims .+ 1))),augmented_paths)
+                feasible_augmented_paths = Iterators.filter(s -> all((s_d_s_Id.==s) .| (s .== (S[[I_d;d]] .+ 1))),augmented_paths)
                 for s in feasible_paths
                     @constraint(model, get(x_s, s, 0)<= (z[s_d_s_Id...] + sum(z[s...] for s in feasible_augmented_paths)))
                 end
