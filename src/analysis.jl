@@ -103,9 +103,13 @@ Construct the probability mass function for path utilities on paths that are com
 UtilityDistribution(diagram, Z)
 ```
 """
-function UtilityDistribution(diagram::InfluenceDiagram, Z::DecisionStrategy; x_x::Dict{Tuple{Node,Node},VariableRef} = Dict{Tuple{Node,Node},VariableRef}())
+function UtilityDistribution(diagram::InfluenceDiagram, Z::DecisionStrategy; x_x::Dict{Tuple{Node,Node},VariableRef} = Dict{Tuple{Node,Node},VariableRef}(), augmented_states::Bool = false, x_s::PathCompatibilityVariables = Dict{Path{N}, VariableRef}())
     # Extract utilities and probabilities of active paths
-    S_Z = CompatiblePaths(diagram, Z)
+    if augmented_states
+        S_Z = map(x -> x[1],Iterators.filter(x -> value.(x[2]) > 0, x_s))
+    else
+        S_Z = CompatiblePaths(diagram, Z)
+    end
     utilities = Vector{Float64}(undef, length(S_Z))
     probabilities = Vector{Float64}(undef, length(S_Z))
     for (i, s) in enumerate(S_Z)
