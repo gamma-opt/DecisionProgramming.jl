@@ -734,7 +734,7 @@ end
 
 function add_edge_probabilities!(diagram::InfluenceDiagram, edge::Tuple{Node,Node}, probabilities::AbstractArray{Float64, N}) where N
 
-    if sum(probabilities != 1)
+    if sum(probabilities) != 1
         throw(DomainError("Probabilities should sum to 1"))
     end
 
