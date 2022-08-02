@@ -519,6 +519,7 @@ mutable struct InfluenceDiagram
     P::AbstractPathProbability
     U::AbstractPathUtility
     K::Vector{Tuple{Node,Node}}
+    Kp::Dict{Tuple{Node,Node},Vector{Float64}}
     Cost::Vector{AbstractCosts}
     Cs::Dict{Tuple{Node,Node},Float64}
     translation::Utility
@@ -729,6 +730,15 @@ function add_probabilities!(diagram::InfluenceDiagram, node::Name, probabilities
     else
         throw(DomainError("The dimensions of a probability matrix should match the node's states' and information states' cardinality. Expected $(Tuple((diagram.S[n] for n in (diagram.I_j[c]..., c)))) for node $name, got $(size(probabilities))."))
     end
+end
+
+function add_edge_probabilities!(diagram::InfluenceDiagram, edge::Tuple{Node,Node}, probabilities::AbstractArray{Float64, N}) where N
+
+    if sum(probabilities != 1)
+        throw(DomainError("Probabilities should sum to 1"))
+    end
+
+    push!(diagram.Kp, probabilities)
 end
 
 
@@ -999,6 +1009,7 @@ function generate_arcs!(diagram::InfluenceDiagram)
     # Declaring X and Y
     diagram.X = Vector{Probabilities}()
     diagram.Y = Vector{Utilities}()
+    diagram.Kp = Dict{Tuple{Node,Node},Vector{Float64}}()
 end
 
 
