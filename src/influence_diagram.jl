@@ -738,7 +738,7 @@ function add_edge_probabilities!(diagram::InfluenceDiagram, edge::Tuple{Node,Nod
         throw(DomainError("Probabilities should sum to 1"))
     end
 
-    push!(diagram.Kp, probabilities)
+   diagram.Kp[edge] = probabilities
 end
 
 
