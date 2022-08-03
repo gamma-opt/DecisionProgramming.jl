@@ -8,7 +8,7 @@ struct StateDependentInformationStructureVariables{N} <: AbstractDict{Tuple{Node
     data::Dict{Tuple{Node,Node,States}, VariableRef}
 end
 
-function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node},K::Vector{Tuple{Node,Node}},Pj::Vector{Tuple{Node,Node}},augmented_states::Bool,binary::Bool, base_name::String="")
+function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node},K::Vector{Tuple{Node,Node}},Pj::Dict{Tuple{Node,Node},Vector{Node}},augmented_states::Bool,binary::Bool, base_name::String="")
     # Create decision variables.
     dims = S[[I_d; d]]
 
