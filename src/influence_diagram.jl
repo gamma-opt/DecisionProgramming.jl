@@ -57,7 +57,7 @@ struct DecisionNode <: AbstractNode
     I_j::Vector{Name}
     states::Vector{Name}
     K_j::Vector{Name}
-    P_j::Vector{Name}
+    P_j::Vector{Tuple{Name,Vector{Name}}}
     function DecisionNode(name, I_j, states,K_j)
         return new(name, I_j, states,K_j,[])
     end
@@ -526,7 +526,7 @@ mutable struct InfluenceDiagram
     P::AbstractPathProbability
     U::AbstractPathUtility
     K::Vector{Tuple{Node,Node}}
-    Pj::Vector{Tuple{Node,Node}}
+    Pj::Dict{Tuple{Node,Node},Vector{Node}}
     Cost::Vector{AbstractCosts}
     Cs::Dict{Tuple{Node,Node},Float64}
     translation::Utility
@@ -946,7 +946,7 @@ function generate_arcs!(diagram::InfluenceDiagram)
     D = Vector{Node}()
     V = Vector{Node}()
     K = Vector{Tuple{Node,Node}}()
-    Pj = Vector{Tuple{Node,Node}}()
+    Pj = Dict{Tuple{Node,Node},Vector{Node}}()
     Cs = Dict{Tuple{Node,Node},Float64}()
     # Declare helper collections
     indices = Dict{Name, Node}()
@@ -974,7 +974,7 @@ function generate_arcs!(diagram::InfluenceDiagram)
                     cost = filter(x -> x.arc[1]==k && x.arc[2] == j.name,diagram.Cost)
                     Cs[(indices[k],index)] = cost[1].cost
                     if k in j.P_j
-                        push!(Pj,(Node(indices[k]), index))
+                        Pj[(Node(indices[k[1]]), index)] = k[2]
                     end
                 end
             end
