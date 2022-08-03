@@ -57,11 +57,15 @@ struct DecisionNode <: AbstractNode
     I_j::Vector{Name}
     states::Vector{Name}
     K_j::Vector{Name}
+    P_j::Vector{Name}
     function DecisionNode(name, I_j, states,K_j)
-        return new(name, I_j, states,K_j)
+        return new(name, I_j, states,K_j,[])
     end
     function DecisionNode(name, I_j, states)
-        return new(name, I_j, states,[])
+        return new(name, I_j, states,[],[])
+    end
+    function DecisionNode(name, I_j, states,K_j,P_j)
+        return new(name, I_j, states,K_j,P_j)
     end
 end
 
@@ -471,6 +475,9 @@ end
         Y::Vector{Utilities}
         P::AbstractPathProbability
         U::AbstractPathUtility
+        K::Vector{Tuple{Node,Node}}
+        Cost::Vector{AbstractCosts}
+        Cs::Dict{Tuple{Node,Node},Float64}
         translation::Utility
         function InfluenceDiagram()
             new(Vector{AbstractNode}())
@@ -519,7 +526,7 @@ mutable struct InfluenceDiagram
     P::AbstractPathProbability
     U::AbstractPathUtility
     K::Vector{Tuple{Node,Node}}
-    Kp::Dict{Tuple{Node,Node},Vector{Float64}}
+    Pj::Vector{Tuple{Node,Node}}
     Cost::Vector{AbstractCosts}
     Cs::Dict{Tuple{Node,Node},Float64}
     translation::Utility
@@ -732,15 +739,6 @@ function add_probabilities!(diagram::InfluenceDiagram, node::Name, probabilities
     end
 end
 
-function add_edge_probabilities!(diagram::InfluenceDiagram, edge::Tuple{Node,Node}, probabilities::AbstractArray{Float64, N}) where N
-
-    if sum(probabilities) != 1
-        throw(DomainError("Probabilities should sum to 1"))
-    end
-
-   diagram.Kp[edge] = probabilities
-end
-
 
 # --- Adding Utilities ---
 
@@ -948,6 +946,7 @@ function generate_arcs!(diagram::InfluenceDiagram)
     D = Vector{Node}()
     V = Vector{Node}()
     K = Vector{Tuple{Node,Node}}()
+    Pj = Vector{Tuple{Node,Node}}()
     Cs = Dict{Tuple{Node,Node},Float64}()
     # Declare helper collections
     indices = Dict{Name, Node}()
@@ -974,6 +973,9 @@ function generate_arcs!(diagram::InfluenceDiagram)
                     push!(K,(Node(indices[k]), index))
                     cost = filter(x -> x.arc[1]==k && x.arc[2] == j.name,diagram.Cost)
                     Cs[(indices[k],index)] = cost[1].cost
+                    if k in j.P_j
+                        push!(Pj,(Node(indices[k]), index))
+                    end
                 end
             end
             # Increase index
@@ -1005,11 +1007,11 @@ function generate_arcs!(diagram::InfluenceDiagram)
     diagram.D = D
     diagram.V = V
     diagram.K = K
+    diagram.Pj = Pj
     diagram.Cs = Cs
     # Declaring X and Y
     diagram.X = Vector{Probabilities}()
     diagram.Y = Vector{Utilities}()
-    diagram.Kp = Dict{Tuple{Node,Node},Vector{Float64}}()
 end
 
 
