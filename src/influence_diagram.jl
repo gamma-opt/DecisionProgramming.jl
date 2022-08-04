@@ -975,7 +975,7 @@ function generate_arcs!(diagram::InfluenceDiagram)
                     Cs[(indices[k],index)] = cost[1].cost
                 end
                 for r in j.P_j
-                    Pj[(Node(indices[r[1]]), index)] = r[2]
+                    Pj[(Node(indices[r[1]]), index)] = map(t -> indices[t],r[2])
                 end
             end
             # Increase index
