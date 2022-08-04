@@ -973,9 +973,9 @@ function generate_arcs!(diagram::InfluenceDiagram)
                     push!(K,(Node(indices[k]), index))
                     cost = filter(x -> x.arc[1]==k && x.arc[2] == j.name,diagram.Cost)
                     Cs[(indices[k],index)] = cost[1].cost
-                    if k in j.P_j
-                        Pj[(Node(indices[k[1]]), index)] = k[2]
-                    end
+                end
+                for r in j.P_j
+                    Pj[(Node(indices[r[1]]), index)] = r[2]
                 end
             end
             # Increase index
