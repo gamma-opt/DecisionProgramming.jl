@@ -442,10 +442,15 @@ function StateDependentAugmentedStateVariables(model::Model,
 
 
     # Create path compatibility variable for each effective path.
-    variables_x = Dict{Tuple{Node,Node}, Dict{Path,VariableRef}}(
-        s[1] => (j => information_structure_variable(model, (names ? "$(name)$(s)" : "")) for j in paths(diagram.S[s[2]]))
-        for s in diagram.Pj
-    )
+    variables_x = Dict{Tuple{Node,Node}, Dict{Path,VariableRef}}()
+
+    for s in diagram.Pj
+        d = Dict{Path,VariableRef}()
+        for j in paths(diagram.S[s[2]])
+            d[j] = information_structure_variable(model, (names ? "$(name)$(s)$(j)" : ""))
+        end
+        variables_x[s] = d
+    end
 
 
     # Add information constraints for each decision node
