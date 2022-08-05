@@ -4,7 +4,7 @@ struct InformationStructureVariables{N} <: AbstractDict{Tuple{Node,Node}, Variab
     data::Dict{Tuple{Node,Node}, VariableRef}
 end
 
-struct StateDependentInformationStructureVariables{N} <: AbstractDict{Tuple{Node,Node}, AbstractDict{{Tuple{Vararg{Int16,N}} where N},VariableRef}}
+struct StateDependentInformationStructureVariables{N} <: AbstractDict{Tuple{Node,Node}, AbstractDict{Path,VariableRef}}
     data::Dict{Tuple{Node,Node}, Dict{{Tuple{Vararg{Int16,N}} where N},VariableRef}}
 end
 
@@ -442,7 +442,7 @@ function StateDependentAugmentedStateVariables(model::Model,
 
 
     # Create path compatibility variable for each effective path.
-    variables_x = Dict{Tuple{Node,Node}, Dict{{Tuple{Vararg{Int16,N}} where N},VariableRef}}(
+    variables_x = Dict{Tuple{Node,Node}, Dict{Path,VariableRef}}(
         s[1] => (j => information_structure_variable(model, (names ? "$(name)$(s)" : "")), for j in paths(diagram.S[s[2]]))
         for s in diagram.Pj
     )
@@ -481,7 +481,7 @@ function augmented_state_constraints(model::Model, S::States, d::Node, I_d::Vect
     end
 end
 
-function state_dependent_augmented_state_constraints(model::Model, S::States, d::Node, I_d::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables, Pj::Dict{Tuple{Node,Node},Vector{Node}}, x_x::Dict{Tuple{Node,Node}, Dict{{Tuple{Vararg{Int16,N}} where N},VariableRef}})
+function state_dependent_augmented_state_constraints(model::Model, S::States, d::Node, I_d::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables, Pj::Dict{Tuple{Node,Node},Vector{Node}}, x_x::Dict{Tuple{Node,Node}, Dict{Path,VariableRef}})
 
     # states of nodes in information structure (s_d | s_I(d))
     dims = S[[I_d; d]]
