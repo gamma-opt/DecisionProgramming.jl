@@ -449,6 +449,8 @@ function StateDependentAugmentedStateVariables(model::Model,
         for j in paths(diagram.S[s[2]])
             d[j] = information_structure_variable(model, (names ? "$(name)$(s)$(j)" : ""))
         end
+        println(d)
+        println(typeof(d))
         variables_x[s] = d
     end
 
