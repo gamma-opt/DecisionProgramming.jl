@@ -5,7 +5,7 @@ struct InformationStructureVariables{N} <: AbstractDict{Tuple{Node,Node}, Variab
 end
 
 struct StateDependentInformationStructureVariables{N} <: AbstractDict{Tuple{Node,Node}, AbstractDict{Path,VariableRef}}
-    data::Dict{Tuple{Node,Node}, Dict{{Tuple{Vararg{Int16,N}} where N},VariableRef}}
+    data::Dict{Tuple{Node,Node}, Dict{Path,VariableRef}}
 end
 
 function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node},K::Vector{Tuple{Node,Node}},Pj::Dict{Tuple{Node,Node},Vector{Node}},augmented_states::Bool,binary::Bool, base_name::String="")
