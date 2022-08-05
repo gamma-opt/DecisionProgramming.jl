@@ -4,8 +4,8 @@ struct InformationStructureVariables{N} <: AbstractDict{Tuple{Node,Node}, Variab
     data::Dict{Tuple{Node,Node}, VariableRef}
 end
 
-struct StateDependentInformationStructureVariables{N} <: AbstractDict{Tuple{Node,Node}, VariableRef}
-    data::Dict{Tuple{Node,Node,States}, VariableRef}
+struct StateDependentInformationStructureVariables{N} <: AbstractDict{Tuple{Node,Node}, AbstractDict{{Tuple{Vararg{Int16,N}} where N},VariableRef}}
+    data::Dict{Tuple{Node,Node}, Dict{{Tuple{Vararg{Int16,N}} where N},VariableRef}}
 end
 
 function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node},K::Vector{Tuple{Node,Node}},Pj::Dict{Tuple{Node,Node},Vector{Node}},augmented_states::Bool,binary::Bool, base_name::String="")
@@ -285,6 +285,7 @@ function InformationConstraintVariables(model::Model,
     )
 
 
+
     # Add information constraints for each decision node
     for (d, z_d) in zip(z.D, z.z)
         information_constraints(model, diagram.S, d, diagram.I_j[d], z_d, x_s, diagram.K,variables_x)
@@ -425,10 +426,31 @@ function AugmentedStateVariables(model::Model,
         for s in diagram.K
     )
 
-
     # Add information constraints for each decision node
     for (d, z_d) in zip(z.D, z.z)
         augmented_state_constraints(model, diagram.S, d, diagram.I_j[d], z_d, x_s, diagram.K,variables_x)
+    end
+    return variables_x
+end
+
+function StateDependentAugmentedStateVariables(model::Model,
+    diagram::InfluenceDiagram,
+    z::DecisionVariables,
+    x_s::PathCompatibilityVariables;
+    names::Bool=false,
+    name::String="x")
+
+
+    # Create path compatibility variable for each effective path.
+    variables_x = Dict{Tuple{Node,Node}, Dict{{Tuple{Vararg{Int16,N}} where N},VariableRef}}(
+        s[1] => (j => information_structure_variable(model, (names ? "$(name)$(s)" : "")), for j in paths(diagram.S[s[2]]))
+        for s in diagram.Pj
+    )
+
+
+    # Add information constraints for each decision node
+    for (d, z_d) in zip(z.D, z.z)
+        #state_dependent_augmented_state_constraints(model, diagram.S, d, diagram.I_j[d], z_d, x_s, diagram.Pj,variables_x)
     end
     return variables_x
 end
@@ -450,6 +472,32 @@ function augmented_state_constraints(model::Model, S::States, d::Node, I_d::Vect
     augmented_paths = Iterators.filter(x -> x ∉ existing_paths, paths(dims_3))
 
     for k in filter(tup -> tup[2] == d, K)
+        indices = findall(y -> y == k[1] ,I_d)
+        dimensions = dims[indices[1]]
+        zero = Iterators.filter(x -> x[indices[1]] == dimensions + 1, augmented_paths)
+        non_zero = Iterators.filter(x -> x[indices[1]] < dimensions + 1, paths(dims_3))
+        @constraint(model,sum(z[s...] for s in non_zero) <= length(paths(dims_3))*x_x[k])
+        @constraint(model,sum(z[s...] for s in zero) <= length(paths(dims_3))*(1-x_x[k]))
+    end
+end
+
+function state_dependent_augmented_state_constraints(model::Model, S::States, d::Node, I_d::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables, Pj::Dict{Tuple{Node,Node},Vector{Node}}, x_x::Dict{Tuple{Node,Node}, Dict{{Tuple{Vararg{Int16,N}} where N},VariableRef}})
+
+    # states of nodes in information structure (s_d | s_I(d))
+    dims = S[[I_d; d]]
+    dims_3 = S[[I_d; d]]
+    # paths that have a corresponding path compatibility variable
+    existing_paths = paths(dims)
+    K_j = map(x -> x[1] , filter(x -> x[2] == d,K))
+    for i in K_j
+        indices = findall(x->x==i, I_d)
+        for j in indices
+            dims_3[j] = dims_3[j] + 1
+        end
+    end
+    augmented_paths = Iterators.filter(x -> x ∉ existing_paths, paths(dims_3))
+
+    for k in filter(tup -> tup[1][2] == d, Pj)
         indices = findall(y -> y == k[1] ,I_d)
         dimensions = dims[indices[1]]
         zero = Iterators.filter(x -> x[indices[1]] == dimensions + 1, augmented_paths)
