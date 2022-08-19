@@ -103,7 +103,7 @@ Construct the probability mass function for path utilities on paths that are com
 UtilityDistribution(diagram, Z)
 ```
 """
-function UtilityDistribution(diagram::InfluenceDiagram, Z::DecisionStrategy; x_x::Dict{Tuple{Node,Node},VariableRef} = Dict{Tuple{Node,Node},VariableRef}(), augmented_states::Bool = false, x_s::PathCompatibilityVariables = Dict{Path{N}, VariableRef}())
+function UtilityDistribution(diagram::InfluenceDiagram, Z::DecisionStrategy; x_x::Dict{Tuple{Node,Node},VariableRef} = Dict{Tuple{Node,Node},VariableRef}(), augmented_states::Bool = false,  x_s::PathCompatibilityVariables = Dict{Path, VariableRef}())
     # Extract utilities and probabilities of active paths
     if augmented_states
         S_Z = map(x -> x[1],Iterators.filter(x -> value.(x[2]) > 0, x_s))
@@ -227,6 +227,14 @@ function StateProbabilities(diagram::InfluenceDiagram, Z::DecisionStrategy)
     probs = Dict(i => zeros(diagram.S[i]) for i in 1:length(diagram.S))
     for s in CompatiblePaths(diagram, Z), i in 1:length(diagram.S)
         probs[i][s[i]] += diagram.P(s)
+    end
+    StateProbabilities(probs, Dict{Node, State}())
+end
+
+function StateProbabilities(diagram::InfluenceDiagram, Z::DecisionStrategy, x_s::PathCompatibilityVariables)
+    probs = Dict(i => zeros(diagram.S[i]) for i in 1:length(diagram.S))
+    for (s,x) in x_s, i in 1:length(diagram.S)
+        probs[i][s[i]] += value.(x)
     end
     StateProbabilities(probs, Dict{Node, State}())
 end

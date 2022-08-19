@@ -440,26 +440,27 @@ function StateDependentAugmentedStateVariables(model::Model,
     names::Bool=false,
     name::String="x")
 
+    variables_x = Dict{Tuple{Node,Node}, VariableRef}(
+        s => information_structure_variable(model, (names ? "$(name)$(s)" : ""))
+        for s in filter(k -> k ∉ keys(diagram.Pj) ,diagram.K)
+    )
 
     # Create path compatibility variable for each effective path.
-    variables_x = Dict{Tuple{Node,Node}, Dict{Path,VariableRef}}()
-
+    variables_xx = Dict{Tuple{Node,Node}, Dict{Path,VariableRef}}()
     for s in diagram.Pj
         d = Dict{Path,VariableRef}()
         for j in paths(diagram.S[s[2]])
-            d[j] = information_structure_variable(model, (names ? "$(name)$(s)$(j)" : ""))
+            d[j] = information_structure_variable(model, (names ? "$(name)$(s[1])$(j)" : ""))
         end
-        println(d)
-        println(typeof(d))
-        variables_x[s] = d
+        variables_xx[s[1]] = d
     end
 
 
     # Add information constraints for each decision node
     for (d, z_d) in zip(z.D, z.z)
-        #state_dependent_augmented_state_constraints(model, diagram.S, d, diagram.I_j[d], z_d, x_s, diagram.Pj,variables_x)
+        state_dependent_augmented_state_constraints(model, diagram.S, d, diagram.I_j[d], z_d, x_s,diagram.K, diagram.Pj,variables_x,variables_xx)
     end
-    return variables_x
+    return (variables_x,variables_xx)
 end
 
 function augmented_state_constraints(model::Model, S::States, d::Node, I_d::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables, K::Vector{Tuple{Node,Node}}, x_x::Dict{Tuple{Node,Node},VariableRef})
@@ -488,8 +489,7 @@ function augmented_state_constraints(model::Model, S::States, d::Node, I_d::Vect
     end
 end
 
-function state_dependent_augmented_state_constraints(model::Model, S::States, d::Node, I_d::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables, Pj::Dict{Tuple{Node,Node},Vector{Node}}, x_x::Dict{Tuple{Node,Node}, Dict{Path,VariableRef}})
-
+function state_dependent_augmented_state_constraints(model::Model, S::States, d::Node, I_d::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables, K::Vector{Tuple{Node,Node}}, Pj::Dict{Tuple{Node,Node},Vector{Node}}, x_x::Dict{Tuple{Node,Node},VariableRef}, x_xx::Dict{Tuple{Node,Node}, Dict{Path,VariableRef}})
     # states of nodes in information structure (s_d | s_I(d))
     dims = S[[I_d; d]]
     dims_3 = S[[I_d; d]]
@@ -504,13 +504,27 @@ function state_dependent_augmented_state_constraints(model::Model, S::States, d:
     end
     augmented_paths = Iterators.filter(x -> x ∉ existing_paths, paths(dims_3))
 
-    for k in filter(tup -> tup[1][2] == d, Pj)
+    for k in filter(tup -> tup[2] == d, K)
         indices = findall(y -> y == k[1] ,I_d)
         dimensions = dims[indices[1]]
-        zero = Iterators.filter(x -> x[indices[1]] == dimensions + 1, augmented_paths)
-        non_zero = Iterators.filter(x -> x[indices[1]] < dimensions + 1, paths(dims_3))
-        @constraint(model,sum(z[s...] for s in non_zero) <= length(paths(dims_3))*x_x[k])
-        @constraint(model,sum(z[s...] for s in zero) <= length(paths(dims_3))*(1-x_x[k]))
+        if k in keys(Pj)
+            indices2 = []
+            for b in Pj[k]
+                s = findall(y -> y == b ,I_d)
+                push!(indices2,s[1])
+            end
+            for i in paths(S[Pj[k]])
+                zero = Iterators.filter(x -> x[indices[1]] == dimensions + 1 && x[indices2] == i, augmented_paths)
+                non_zero = Iterators.filter(x -> x[indices[1]] < dimensions + 1 && x[indices2] == i, paths(dims_3))
+                @constraint(model,sum(z[s...] for s in non_zero) <= length(paths(dims_3))*x_xx[k][i])
+                @constraint(model,sum(z[s...] for s in zero) <= length(paths(dims_3))*(1-x_xx[k][i]))
+            end
+        else
+            zero = Iterators.filter(x -> x[indices[1]] == dimensions + 1, augmented_paths)
+            non_zero = Iterators.filter(x -> x[indices[1]] < dimensions + 1, paths(dims_3))
+            @constraint(model,sum(z[s...] for s in non_zero) <= length(paths(dims_3))*x_x[k])
+            @constraint(model,sum(z[s...] for s in zero) <= length(paths(dims_3))*(1-x_x[k]))
+        end
     end
 end
 
@@ -566,8 +580,22 @@ EV = expected_value(model, diagram, x_s,x_x)
 function expected_value(model::Model,
     diagram::InfluenceDiagram,
     x_s::PathCompatibilityVariables;
-    x_x::Dict{Tuple{Node,Node},VariableRef} = Dict{Tuple{Node,Node},VariableRef}())
-    @expression(model, sum(x * diagram.U(s, diagram.translation)  for (s, x) in x_s) - sum(diagram.Cs[k] * x for (k,x) in x_x )+ sum(0.000001 * x for (k,x) in x_x ))
+    x_x::Dict{Tuple{Node,Node},VariableRef} = Dict{Tuple{Node,Node},VariableRef}(),
+    x_xx::Dict{Tuple{Node,Node},Dict{Path,VariableRef}} = Dict{Tuple{Node,Node},Dict{Path,VariableRef}}())
+    @expression(model, sum(x * diagram.U(s, diagram.translation)  for (s, x) in x_s) - sum(diagram.P(s)/sum(diagram.P(s1) for (s1,x1) in x_s) * cost_of_path(s,diagram,x_xx) for (s, x) in x_s) - sum(diagram.Cs[k] * x for (k,x) in x_x )+ sum(0.000001 * x for (k,x) in x_x ))
+end
+
+function cost_of_path(s::Path,diagram::InfluenceDiagram,x_xx::Dict{Tuple{Node,Node},Dict{Path,VariableRef}})
+    cost = 0
+    for x in keys(x_xx)
+        nodes =diagram.Pj[x]
+        for i in keys(x_xx[x])
+            if s[nodes] ==  i
+                cost = cost + diagram.Cs[x] * x_xx[x][i]
+            end
+        end
+    end
+    cost
 end
 
 """
