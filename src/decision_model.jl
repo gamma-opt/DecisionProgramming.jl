@@ -309,9 +309,7 @@ function information_constraints(model::Model, S::States, d::Node, I_d::Vector{N
         for s_d_s_Id in paths(dims) # iterate through all information states and states of d
             # paths with (s_d | s_I(d)) information structure
             s_prime = filter(s -> s[d] != s_d_s_Id[first(d_index)] && s[Id_without_k] == s_d_s_Id[Id_index] && s[k[1]] != s_d_s_Id[first(k_index)], existing_paths)
-            for s in s_prime
-                @constraint(model, get(x_s, s, 0) <= 1 - z[s_d_s_Id...] + x_x[k])
-            end
+            @constraint(model, sum(get(x_s, s, 0) for s in s_prime) <= (length(s_prime)+1)*(1 - z[s_d_s_Id...] + x_x[k]))
         end
     end
 end
@@ -582,7 +580,7 @@ function expected_value(model::Model,
     x_s::PathCompatibilityVariables;
     x_x::Dict{Tuple{Node,Node},VariableRef} = Dict{Tuple{Node,Node},VariableRef}(),
     x_xx::Dict{Tuple{Node,Node},Dict{Path,VariableRef}} = Dict{Tuple{Node,Node},Dict{Path,VariableRef}}())
-    @expression(model, sum(x * diagram.U(s, diagram.translation)  for (s, x) in x_s) - sum(diagram.P(s)/sum(diagram.P(s1) for (s1,x1) in x_s) * cost_of_path(s,diagram,x_xx) for (s, x) in x_s) - sum(diagram.Cs[k] * x for (k,x) in x_x )+ sum(0.000001 * x for (k,x) in x_x ))
+    @expression(model, sum(x * diagram.U(s, diagram.translation)  for (s, x) in x_s) - sum(diagram.P(s)/sum(diagram.P(s1) for (s1,x1) in x_s) * cost_of_path(s,diagram,x_xx) for (s, x) in x_s) - sum(diagram.Cs[k] * x for (k,x) in x_x ))
 end
 
 function cost_of_path(s::Path,diagram::InfluenceDiagram,x_xx::Dict{Tuple{Node,Node},Dict{Path,VariableRef}})
