@@ -94,7 +94,7 @@ struct UtilityDistribution
 end
 
 """
-    UtilityDistribution(diagram::InfluenceDiagram, Z::DecisionStrategy, x_x::Dict{Tuple{Node,Node},VariableRef})
+    UtilityDistribution(diagram::InfluenceDiagram, Z::DecisionStrategy, x_x::Dict{Tuple{Node,Node},VariableRef} = Dict{Tuple{Node,Node},VariableRef}())
 
 Construct the probability mass function for path utilities on paths that are compatible with given decision strategy.
 
@@ -103,24 +103,55 @@ Construct the probability mass function for path utilities on paths that are com
 UtilityDistribution(diagram, Z)
 ```
 """
-function UtilityDistribution(diagram::InfluenceDiagram, Z::DecisionStrategy; x_x::Dict{Tuple{Node,Node},VariableRef} = Dict{Tuple{Node,Node},VariableRef}(), augmented_states::Bool = false,  x_s::PathCompatibilityVariables = Dict{Path, VariableRef}())
+function UtilityDistribution(diagram::InfluenceDiagram, Z::DecisionStrategy; x_x::Dict{Tuple{Node,Node},VariableRef} = Dict{Tuple{Node,Node},VariableRef}())
     # Extract utilities and probabilities of active paths
-    if augmented_states
-        S_Z = map(x -> x[1],Iterators.filter(x -> value.(x[2]) > 0, x_s))
-    else
-        S_Z = CompatiblePaths(diagram, Z)
-    end
+    S_Z = CompatiblePaths(diagram, Z)
     utilities = Vector{Float64}(undef, length(S_Z))
     probabilities = Vector{Float64}(undef, length(S_Z))
     for (i, s) in enumerate(S_Z)
-        if isempty(x_x)
-            utilities[i] = diagram.U(s)
-        else
-            utilities[i] = diagram.U(s) - sum(diagram.Cs[c] * value.(x_x[c]) for c in keys(x_x))
+        cost = 0
+        if !isempty(x_x)
+            cost += sum(diagram.Cs[c] * value.(x_x[c]) for c in keys(x_x))
         end
+        utilities[i] = diagram.U(s) - cost
         probabilities[i] = diagram.P(s)
     end
+    (u2,p2) = probability_mass_functions(probabilities,utilities)
+    UtilityDistribution(u2, p2)
+end
 
+"""
+AugmentedUtilityDistribution(diagram::InfluenceDiagram, Z::DecisionStrategy,  x_s::PathCompatibilityVariables; x_x::Dict{Tuple{Node,Node},VariableRef} = Dict{Tuple{Node,Node},VariableRef}(),x_xx::Dict{Tuple{Node,Node},Dict{Path,VariableRef}} = Dict{Tuple{Node,Node},Dict{Path,VariableRef}}())
+
+Construct the probability mass function for path utilities on paths that are compatible with given decision strategy. Used when constraints on augmented states are present.
+
+# Examples
+```julia
+UtilityDistribution(diagram, Z, x_s)
+```
+"""
+
+function AugmentedUtilityDistribution(diagram::InfluenceDiagram, Z::DecisionStrategy,  x_s::PathCompatibilityVariables; x_x::Dict{Tuple{Node,Node},VariableRef} = Dict{Tuple{Node,Node},VariableRef}(),x_xx::Dict{Tuple{Node,Node},Dict{Path,VariableRef}} = Dict{Tuple{Node,Node},Dict{Path,VariableRef}}())
+    # Extract utilities and probabilities of active paths
+    S_Z = map(x -> x[1],Iterators.filter(x -> value.(x[2]) > 0, x_s))
+    utilities = Vector{Float64}(undef, length(S_Z))
+    probabilities = Vector{Float64}(undef, length(S_Z))
+    for (i, s) in enumerate(S_Z)
+        cost = 0
+        if !isempty(x_x)
+            cost += sum(diagram.Cs[c] * value.(x_x[c]) for c in keys(x_x))
+        end
+        if !isempty(x_xx)
+            cost += path_cost(s,diagram,x_xx)
+        end
+        utilities[i] = diagram.U(s) - cost
+        probabilities[i] = diagram.P(s)
+    end
+    (u2,p2) = probability_mass_functions(probabilities,utilities)
+    UtilityDistribution(u2, p2)
+end
+
+function probability_mass_functions(probabilities::Vector{Float64}, utilities::Vector{Float64})
     # Filter zero probabilities
     nonzero = @. (!)(iszero(probabilities))
     utilities = utilities[nonzero]
@@ -144,8 +175,20 @@ function UtilityDistribution(diagram::InfluenceDiagram, Z::DecisionStrategy; x_x
             p2[j] = p[k]
         end
     end
+    return (u2,p2)
+end
 
-    UtilityDistribution(u2, p2)
+function path_cost(s::Path,diagram::InfluenceDiagram,x_xx::Dict{Tuple{Node,Node},Dict{Path,VariableRef}})
+    cost = 0
+    for x in keys(x_xx)
+        nodes =diagram.Pj[x]
+        for i in keys(x_xx[x])
+            if s[nodes] ==  i
+                cost = cost + diagram.Cs[x] * value.(x_xx[x][i])
+            end
+        end
+    end
+    cost
 end
 
 """

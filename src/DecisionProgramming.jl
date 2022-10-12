@@ -61,6 +61,7 @@ export random_diagram!,
 
 export CompatiblePaths,
     UtilityDistribution,
+    AugmentedUtilityDistribution,
     StateProbabilities,
     value_at_risk,
     conditional_value_at_risk
@@ -69,7 +70,8 @@ export print_decision_strategy,
     print_utility_distribution,
     print_state_probabilities,
     print_statistics,
-    print_risk_measures
+    print_risk_measures,
+    print_information_structure
 
 # For API docs
 export AbstractRNG, Model, VariableRef

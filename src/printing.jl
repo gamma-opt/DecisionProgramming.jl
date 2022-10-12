@@ -18,7 +18,7 @@ Print decision strategy.
 print_decision_strategy(diagram, Z, S_probabilities)
 ```
 """
-function print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy, state_probabilities::StateProbabilities; show_incompatible_states::Bool = false, augmented_states::Bool = false, x_s::PathCompatibilityVariables = Dict{Path, VariableRef}())
+function print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy, state_probabilities::StateProbabilities; show_incompatible_states::Bool = false, augmented_states::Bool = false)
     probs = state_probabilities.probs
     for (d, I_d, Z_d) in zip(Z.D, Z.I_d, Z.Z_d)
         if augmented_states
@@ -41,21 +41,7 @@ function print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy,
         if !isempty(I_d)
             if augmented_states
                 informations_states = [join([(s_i > diagram.S[i] ? "0" : String(diagram.States[i][s_i])) for (i, s_i) in zip(I_d, s)], ", ") for s in s_I]
-                if isempty(x_s)
-                    decision_probs = [ceil(prod(s1 > diagram.S[i] ? sum(probs[i]) : probs[i][s1] for (i, s1) in zip(I_d, s))) for s in s_I]
-                else
-                    decision_probs = zeros(length(s_I))
-                    j = 1
-                    x_ss = [value.(x) > 0 ? s[I_d] : "-" for (s,x) in x_s]
-                    x_ss = filter(x -> x != "-",x_ss)
-                    for s in s_I
-                        indices = filter(i -> s[i] <= diagram.S[I_d[i]],collect(1:length(s)))
-                        x_ss2 = map(x -> x[indices],x_ss)
-                        s2 = s[indices]
-                        decision_probs[j] = s2 ∈ x_ss2 ? 1 : 0
-                        j = j+1
-                    end
-                end
+                decision_probs = [ceil(prod(s1 > diagram.S[i] ? sum(probs[i]) : probs[i][s1] for (i, s1) in zip(I_d, s))) for s in s_I]
             else
                 informations_states = [join([String(diagram.States[i][s_i]) for (i, s_i) in zip(I_d, s)], ", ") for s in s_I]
                 decision_probs = [ceil(prod(probs[i][s1] for (i, s1) in zip(I_d, s))) for s in s_I]
@@ -72,6 +58,66 @@ function print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy,
         end
     end
 end
+
+"""
+    print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy, state_probabilities::StateProbabilities; show_incompatible_states::Bool = false, augmented_states::Bool)
+
+Print decision strategy.
+
+# Arguments
+- `diagram::InfluenceDiagram`: Influence diagram structure.
+- `Z::DecisionStrategy`: Decision strategy structure with optimal decision strategy.
+- `state_probabilities::StateProbabilities`: State probabilities structure corresponding to optimal decision strategy.
+- `show_incompatible_states::Bool`: Choice to print rows also for incompatible states.
+- `augmented_states::Bool`: If information structure constraints on augmented states are used, this must be true
+
+# Examples
+```julia
+print_decision_strategy(diagram, Z, S_probabilities)
+```
+"""
+function print_information_structure(diagram::InfluenceDiagram, x_x::Dict{Tuple{Node,Node},VariableRef};x_xx::Dict{Tuple{Node,Node},Dict{Path,VariableRef}} = Dict{Tuple{Node,Node},Dict{Path,VariableRef}}())
+        information_structure = []
+        cost = []
+        if isempty(x_xx)
+            for k in keys(x_x)
+                if value.(x_x[k]) > 0
+                    push!(information_structure,"$(diagram.Nodes[k[1]].name) --> $(diagram.Nodes[k[2]].name)")
+                    push!(cost,diagram.Cs[k])
+                end
+            end
+            df = DataFrame(information_structure = information_structure, cost = cost)
+            pretty_table(df, header = ["Arc", "Cost"], alignment=:l)
+        else
+            conditioning_nodes = []
+            paths = []
+            for k in keys(x_x)
+                if value.(x_x[k]) > 0
+                    push!(information_structure,"$(diagram.Nodes[k[1]].name) --> $(diagram.Nodes[k[2]].name)")
+                    push!(cost,diagram.Cs[k])
+                    push!(conditioning_nodes,"--")
+                    push!(paths,"--")
+                end
+            end
+            for k in keys(x_xx)
+                path = []
+                for b in keys(x_xx[k])
+                    if value.(x_xx[k][b]) > 0
+                        push!(path,join([diagram.States[n][s] for (n,s) in zip(diagram.Pj[k],b)],", "))
+                    end
+                end
+                if !isempty(path)
+                    push!(information_structure,"$(diagram.Nodes[k[1]].name) --> $(diagram.Nodes[k[2]].name)")
+                    push!(cost,diagram.Cs[k])
+                    push!(conditioning_nodes,join([diagram.Names[i] for i in diagram.Pj[k]], ", "))
+                    push!(paths,join([i for i in path]," or "))
+                end
+            end
+            df = DataFrame(information_structure = information_structure, cost = cost, nodes = conditioning_nodes, paths = paths)
+            pretty_table(df, header = ["Arc", "Cost","If nodes...","...are in states"], alignment=:l)
+        end
+end
+
 
 """
     print_utility_distribution(U_distribution::UtilityDistribution; util_fmt="%f", prob_fmt="%f")
