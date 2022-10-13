@@ -277,7 +277,7 @@ end
 function StateProbabilities(diagram::InfluenceDiagram, Z::DecisionStrategy, x_s::PathCompatibilityVariables)
     probs = Dict(i => zeros(diagram.S[i]) for i in 1:length(diagram.S))
     for (s,x) in x_s, i in 1:length(diagram.S)
-        probs[i][s[i]] += value.(x)
+        probs[i][s[i]] += diagram.P(s) * value.(x)
     end
     StateProbabilities(probs, Dict{Node, State}())
 end

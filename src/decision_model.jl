@@ -81,7 +81,7 @@ function path_compatibility_variable(model::Model, p_s::Float64, base_name::Stri
     x = @variable(model, base_name=base_name)
 
     # Constraint on the lower and upper bounds.
-    @constraint(model, 0 ≤ x ≤ p_s)
+    @constraint(model, 0 ≤ x ≤ 1)
 
 
     return x
@@ -107,7 +107,7 @@ Base.iterate(x_s::PathCompatibilityVariables) = iterate(x_s.data)
 Base.iterate(x_s::PathCompatibilityVariables, i) = iterate(x_s.data, i)
 
 
-function decision_strategy_constraint(model::Model, S::States, d::Node, I_d::Vector{Node}, D::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables, upper_bound::Bool, K::Vector{Tuple{Node,Node}}, augmented_states::Bool)
+function decision_strategy_constraint(model::Model, S::States, d::Node, I_d::Vector{Node}, D::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables, K::Vector{Tuple{Node,Node}}, augmented_states::Bool)
 
     # states of nodes in information structure (s_d | s_I(d))
     dims = S[[I_d; d]]
@@ -126,26 +126,15 @@ function decision_strategy_constraint(model::Model, S::States, d::Node, I_d::Vec
     for s_d_s_Id in paths(S[[I_d; d]]) # iterate through all information states and states of d
         # paths with (s_d | s_I(d)) information structure
         feasible_paths = filter(s -> s[[I_d; d]] == s_d_s_Id, existing_paths)
-        if upper_bound
-            if augmented_states
-                augmented_paths = Iterators.filter(x -> x ∉ paths(S[[I_d; d]]), paths(dims))
-                feasible_augmented_paths = Iterators.filter(s -> all((s_d_s_Id.==s) .| (s .== (S[[I_d;d]] .+ 1))),augmented_paths)
-                @constraint(model, sum(get(x_s, s, 0) for s in feasible paths)  ≤ (z[s_d_s_Id...] + sum(z[s...] for s in feasible_augmented_paths)) * min(length(feasible_paths), theoretical_ub))
-
-            else
-                @constraint(model, sum(get(x_s, s, 0) for s in feasible paths) ≤ z[s_d_s_Id...] * min(length(feasible_paths), theoretical_ub))
+        if augmented_states
+            augmented_paths = Iterators.filter(x -> x ∉ paths(S[[I_d; d]]), paths(dims))
+            feasible_augmented_paths = Iterators.filter(s -> all((s_d_s_Id.==s) .| (s .== (S[[I_d;d]] .+ 1))),augmented_paths)
+            if !isempty(feasible_paths)
+                @constraint(model, sum(get(x_s, s, 0) for s in feasible_paths)<= length(feasible_paths) *(z[s_d_s_Id...] + sum(z[s...] for s in feasible_augmented_paths)))
             end
         else
-            if augmented_states
-                augmented_paths = Iterators.filter(x -> x ∉ paths(S[[I_d; d]]), paths(dims))
-                feasible_augmented_paths = Iterators.filter(s -> all((s_d_s_Id.==s) .| (s .== (S[[I_d;d]] .+ 1))),augmented_paths)
-                if !isempty(feasible_paths)
-                    @constraint(model, sum(get(x_s, s, 0) for s in feasible_paths)<= length(feasible_paths) *(z[s_d_s_Id...] + sum(z[s...] for s in feasible_augmented_paths)))
-                end
-            else
-               if !isempty(feasible_paths)
-                    @constraint(model, sum(get(x_s, s, 0) for s in feasible_paths)<= length(feasible_paths) * z[s_d_s_Id...])
-                end
+            if !isempty(feasible_paths)
+                @constraint(model, sum(get(x_s, s, 0) for s in feasible_paths)<= length(feasible_paths) * z[s_d_s_Id...])
             end
         end
     end
@@ -193,7 +182,6 @@ function PathCompatibilityVariables(model::Model,
     fixed::FixedPath=Dict{Node, State}(),
     probability_cut::Bool=true,
     probability_scale_factor::Float64=1.0,
-    upper_bound::Bool = false,
     augmented_states::Bool = false)
 
     if probability_scale_factor ≤ 0
@@ -216,7 +204,7 @@ function PathCompatibilityVariables(model::Model,
 
     # Add decision strategy constraints for each decision node
     for (d, z_d) in zip(z.D, z.z)
-        decision_strategy_constraint(model, diagram.S, d, diagram.I_j[d], z.D, z_d, x_s,upper_bound,diagram.K,augmented_states)
+        decision_strategy_constraint(model, diagram.S, d, diagram.I_j[d], z.D, z_d, x_s,diagram.K,augmented_states)
     end
 
     if probability_cut
