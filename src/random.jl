@@ -117,6 +117,12 @@ function random_diagram!(rng::AbstractRNG, diagram::InfluenceDiagram, n_C::Int, 
     diagram.P = DefaultPathProbability(diagram.C, diagram.I_j[diagram.C], diagram.X)
     diagram.U = DefaultPathUtility(diagram.I_j[diagram.V], diagram.Y)
 
+    # TODO: Add random generation of these instances
+    diagram.K = []
+    diagram.Pj = Dict{Tuple{Int16, Int16}, Vector{Int16}}()
+    diagram.Cost = []
+    diagram.Cs = Dict{Tuple{Node,Node},Float64}()
+
     return diagram
 end
 
