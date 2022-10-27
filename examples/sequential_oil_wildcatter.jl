@@ -68,12 +68,6 @@ EV = expected_value(model, diagram, x_s,x_x = x_x, x_xx = x_xx)
 @constraint(model,x_xx[(3,5)][(2,)] + x_xx[(2,5)][(2,)] <= 1 + x_x[(2,4)] + x_x[(3,4)])
 @constraint(model,x_xx[(3,5)][(1,)] + x_xx[(2,5)][(1,)] <= 1 + x_x[(2,4)] + x_x[(3,4)])
 for (d, z_d) in zip(z.D, z.z)
-    id = 1
-    for zd in z_d
-        println(zd)
-        println(id)
-        id = id + 1
-    end
     if d == 5
         @constraint(model, z_d[10] == 0)
         @constraint(model, z_d[11] == 0)
@@ -95,7 +89,6 @@ for (d, z_d) in zip(z.D, z.z)
         @constraint(model, z_d[36] == 0)
     end
 end
-println(z.z[1][1])
 
 @objective(model, Max, EV)
 optimizer = optimizer_with_attributes(
