@@ -82,7 +82,7 @@ for f in 1:length(fitr)
         model3 = Model()
         z = DecisionVariables(model3, diagram, names=true, name = "z")
         x_s = PathCompatibilityVariables(model3, diagram, z, names=true, name = "s", probability_cut = false)
-        x_x = InformationConstraintVariables(model3,diagram,z,x_s,names=true,name="x")
+        x_x = ConstraintsOnLocalDecisions(model3,diagram,z,x_s,names=true,name="x")
         EV = expected_value(model3, diagram, x_s,x_x = x_x)
         @objective(model3, Max, EV)
 

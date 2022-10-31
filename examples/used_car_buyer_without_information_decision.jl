@@ -47,7 +47,7 @@ generate_diagram!(diagram, positive_path_utility = true)
 model = Model()
 z = DecisionVariables(model, diagram, names=true, name = "z")
 x_s = PathCompatibilityVariables(model, diagram, z, names=true, name = "s", probability_cut = false)
-x_x = InformationConstraintVariables(model,diagram,z,x_s,names=true,name="x")
+x_x = ConstraintsOnLocalDecisions(model,diagram,z,x_s,names=true,name="x")
 EV = expected_value(model, diagram, x_s,x_x = x_x)
 @objective(model, Max, EV)
 

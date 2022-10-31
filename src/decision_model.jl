@@ -215,7 +215,7 @@ function PathCompatibilityVariables(model::Model,
 end
 
 """
-    InformationConstraintVariables(model::Model,
+ConstraintsOnPathProbabilities(model::Model,
         diagram::InfluenceDiagram,
         z::DecisionVariables,
         x_s::PathCompatibilityVariables;
@@ -234,11 +234,11 @@ Create information structure constraints for path probabilities.
 
 # Examples
 ```julia
-    x_x = InformationConstraintVariables(model, diagram, z, x_s, names=true, name="x")
+    x_x = ConstraintsOnPathProbabilities(model, diagram, z, x_s, names=true, name="x")
 ```
 """
 
-function InformationConstraintVariables(model::Model,
+function ConstraintsOnPathProbabilities(model::Model,
     diagram::InfluenceDiagram,
     z::DecisionVariables,
     x_s::PathCompatibilityVariables;
@@ -256,12 +256,12 @@ function InformationConstraintVariables(model::Model,
 
     # Add information constraints for each decision node
     for (d, z_d) in zip(z.D, z.z)
-        information_constraints(model, diagram.S, d, diagram.I_j[d], z_d, x_s, diagram.K,variables_x)
+        path_probability_constraints(model, diagram.S, d, diagram.I_j[d], z_d, x_s, diagram.K,variables_x)
     end
     return variables_x
 end
 
-function information_constraints(model::Model, S::States, d::Node, I_d::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables, K::Vector{Tuple{Node,Node}}, x_x::Dict{Tuple{Node,Node},VariableRef})
+function path_probability_constraints(model::Model, S::States, d::Node, I_d::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables, K::Vector{Tuple{Node,Node}}, x_x::Dict{Tuple{Node,Node},VariableRef})
     # states of nodes in information structure (s_d | s_I(d))
     for k in filter(tup -> tup[2] == d, K)
         nodes = [I_d;d]
@@ -283,7 +283,7 @@ function information_constraints(model::Model, S::States, d::Node, I_d::Vector{N
 end
 
 """
-DecisionConstraintVariables(model::Model,
+ConstraintsOnLocalDecisions(model::Model,
         diagram::InfluenceDiagram,
         z::DecisionVariables,
         x_s::PathCompatibilityVariables;
@@ -302,11 +302,11 @@ Create information structure constraints for local decisions.
 
 # Examples
 ```julia
-    x_x = DecisionConstraintVariables(model, diagram, z, x_s, names=true, name="x")
+    x_x = ConstraintsOnLocalDecisions(model, diagram, z, x_s, names=true, name="x")
 ```
 """
 
-function DecisionConstraintVariables(model::Model,
+function ConstraintsOnLocalDecisions(model::Model,
     diagram::InfluenceDiagram,
     z::DecisionVariables,
     x_s::PathCompatibilityVariables;
@@ -328,12 +328,12 @@ function DecisionConstraintVariables(model::Model,
 
     # Add information constraints for each decision node
     for (d, z_d) in zip(z.D, z.z)
-        decision_path_constraints(model, diagram.S, d, diagram.I_j[d], z_d, x_s, diagram.K, variables_x)
+        local_decision_constraints(model, diagram.S, d, diagram.I_j[d], z_d, x_s, diagram.K, variables_x)
     end
     return variables_x
 end
 
-function decision_path_constraints(model::Model, S::States, d::Node, I_d::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables, K::Vector{Tuple{Node,Node}}, x_x::Dict{Tuple{Node,Node},VariableRef})
+function local_decision_constraints(model::Model, S::States, d::Node, I_d::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables, K::Vector{Tuple{Node,Node}}, x_x::Dict{Tuple{Node,Node},VariableRef})
     # states of nodes in information structure (s_d | s_I(d))
     for k in filter(tup -> tup[2] == d, K)
         nodes = [I_d;d]
@@ -372,7 +372,7 @@ Create information structure constraints for augmented states.
 
 # Examples
 ```julia
-    x_x = InformationConstraintVariables(model, diagram, z, x_s, names=true, name="x")
+    x_x = ConstraintsOnPathProbabilities(model, diagram, z, x_s, names=true, name="x")
 ```
 """
 
@@ -418,7 +418,7 @@ Create state dependent information structure constraints for augmented states.
 
 # Examples
 ```julia
-    (x_x,x_xx) = InformationConstraintVariables(model, diagram, z, x_s, names=true, name="x")
+    (x_x,x_xx) = ConstraintsOnPathProbabilities(model, diagram, z, x_s, names=true, name="x")
 ```
 """
 
