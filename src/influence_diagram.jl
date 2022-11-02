@@ -301,10 +301,12 @@ struct DefaultPathProbability <: AbstractPathProbability
     I_c::Vector{Vector{Node}}
     X::Vector{Probabilities}
     function DefaultPathProbability(C, I_c, X)
-        if length(C) == length(I_c)
-            new(C, I_c, X)
-        else
+        if length(C) != length(I_c)
             throw(DomainError("The number of chance nodes and information sets given to DefaultPathProbability should be equal."))
+        elseif length(C) != length(X)
+            throw(DomainError("The number of chance nodes and probability matrices given to DefaultPathProbability should be equal."))
+        else
+            new(C, I_c, X)
         end
     end
 
