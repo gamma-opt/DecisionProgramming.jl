@@ -52,7 +52,7 @@ function randomStrategy(diagram::InfluenceDiagram)
 end
 
 
-function findBestStrategy(diagram, j, s_Ij, S_active, model)
+function findBestStrategy(diagram, j, s_Ij, S_active, model, EU)
     # Check that the model is either a minimization or maximization problem
     if objective_sense(model) == MOI.MIN_SENSE
         bestsofar = (Inf, 0, [])
@@ -66,16 +66,16 @@ function findBestStrategy(diagram, j, s_Ij, S_active, model)
     for s_j in 1:num_states(diagram,diagram.Names[j])
         # Get the expected value corresponding to a strategy where the information state s_Ij maps to s_j 
         # and the strategy stays otherwise the same. Note that the strategy is represented by the active paths.
-        EU, S_active = get_value(diagram, S_active, j, s_j, s_Ij)
+        EU, S_active = get_value(diagram, S_active, j, s_j, s_Ij, EU)
 
         # Update the best value so far
         if objective_sense(model) == MOI.MIN_SENSE
             if EU <= bestsofar[1]
-                bestsofar = (EU, s_j, S_active)
+                bestsofar = (EU, s_j, copy(S_active))
             end
         else #objective_sense(model) == MOI.MAX_SENSE
             if EU >= bestsofar[1]
-                bestsofar = (EU, s_j, S_active)
+                bestsofar = (EU, s_j, copy(S_active))
             end
         end
     end
@@ -83,24 +83,23 @@ function findBestStrategy(diagram, j, s_Ij, S_active, model)
 end
 
 
-function get_value(diagram, S_active, j, s_j, s_Ij)
+function get_value(diagram, S_active, j, s_j, s_Ij, EU)
     I_j = diagram.I_j[j] # Information set of node j
-
     # Loop through all compatible paths and update the ones that correspond to the given information state s_Ij
+    # and update the expected utility whenever a path is updated
     for (k, s) in enumerate(S_active)
         if s[I_j] == s_Ij
+            EU -= diagram.P(s)*diagram.U(s)
             s_new = [s_j for s_j in s]
             s_new[j] = s_j
             s_new = Tuple(s_new)
             S_active[k] = s_new
+            EU += diagram.P(s_new)*diagram.U(s_new)
         end
     end
 
-    #Calculate the expected utility corresponding to this strategy
-    EU = 0
-    for s in S_active
-        EU += diagram.P(s)*diagram.U(s)
-    end
+    return EU, S_active
+end
 
 function set_MIP_start(diagram, Z, S_active, z, x_s)
     for (k,j) in enumerate(Z.D)
@@ -109,7 +108,7 @@ function set_MIP_start(diagram, Z, S_active, z, x_s)
                 set_start_value(z.z[k][s_Ij..., Z.Z_d[k](s_Ij)], 1)
                 # println(start_value(z.z[j][s_Ij..., s_j]))
         end
-end
+    end
 
     for s in S_active
         # println(x_s[s])
@@ -169,10 +168,10 @@ function singlePolicyUpdate(diagram::InfluenceDiagram, model::Model, z::Decision
                 end
 
                 # Find the best decision alternative s_j for information state s_Ij
-                s_j, bestval, S_active = findBestStrategy(diagram, j, s_Ij, S_active, model)
+                s_j, bestval, S_active = findBestStrategy(diagram, j, s_Ij, S_active, model, EU)
                 
                 # If the strategy improved, save the new strategy and its expected utility
-                if bestval > EU
+                if (objective_sense(model) == MOI.MIN_SENSE && bestval < EU-1E-9) || (objective_sense(model) == MOI.MAX_SENSE && bestval > EU+1E-9)
                     lastchange = (j, s_Ij)
                     localstrategy = strategy.Z_d[idx].data
                     localstrategy[s_Ij..., :] .= 0
