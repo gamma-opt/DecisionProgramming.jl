@@ -1,10 +1,8 @@
-using Dates
-
 """
     randomStrategy(diagram::InfluenceDiagram)
 
-Generates a random decision strategy for the problem and also returns the expected utility of the strategy
-and the paths that are compatible with the strategy.
+Generates a random decision strategy for the problem. Returns the strategy as well as 
+the expected utility of the strategy and the paths that are compatible with the strategy.
 
 # Arguments
 - `diagram::InfluenceDiagram`: Influence diagram structure.
@@ -23,7 +21,7 @@ function randomStrategy(diagram::InfluenceDiagram)
     # Z_d = Vector{LocalDecisionStrategy}[] # Doesn't work for some reason...
     Z_d = []
 
-    # Loop through all decision nodes to obtain their local decision strategies
+    # Loop through all decision nodes and set local decision strategies
     for j in diagram.D
         I_j = diagram.I_j[j]
 
@@ -44,10 +42,8 @@ function randomStrategy(diagram::InfluenceDiagram)
     S_active = CompatiblePaths(diagram, Z)
 
     # Calculate the expected utility corresponding to the strategy
-    EU = 0
-    for s in S_active
-        EU += diagram.P(s)*diagram.U(s)
-    end
+    EU = sum(diagram.P(s)*diagram.U(s) for s in S_active)
+
     return EU, Z, collect(S_active)
 end
 
@@ -55,9 +51,9 @@ end
 function findBestStrategy(diagram, j, s_Ij, S_active, model, EU)
     # Check that the model is either a minimization or maximization problem
     if objective_sense(model) == MOI.MIN_SENSE
-        bestsofar = (Inf, 0, [])
+        bestsofar = (0, Inf, [])
     elseif objective_sense(model) == MOI.MAX_SENSE
-        bestsofar = (-Inf, 0, [])
+        bestsofar = (0, -Inf, [])
     else
         throw("The given model is not a maximization or minimization problem.")
     end
@@ -66,20 +62,20 @@ function findBestStrategy(diagram, j, s_Ij, S_active, model, EU)
     for s_j in 1:num_states(diagram,diagram.Names[j])
         # Get the expected value corresponding to a strategy where the information state s_Ij maps to s_j 
         # and the strategy stays otherwise the same. Note that the strategy is represented by the active paths.
-        EU, S_active = get_value(diagram, S_active, j, s_j, s_Ij, EU)
+        EU_new, S_active_new = get_value(diagram, S_active, j, s_j, s_Ij, EU)
 
         # Update the best value so far
         if objective_sense(model) == MOI.MIN_SENSE
-            if EU <= bestsofar[1]
-                bestsofar = (EU, s_j, copy(S_active))
+            if EU_new <= bestsofar[2]
+                bestsofar = (s_j, EU_new, S_active_new)
             end
         else #objective_sense(model) == MOI.MAX_SENSE
-            if EU >= bestsofar[1]
-                bestsofar = (EU, s_j, copy(S_active))
+            if EU_new >= bestsofar[2]
+                bestsofar = (s_j, EU_new, S_active_new)
             end
         end
     end
-    return bestsofar[2], bestsofar[1], bestsofar[3]
+    return bestsofar
 end
 
 
@@ -87,33 +83,30 @@ function get_value(diagram, S_active, j, s_j, s_Ij, EU)
     I_j = diagram.I_j[j] # Information set of node j
     # Loop through all compatible paths and update the ones that correspond to the given information state s_Ij
     # and update the expected utility whenever a path is updated
+    S_active_new = copy(S_active)
     for (k, s) in enumerate(S_active)
         if s[I_j] == s_Ij
             EU -= diagram.P(s)*diagram.U(s)
             s_new = [s_j for s_j in s]
             s_new[j] = s_j
             s_new = Tuple(s_new)
-            S_active[k] = s_new
+            S_active_new[k] = s_new
             EU += diagram.P(s_new)*diagram.U(s_new)
         end
     end
 
-    return EU, S_active
+    return EU, S_active_new
 end
 
 function set_MIP_start(diagram, Z, S_active, z, x_s)
     for (k,j) in enumerate(Z.D)
         for s_Ij in paths(diagram.S[Z.I_d[k]])
-                # println(z.z[j][s_Ij..., s_j])
                 set_start_value(z.z[k][s_Ij..., Z.Z_d[k](s_Ij)], 1)
-                # println(start_value(z.z[j][s_Ij..., s_j]))
         end
     end
 
     for s in S_active
-        # println(x_s[s])
         set_start_value(x_s[s], 1)
-        # println(start_value(x_s[s]))
     end
 end
 
@@ -140,7 +133,7 @@ solutionhistory = singlePolicyUpdate(diagram, model)
 ```
 """
 function singlePolicyUpdate(diagram::InfluenceDiagram, model::Model, z::DecisionVariables, x_s::PathCompatibilityVariables)
-    t1 = now() # Start time
+    t1 = time_ns() # Start time
 
     # Initialize empty values
     solutionhistory = [] 
@@ -148,7 +141,7 @@ function singlePolicyUpdate(diagram::InfluenceDiagram, model::Model, z::Decision
 
     # Get an initial (random) solution
     EU, strategy, S_active = randomStrategy(diagram)
-    push!(solutionhistory, (EU, Dates.value(now()-t1), deepcopy(strategy)))
+    push!(solutionhistory, (EU, (time_ns()-t1)/1E6, deepcopy(strategy)))
 
     # In principle, this always converges, but we set a maximum number of iterations anyway to avoid very long solution times
     for iter in 1:20
@@ -178,14 +171,13 @@ function singlePolicyUpdate(diagram::InfluenceDiagram, model::Model, z::Decision
                     localstrategy[s_Ij..., s_j] = 1
                     strategy.Z_d[idx] = LocalDecisionStrategy(j, localstrategy)
                     EU = bestval
-                    push!(solutionhistory, (EU, Dates.value(now()-t1), deepcopy(strategy)))
+                    push!(solutionhistory, (EU, (time_ns()-t1)/1E6, deepcopy(strategy)))
                 end
             end
         end
     end
-    
-    # TODO: set start values in the model
 
+    # Set the best found solution as the MIP start to the model
     set_MIP_start(diagram, solutionhistory[end][3], S_active, z, x_s)
 
     return solutionhistory
