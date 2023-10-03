@@ -55,6 +55,9 @@ The motivation for using the minimum of these bounds is that it depends on the p
 ## Lazy Probability Cut
 Constraint $(6)$ is a complicating constraint involving all path compatibility variables $x(s)$ and thus adding it directly to the model may slow down the overall solution process. It may be beneficial to instead add it as a *lazy constraint*. In the solver, a lazy constraint is only generated when an incumbent solution violates it. In some instances, this allows the MILP solver to prune nodes of the branch-and-bound tree more efficiently.
 
+## Single Policy Update
+To obtain (hopefully good) starting solutions, the SPU heuristic described in [^3] can be used. The heuristic finds a locally optimal strategy in the sense that the strategy cannot be improved by changing any single local strategy. With large problems, the heuristic can quickly provide a solution that would otherwise take very long to obtain.
+
 
 ## Expected Value
 The **expected value** objective is defined using the path compatibility variables $x(𝐬)$ and their associated path probabilities $p(𝐬)$ and path utilities $\mathcal{U}(𝐬)$.
@@ -144,6 +147,8 @@ where the parameter $w∈[0, 1]$ expresses the decision maker's **risk tolerance
 
 
 ## References
-[^1]: Salo, A., Andelmin, J., & Oliveira, F. (2019). Decision Programming for Multi-Stage Optimization under Uncertainty, 1–35. Retrieved from [http://arxiv.org/abs/1910.09196](http://arxiv.org/abs/1910.09196)
+[^1]: Salo, A., Andelmin, J., & Oliveira, F. (2022). Decision programming for mixed-integer multi-stage optimization under uncertainty. European Journal of Operational Research, 299(2), 550-565.
 
 [^2]: Hölsä, O. (2020). Decision Programming Framework for Evaluating Testing Costs of Disease-Prone Pigs. Retrieved from [http://urn.fi/URN:NBN:fi:aalto-202009295618](http://urn.fi/URN:NBN:fi:aalto-202009295618)
+
+[^3]: Hankimaa, H., Herrala, O., Oliveira, F., Tollander de Balsch, J. (2023). DecisionProgramming.jl -- A framework for modelling decision problems using mathematical programming. Retrieved from [https://arxiv.org/abs/2307.13299](https://arxiv.org/abs/2307.13299)

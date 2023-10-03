@@ -4,6 +4,7 @@ include("influence_diagram.jl")
 include("decision_model.jl")
 include("random.jl")
 include("analysis.jl")
+include("heuristics.jl")
 include("printing.jl")
 
 export Node,
@@ -55,6 +56,9 @@ export CompatiblePaths,
     StateProbabilities,
     value_at_risk,
     conditional_value_at_risk
+
+export randomStrategy,
+    singlePolicyUpdate
 
 export print_decision_strategy,
     print_utility_distribution,

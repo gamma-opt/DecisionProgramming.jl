@@ -1,7 +1,8 @@
-using Logging
-using JuMP, Gurobi
+using Test, Logging, Random, JuMP
 using DecisionProgramming
 
+
+@info("Creating a pig farm problem with 3 decision stages")
 const N = 4
 
 @info("Creating the influence diagram.")
@@ -60,41 +61,11 @@ x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
 EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
 
-@info("Starting the optimization process.")
-optimizer = optimizer_with_attributes(
-    () -> Gurobi.Optimizer(Gurobi.Env()),
-    "IntFeasTol"      => 1e-9,
-)
-set_optimizer(model, optimizer)
 
 spu = singlePolicyUpdate(diagram, model, z, x_s)
 @info("Single policy update found solution $(spu[end][1]) in $(spu[end][2]/1000) seconds.")
-optimize!(model)
 
-@info("Extracting results.")
-Z = DecisionStrategy(z)
-S_probabilities = StateProbabilities(diagram, Z)
-U_distribution = UtilityDistribution(diagram, Z)
-
-
-@info("Printing decision strategy:")
-print_decision_strategy(diagram, Z, S_probabilities)
-
-@info("Printing utility distribution.")
-print_utility_distribution(U_distribution)
-
-@info("Printing statistics")
-print_statistics(U_distribution)
-
-@info("State probabilities:")
-print_state_probabilities(diagram, S_probabilities, [["H$i" for i in 1:N]...])
-print_state_probabilities(diagram, S_probabilities, [["T$i" for i in 1:N-1]...])
-print_state_probabilities(diagram, S_probabilities, [["D$i" for i in 1:N-1]...])
-
-@info("Conditional state probabilities")
-for state in ["ill", "healthy"]
-    S_probabilities2 = StateProbabilities(diagram, Z, "H1", state, S_probabilities)
-    print_state_probabilities(diagram, S_probabilities2, [["H$i" for i in 1:N]...])
-    print_state_probabilities(diagram, S_probabilities2, [["T$i" for i in 1:N-1]...])
-    print_state_probabilities(diagram, S_probabilities2, [["D$i" for i in 1:N-1]...])
-end
+@test spu[end][1] <= 726.8121 + 1E-9 # Result is not better than the known optimal value
+spu_pairs = zip(spu[1:end-1], spu[2:end])
+@test all(pair -> pair[1][1] < pair[2][1], spu_pairs) # Solution values increase
+@test all(pair -> pair[1][2] < pair[2][2], spu_pairs) # Times increase

@@ -87,6 +87,13 @@ LocalDecisionStrategy(::Node, ::Vector{VariableRef})
 DecisionStrategy(::DecisionVariables)
 ```
 
+## `heuristics.jl`
+### Single policy update
+```@docs
+randomStrategy
+singlePolicyUpdate
+```
+
 ## `analysis.jl`
 ```@docs
 CompatiblePaths

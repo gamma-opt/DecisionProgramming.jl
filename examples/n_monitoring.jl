@@ -76,6 +76,7 @@ optimizer = optimizer_with_attributes(
     "IntFeasTol"      => 1e-9,
 )
 set_optimizer(model, optimizer)
+
 optimize!(model)
 
 @info("Extracting results.")

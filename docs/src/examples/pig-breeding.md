@@ -181,7 +181,7 @@ EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
 ```
 
-and set up the solver and solve the problem.
+and set up the solver.
 
 ```julia
 optimizer = optimizer_with_attributes(
@@ -189,6 +189,11 @@ optimizer = optimizer_with_attributes(
     "IntFeasTol"      => 1e-9,
 )
 set_optimizer(model, optimizer)
+```
+
+Finally, we use the single policy update heuristic to obtain an initial solution and then solve the problem.
+```
+spu = singlePolicyUpdate(diagram, model, z, x_s)
 optimize!(model)
 ```
 
