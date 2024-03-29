@@ -7,7 +7,7 @@
 `DecisionProgramming.jl` is a [Julia](https://julialang.org/) package for solving multi-stage decision problems under uncertainty, modeled using influence diagrams. Internally, it relies on mathematical optimization. Decision models can be embedded within other optimization models. We designed the package as [JuMP](https://jump.dev/) extension. We have also developed a [Python](https://python.org) interface, which is available [here](https://github.com/gamma-opt/pyDecisionProgramming). 
 
 ## Citting
-The Decision Prgramming framework is decribed in this publication. If you found the framework useful in your work, we kindly ask you to cite the following publication ([pdf](https://www.sciencedirect.com/science/article/pii/S0377221721010201/pdf)):
+The Decision Programming framework is decribed in this publication. If you found the framework useful in your work, we kindly ask you to cite the following publication ([pdf](https://www.sciencedirect.com/science/article/pii/S0377221721010201/pdf)):
 ```
 @article{Salo_et_al-2022,
     title = {Decision programming for mixed-integer multi-stage optimization under uncertainty},
