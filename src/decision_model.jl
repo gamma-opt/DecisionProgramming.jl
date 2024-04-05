@@ -48,12 +48,7 @@ end
 
 function path_compatibility_variable(model::Model, base_name::String="")
     # Create a path compatiblity variable
-    x = @variable(model, base_name=base_name)
-
-    # Constraint on the lower and upper bounds.
-    @constraint(model, 0 ≤ x ≤ 1.0)
-
-    return x
+    return @variable(model, base_name=base_name, lower_bound = 0, upper_bound = 1)
 end
 
 struct PathCompatibilityVariables{N} <: AbstractDict{Path{N}, VariableRef}
