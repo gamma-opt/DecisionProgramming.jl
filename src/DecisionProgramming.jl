@@ -69,4 +69,6 @@ export print_decision_strategy,
 # For API docs
 export AbstractRNG, Model, VariableRef
 
+plusone(x::Int) = x + 1
+
 end # module
