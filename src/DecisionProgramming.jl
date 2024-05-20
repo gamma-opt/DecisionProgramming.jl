@@ -70,5 +70,6 @@ export print_decision_strategy,
 export AbstractRNG, Model, VariableRef
 
 plusone(x::Int) = x + 1
+plustwo(x::Int) = x + 2
 
 end # module
