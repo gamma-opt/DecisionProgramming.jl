@@ -71,5 +71,6 @@ export AbstractRNG, Model, VariableRef
 
 plusone(x::Int) = x + 1
 plustwo(x::Int) = x + 2
+plusthree(x::Int) = x + 3
 
 end # module
