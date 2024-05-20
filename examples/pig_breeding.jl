@@ -1,6 +1,7 @@
 using Logging
-using JuMP, Gurobi
-using DecisionProgramming
+#using JuMP, Gurobi
+using JuMP, Cbc
+#using DecisionProgramming
 
 const N = 4
 
@@ -61,8 +62,12 @@ EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
 
 @info("Starting the optimization process.")
+#optimizer = optimizer_with_attributes(
+#    () -> Gurobi.Optimizer(Gurobi.Env()),
+#    "IntFeasTol"      => 1e-9,
+#)
 optimizer = optimizer_with_attributes(
-    () -> Gurobi.Optimizer(Gurobi.Env()),
+    () -> Cbc.Optimizer(),
     "IntFeasTol"      => 1e-9,
 )
 set_optimizer(model, optimizer)
