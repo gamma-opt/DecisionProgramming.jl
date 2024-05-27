@@ -1,11 +1,11 @@
 using Logging
-#using JuMP, Gurobi
 using JuMP, HiGHS
-#using DecisionProgramming
+using DecisionProgramming
+
+
 
 const N = 4
 
-@info("Creating the influence diagram.")
 diagram = InfluenceDiagram()
 
 add_node!(diagram, ChanceNode("H1", [], ["ill", "healthy"]))
@@ -21,7 +21,9 @@ for i in 1:N-1
 end
 add_node!(diagram, ValueNode("MP", ["H$N"]))
 
-generate_arcs!(diagram)
+generate_arcs!(diagram);
+
+
 
 # Add probabilities for node H1
 add_probabilities!(diagram, "H1", [0.1, 0.9])
@@ -51,62 +53,38 @@ end
 
 add_utilities!(diagram, "MP", [300.0, 1000.0])
 
+generate_diagram!(diagram);
 
 
-generate_diagram!(diagram, positive_path_utility = true)
 
-@info("Creating the decision model.")
 model = Model()
-#println(diagram)
-z = DecisionVariables(model, diagram)
-println("")
-println("z: $z")
-x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
-EV = expected_value(model, diagram, x_s)
-println("EV: $EV")
-@objective(model, Max, EV)
-
-@info("Starting the optimization process.")
-#optimizer = optimizer_with_attributes(
-#    () -> Gurobi.Optimizer(Gurobi.Env()),
-#    "IntFeasTol"      => 1e-9,
-#)
+# set_silent(model)
 optimizer = optimizer_with_attributes(
     () -> HiGHS.Optimizer()
+    # "DualReductions"  => 0,
 )
 set_optimizer(model, optimizer)
 
-spu = singlePolicyUpdate(diagram, model, z, x_s)
-@info("Single policy update found solution $(spu[end][1]) in $(spu[end][2]/1000) seconds.")
+z = DecisionVariables(model, diagram)
+#print(z)
+μ = cluster_variables_and_constraints(model, diagram, z)
+
+model
+
+
 optimize!(model)
 
-@info("Extracting results.")
+
 Z = DecisionStrategy(z)
+println(Z)
 S_probabilities = StateProbabilities(diagram, Z)
-U_distribution = UtilityDistribution(diagram, Z)
+U_distribution = UtilityDistribution(diagram, Z);
 
-
-@info("Printing decision strategy:")
 #println(diagram)
 #println(Z)
 #println(S_probabilities)
 print_decision_strategy(diagram, Z, S_probabilities)
 
-@info("Printing utility distribution.")
 print_utility_distribution(U_distribution)
 
-@info("Printing statistics")
 print_statistics(U_distribution)
-
-@info("State probabilities:")
-print_state_probabilities(diagram, S_probabilities, [["H$i" for i in 1:N]...])
-print_state_probabilities(diagram, S_probabilities, [["T$i" for i in 1:N-1]...])
-print_state_probabilities(diagram, S_probabilities, [["D$i" for i in 1:N-1]...])
-
-@info("Conditional state probabilities")
-for state in ["ill", "healthy"]
-    S_probabilities2 = StateProbabilities(diagram, Z, "H1", state, S_probabilities)
-    print_state_probabilities(diagram, S_probabilities2, [["H$i" for i in 1:N]...])
-    print_state_probabilities(diagram, S_probabilities2, [["T$i" for i in 1:N-1]...])
-    print_state_probabilities(diagram, S_probabilities2, [["D$i" for i in 1:N-1]...])
-end

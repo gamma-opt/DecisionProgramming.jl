@@ -1,6 +1,6 @@
 using Logging, Random
-using JuMP, Gurobi
-using DecisionProgramming
+using JuMP, HiGHS
+#using DecisionProgramming
 
 Random.seed!(13)
 
@@ -72,8 +72,7 @@ EV = expected_value(model, diagram, x_s)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
-    () -> Gurobi.Optimizer(Gurobi.Env()),
-    "IntFeasTol"      => 1e-9,
+    () -> HiGHS.Optimizer()
 )
 set_optimizer(model, optimizer)
 
