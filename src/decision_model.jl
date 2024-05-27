@@ -378,6 +378,10 @@ end
 
 
 
+function cluster_variable(model::Model, base_name::String="")
+    # Create a path compatiblity variable
+    return @variable(model, base_name=base_name, lower_bound = 0, upper_bound = 1)
+end
 
 
 
@@ -467,6 +471,7 @@ function cluster_variables_and_constraints(model, diagram, z)
         if !isa(Nodes[j], ValueNode)
             μ[j] = Array{VariableRef}(undef, Tuple(length.([getindex.(Ref(S), C_rjt[j])]...)))
             for index in CartesianIndices(μ[j])
+
                 μ[j][index] = @variable(model, base_name="μ_$j($(join(Tuple(index),',')))", lower_bound=0)
                 #println(μ[j][index])
             end
@@ -475,8 +480,9 @@ function cluster_variables_and_constraints(model, diagram, z)
         end
     end
 
-    println(μ)
-    println("")
+    #println(μ)
+    println("testi")
+    println("μ: $μ")
 
     for a in A_rjt
         if !isa(Nodes[a[2]], ValueNode)
@@ -508,7 +514,8 @@ function cluster_variables_and_constraints(model, diagram, z)
         end
     end
 
-    println(μ_breve)
+    println("erkki")
+    println("μ_breve: $μ_breve")
     println("")
     println(diagram.Names)
     println("")
@@ -545,7 +552,7 @@ function cluster_variables_and_constraints(model, diagram, z)
     for j in keys(C_rjt)
         if isa(Nodes[j], ValueNode)
             i = A_rjt[findfirst(a -> a[2] == j, A_rjt)][1]
-            println("nakki")
+            #println("nakki")
             println(i)
             I_j_mapping = [findfirst(isequal(node), C_rjt[i]) for node in I_j[j]]
             println(I_j_mapping)
