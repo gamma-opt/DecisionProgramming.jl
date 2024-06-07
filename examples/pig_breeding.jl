@@ -1,7 +1,7 @@
 using Logging
 #using JuMP, Gurobi
 using JuMP, HiGHS
-#using DecisionProgramming
+using DecisionProgramming
 
 const N = 4
 
@@ -54,6 +54,7 @@ add_utilities!(diagram, "MP", [300.0, 1000.0])
 
 
 generate_diagram!(diagram, positive_path_utility = true)
+#println("diagram: $diagram")
 
 @info("Creating the decision model.")
 model = Model()
@@ -62,8 +63,9 @@ z = DecisionVariables(model, diagram)
 println("")
 println("z: $z")
 x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
+#println("x_s: $x_s")
 EV = expected_value(model, diagram, x_s)
-println("EV: $EV")
+#println("EV: $EV")
 @objective(model, Max, EV)
 
 @info("Starting the optimization process.")
@@ -78,6 +80,7 @@ set_optimizer(model, optimizer)
 
 spu = singlePolicyUpdate(diagram, model, z, x_s)
 @info("Single policy update found solution $(spu[end][1]) in $(spu[end][2]/1000) seconds.")
+println("spu: $spu")
 optimize!(model)
 
 @info("Extracting results.")

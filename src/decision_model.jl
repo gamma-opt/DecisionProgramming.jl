@@ -45,14 +45,13 @@ z = DecisionVariables(model, diagram)
 ```
 """
 function DecisionVariables(model::Model, diagram::InfluenceDiagram; names::Bool=false, name::String="z")
-    println(diagram.D)
-    println(diagram.I_j[diagram.D])
-    println(diagram.S)
-    println(diagram.States)
-    #println(diagram.d)
-    #println(I_d)
-    println(zip(diagram.D, diagram.I_j[diagram.D]))
-    DecisionVariables(diagram.D, diagram.I_j[diagram.D], [decision_variable(model, diagram.S, d, I_d, (names ? "$(name)_$(d.j)$(s)" : "")) for (d, I_d) in zip(diagram.D, diagram.I_j[diagram.D])])
+    D_keys_indexed = Int16.([index_of(diagram, node) for node in get_keys(diagram.D)])
+    D_I_j = [diagram.I_j[node] for node in get_keys(diagram.D)]
+    D_I_j_indexed = Vector{Int16}.([indices_of(diagram, nodes) for nodes in D_I_j])
+
+    DecisionVariables(D_keys_indexed,
+                      D_I_j_indexed,
+                      [decision_variable(model, States(get_values(diagram.S)), d, I_d, (names ? "$(name)_$(d.j)$(s)" : "")) for (d, I_d) in zip(D_keys_indexed, D_I_j_indexed)])
 end
 
 function is_forbidden(s::Path, forbidden_paths::Vector{ForbiddenPath})
@@ -156,22 +155,20 @@ function PathCompatibilityVariables(model::Model,
     println("N: $N")
     variables_x_s = Dict{Path{N}, VariableRef}(
         s => path_compatibility_variable(model, (names ? "$(name)$(s)" : ""))
-        for s in paths(diagram.S, fixed)
+        for s in paths(get_values(diagram.S), fixed)
         if !iszero(diagram.P(s)) && !is_forbidden(s, forbidden_paths)
     )
 
     x_s = PathCompatibilityVariables{N}(variables_x_s)
-    println("x_s: $x_s")
+    #println("x_s: $x_s")
 
     # Add decision strategy constraints for each decision node
-    #println("nakki")
-    #println(z)
-    #println(z_d)
+    I_j_indexed = Vector{Int16}.([indices_of(diagram, nodes) for nodes in get_values(diagram.I_j)])
+    println(I_j_indexed)
     #println(z.D)
     #println(z.z)
     for (d, z_d) in zip(z.D, z.z)
-        #println(z_d)
-        decision_strategy_constraint(model, diagram.S, d, diagram.I_j[d], z.D, z_d, x_s)
+        decision_strategy_constraint(model, States(get_values(diagram.S)), d, I_j_indexed[d], z.D, z_d, x_s)
     end
 
     if probability_cut

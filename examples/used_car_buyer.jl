@@ -1,8 +1,7 @@
-
 using Logging
 #using JuMP, Gurobi
 using JuMP, HiGHS
-#using DecisionProgramming
+using DecisionProgramming
 
 @info("Creating the influence diagram.")
 diagram = InfluenceDiagram()
