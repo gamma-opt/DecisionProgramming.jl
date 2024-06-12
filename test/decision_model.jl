@@ -4,20 +4,29 @@ using DecisionProgramming
 
 function influence_diagram(rng::AbstractRNG, n_C::Int, n_D::Int, n_V::Int, m_C::Int, m_D::Int, states::Vector{Int}, n_inactive::Int)
     diagram = InfluenceDiagram()
+    #tähän esimerkki suoraan eri nodeja, eri statien määriä, eri lähtönodejen ja päätösnodejen määriä
     random_diagram!(rng, diagram, n_C, n_D, n_V, m_C, m_D, states)
-    for c in diagram.C
+    for c in keys(diagram.C)
         random_probabilities!(rng, diagram, c; n_inactive=n_inactive)
     end
-    for v in diagram.V
+    for v in keys(diagram.V)
         random_utilities!(rng, diagram, v; low=-1.0, high=1.0)
     end
 
     # Names needed for printing functions only
-    diagram.Names = ["node$j" for j in 1:n_C+n_D+n_V]
-    diagram.States = [["s$s" for s in 1:n_s] for n_s in diagram.S]
+    diagram.Names = ["$j" for j in 1:n_C+n_D+n_V]
+    println("")
+    println(values(diagram.S))
+    #diagram.States = [["s$s" for s in 1:n_s] for n_s in collect(values(diagram.S))]
 
-    diagram.P = DefaultPathProbability(diagram.C, diagram.I_j[diagram.C], diagram.X)
-    diagram.U = DefaultPathUtility(diagram.I_j[diagram.V], diagram.Y)
+    C_I_j = [get(diagram.I_j, key, Set{Int}()) for key in keys(diagram.C)]
+    C_I_j_int16 = [Int16.(parse.(Int, collect(s))) for s in C_I_j]
+
+    V_I_j = [get(diagram.I_j, key, Set{Int}()) for key in keys(diagram.V)]
+    V_I_j_int16 = [Int16.(parse.(Int, collect(s))) for s in V_I_j]
+
+    diagram.P = DefaultPathProbability(parse.(Int16, keys(diagram.C)), C_I_j_int16, collect(values(diagram.X)))
+    diagram.U = DefaultPathUtility(V_I_j_int16, collect(values(diagram.Y)))
 
     return diagram
 end
@@ -30,6 +39,11 @@ function test_decision_model(diagram, n_inactive, probability_scale_factor, prob
 
     @info "Testing PathCompatibilityVariables"
     if probability_scale_factor > 0
+        println("model:")
+        println(model)
+        println(diagram)
+        println(z)
+        println(diagram.P)
         x_s = PathCompatibilityVariables(model, diagram, z; probability_cut = probability_cut, probability_scale_factor = probability_scale_factor)
     else
         @test_throws DomainError x_s = PathCompatibilityVariables(model, diagram, z; probability_cut = probability_cut, probability_scale_factor = probability_scale_factor)
@@ -60,7 +74,9 @@ function test_analysis_and_printing(diagram)
 
     @info "Testing CompatiblePaths"
     @test all(true for s in CompatiblePaths(diagram, Z))
+    #laita vain joku decision node tähän
     @test_throws DomainError CompatiblePaths(diagram, Z, Dict(diagram.D[1] => State(1)))
+    #joku chance node vain tähän
     node, state = (diagram.C[1], State(1))
     @test all(s[node] == state for s in CompatiblePaths(diagram, Z, Dict(node => state)))
 
@@ -89,14 +105,14 @@ end
 
 @info "Testing model construction"
 rng = MersenneTwister(4)
-for (n_C, n_D, states, n_inactive, probability_scale_factor, probability_cut) in [
-        (3, 2, [2, 3, 4], 0, 1.0, true),
-        (3, 2, [2, 3], 0, -1.0, true),
-        (3, 2, [3], 1, 100.0, true),
-        (3, 2, [2, 3], 0, -1.0, false),
-        (3, 2, [4], 1, 10.0, false)
+for (probability_scale_factor, probability_cut) in [
+        (1.0, true),
+        (-1.0, true),
+        (100.0, true),
+        (-1.0, false),
+        (10.0, false)
     ]
-    diagram = influence_diagram(rng, n_C, n_D, 2, 2, 2, states, n_inactive)
-    test_decision_model(diagram, n_inactive, probability_scale_factor, probability_cut)
+    diagram = influence_diagram()
+    test_decision_model(diagram, probability_scale_factor, probability_cut)
     test_analysis_and_printing(diagram)
 end

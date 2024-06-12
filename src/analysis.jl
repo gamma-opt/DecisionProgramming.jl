@@ -39,12 +39,6 @@ end
 """
 function CompatiblePaths(diagram::InfluenceDiagram, Z::DecisionStrategy, fixed::FixedPath=Dict{Node, State}())
     C_keys_indexed = Int16.([index_of(diagram, node) for node in get_keys(diagram.C)])
-    println("S_values_ordered:")
-    println(get_values(diagram.S))
-    println(C_keys_indexed)
-    println(Z)
-    println(fixed)
-    
     CompatiblePaths(States(get_values(diagram.S)), C_keys_indexed, Z, fixed)
 end
 

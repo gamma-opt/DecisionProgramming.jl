@@ -2,20 +2,13 @@ using JuMP
 
 function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node}, base_name::String="")
     # Create decision variables.
-    println(d)
-    println(I_d)
-    #println("base_name" * base_name)
     dims = S[[I_d; d]]
-    println(dims)
     z_d = Array{VariableRef}(undef, dims...)
-    println(z_d)
     for s in paths(dims)
         z_d[s...] = @variable(model, binary=true, base_name=base_name)
     end
-    println(z_d)
     # Constraints to one decision per decision strategy.
     for s_I in paths(S[I_d])
-        println(s_I)
         @constraint(model, sum(z_d[s_I..., s_d] for s_d in 1:S[d]) == 1)
     end
     return z_d
@@ -45,6 +38,10 @@ z = DecisionVariables(model, diagram)
 ```
 """
 function DecisionVariables(model::Model, diagram::InfluenceDiagram; names::Bool=false, name::String="z")
+    println(get_keys(diagram.D))
+    println("")
+    println(diagram)
+    println(index_of(diagram, "3"))
     D_keys_indexed = Int16.([index_of(diagram, node) for node in get_keys(diagram.D)])
     D_I_j = [diagram.I_j[node] for node in get_keys(diagram.D)]
     D_I_j_indexed = Vector{Int16}.([indices_of(diagram, nodes) for nodes in D_I_j])
@@ -93,8 +90,6 @@ function decision_strategy_constraint(model::Model, S::States, d::Node, I_d::Vec
     for s_d_s_Id in paths(dims) # iterate through all information states and states of d
         # paths with (s_d | s_I(d)) information structure
         feasible_paths = filter(s -> s[[I_d; d]] == s_d_s_Id, existing_paths)
-        #println(s_d_s_Id...)
-        #println(z[s_d_s_Id...])
         @constraint(model, sum(get(x_s, s, 0) for s in feasible_paths) ≤ z[s_d_s_Id...] * min(length(feasible_paths), theoretical_ub))
     end
 end
@@ -152,7 +147,8 @@ function PathCompatibilityVariables(model::Model,
 
     # Create path compatibility variable for each effective path.
     N = length(diagram.S)
-    println("N: $N")
+    println("paths:")
+    println(paths(get_values(diagram.S), fixed))
     variables_x_s = Dict{Path{N}, VariableRef}(
         s => path_compatibility_variable(model, (names ? "$(name)$(s)" : ""))
         for s in paths(get_values(diagram.S), fixed)
@@ -160,13 +156,9 @@ function PathCompatibilityVariables(model::Model,
     )
 
     x_s = PathCompatibilityVariables{N}(variables_x_s)
-    #println("x_s: $x_s")
 
     # Add decision strategy constraints for each decision node
     I_j_indexed = Vector{Int16}.([indices_of(diagram, nodes) for nodes in get_values(diagram.I_j)])
-    println(I_j_indexed)
-    #println(z.D)
-    #println(z.z)
     for (d, z_d) in zip(z.D, z.z)
         decision_strategy_constraint(model, States(get_values(diagram.S)), d, I_j_indexed[d], z.D, z_d, x_s)
     end
