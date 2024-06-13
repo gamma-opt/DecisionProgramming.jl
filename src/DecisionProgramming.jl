@@ -2,7 +2,7 @@ module DecisionProgramming
 
 include("influence_diagram.jl")
 include("decision_model.jl")
-include("random.jl")
+#include("random.jl")
 include("analysis.jl")
 include("heuristics.jl")
 include("printing.jl")
@@ -51,8 +51,8 @@ export DecisionVariables,
 
 export random_diagram!,
     random_probabilities!,
-    random_utilities!,
-    LocalDecisionStrategy
+    random_utilities!
+    #LocalDecisionStrategy
 
 export CompatiblePaths,
     UtilityDistribution,

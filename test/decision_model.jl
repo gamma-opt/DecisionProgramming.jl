@@ -2,36 +2,52 @@ using Test, Logging, Random, JuMP
 using DecisionProgramming
 
 
-function influence_diagram(rng::AbstractRNG, n_C::Int, n_D::Int, n_V::Int, m_C::Int, m_D::Int, states::Vector{Int}, n_inactive::Int)
+function influence_diagram()
     diagram = InfluenceDiagram()
-    #tähän esimerkki suoraan eri nodeja, eri statien määriä, eri lähtönodejen ja päätösnodejen määriä
-    random_diagram!(rng, diagram, n_C, n_D, n_V, m_C, m_D, states)
-    for c in keys(diagram.C)
-        random_probabilities!(rng, diagram, c; n_inactive=n_inactive)
-    end
-    for v in keys(diagram.V)
-        random_utilities!(rng, diagram, v; low=-1.0, high=1.0)
-    end
+    #A test influence diagram with varying amounts of states and nodes in the information set
+    add_node!(diagram, ChanceNode("H1", [], ["1", "2"]))
+    add_node!(diagram, DecisionNode("D1", [], ["1", "2"]))
+    add_node!(diagram, DecisionNode("D2", ["H1"], ["1", "2", "3"]))
+    add_node!(diagram, ChanceNode("H2", ["D1", "D2"], ["1", "2", "3", "4"]))
+    add_node!(diagram, ChanceNode("H3", [], ["1", "2", "3"]))
+    add_node!(diagram, DecisionNode("D3", ["H2", "H3"], ["1", "2"]))
 
-    # Names needed for printing functions only
-    diagram.Names = ["$j" for j in 1:n_C+n_D+n_V]
-    println("")
-    println(values(diagram.S))
-    #diagram.States = [["s$s" for s in 1:n_s] for n_s in collect(values(diagram.S))]
+    add_node!(diagram, ValueNode("C1", ["D2", "H2"]))
+    add_node!(diagram, ValueNode("C2", ["D3"]))
 
-    C_I_j = [get(diagram.I_j, key, Set{Int}()) for key in keys(diagram.C)]
-    C_I_j_int16 = [Int16.(parse.(Int, collect(s))) for s in C_I_j]
+    generate_arcs!(diagram)
 
-    V_I_j = [get(diagram.I_j, key, Set{Int}()) for key in keys(diagram.V)]
-    V_I_j_int16 = [Int16.(parse.(Int, collect(s))) for s in V_I_j]
+    H1_probs = 1/length(diagram.Nodes["H1"].states)
+    add_probabilities!(diagram, "H1", [H1_probs, H1_probs])
 
-    diagram.P = DefaultPathProbability(parse.(Int16, keys(diagram.C)), C_I_j_int16, collect(values(diagram.X)))
-    diagram.U = DefaultPathUtility(V_I_j_int16, collect(values(diagram.Y)))
+    H2_probs = 1/length(diagram.Nodes["H2"].states)
+    H2_prob_matrix_values = [H2_probs, H2_probs, H2_probs, H2_probs]
+    H2_prob_matrix = ProbabilityMatrix(diagram, "H2")
+    H2_prob_matrix["1", "1", :] = H2_prob_matrix_values
+    H2_prob_matrix["1", "2", :] = H2_prob_matrix_values
+    H2_prob_matrix["1", "3", :] = H2_prob_matrix_values
+    H2_prob_matrix["2", "1", :] = H2_prob_matrix_values
+    H2_prob_matrix["2", "2", :] = H2_prob_matrix_values
+    H2_prob_matrix["2", "3", :] = H2_prob_matrix_values
+    add_probabilities!(diagram, "H2", H2_prob_matrix)
+
+    H3_probs = 1/length(diagram.Nodes["H3"].states)
+    add_probabilities!(diagram, "H3", [H3_probs, H3_probs, H3_probs])
+
+    C1_util_matrix = UtilityMatrix(diagram, "C1")
+    C1_util_matrix["1", :] = [0.0, 0.0, 0.0, 0.0]
+    C1_util_matrix["2", :] = [0.0, 0.0, 0.0, 0.0]
+    C1_util_matrix["3", :] = [0.0, 0.0, 0.0, 0.0]
+    add_utilities!(diagram, "C1", C1_util_matrix)
+
+    add_utilities!(diagram, "C2", [0.0, 0.0])
+
+    generate_diagram!(diagram, positive_path_utility = true)
 
     return diagram
 end
 
-function test_decision_model(diagram, n_inactive, probability_scale_factor, probability_cut)
+function test_decision_model(diagram, probability_scale_factor, probability_cut)
     model = Model()
 
     @info "Testing DecisionVariables"
@@ -39,11 +55,6 @@ function test_decision_model(diagram, n_inactive, probability_scale_factor, prob
 
     @info "Testing PathCompatibilityVariables"
     if probability_scale_factor > 0
-        println("model:")
-        println(model)
-        println(diagram)
-        println(z)
-        println(diagram.P)
         x_s = PathCompatibilityVariables(model, diagram, z; probability_cut = probability_cut, probability_scale_factor = probability_scale_factor)
     else
         @test_throws DomainError x_s = PathCompatibilityVariables(model, diagram, z; probability_cut = probability_cut, probability_scale_factor = probability_scale_factor)
@@ -69,15 +80,16 @@ end
 
 function test_analysis_and_printing(diagram)
     @info("Creating random decision strategy")
-    Z_j = [LocalDecisionStrategy(rng, diagram, d) for d in diagram.D]
-    Z = DecisionStrategy(diagram.D, diagram.I_j[diagram.D], Z_j)
+    Z_j = [LocalDecisionStrategy(rng, diagram, d) for d in keys(diagram.D)]
+    D_keys_indexed = Int16.([index_of(diagram, node) for node in get_keys(diagram.D)])
+    D_I_j = [diagram.I_j[node] for node in get_keys(diagram.D)]
+    D_I_j_indexed = Vector{Int16}.([indices_of(diagram, nodes) for nodes in D_I_j])
+    Z = DecisionStrategy(D_keys_indexed, D_I_j_indexed, Z_j)
 
     @info "Testing CompatiblePaths"
     @test all(true for s in CompatiblePaths(diagram, Z))
-    #laita vain joku decision node tähän
-    @test_throws DomainError CompatiblePaths(diagram, Z, Dict(diagram.D[1] => State(1)))
-    #joku chance node vain tähän
-    node, state = (diagram.C[1], State(1))
+    @test_throws DomainError CompatiblePaths(diagram, Z, Dict(Node(index_of(diagram, "D1")) => State(1)))
+    node, state = (Node(index_of(diagram, "H1")), State(1))
     @test all(s[node] == state for s in CompatiblePaths(diagram, Z, Dict(node => state)))
 
     @info "Testing UtilityDistribution"
@@ -93,15 +105,16 @@ function test_analysis_and_printing(diagram)
     print_decision_strategy(diagram, Z, S_probabilities)
     print_decision_strategy(diagram, Z, S_probabilities, show_incompatible_states=true)
     print_utility_distribution(U_distribution)
-    print_state_probabilities(diagram, S_probabilities, [diagram.Names[c] for c in diagram.C])
-    print_state_probabilities(diagram, S_probabilities, [diagram.Names[d] for d in diagram.D])
-    print_state_probabilities(diagram, S_probabilities2, [diagram.Names[c] for c in diagram.C])
-    print_state_probabilities(diagram, S_probabilities2, [diagram.Names[d] for d in diagram.D])
+    print_state_probabilities(diagram, S_probabilities, get_keys(diagram.C))
+    print_state_probabilities(diagram, S_probabilities, get_keys(diagram.D))
+    print_state_probabilities(diagram, S_probabilities2, get_keys(diagram.C))
+    print_state_probabilities(diagram, S_probabilities2, get_keys(diagram.D))
     print_statistics(U_distribution)
     print_risk_measures(U_distribution, [0.0, 0.05, 0.1, 0.2, 1.0])
 
     @test true
 end
+
 
 @info "Testing model construction"
 rng = MersenneTwister(4)
@@ -116,3 +129,5 @@ for (probability_scale_factor, probability_cut) in [
     test_decision_model(diagram, probability_scale_factor, probability_cut)
     test_analysis_and_printing(diagram)
 end
+
+

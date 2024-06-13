@@ -38,10 +38,6 @@ z = DecisionVariables(model, diagram)
 ```
 """
 function DecisionVariables(model::Model, diagram::InfluenceDiagram; names::Bool=false, name::String="z")
-    println(get_keys(diagram.D))
-    println("")
-    println(diagram)
-    println(index_of(diagram, "3"))
     D_keys_indexed = Int16.([index_of(diagram, node) for node in get_keys(diagram.D)])
     D_I_j = [diagram.I_j[node] for node in get_keys(diagram.D)]
     D_I_j_indexed = Vector{Int16}.([indices_of(diagram, nodes) for nodes in D_I_j])
@@ -147,8 +143,6 @@ function PathCompatibilityVariables(model::Model,
 
     # Create path compatibility variable for each effective path.
     N = length(diagram.S)
-    println("paths:")
-    println(paths(get_values(diagram.S), fixed))
     variables_x_s = Dict{Path{N}, VariableRef}(
         s => path_compatibility_variable(model, (names ? "$(name)$(s)" : ""))
         for s in paths(get_values(diagram.S), fixed)
@@ -332,15 +326,3 @@ Z = DecisionStrategy(z)
 function DecisionStrategy(z::DecisionVariables)
     DecisionStrategy(z.D, z.I_d, [LocalDecisionStrategy(d, z_var) for (d, z_var) in zip(z.D, z.z)])
 end
-
-
-# RJT MODEL
-
-
-
-
-
-
-
-
-

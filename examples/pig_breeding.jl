@@ -3,10 +3,13 @@ using Logging
 using JuMP, HiGHS
 using DecisionProgramming
 
+LocalDecisionStrategy(Node(2), [0 0 1; 0 0 0; 0 0 0;;; 0 1 0; 1 0 0; 1 1 0;;; 1 0 0; 0 1 1; 0 0 1])
 const N = 4
 
 @info("Creating the influence diagram.")
+
 diagram = InfluenceDiagram()
+
 
 add_node!(diagram, ChanceNode("H1", [], ["ill", "healthy"]))
 for i in 1:N-1
@@ -54,18 +57,12 @@ add_utilities!(diagram, "MP", [300.0, 1000.0])
 
 
 generate_diagram!(diagram, positive_path_utility = true)
-#println("diagram: $diagram")
 
 @info("Creating the decision model.")
 model = Model()
-#println(diagram)
 z = DecisionVariables(model, diagram)
-println("")
-println("z: $z")
 x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
-#println("x_s: $x_s")
 EV = expected_value(model, diagram, x_s)
-#println("EV: $EV")
 @objective(model, Max, EV)
 
 @info("Starting the optimization process.")
@@ -80,19 +77,17 @@ set_optimizer(model, optimizer)
 
 spu = singlePolicyUpdate(diagram, model, z, x_s)
 @info("Single policy update found solution $(spu[end][1]) in $(spu[end][2]/1000) seconds.")
-println("spu: $spu")
 optimize!(model)
 
 @info("Extracting results.")
+
+#LocalDecisionStrategy(Node(2), [0 0 1; 0 0 0; 0 0 0;;; 0 1 0; 1 0 0; 1 1 0;;; 1 0 0; 0 1 1; 0 0 1])
 Z = DecisionStrategy(z)
 S_probabilities = StateProbabilities(diagram, Z)
 U_distribution = UtilityDistribution(diagram, Z)
 
 
 @info("Printing decision strategy:")
-#println(diagram)
-#println(Z)
-#println(S_probabilities)
 print_decision_strategy(diagram, Z, S_probabilities)
 
 @info("Printing utility distribution.")

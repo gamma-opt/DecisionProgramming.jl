@@ -1,4 +1,5 @@
 using Base.Iterators: product
+using Random
 using DataStructures
 
 
@@ -431,39 +432,40 @@ end
 # --- Influence diagram ---
 """
     mutable struct InfluenceDiagram
-        Nodes::Vector{AbstractNode}
+        Nodes::OrderedDict{Name, AbstractNode}
         Names::Vector{Name}
-        I_j::Vector{Vector{Node}}
-        States::Vector{Vector{Name}}
-        S::States
-        C::Vector{Node}
-        D::Vector{Node}
-        V::Vector{Node}
-        X::Vector{Probabilities}
-        Y::Vector{Utilities}
+        I_j::OrderedDict{Name, Vector{Name}}
+        States::OrderedDict{Name, Vector{Name}}
+        S::OrderedDict{Name,State}
+    
+        C::OrderedDict{Name, ChanceNode}
+        D::OrderedDict{Name, DecisionNode}
+        V::OrderedDict{Name, ValueNode}
+        X::OrderedDict{Name, Probabilities}
+        Y::OrderedDict{Name, Utilities}
         P::AbstractPathProbability
         U::AbstractPathUtility
         translation::Utility
         function InfluenceDiagram()
-            new(Vector{AbstractNode}())
+            new(OrderedDict{String, AbstractNode}())
         end
     end
 
 Hold all information related to the influence diagram.
 
 # Fields
-- `Nodes::Vector{AbstractNode}`: Vector of added abstract nodes.
+All OrderedDicts are ordered by vector Names.
+- `Nodes::OrderedDict{Name, AbstractNode}`: OrderedDict of node names as key
+and their respective abstract nodes as values.
 - `Names::Vector{Name}`: Names of nodes in order of their indices.
-- `I_j::Vector{Vector{Node}}`: Information sets of nodes in order of their indices.
-    Nodes of information sets identified by their indices.
-- `States::Vector{Vector{Name}}`: States of each node in order of their indices.
-- `S::States`: Vector showing the number of states each node has.
-- `C::Vector{Node}`: Indices of chance nodes in ascending order.
-- `D::Vector{Node}`: Indices of decision nodes in ascending order.
-- `V::Vector{Node}`: Indices of value nodes in ascending order.
-- `X::Vector{Probabilities}`: Probability matrices of chance nodes in order of chance
-    nodes in C.
-- `Y::Vector{Utilities}`: Utility matrices of value nodes in order of value nodes in V.
+- `I_j::OrderedDict{Name, Vector{Name}}`: Information sets of nodes by their name.
+- `States::OrderedDict{Name, Vector{Name}}`: States of each node by their name.
+- `S::OrderedDict{Name,State}`: Number of states of each node.
+- `C::OrderedDict{Name, ChanceNode}`: Chance nodes by their name.
+- `D::OrderedDict{Name, DecisionNode}`: Decision nodes by their name.
+- `V::OrderedDict{Name, ValueNode}`: Values nodes by their name.
+- `X::OrderedDict{Name, Probabilities}`: Probability matrices of chance nodes by their name.
+- `Y::OrderedDict{Name, Utilities}`: Utility matrices of value nodes by their name.
 - `P::AbstractPathProbability`: Path probabilities.
 - `U::AbstractPathUtility`: Path utilities.
 - `translation::Utility`: Utility translation for storing the positive or negative
@@ -624,7 +626,6 @@ function ProbabilityMatrix(diagram::InfluenceDiagram, node::Name)
 
     # Find the node's indices and it's I_c nodes
     names = [diagram.I_j[node]..., node]
-    #names = [node for node in nodes]
 
     indices = [Dict{Name, Int}(state => i for (i, state) in enumerate(diagram.States[name])) for name in names]
     sizes = [diagram.S[name] for name in names]
@@ -669,7 +670,6 @@ function add_probabilities!(diagram::InfluenceDiagram, node::Name, probabilities
     if size(probabilities) == cardinalities
         if isa(probabilities, ProbabilityMatrix)
             # Check that probabilities sum to one happens in Probabilities
-            # REFERRING USING INDEX_OF TO THE NODE, SHOULD PROBABILITY STRUCT BE CHANGED SO THAT THIS MUST NOT BE DONE?
             diagram.X[node] = Probabilities(Node(index_of(diagram, node)), probabilities.matrix)
         else
             diagram.X[node] = Probabilities(Node(index_of(diagram, node)), probabilities)
@@ -814,7 +814,6 @@ function add_utilities!(diagram::InfluenceDiagram, node::Name, utilities::Abstra
         else
             # Conversion to Float32 using Utility(), since machine default is Float64
             diagram.Y[node] = Utilities(Node(index_of(diagram, node)), [Utility(u) for u in utilities])
-            #Probabilities(Node(index_of(diagram, node)), probabilities)
         end
     else
         throw(DomainError("The dimensions of the utilities matrix should match the node's information states' cardinality. Expected $cardinalities for node $node, got $(size(utilities))."))
@@ -848,10 +847,9 @@ end
 """
     function generate_arcs!(diagram::InfluenceDiagram)
 
-Generate arc structures using nodes added to influence diagram, by ordering nodes,
-giving them indices and generating correct values for the vectors Names, I_j, states,
-S, C, D, V in the influence digram. Abstraction is created and the names of the nodes
-and states are only used in the user interface from here on.
+Generate arc structures using nodes added to influence diagram and storing them to
+variable diagram.I_j. Also creating variables diagram.States, diagram.S, diagram.C,
+diagram.D and diagram.V and storing appropriate values to them.
 
 # Examples
 ```julia
@@ -859,7 +857,6 @@ generate_arcs!(diagram)
 ```
 """
 function generate_arcs!(diagram::InfluenceDiagram)
-   #SIMILAR TO BEFORE
    C_and_D = filter(x -> !isa(x[2], ValueNode), pairs(diagram.Nodes)) # Collects all nodes not ValueNodes
    n_CD = length(C_and_D)
    V_ = filter(x -> isa(x[2], ValueNode), pairs(diagram.Nodes)) # Collects all ValueNodes
@@ -875,7 +872,7 @@ function generate_arcs!(diagram::InfluenceDiagram)
    D = OrderedDict{Name, DecisionNode}()
    V = OrderedDict{Name, ValueNode}()
 
-   #THIS WAS NEEDED FOR REORDERING OF NODES, DON'T COMMENT AWAY
+   #LINE BELOW WAS NEEDED FOR REORDERING OF NODES, UNLIKE WHAT WE THOUGHT
    diagram.Nodes = merge(C_and_D, V_)
    diagram.Names = collect(keys(diagram.Nodes))
 
@@ -910,7 +907,7 @@ end
     positive_path_utility::Bool=false,
     negative_path_utility::Bool=false)
 
-Generate complete influence diagram with probabilities and utilities as well.
+Generate complete influence diagram with probabilities and utilities included.
 
 # Arguments
 - `default_probability::Bool=true`: Choice to use default path probabilities.
@@ -988,15 +985,49 @@ function index_of(diagram::InfluenceDiagram, node::Name)
     return idx
 end
 
+"""
+    function indices_of(diagram::InfluenceDiagram, nodes::AbstractArray)
+
+Get the indices of a array of nodes and store them in an array.
+
+# Example
+```julia-repl
+julia> idcs_O_P = indices_of(diagram, ["O", "P"])
+1
+```
+"""
+
 function indices_of(diagram::InfluenceDiagram, nodes::AbstractArray)
     return [index_of(diagram, node) for node in nodes]
 end
 
+"""
+    function get_values(dict::OrderedDict)
+
+generic function to get values from an OrderedDict
+
+# Example
+```julia-repl
+julia> S_values = get_values(diagram.S)
+1
+```
+"""
 # generic function to get values from an OrderedDict
 function get_values(dict::OrderedDict)
     return collect(values(dict))
 end
 
+"""
+    function get_values(dict::OrderedDict)
+
+generic function to get values from an OrderedDict
+
+# Example
+```julia-repl
+julia> D_values = get_keys(diagram.D)
+1
+```
+"""
 # generic function to get keys from an OrderedDict
 function get_keys(dict::OrderedDict)
     return collect(keys(dict))
@@ -1111,6 +1142,7 @@ end
 
 Local decision strategy type.
 """
+
 struct LocalDecisionStrategy{N} <: AbstractArray{Int, N}
     d::Node
     data::Array{Int, N}
@@ -1124,8 +1156,35 @@ struct LocalDecisionStrategy{N} <: AbstractArray{Int, N}
             end
         end
         new{N}(d, data)
-    end
+    end    
 end
+
+"""
+    function LocalDecisionStrategy(rng::AbstractRNG, diagram::InfluenceDiagram, d::Node)
+
+Generate random decision strategy for decision node `d`.
+
+# Examples
+```julia
+rng = MersenneTwister(3)
+diagram = InfluenceDiagram()
+random_diagram!(rng, diagram, 5, 2, 3, 2, 2, rand(rng, [2,3], 5))
+LocalDecisionStrategy(rng, diagram, diagram.D[1])
+```
+"""
+
+function LocalDecisionStrategy(rng::AbstractRNG, diagram::InfluenceDiagram, d::Name)
+    I_d = diagram.I_j[d]
+    states = Int16[diagram.S[s] for s in I_d]
+    state = diagram.S[d]
+    data = zeros(Int, states..., state)
+    for s in CartesianIndices((states...,))
+        s_j = rand(rng, 1:state)
+        data[s, s_j] = 1
+    end
+    LocalDecisionStrategy(Node(index_of(diagram, d)), data)
+end
+
 
 Base.size(Z::LocalDecisionStrategy) = size(Z.data)
 Base.IndexStyle(::Type{<:LocalDecisionStrategy}) = IndexLinear()
