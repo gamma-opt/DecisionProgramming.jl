@@ -23,12 +23,11 @@ function influence_diagram()
     H2_probs = 1/length(diagram.Nodes["H2"].states)
     H2_prob_matrix_values = [H2_probs, H2_probs, H2_probs, H2_probs]
     H2_prob_matrix = ProbabilityMatrix(diagram, "H2")
-    H2_prob_matrix["1", "1", :] = H2_prob_matrix_values
-    H2_prob_matrix["1", "2", :] = H2_prob_matrix_values
-    H2_prob_matrix["1", "3", :] = H2_prob_matrix_values
-    H2_prob_matrix["2", "1", :] = H2_prob_matrix_values
-    H2_prob_matrix["2", "2", :] = H2_prob_matrix_values
-    H2_prob_matrix["2", "3", :] = H2_prob_matrix_values
+    for state1 in ["1", "2"]
+        for state2 in ["1", "2", "3"]
+            setindex!(H2_prob_matrix, H2_prob_matrix_values, state1, state2, Colon())
+        end
+    end
     add_probabilities!(diagram, "H2", H2_prob_matrix)
 
     H3_probs = 1/length(diagram.Nodes["H3"].states)
