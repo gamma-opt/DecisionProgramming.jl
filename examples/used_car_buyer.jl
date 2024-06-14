@@ -1,5 +1,4 @@
 using Logging
-#using JuMP, Gurobi
 using JuMP, HiGHS
 using DecisionProgramming
 

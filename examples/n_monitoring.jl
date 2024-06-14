@@ -1,6 +1,6 @@
 using Logging, Random
 using JuMP, HiGHS
-#using DecisionProgramming
+using DecisionProgramming
 
 Random.seed!(13)
 

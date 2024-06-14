@@ -842,6 +842,21 @@ function validate_structure(Nodes::OrderedDict{String, AbstractNode}, C_and_D::O
             @warn("Node $i is redundant.")
         end
     end
+
+    indexed_nodes = Set{Name}()
+    while true
+        new_nodes = filter(j -> (j ∉ indexed_nodes && Set(C_and_D[j].I_j) ⊆ indexed_nodes), keys(C_and_D))
+        for j in new_nodes
+            push!(indexed_nodes, j)
+        end
+        if isempty(new_nodes)
+            if length(indexed_nodes) < n_CD
+                throw(DomainError("The influence diagram should be acyclic."))
+            else
+                break
+            end
+        end
+    end
 end
 
 """
@@ -956,7 +971,6 @@ function generate_diagram!(diagram::InfluenceDiagram;
 
         diagram.U = DefaultPathUtility(V_I_j_indexed, get_values(diagram.Y))
         if positive_path_utility
-            # Conversion to Float32 using Utility(), since machine default is Float64
             diagram.translation = 1 -  minimum(diagram.U(s) for s in paths(get_values(diagram.S)))
         elseif negative_path_utility
             diagram.translation = -1 - maximum(diagram.U(s) for s in paths(get_values(diagram.S)))
@@ -1012,7 +1026,7 @@ julia> S_values = get_values(diagram.S)
 1
 ```
 """
-# generic function to get values from an OrderedDict
+
 function get_values(dict::OrderedDict)
     return collect(values(dict))
 end
@@ -1028,7 +1042,7 @@ julia> D_values = get_keys(diagram.D)
 1
 ```
 """
-# generic function to get keys from an OrderedDict
+
 function get_keys(dict::OrderedDict)
     return collect(keys(dict))
 end

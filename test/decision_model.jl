@@ -4,7 +4,7 @@ using DecisionProgramming
 
 function influence_diagram()
     diagram = InfluenceDiagram()
-    #A test influence diagram with varying amounts of states and nodes in the information set
+    #Creating an experimental influence diagram with nodes having varying amounts of states and nodes in their information sets
     add_node!(diagram, ChanceNode("H1", [], ["1", "2"]))
     add_node!(diagram, DecisionNode("D1", [], ["1", "2"]))
     add_node!(diagram, DecisionNode("D2", ["H1"], ["1", "2", "3"]))

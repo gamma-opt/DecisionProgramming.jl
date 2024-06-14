@@ -1,15 +1,11 @@
 using Logging
-#using JuMP, Gurobi
 using JuMP, HiGHS
 using DecisionProgramming
 
-LocalDecisionStrategy(Node(2), [0 0 1; 0 0 0; 0 0 0;;; 0 1 0; 1 0 0; 1 1 0;;; 1 0 0; 0 1 1; 0 0 1])
 const N = 4
 
 @info("Creating the influence diagram.")
-
 diagram = InfluenceDiagram()
-
 
 add_node!(diagram, ChanceNode("H1", [], ["ill", "healthy"]))
 for i in 1:N-1
@@ -81,7 +77,6 @@ optimize!(model)
 
 @info("Extracting results.")
 
-#LocalDecisionStrategy(Node(2), [0 0 1; 0 0 0; 0 0 0;;; 0 1 0; 1 0 0; 1 1 0;;; 1 0 0; 0 1 1; 0 0 1])
 Z = DecisionStrategy(z)
 S_probabilities = StateProbabilities(diagram, Z)
 U_distribution = UtilityDistribution(diagram, Z)
