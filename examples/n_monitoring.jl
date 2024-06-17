@@ -79,7 +79,7 @@ set_optimizer(model, optimizer)
 optimize!(model)
 
 @info("Extracting results.")
-Z = DecisionStrategy(z)
+Z = DecisionStrategy(diagram, z)
 U_distribution = UtilityDistribution(diagram, Z)
 S_probabilities = StateProbabilities(diagram, Z)
 

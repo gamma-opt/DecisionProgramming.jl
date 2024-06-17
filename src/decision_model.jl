@@ -5,7 +5,8 @@ function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node}, 
     dims = S[[I_d; d]]
     z_d = Array{VariableRef}(undef, dims...)
     for s in paths(dims)
-        z_d[s...] = @variable(model, binary=true, base_name=base_name)
+        name = join([base_name, s...], "_")
+        z_d[s...] = @variable(model, binary=true, base_name=name)
     end
     # Constraints to one decision per decision strategy.
     for s_I in paths(S[I_d])
@@ -13,11 +14,18 @@ function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node}, 
     end
     return z_d
 end
-
+"""
 struct DecisionVariables
     D::Vector{Node}
     I_d::Vector{Vector{Node}}
     z::Vector{<:Array{VariableRef}}
+end
+"""
+
+struct DecisionVariable
+    D::Name
+    I_d::Vector{Name}
+    z::Array{VariableRef}
 end
 
 """
@@ -37,14 +45,20 @@ Create decision variables and constraints.
 z = DecisionVariables(model, diagram)
 ```
 """
+#FUNCTION NOT WORKING IF NAMES SET AS TRUE
 function DecisionVariables(model::Model, diagram::InfluenceDiagram; names::Bool=false, name::String="z")
-    D_keys_indexed = Int16.([index_of(diagram, node) for node in get_keys(diagram.D)])
-    D_I_j = [diagram.I_j[node] for node in get_keys(diagram.D)]
-    D_I_j_indexed = Vector{Int16}.([indices_of(diagram, nodes) for nodes in D_I_j])
+    decVars = OrderedDict{Name, DecisionVariable}()
 
-    DecisionVariables(D_keys_indexed,
-                      D_I_j_indexed,
-                      [decision_variable(model, States(get_values(diagram.S)), d, I_d, (names ? "$(name)_$(d.j)$(s)" : "")) for (d, I_d) in zip(D_keys_indexed, D_I_j_indexed)])
+    for key in get_keys(diagram.D)
+        states = States(get_values(diagram.S))
+        node = Node(index_of(diagram, key))
+        I_j = convert(Vector{Node}, indices_of(diagram, diagram.D[key].I_j))
+        base_name = names ? "$(name)_$(d.j)$(s)" : "$(diagram.D[key].name)"
+
+        decVars[key] = DecisionVariable(key, diagram.D[key].I_j, decision_variable(model, states, node, I_j, base_name)) 
+    end
+
+    return decVars 
 end
 
 function is_forbidden(s::Path, forbidden_paths::Vector{ForbiddenPath})
@@ -125,7 +139,7 @@ x_s = PathCompatibilityVariables(model, diagram; probability_cut = false)
 """
 function PathCompatibilityVariables(model::Model,
     diagram::InfluenceDiagram,
-    z::DecisionVariables;
+    z::OrderedDict{Name, DecisionVariable};
     names::Bool=false,
     name::String="x",
     forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
@@ -152,9 +166,13 @@ function PathCompatibilityVariables(model::Model,
     x_s = PathCompatibilityVariables{N}(variables_x_s)
 
     # Add decision strategy constraints for each decision node
-    I_j_indexed = Vector{Int16}.([indices_of(diagram, nodes) for nodes in get_values(diagram.I_j)])
-    for (d, z_d) in zip(z.D, z.z)
-        decision_strategy_constraint(model, States(get_values(diagram.S)), d, I_j_indexed[d], z.D, z_d, x_s)
+    I_j_indexed = Vector{Node}.([indices_of(diagram, nodes) for nodes in get_values(diagram.I_j)])
+    z_keys_indexed = Node.([index_of(diagram, node) for node in get_keys(diagram.D)])
+
+    z_z = [decision_node.z for decision_node in get_values(z)]
+
+    for (d, z_d) in zip(z_keys_indexed, z_z)
+        decision_strategy_constraint(model, States(get_values(diagram.S)), d, I_j_indexed[d], z_keys_indexed, z_d, x_s)
     end
 
     if probability_cut
@@ -323,6 +341,12 @@ Extract values for decision variables from solved decision model.
 Z = DecisionStrategy(z)
 ```
 """
-function DecisionStrategy(z::DecisionVariables)
-    DecisionStrategy(z.D, z.I_d, [LocalDecisionStrategy(d, z_var) for (d, z_var) in zip(z.D, z.z)])
+function DecisionStrategy(diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable})
+    z_D = convert(Vector{Node}, indices_of(diagram, get_keys(z)))
+    z_I_d_Names = [decision_node.I_d for decision_node in get_values(z)]
+
+    z_I_d_Nodes = [indices_of(diagram, I_j) for I_j in z_I_d_Names]
+    z_z = [decision_node.z for decision_node in get_values(z)]
+
+    DecisionStrategy(z_D, z_I_d_Nodes, [LocalDecisionStrategy(d, z_var) for (d, z_var) in zip(z_D, z_z)])
 end

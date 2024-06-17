@@ -1,6 +1,7 @@
 using Logging
 using JuMP, HiGHS
 using DecisionProgramming
+using DataStructures
 
 const N = 4
 
@@ -56,6 +57,7 @@ generate_diagram!(diagram, positive_path_utility = true)
 
 @info("Creating the decision model.")
 model = Model()
+
 z = DecisionVariables(model, diagram)
 x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
 EV = expected_value(model, diagram, x_s)
@@ -77,10 +79,9 @@ optimize!(model)
 
 @info("Extracting results.")
 
-Z = DecisionStrategy(z)
+Z = DecisionStrategy(diagram, z)
 S_probabilities = StateProbabilities(diagram, Z)
 U_distribution = UtilityDistribution(diagram, Z)
-
 
 @info("Printing decision strategy:")
 print_decision_strategy(diagram, Z, S_probabilities)

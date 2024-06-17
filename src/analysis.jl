@@ -204,8 +204,6 @@ function StateProbabilities(diagram::InfluenceDiagram, Z::DecisionStrategy, node
 end
 
 
-
-
 """
     StateProbabilities(diagram::InfluenceDiagram, Z::DecisionStrategy)
 
