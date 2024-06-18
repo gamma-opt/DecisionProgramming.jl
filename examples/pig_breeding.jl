@@ -59,15 +59,13 @@ generate_diagram!(diagram, positive_path_utility = true)
 model = Model()
 
 z = DecisionVariables(model, diagram)
+
 x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
 EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
 
+
 @info("Starting the optimization process.")
-#optimizer = optimizer_with_attributes(
-#    () -> Gurobi.Optimizer(Gurobi.Env()),
-#    "IntFeasTol"      => 1e-9,
-#)
 optimizer = optimizer_with_attributes(
     () -> HiGHS.Optimizer()
 )

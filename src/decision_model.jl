@@ -14,13 +14,6 @@ function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node}, 
     end
     return z_d
 end
-"""
-struct DecisionVariables
-    D::Vector{Node}
-    I_d::Vector{Vector{Node}}
-    z::Vector{<:Array{VariableRef}}
-end
-"""
 
 struct DecisionVariable
     D::Name
@@ -51,11 +44,11 @@ function DecisionVariables(model::Model, diagram::InfluenceDiagram; names::Bool=
 
     for key in get_keys(diagram.D)
         states = States(get_values(diagram.S))
-        node = Node(index_of(diagram, key))
-        I_j = convert(Vector{Node}, indices_of(diagram, diagram.D[key].I_j))
+        node_index = Node(index_of(diagram, key))
+        I_d = convert(Vector{Node}, indices_of(diagram, diagram.D[key].I_j))
         base_name = names ? "$(name)_$(d.j)$(s)" : "$(diagram.D[key].name)"
 
-        decVars[key] = DecisionVariable(key, diagram.D[key].I_j, decision_variable(model, states, node, I_j, base_name)) 
+        decVars[key] = DecisionVariable(key, diagram.D[key].I_j, decision_variable(model, states, node_index, I_d, base_name)) 
     end
 
     return decVars 
@@ -345,8 +338,10 @@ function DecisionStrategy(diagram::InfluenceDiagram, z::OrderedDict{Name, Decisi
     z_D = convert(Vector{Node}, indices_of(diagram, get_keys(z)))
     z_I_d_Names = [decision_node.I_d for decision_node in get_values(z)]
 
-    z_I_d_Nodes = [indices_of(diagram, I_j) for I_j in z_I_d_Names]
+    z_I_d_indices = [indices_of(diagram, I_j) for I_j in z_I_d_Names]
     z_z = [decision_node.z for decision_node in get_values(z)]
 
-    DecisionStrategy(z_D, z_I_d_Nodes, [LocalDecisionStrategy(d, z_var) for (d, z_var) in zip(z_D, z_z)])
+    DecisionStrategy(z_D, z_I_d_indices, [LocalDecisionStrategy(d, z_var) for (d, z_var) in zip(z_D, z_z)])
 end
+
+
