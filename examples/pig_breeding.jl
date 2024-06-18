@@ -64,6 +64,7 @@ x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
 EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
 
+#μ = cluster_variables_and_constraints(model, diagram, z)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
