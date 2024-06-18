@@ -42,7 +42,6 @@ Create decision variables and constraints.
 z = DecisionVariables(model, diagram)
 ```
 """
-#FUNCTION NOT WORKING IF NAMES SET AS TRUE
 function DecisionVariables(model::Model, diagram::InfluenceDiagram; names::Bool=true)
     decVars = OrderedDict{Name, DecisionVariable}()
 
