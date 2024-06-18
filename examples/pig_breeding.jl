@@ -58,7 +58,7 @@ generate_diagram!(diagram, positive_path_utility = true)
 @info("Creating the decision model.")
 model = Model()
 
-z = DecisionVariables(model, diagram)
+z = DecisionVariables(model, diagram, names=true)
 
 x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
 EV = expected_value(model, diagram, x_s)

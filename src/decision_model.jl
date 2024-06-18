@@ -1,12 +1,16 @@
 using JuMP
 
-function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node}, base_name::String="")
+function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node}, names::Bool, base_name::String="")
     # Create decision variables.
     dims = S[[I_d; d]]
     z_d = Array{VariableRef}(undef, dims...)
     for s in paths(dims)
         name = join([base_name, s...], "_")
-        z_d[s...] = @variable(model, binary=true, base_name=name)
+        if names == true
+            z_d[s...] = @variable(model, binary=true, base_name=name)
+        else
+            z_d[s...] = @variable(model, binary=true, base_name=base_name)
+        end
     end
     # Constraints to one decision per decision strategy.
     for s_I in paths(S[I_d])
@@ -39,16 +43,16 @@ z = DecisionVariables(model, diagram)
 ```
 """
 #FUNCTION NOT WORKING IF NAMES SET AS TRUE
-function DecisionVariables(model::Model, diagram::InfluenceDiagram; names::Bool=false, name::String="z")
+function DecisionVariables(model::Model, diagram::InfluenceDiagram; names::Bool=true)
     decVars = OrderedDict{Name, DecisionVariable}()
 
     for key in get_keys(diagram.D)
         states = States(get_values(diagram.S))
         node_index = Node(index_of(diagram, key))
         I_d = convert(Vector{Node}, indices_of(diagram, diagram.D[key].I_j))
-        base_name = names ? "$(name)_$(d.j)$(s)" : "$(diagram.D[key].name)"
+        base_name = names ? "$(diagram.D[key].name)" : ""
 
-        decVars[key] = DecisionVariable(key, diagram.D[key].I_j, decision_variable(model, states, node_index, I_d, base_name)) 
+        decVars[key] = DecisionVariable(key, diagram.D[key].I_j, decision_variable(model, states, node_index, I_d, names, base_name)) 
     end
 
     return decVars 
