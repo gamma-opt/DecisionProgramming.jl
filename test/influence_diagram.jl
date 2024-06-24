@@ -34,27 +34,27 @@ using DataStructures
 @test vec(collect(paths(States(State[2, 3]), FixedPath(Dict(Node(1)=>State(2)))))) == [(2, 1), (2, 2), (2, 3)]
 
 @info "Testing Probabilities"
-@test isa(Probabilities(Node(1), [0.4 0.6; 0.3 0.7]), Probabilities)
-@test isa(Probabilities(Node(1), [0.0, 0.4, 0.6]), Probabilities)
-@test_throws DomainError Probabilities(Node(1), [1.1, 0.1])
+@test isa(Probabilities([0.4 0.6; 0.3 0.7]), Probabilities)
+@test isa(Probabilities([0.0, 0.4, 0.6]), Probabilities)
+@test_throws DomainError Probabilities([1.1, 0.1])
 
 @info "Testing DefaultPathProbability"
 P = DefaultPathProbability(
     [Node(1), Node(2)],
     [Node[], [Node(1)]],
-    [Probabilities(Node(1), [0.4, 0.6]), Probabilities(Node(2), [0.3 0.7; 0.9 0.1])]
+    [Probabilities([0.4, 0.6]), Probabilities([0.3 0.7; 0.9 0.1])]
 )
 @test isa(P, DefaultPathProbability)
 @test P((State(1), State(2))) == 0.4 * 0.7
 
 @info "Testing Utilities"
-@test isa(Utilities(Node(1), Utility[-1.1, 0.0, 2.7]), Utilities)
-@test isa(Utilities(Node(1), Utility[-1.1 0.0; 2.7 7.0]), Utilities)
+@test isa(Utilities(Utility[-1.1, 0.0, 2.7]), Utilities)
+@test isa(Utilities(Utility[-1.1 0.0; 2.7 7.0]), Utilities)
 
 @info "Testing DefaultPathUtility"
 U = DefaultPathUtility(
     [Node[2], Node[1, 2]],
-    [Utilities(Node(3), Utility[1.0, 1.4]), Utilities(Node(4), Utility[1.0 1.5; 0.6 3.4])]
+    [Utilities(Utility[1.0, 1.4]), Utilities(Utility[1.0 1.5; 0.6 3.4])]
 )
 @test isa(U, DefaultPathUtility)
 @test U((State(2), State(1))) == Utility(1.0 + 0.6)

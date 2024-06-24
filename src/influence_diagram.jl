@@ -240,15 +240,14 @@ julia> X(s)
 ```
 """
 struct Probabilities{N} <: AbstractArray{Float64, N}
-    c::Node
     data::Array{Float64, N}
-    function Probabilities(c::Node, data::Array{Float64, N}) where N
+    function Probabilities(data::Array{Float64, N}) where N
         for i in CartesianIndices(size(data)[1:end-1])
             if !(sum(data[i, :]) ≈ 1)
                 throw(DomainError("Probabilities should sum to one."))
             end
         end
-        new{N}(c, data)
+        new{N}(data)
     end
 end
 
@@ -311,7 +310,6 @@ struct DefaultPathProbability <: AbstractPathProbability
             new(C, I_c, X)
         end
     end
-
 end
 
 function (P::DefaultPathProbability)(s::Path)
@@ -353,13 +351,12 @@ julia> Y(s)
 ```
 """
 struct Utilities{N} <: AbstractArray{Utility, N}
-    v::Node
     data::Array{Utility, N}
-    function Utilities(v::Node, data::Array{Utility, N}) where N
+    function Utilities(data::Array{Utility, N}) where N
         if any(isinf(u) for u in data)
             throw(DomainError("A value should be defined for each element of a utility matrix."))
         end
-        new{N}(v, data)
+        new{N}(data)
     end
 end
 
@@ -670,9 +667,9 @@ function add_probabilities!(diagram::InfluenceDiagram, node::Name, probabilities
     if size(probabilities) == cardinalities
         if isa(probabilities, ProbabilityMatrix)
             # Check that probabilities sum to one happens in Probabilities
-            diagram.X[node] = Probabilities(Node(index_of(diagram, node)), probabilities.matrix)
+            diagram.X[node] = Probabilities(probabilities.matrix)
         else
-            diagram.X[node] = Probabilities(Node(index_of(diagram, node)), probabilities)
+            diagram.X[node] = Probabilities(probabilities)
         end
     else
         throw(DomainError("The dimensions of a probability matrix should match the node's states' and information states' cardinality. Expected $cardinalities for node $node, got $(size(probabilities))."))
@@ -810,10 +807,10 @@ function add_utilities!(diagram::InfluenceDiagram, node::Name, utilities::Abstra
     cardinalities = Tuple([diagram.S[n] for n in diagram.I_j[node]])
     if size(utilities) == cardinalities
         if isa(utilities, UtilityMatrix)
-            diagram.Y[node] = Utilities(Node(index_of(diagram, node)), utilities.matrix)
+            diagram.Y[node] = Utilities(utilities.matrix)
         else
             # Conversion to Float32 using Utility(), since machine default is Float64
-            diagram.Y[node] = Utilities(Node(index_of(diagram, node)), [Utility(u) for u in utilities])
+            diagram.Y[node] = Utilities([Utility(u) for u in utilities])
         end
     else
         throw(DomainError("The dimensions of the utilities matrix should match the node's information states' cardinality. Expected $cardinalities for node $node, got $(size(utilities))."))

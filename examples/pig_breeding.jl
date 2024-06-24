@@ -33,7 +33,7 @@ X_H["healthy", "treat", :] = [0.1, 0.9]
 X_H["ill", "pass", :] = [0.9, 0.1]
 X_H["ill", "treat", :] = [0.5, 0.5]
 
-# Declare proability matrix for test result nodes T_1...T_N
+# Declare probability matrix for test result nodes T_1...T_N
 X_T = ProbabilityMatrix(diagram, "T1")
 X_T["ill", "positive"] = 0.8
 X_T["ill", "negative"] = 0.2
@@ -50,8 +50,6 @@ for i in 1:N-1
 end
 
 add_utilities!(diagram, "MP", [300.0, 1000.0])
-
-
 
 generate_diagram!(diagram, positive_path_utility = true)
 
