@@ -5,6 +5,7 @@ function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node}, 
     dims = S[[I_d; d]]
     z_d = Array{VariableRef}(undef, dims...)
     for s in paths(dims)
+        #TÄHÄNKIN HAKASULKEET ALAVIIVAN SIJASTA?
         name = join([base_name, s...], "_")
         if names == true
             z_d[s...] = @variable(model, binary=true, base_name=name)
@@ -355,117 +356,197 @@ end
 function ID_to_RJT(diagram)
     C_rjt = Dict{String, Vector{String}}()
     A_rjt = []
-    namelist = [node.name for node in diagram.Nodes]
-    println("namelist:")
-    println(namelist)
+    names = get_keys(diagram.Nodes)
     for j in length(diagram.Nodes):-1:1
-        C_j = copy(diagram.Nodes[j].I_j)
-        println(C_j)
-        push!(C_j, namelist[j])
+        C_j = copy(get_values(diagram.I_j)[j])
+        push!(C_j, names[j])
         for a in A_rjt 
-            if a[1] == namelist[j]
+            if a[1] == names[j]
                 push!(C_j, setdiff(C_rjt[a[2]], [a[2]])...)
             end
         end
         C_j = unique(C_j)
-        C_j_aux = sort([(elem, findfirst(isequal(elem), namelist)) for elem in C_j], by = last)
+        C_j_aux = sort([(elem, findfirst(isequal(elem), names)) for elem in C_j], by = last)
         C_j = [C_j_tuple[1] for C_j_tuple in C_j_aux]
-        C_rjt[namelist[j]] = C_j
+        C_rjt[names[j]] = C_j
         
-        if length(C_rjt[namelist[j]]) > 1
-            u = maximum([findfirst(isequal(name), namelist) for name in setdiff(C_j, [namelist[j]])])
-            push!(A_rjt, (namelist[u], namelist[j]))
+        if length(C_rjt[names[j]]) > 1
+            u = maximum([findfirst(isequal(name), names) for name in setdiff(C_j, [names[j]])])
+            push!(A_rjt, (names[u], names[j]))
         end
     end
     println(C_rjt)
-    println(A_rjt)
-    println("")
     return C_rjt, A_rjt
+    
 end
 
 
-
-function cluster_variable(model::Model, base_name::String="")
-    # Create a path compatiblity variable
-    return @variable(model, base_name=base_name, lower_bound = 0, upper_bound = 1)
+function add_variable(model::Model, states::Vector, name::Name)
+    variable = @variable(model, [1:prod(length.(states))], lower_bound = 0)
+    #DO WE WANT NAMING LIKE THIS?
+    for (variable_i, states_i) in zip(variable, Iterators.product(states...))
+        set_name(variable_i, "$name[$(join(states_i, ", "))]")
+    end
+    return Containers.DenseAxisArray(reshape(variable, length.(states)...), states...)
 end
 
+
+function μ_variable(model::Model, name::Name, S::OrderedDict{Name, Vector{Name}}, C_rjt::Dict{Name, Vector{Name}})
+    μ_statevars = add_variable(model, getindex.(Ref(S), C_rjt[name]), name)
+    # Probability distributions μ sum to 1
+    @constraint(model, sum(μ_statevars) == 1)
+
+    #=
+    # Create μ-variables
+    μ_statevars = Array{VariableRef}(undef, Tuple(length.([getindex.(Ref(S), C_rjt[name])]...)))
+    for index in CartesianIndices(μ_statevars)
+        μ_statevars[index] = @variable(model, base_name="μ_$name($(join(Tuple(index),',')))", lower_bound=0)
+    end
+    # Probability distributions μ sum to 1
+    @constraint(model, sum(μ_statevars) == 1)
+    =#
+
+    #println(μ_statevars)
+    return μ_statevars
+end
+
+function μ_bar_variable(model::Model, name::Name, S::OrderedDict{Name, Vector{Name}}, C_rjt::Dict{Name, Vector{Name}}, μ_statevars::Array{VariableRef})
+    μ_bar_statevars = add_variable(model, getindex.(Ref(S), setdiff(C_rjt[name], [name])), name)
+    for index in CartesianIndices(μ_bar_statevars)
+        @constraint(model, μ_bar_statevars[index] .== dropdims(sum(μ_statevars, dims=findfirst(isequal(name), C_rjt[name])), dims=findfirst(isequal(name), C_rjt[name]))[index])
+    end
+
+    #=
+    # Create μ_bar-variables
+    μ_bar_statevars = Array{VariableRef}(undef, Tuple(length.([getindex.(Ref(S), setdiff(C_rjt[name], [name]))]...)))
+    for index in CartesianIndices(μ_bar_statevars)
+        # Moments μ_{\breve{C}_v} (the moments from above, but with the last variable dropped out)
+        μ_bar_statevars[index] = @variable(model, base_name="μ_bar_$name($(join(Tuple(index),',')))", lower_bound=0)
+        @constraint(model, μ_bar_statevars[index] .== dropdims(sum(μ_statevars, dims=findfirst(isequal(name), C_rjt[name])), dims=findfirst(isequal(name), C_rjt[name]))[index])
+    end
+    =#
+
+    return μ_bar_statevars
+end
+
+
+struct μVariable
+    node::Name
+    statevars::Array{VariableRef}
+end
+
+
+function local_consistency_constraint(model::Model, arc::Tuple{Name, Name}, C_rjt::Dict{Name, Vector{Name}}, μVars::Dict{Name, μVariable})
+    intersection = C_rjt[arc[1]] ∩ C_rjt[arc[2]]
+    C1_minus_C2 = Tuple(setdiff(collect(1:length(C_rjt[arc[1]])), indexin(intersection, C_rjt[arc[1]])))
+    C2_minus_C1 = Tuple(setdiff(collect(1:length(C_rjt[arc[2]])), indexin(intersection, C_rjt[arc[2]])))
+    @constraint(model, 
+        dropdims(sum(μVars[arc[1]].statevars, dims=C1_minus_C2), dims=C1_minus_C2) .== 
+        dropdims(sum(μVars[arc[2]].statevars, dims=C2_minus_C1), dims=C2_minus_C1))
+end
+
+
+function probability_and_decision_constraints(model::Model, diagram::InfluenceDiagram, name::Name, μ_statevars::Array{VariableRef}, μ_bar_statevars::Array{VariableRef}, z::OrderedDict{String, DecisionVariable})
+    I_j_mapping_in_cluster = [findfirst(isequal(node), diagram.C_rjt[name]) for node in diagram.I_j[name]] # Map the information set to the variables in the cluster
+    println(I_j_mapping_in_cluster)
+    for index in CartesianIndices(μ_bar_statevars)
+        for s_j in 1:length(diagram.States[name])
+            if isa(diagram.Nodes[name], ChanceNode)
+                # μ_{C_v} = p*μ_{\breve{C}_v}
+                @constraint(model, μ_statevars[Tuple(index)...,s_j] == diagram.X[name][Tuple(index)[I_j_mapping_in_cluster]...,s_j]*μ_bar_statevars[index])
+            elseif isa(diagram.Nodes[name], DecisionNode)
+                # μ_{C_v} ≤ z
+                @constraint(model, μ_statevars[Tuple(index)...,s_j] <= z[name].z[Tuple(index)[I_j_mapping_in_cluster]...,s_j])
+            end
+        end
+    end
+end
 
 
 # Using the influence diagram and decision variables z from DecisionProgramming.jl,  
 # adds the variables and constraints of the corresponding RJT model
 function cluster_variables_and_constraints(model, diagram, z)
     # Get the RJT structure
-    C_rjt, A_rjt = ID_to_RJT(diagram)
+    # ARE THESE NECESSARY TO DEFINE AS PART OF THE DIAGRAM. MAYBE LOGICAL BUT POSSIBLY NOT PRACTICAL IF NOT NEEDED IN OTHER FUNCTIONS, NOW NEEDED IN RJT_objective THOUGH
+    # BETTER NAMES FOR THESE, E.G. diagram.clusters and diagram.arcs?
+    diagram.C_rjt, diagram.A_rjt = ID_to_RJT(diagram)
 
+    #μ- AND μ_bar-VARIABLES IN THE SAME LOOP, OTHERWISE NOT A PROBLEM, BUT DIFFERENT ORDER COMPARED TO PAPER AND ALSO SLIGHTLY WEIRD ORDER OF EQUATIONS IN MODEL PRINTOUT
     # Variables corresponding to the nodes in the RJT
-    μ = Dict{String, Array{VariableRef}}()
-    for j in keys(C_rjt)
-        if !isa(Nodes[j], ValueNode)
-            μ[j] = Array{VariableRef}(undef, Tuple(length.([getindex.(Ref(S), C_rjt[j])]...)))
-            for index in CartesianIndices(μ[j])
-                μ[j][index] = @variable(model, base_name="μ_$j($(join(Tuple(index),',')))", lower_bound=0)
-            end
-            # Probability distributions μ sum to 1
-            @constraint(model, sum(μ[j]) == 1)
-        end
-    end
-
-    for a in A_rjt
-        if !isa(Nodes[a[2]], ValueNode)
-            intersection = C_rjt[a[1]] ∩ C_rjt[a[2]]
-            C1_minus_C2 = Tuple(setdiff(collect(1:length(C_rjt[a[1]])), indexin(intersection, C_rjt[a[1]])))
-            C2_minus_C1 = Tuple(setdiff(collect(1:length(C_rjt[a[2]])), indexin(intersection, C_rjt[a[2]])))
-            @constraint(model, 
-                dropdims(sum(μ[a[1]], dims=C1_minus_C2), dims=C1_minus_C2) .== 
-                dropdims(sum(μ[a[2]], dims=C2_minus_C1), dims=C2_minus_C1))
-        end
-    end
-
+    μVars = Dict{Name, μVariable}()
     # Variables μ_{\breve{C}_v} = ∑_{x_v} μ_{C_v}
-    μ_breve = Dict{String, Array{VariableRef}}()
-    for j in keys(C_rjt)
-        if !isa(Nodes[j], ValueNode)
-            μ_breve[j] = Array{VariableRef}(undef, Tuple(length.([getindex.(Ref(S), setdiff(C_rjt[j], [j]))]...)))
-            println(μ_breve[j])
-            for index in CartesianIndices(μ_breve[j])
-                # Moments μ_{\breve{C}_v} (the moments from above, but with the last variable dropped out)
-                μ_breve[j][index] = @variable(model, base_name="μ_breve_$j($(join(Tuple(index),',')))", lower_bound=0)
-                # μ_{\breve{C}_v} = ∑_{x_v} μ_{C_v}
-                @constraint(model, μ_breve[j][index] .== dropdims(sum(μ[j], dims=findfirst(isequal(j), C_rjt[j])), dims=findfirst(isequal(j), C_rjt[j]))[index])
-            end
+    μ_barVars = Dict{Name, μVariable}()
+    for name in union(keys(diagram.C), keys(diagram.D))
+        μVars[name] = μVariable(name, μ_variable(model, name, diagram.States, diagram.C_rjt))
+        μ_barVars[name] = μVariable(name, μ_bar_variable(model, name, diagram.States, diagram.C_rjt, μVars[name].statevars))
+    end
+
+    for arc in diagram.A_rjt
+        if !isa(diagram.Nodes[arc[2]], ValueNode)
+            local_consistency_constraint(model, arc, diagram.C_rjt, μVars)
         end
     end
 
     # Add in the conditional probabilities and decision strategies
-    for name in diagram.Names 
-        if !isa(Nodes[name], ValueNode) # In our structure, value nodes are not stochastic and the whole objective thing doesn't really work in this context
-            I_j_mapping = [findfirst(isequal(node), C_rjt[name]) for node in I_j[name]] # Map the information set to the variables in the cluster
-            for index in CartesianIndices(μ_breve[name])
-                for s_j in 1:length(States[name])
-                    if isa(Nodes[name], ChanceNode)
-                        # μ_{C_v} = p*μ_{\breve{C}_v}
-                        @constraint(model, μ[name][Tuple(index)...,s_j] == X[name][Tuple(index)[I_j_mapping]...,s_j]*μ_breve[name][index])
-                    elseif isa(Nodes[name], DecisionNode)
-                        # μ_{C_v} ≤ z
-                        @constraint(model, μ[name][Tuple(index)...,s_j] <= z_dict[name][Tuple(index)[I_j_mapping]...,s_j])
-                    end
-                end
-            end
-        end
+    # In our structure, value nodes are not stochastic and the whole objective thing doesn't really work in this context
+    for name in union(keys(diagram.C), keys(diagram.D))
+        probability_and_decision_constraints(model, diagram, name, μVars[name].statevars, μ_barVars[name].statevars, z)
     end
+    #μ_barVars MAYBE NOT NEEDED AS OUTPUT???
+    return μVars
+end
 
+
+#IS THIS FUNCTION NECESSARY TO HAVE SEPARATELY, I DID IT BECAUSE PATH-VERSION WAS BUILT SOMEWHAT SIMILARLY TO EXPECTED_VALUE-FUNCTION
+function RJT_objective(model, diagram, μVars)
     # Build the objective. The key observation here is that the information set
     # of a value node is always included in the previous cluster by construction
+    
     @objective(model, Max, 0)
-    for j in keys(C_rjt)
-        if isa(Nodes[j], ValueNode)
-            i = A_rjt[findfirst(a -> a[2] == j, A_rjt)][1]
-            I_j_mapping = [findfirst(isequal(node), C_rjt[i]) for node in I_j[j]]
-            for index in CartesianIndices(μ[i])
-                set_objective_coefficient(model, μ[i][index], Y[j][Tuple(index)[I_j_mapping]...])
+    """
+    expr = :()
+    """
+    for V_name in keys(diagram.V)
+        V_determining_node_name = diagram.A_rjt[findfirst(a -> a[2] == V_name, diagram.A_rjt)][1]
+        V_determining_node_index_in_cluster = [findfirst(isequal(node), diagram.C_rjt[V_determining_node_name]) for node in diagram.I_j[V_name]]
+        for index in CartesianIndices(μVars[V_determining_node_name].statevars)
+            
+            #Find existing coefficient if a coefficient has been added to variable currently being modified before
+            obj_func = objective_function(model)
+            coefficient = 0.0  # Initialize the coefficient to zero
+            for v in keys(obj_func.terms)
+                if v === μVars[V_determining_node_name].statevars[index]
+                    coefficient = obj_func.terms[v]
+                    break
+                end
             end
+
+            set_objective_coefficient(model, μVars[V_determining_node_name].statevars[index], coefficient + diagram.Y[V_name][Tuple(index)[V_determining_node_index_in_cluster]...])
+
+            """
+            println("muuttujat:")
+            println(all_variables(model))
+            println(all_variables(model)[1])
+            println(typeof(all_variables(model)[1]))
+            println(μVars)
+            println(expr)
+            println(diagram.Y[V_name][Tuple(index)[V_determining_index_in_cluster]...])
+            println(typeof(diagram.Y[V_name][Tuple(index)[V_determining_index_in_cluster]...]))
+            println(μVars[V_determining_name].statevars[index])
+            println(typeof(μVars[V_determining_name].statevars[index]))
+            #@variable(model, μVars[V_determining_name].statevars[index])
+            #@variable(model, diagram.Y[V_name][Tuple(index)[V_determining_index_in_cluster]...])
+            args = expr.args
+            println(args)
+            push!(args, :(diagram.Y[V_name][Tuple(index)[V_determining_index_in_cluster]...])*(μVars[V_determining_name].statevars[index]))
+            #expr = Expr(:call, args...)
+            #expr = (diagram.Y[V_name][Tuple(index)[V_determining_index_in_cluster]...])*(μVars[V_determining_name].statevars[index])
+            """
         end
     end
-    return μ
+    """
+    println("expr:")
+    println(expr)
+    #set_objective_coefficient(model, , Float32(100))
+    """
 end

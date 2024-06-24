@@ -492,6 +492,9 @@ mutable struct InfluenceDiagram
     P::AbstractPathProbability
     U::AbstractPathUtility
     translation::Utility
+
+    C_rjt::Dict{Name, Vector{Name}}
+    A_rjt::Vector{Tuple{Name, Name}}
     function InfluenceDiagram()
         new(OrderedDict{String, AbstractNode}())
     end

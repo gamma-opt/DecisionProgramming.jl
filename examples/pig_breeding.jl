@@ -54,17 +54,24 @@ add_utilities!(diagram, "MP", [300.0, 1000.0])
 
 
 generate_diagram!(diagram, positive_path_utility = true)
+#println(diagram)
 
 @info("Creating the decision model.")
 model = Model()
 
 z = DecisionVariables(model, diagram, names=true)
+#println(z)
 
+"""
 x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
 EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
+"""
 
-#μ = cluster_variables_and_constraints(model, diagram, z)
+μVars = cluster_variables_and_constraints(model, diagram, z)
+RJT_objective(model, diagram, μVars)
+#println("model:")
+#println(model)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
@@ -72,8 +79,8 @@ optimizer = optimizer_with_attributes(
 )
 set_optimizer(model, optimizer)
 
-spu = singlePolicyUpdate(diagram, model, z, x_s)
-@info("Single policy update found solution $(spu[end][1]) in $(spu[end][2]/1000) seconds.")
+#spu = singlePolicyUpdate(diagram, model, z, x_s)
+#@info("Single policy update found solution $(spu[end][1]) in $(spu[end][2]/1000) seconds.")
 optimize!(model)
 
 @info("Extracting results.")

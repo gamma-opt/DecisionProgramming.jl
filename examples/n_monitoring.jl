@@ -66,9 +66,16 @@ generate_diagram!(diagram, positive_path_utility=true)
 
 model = Model()
 z = DecisionVariables(model, diagram)
+"""
 x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
 EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
+"""
+μVars, μ_barVars = cluster_variables_and_constraints(model, diagram, z)
+RJT_objective(model, diagram, μVars)
+println("model:")
+println(model)
+
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
