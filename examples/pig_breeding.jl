@@ -26,7 +26,7 @@ generate_arcs!(diagram)
 # Add probabilities for node H1
 add_probabilities!(diagram, "H1", [0.1, 0.9])
 
-# Declare proability matrix for health nodes H_2, ... H_N-1, which have identical information sets and states
+# Declare probability matrix for health nodes H_2, ... H_N-1, which have identical information sets and states
 X_H = ProbabilityMatrix(diagram, "H2")
 X_H["healthy", "pass", :] = [0.2, 0.8]
 X_H["healthy", "treat", :] = [0.1, 0.9]

@@ -2,7 +2,7 @@ using Base.Iterators: product
 using Random
 using DataStructures
 
-
+global node_indexing = 1
 # --- Nodes and States ---
 
 """
@@ -35,10 +35,13 @@ struct ChanceNode <: AbstractNode
     name::Name
     I_j::Vector{Name}
     states::Vector{Name}
+    index::Int16
     function ChanceNode(name, I_j, states)
-        return new(name, I_j, states)
+        return new(name, I_j, states, 0)
     end
-
+    function ChanceNode(name, I_j, states, index)
+        return new(name, I_j, states, index)
+    end
 end
 
 """
@@ -50,8 +53,12 @@ struct DecisionNode <: AbstractNode
     name::Name
     I_j::Vector{Name}
     states::Vector{Name}
+    index::Int16
     function DecisionNode(name, I_j, states)
-        return new(name, I_j, states)
+        return new(name, I_j, states, 0)
+    end
+    function DecisionNode(name, I_j, states, index)
+        return new(name, I_j, states, index)
     end
 end
 
@@ -63,8 +70,12 @@ A struct for value nodes, includes the name and information set of the node
 struct ValueNode <: AbstractNode
     name::Name
     I_j::Vector{Name}
+    index::Int16
     function ValueNode(name, I_j)
-        return new(name, I_j)
+        return new(name, I_j, 0)
+    end
+    function ValueNode(name, I_j, index)
+        return new(name, I_j, index)
     end
 end
 
@@ -869,46 +880,60 @@ generate_arcs!(diagram)
 ```
 """
 function generate_arcs!(diagram::InfluenceDiagram)
-   C_and_D = filter(x -> !isa(x[2], ValueNode), pairs(diagram.Nodes)) # Collects all nodes not ValueNodes
-   n_CD = length(C_and_D)
-   V_ = filter(x -> isa(x[2], ValueNode), pairs(diagram.Nodes)) # Collects all ValueNodes
-   n_V = length(V_)
+    C_and_D = filter(x -> !isa(x[2], ValueNode), pairs(diagram.Nodes)) # Collects all nodes not ValueNodes
+    n_CD = length(C_and_D)
+    V_ = filter(x -> isa(x[2], ValueNode), pairs(diagram.Nodes)) # Collects all ValueNodes
+    n_V = length(V_)
 
-   validate_structure(diagram.Nodes, C_and_D, n_CD, V_, n_V)
+    validate_structure(diagram.Nodes, C_and_D, n_CD, V_, n_V)
 
-   # Declare vectors for results
-   I_j = OrderedDict{Name, Vector{Name}}()
-   states = OrderedDict{Name, Vector{Name}}()
-   S = OrderedDict{Name, State}()
-   C = OrderedDict{Name, ChanceNode}()
-   D = OrderedDict{Name, DecisionNode}()
-   V = OrderedDict{Name, ValueNode}()
+    # Declare vectors for results
+    I_j = OrderedDict{Name, Vector{Name}}()
+    states = OrderedDict{Name, Vector{Name}}()
+    S = OrderedDict{Name, State}()
+    C = OrderedDict{Name, ChanceNode}()
+    D = OrderedDict{Name, DecisionNode}()
+    V = OrderedDict{Name, ValueNode}()
 
-   #LINE BELOW WAS NEEDED FOR REORDERING OF NODES, UNLIKE WHAT WE THOUGHT
-   diagram.Nodes = merge(C_and_D, V_)
-   diagram.Names = collect(keys(diagram.Nodes))
+    #LINE BELOW WAS NEEDED FOR REORDERING OF NODES, UNLIKE WHAT WE THOUGHT
+    diagram.Nodes = merge(C_and_D, V_)
 
-   for name in diagram.Names
-       I_j[name] = diagram.Nodes[name].I_j
-       if !isa(diagram.Nodes[name], ValueNode)
-           states[name] = C_and_D[name].states
-           S[name] = length(states[name])
-       end
-   end
+    #Assigning indices for all nodes by constructing new nodes
+    node_index = 1
+    for (name, node) in diagram.Nodes
+        if isa(node, ChanceNode)
+            diagram.Nodes[name] = ChanceNode(node.name, node.I_j, node.states, node_index)
+        elseif isa(node, DecisionNode)
+            diagram.Nodes[name] = DecisionNode(node.name, node.I_j, node.states, node_index)
+        elseif isa(node, ValueNode)
+            diagram.Nodes[name] = ValueNode(node.name, node.I_j, node_index)
+        end
+        node_index += 1
+    end
 
-   C = filter(x -> isa(x[2], ChanceNode), pairs(diagram.Nodes))
-   D = filter(x -> isa(x[2], DecisionNode), pairs(diagram.Nodes))
-   V = filter(x -> isa(x[2], ValueNode), pairs(diagram.Nodes))
+    diagram.Names = get_keys(diagram.Nodes)
 
-   diagram.I_j = I_j
-   diagram.States = states
-   diagram.S = S
-   diagram.C = C
-   diagram.D = D
-   diagram.V = V
-   # Declaring X and Y
-   diagram.X = OrderedDict{Name, Probabilities}()
-   diagram.Y = OrderedDict{Name, Utilities}()
+    for name in diagram.Names
+        I_j[name] = diagram.Nodes[name].I_j
+        if !isa(diagram.Nodes[name], ValueNode)
+            states[name] = C_and_D[name].states
+            S[name] = length(states[name])
+        end
+    end
+
+    C = filter(x -> isa(x[2], ChanceNode), pairs(diagram.Nodes))
+    D = filter(x -> isa(x[2], DecisionNode), pairs(diagram.Nodes))
+    V = filter(x -> isa(x[2], ValueNode), pairs(diagram.Nodes))
+
+    diagram.I_j = I_j
+    diagram.States = states
+    diagram.S = S
+    diagram.C = C
+    diagram.D = D
+    diagram.V = V
+    # Declaring X and Y
+    diagram.X = OrderedDict{Name, Probabilities}()
+    diagram.Y = OrderedDict{Name, Utilities}()
 end
 
 # --- Generating Diagram ---
@@ -950,23 +975,15 @@ function generate_diagram!(diagram::InfluenceDiagram;
 
     # Declare P and U if defaults are used
     if default_probability
-        C_keys_indexed = [index_of(diagram, node) for node in get_keys(diagram.C)]
-
-        C_I_j = [diagram.I_j[node] for node in get_keys(diagram.C)]
-        C_I_j_indexed = [indices_of(diagram, nodes) for nodes in C_I_j]
-
-        diagram.P = DefaultPathProbability(
-            C_keys_indexed, 
-            C_I_j_indexed, 
-            get_values(diagram.X)
-        )
+        C_indices = indices(diagram.C)
+        C_I_j_indices = I_j_indices_(diagram, diagram.C)
+        diagram.P = DefaultPathProbability(C_indices, C_I_j_indices, get_values(diagram.X))
     end
 
     if default_utility
-        V_I_j = [diagram.I_j[node] for node in get_keys(diagram.V)]
-        V_I_j_indexed = [indices_of(diagram, nodes) for nodes in V_I_j]
+        V_I_j_indices = I_j_indices_(diagram, diagram.V)
 
-        diagram.U = DefaultPathUtility(V_I_j_indexed, get_values(diagram.Y))
+        diagram.U = DefaultPathUtility(V_I_j_indices, get_values(diagram.Y))
         if positive_path_utility
             diagram.translation = 1 -  minimum(diagram.U(s) for s in paths(get_values(diagram.S)))
         elseif negative_path_utility
@@ -977,17 +994,7 @@ function generate_diagram!(diagram::InfluenceDiagram;
     end
 end
 
-"""
-    function index_of(diagram::InfluenceDiagram, node::Name)
 
-Get the index of a given node.
-
-# Example
-```julia-repl
-julia> idx_O = index_of(diagram, "O")
-1
-```
-"""
 function index_of(diagram::InfluenceDiagram, node::Name)
     idx = findfirst(isequal(node), diagram.Names)
     if isnothing(idx)
@@ -996,8 +1003,29 @@ function index_of(diagram::InfluenceDiagram, node::Name)
     return idx
 end
 
+#function indices(dict::OrderedDict{Name, AbstractNode})
+function indices(dict)
+    indices = Vector{Node}()
+    for node in values(dict)
+        push!(indices, node.index)
+    end
+    return indices
+end
+
+#function I_j_indices_(diagram::InfluenceDiagram, dict::OrderedDict{Name, AbstractNode})
+function I_j_indices_(diagram::InfluenceDiagram, dict)
+    I_j_indices = Vector{Vector{Node}}()
+    for node in values(dict)
+        I_j_indices_single_node = Vector{Node}()
+        for I_j_node in node.I_j
+            push!(I_j_indices_single_node, diagram.Nodes[I_j_node].index)
+        end
+        push!(I_j_indices, I_j_indices_single_node)
+    end
+    return I_j_indices
+end
 """
-    function indices_of(diagram::InfluenceDiagram, nodes::AbstractArray)
+    function indices_in_vector(diagram::InfluenceDiagram, nodes::AbstractArray)
 
 Get the indices of a array of nodes and store them in an array.
 
@@ -1008,8 +1036,8 @@ julia> idcs_O_P = indices_of(diagram, ["O", "P"])
 ```
 """
 
-function indices_of(diagram::InfluenceDiagram, nodes::AbstractArray)
-    return [index_of(diagram, node) for node in nodes]
+function indices_in_vector(diagram::InfluenceDiagram, nodes::AbstractArray)
+    return [diagram.Nodes[node].index for node in nodes]
 end
 
 """
@@ -1056,8 +1084,8 @@ julia> NS_O = num_states(diagram, "O")
 2
 ```
 """
-function num_states(diagram::InfluenceDiagram, node::Name)
-    return get_values(diagram.S)[index_of(diagram, node)]
+function num_states(diagram::InfluenceDiagram, name::Name)
+    return get_values(diagram.S)[diagram.Nodes[name].index]
 end
 
 # --- ForbiddenPath and FixedPath outer construction functions ---
@@ -1193,7 +1221,7 @@ function LocalDecisionStrategy(rng::AbstractRNG, diagram::InfluenceDiagram, d::N
         s_j = rand(rng, 1:state)
         data[s, s_j] = 1
     end
-    LocalDecisionStrategy(Node(index_of(diagram, d)), data)
+    LocalDecisionStrategy(diagram.Nodes[d].index, data)
 end
 
 
