@@ -2,7 +2,6 @@ using Base.Iterators: product
 using Random
 using DataStructures
 
-global node_indexing = 1
 # --- Nodes and States ---
 
 """
@@ -29,7 +28,7 @@ abstract type AbstractNode end
 """
     struct ChanceNode <: AbstractNode
 
-A struct for chance nodes, includes the name, information set and states of the node
+A struct for chance nodes, includes the name, information set, states and index of the node
 """
 struct ChanceNode <: AbstractNode
     name::Name
@@ -47,7 +46,7 @@ end
 """
     struct DecisionNode <: AbstractNode
 
-A struct for decision nodes, includes the name, information set and states of the node
+A struct for decision nodes, includes the name, information set, states and index of the node
 """
 struct DecisionNode <: AbstractNode
     name::Name
@@ -65,7 +64,7 @@ end
 """
     struct ValueNode <: AbstractNode
 
-A struct for value nodes, includes the name and information set of the node
+A struct for value nodes, includes the name, information set and index of the node
 """
 struct ValueNode <: AbstractNode
     name::Name
@@ -898,7 +897,7 @@ function generate_arcs!(diagram::InfluenceDiagram)
     #LINE BELOW WAS NEEDED FOR REORDERING OF NODES, UNLIKE WHAT WE THOUGHT
     diagram.Nodes = merge(C_and_D, V_)
 
-    #Assigning indices for all nodes by constructing new nodes
+    #Assigning indices for all nodes (by constructing new nodes, because node-structs are immutable)
     node_index = 1
     for (name, node) in diagram.Nodes
         if isa(node, ChanceNode)
@@ -976,12 +975,12 @@ function generate_diagram!(diagram::InfluenceDiagram;
     # Declare P and U if defaults are used
     if default_probability
         C_indices = indices(diagram.C)
-        C_I_j_indices = I_j_indices_(diagram, diagram.C)
+        C_I_j_indices = I_j_indices(diagram, diagram.C)
         diagram.P = DefaultPathProbability(C_indices, C_I_j_indices, get_values(diagram.X))
     end
 
     if default_utility
-        V_I_j_indices = I_j_indices_(diagram, diagram.V)
+        V_I_j_indices = I_j_indices(diagram, diagram.V)
 
         diagram.U = DefaultPathUtility(V_I_j_indices, get_values(diagram.Y))
         if positive_path_utility
@@ -995,27 +994,85 @@ function generate_diagram!(diagram::InfluenceDiagram;
 end
 
 
-function index_of(diagram::InfluenceDiagram, node::Name)
-    idx = findfirst(isequal(node), diagram.Names)
-    if isnothing(idx)
-        throw(DomainError("Name $node not found in the diagram."))
-    end
-    return idx
-end
+"""
+    function indices(dict)
 
-#function indices(dict::OrderedDict{Name, AbstractNode})
+Get the indices of nodes in values of a Dict or OrderedDict.
+
+# Example
+```julia-repl
+julia> D_indices = indices(diagram.D)
+3-element Vector{Int16}:
+ 3
+ 6
+ 9
+```
+"""
+#function indices(dict::OrderedDict{Any, Any}), MIKSEI TÄMÄ TOIMI, NYT TÄYTYY VAIN MÄÄRITELLÄ DICT ILMAN TYYPPIÄ JA TARVITAAN ERROR KÄSITTELIJÄ
+#MIETIN TÄMÄN JA INDICES_IN_VECTOR -FUNKTION YHDISTÄMISTÄ, MUTTA ERI INPUTIT JA PITÄISI KÄSITELLÄ DATATYYPIT ERIKSEEN. OLISIKO SELKEÄMPI KUITENKIN ERI FUNKTIOINA
 function indices(dict)
+    if !(dict isa Dict || dict isa OrderedDict)
+        error("Input must be a Dict or an OrderedDict")
+    end
     indices = Vector{Node}()
     for node in values(dict)
+        if !(node isa AbstractNode)
+            error("Node is not a subtype of AbstractNode")
+        end
         push!(indices, node.index)
     end
     return indices
 end
 
-#function I_j_indices_(diagram::InfluenceDiagram, dict::OrderedDict{Name, AbstractNode})
-function I_j_indices_(diagram::InfluenceDiagram, dict)
+#VAIHTOEHTOINEN VERSIO TÄSSÄ (TOIMIMATON)
+"""
+function indices(data; diagram::InfluenceDiagram=nothing)
+    indices = Vector{Node}()
+    if (data isa OrderedDict)
+        for node in values(data)
+            if !(node isa AbstractNode)
+                error("Node is not a subtype of AbstractNode")
+            end
+            push!(indices, node.index)
+        end
+        return indices
+    end
+    if (data isa AbstractArray)
+        return [diagram.Nodes[node].index for node in nodes]
+    end
+end
+"""
+
+
+"""
+    function I_j_indices(diagram::InfluenceDiagram, dict)
+
+Get the indices of information sets of nodes in values of a Dict or OrderedDict. Returns Vector{Vector{Node}}.
+
+# Example
+```julia-repl
+julia> C_I_j_indices = I_j_indices(diagram, diagram.C)
+7-element Vector{Vector{Int16}}:
+ []
+ [1]
+ [1, 3]
+ [4]
+ [4, 6]
+ [7]
+ [7, 9]
+```
+"""
+
+#function I_j_indices_(diagram::InfluenceDiagram, dict::OrderedDict{Name, AbstractNode}), SAMA KUIN YLLÄ
+function I_j_indices(diagram::InfluenceDiagram, dict)
+    if !(dict isa Dict || dict isa OrderedDict)
+        error("dict-input must be a Dict or an OrderedDict")
+    end
     I_j_indices = Vector{Vector{Node}}()
     for node in values(dict)
+        if !(node isa AbstractNode)
+            error("Node is not a subtype of AbstractNode")
+        end
         I_j_indices_single_node = Vector{Node}()
         for I_j_node in node.I_j
             push!(I_j_indices_single_node, diagram.Nodes[I_j_node].index)
@@ -1024,15 +1081,18 @@ function I_j_indices_(diagram::InfluenceDiagram, dict)
     end
     return I_j_indices
 end
+
 """
     function indices_in_vector(diagram::InfluenceDiagram, nodes::AbstractArray)
 
-Get the indices of a array of nodes and store them in an array.
+Get the indices of an array of nodes and store them in an array.
 
 # Example
 ```julia-repl
-julia> idcs_O_P = indices_of(diagram, ["O", "P"])
-1
+julia> idcs_T1_H2 = indices_of(diagram, ["T1", "H2"])
+2-element Vector{Int16}:
+ 2
+ 4
 ```
 """
 
@@ -1047,8 +1107,11 @@ generic function to get values from an OrderedDict
 
 # Example
 ```julia-repl
-julia> S_values = get_values(diagram.S)
-1
+julia> D_nodes = get_values(diagram.D)
+3-element Vector{DecisionNode}:
+ DecisionNode("D1", ["T1"], ["treat", "pass"], 3)
+ DecisionNode("D2", ["T2"], ["treat", "pass"], 6)
+ DecisionNode("D3", ["T3"], ["treat", "pass"], 9)
 ```
 """
 
@@ -1064,7 +1127,10 @@ generic function to get values from an OrderedDict
 # Example
 ```julia-repl
 julia> D_values = get_keys(diagram.D)
-1
+3-element Vector{String}:
+ "D1"
+ "D2"
+ "D3"
 ```
 """
 

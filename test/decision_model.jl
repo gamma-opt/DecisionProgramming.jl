@@ -81,7 +81,7 @@ function test_analysis_and_printing(diagram)
     @info("Creating random decision strategy")
     Z_j = [LocalDecisionStrategy(rng, diagram, d) for d in keys(diagram.D)]
     D_indices = indices(diagram.D)
-    D_I_j_indices = I_j_indices_(diagram, diagram.D)
+    D_I_j_indices = I_j_indices(diagram, diagram.D)
     Z = DecisionStrategy(D_indices, D_I_j_indices, Z_j)
 
     @info "Testing CompatiblePaths"

@@ -161,12 +161,12 @@ function PathCompatibilityVariables(model::Model,
     x_s = PathCompatibilityVariables{N}(variables_x_s)
 
     # Add decision strategy constraints for each decision node
-    I_j_indices = I_j_indices_(diagram, diagram.Nodes)
+    I_j_indices_result = I_j_indices(diagram, diagram.Nodes)
     z_indices = indices(diagram.D)
     z_z = [decision_node.z for decision_node in get_values(z)]
 
     for (d, z_d) in zip(z_indices, z_z)
-        decision_strategy_constraint(model, States(get_values(diagram.S)), d, I_j_indices[d], z_indices, z_d, x_s)
+        decision_strategy_constraint(model, States(get_values(diagram.S)), d, I_j_indices_result[d], z_indices, z_d, x_s)
     end
 
     if probability_cut

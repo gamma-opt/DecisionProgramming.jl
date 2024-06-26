@@ -21,13 +21,13 @@ function randomStrategy(diagram::InfluenceDiagram)
     # Z_d = Vector{LocalDecisionStrategy}[] # Doesn't work for some reason...
     Z_d = []
     #I_j_indexed = Vector{Node}.([indices_of(diagram, nodes) for nodes in get_values(diagram.I_j)])
-    I_j_indices = I_j_indices_(diagram, diagram.Nodes)
+    I_j_indices_result = I_j_indices(diagram, diagram.Nodes)
     #D_keys_indexed = Node.([index_of(diagram, node) for node in get_keys(diagram.D)])
     D_indices = indices(diagram.D)
     
     # Loop through all decision nodes and set local decision strategies
     for j in D_indices
-        I_j = I_j_indices[j]
+        I_j = I_j_indices_result[j]
 
         # Generate a matrix of correct dimensions to represent the strategy
         dims = get_values(diagram.S)[[I_j; j]]
@@ -42,7 +42,7 @@ function randomStrategy(diagram::InfluenceDiagram)
     end
 
     # Construct a decision strategy and obtain the compatible paths
-    Z = DecisionStrategy(D_indices, I_j_indices[D_indices], Z_d)
+    Z = DecisionStrategy(D_indices, I_j_indices_result[D_indices], Z_d)
     S_active = CompatiblePaths(diagram, Z)
 
     # Calculate the expected utility corresponding to the strategy
@@ -85,8 +85,8 @@ end
 
 function get_value(diagram, S_active, j, s_j, s_Ij, EU)
     #I_j_indexed = Vector{Node}.([indices_of(diagram, nodes) for nodes in get_values(diagram.I_j)])
-    I_j_indices = I_j_indices_(diagram, diagram.Nodes)
-    I_j = I_j_indices[j] # Information set of node j
+    I_j_indices_result = I_j_indices(diagram, diagram.Nodes)
+    I_j = I_j_indices_result[j] # Information set of node j
     # Loop through all compatible paths and update the ones that correspond to the given information state s_Ij
     # and update the expected utility whenever a path is updated
     S_active_new = copy(S_active)
@@ -148,7 +148,7 @@ function singlePolicyUpdate(diagram::InfluenceDiagram, model::Model, z::OrderedD
     EU, strategy, S_active = randomStrategy(diagram)
     push!(solutionhistory, (EU, (time_ns()-t1)/1E6, deepcopy(strategy)))
 
-    I_j_indices = I_j_indices_(diagram, diagram.Nodes)
+    I_j_indices_result = I_j_indices(diagram, diagram.Nodes)
     D_indices = indices(diagram.D)
 
     z_z = [decision_node.z for decision_node in get_values(z)]
@@ -157,7 +157,7 @@ function singlePolicyUpdate(diagram::InfluenceDiagram, model::Model, z::OrderedD
     for iter in 1:20
         # Loop through all nodes
         for (idx, j) in enumerate(D_indices)
-            I_j = I_j_indices[j]
+            I_j = I_j_indices_result[j]
             # Loop through all information states
             for s_Ij in paths(get_values(diagram.S)[I_j])
                 # Check if any improvement has happened since the last time this node and information state was visited
