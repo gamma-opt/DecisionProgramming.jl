@@ -19,7 +19,7 @@ The influence diagram for the generalized $N$-month pig breeding problem. The no
 In this example, we solve the 4 month pig breeding problem and thus, declare $N = 4$.
 
 ```julia
-using JuMP, Gurobi
+using JuMP, HiGHS
 using DecisionProgramming
 
 const N = 4
@@ -50,7 +50,7 @@ for i in 1:N-1
     # Decision to treat
     add_node!(diagram, DecisionNode("D$i", ["T$i"], ["treat", "pass"]))
     # Cost of treatment
-    add_node!(diagram, ValueNode("C$i", ["D$i"]))
+    add_node!(diagram, ValueNode("V$i", ["D$i"]))
     # Health of next period
     add_node!(diagram, ChanceNode("H$(i+1)", ["H$(i)", "D$(i)"], ["ill", "healthy"]))
 end
@@ -59,7 +59,7 @@ end
 ### Market price
 The final value node, representing the market price, is added. It has the final health node $h_N$ as its information set.
 ```julia
-add_node!(diagram, ValueNode("MP", ["H$N"]))
+add_node!(diagram, ValueNode("V4", ["H$N"]))
 ```
 
 ### Generate arcs
@@ -140,7 +140,7 @@ In Decision Programming the utility values are added using utility matrices. Not
 
 ```julia
 for i in 1:N-1
-    add_utilities!(diagram, "C$i", [-100.0, 0.0])
+    add_utilities!(diagram, "V$i", [-100.0, 0.0])
 end
 ```
 The market price of the pig given its health at month $N$ is
@@ -152,7 +152,7 @@ $$Y(h_N=healthy) = 1000.$$
 In Decision Programming:
 
 ```julia
-add_utilities!(diagram, "MP", [300.0, 1000.0])
+add_utilities!(diagram, "V4", [300.0, 1000.0])
 ```
 
 ### Generate influence diagram
@@ -185,14 +185,13 @@ and set up the solver.
 
 ```julia
 optimizer = optimizer_with_attributes(
-    () -> Gurobi.Optimizer(Gurobi.Env()),
-    "IntFeasTol"      => 1e-9,
+    () -> HiGHS.Optimizer()
 )
 set_optimizer(model, optimizer)
 ```
 
 Finally, we use the single policy update heuristic to obtain an initial solution and then solve the problem.
-```
+```julia
 spu = singlePolicyUpdate(diagram, model, z, x_s)
 optimize!(model)
 ```
@@ -203,7 +202,7 @@ optimize!(model)
 Once the model is solved, we extract the results. The results are the decision strategy, state probabilities and utility distribution.
 
 ```julia
-Z = DecisionStrategy(z)
+Z = DecisionStrategy(diagram, z)
 S_probabilities = StateProbabilities(diagram, Z)
 U_distribution = UtilityDistribution(diagram, Z)
 ```

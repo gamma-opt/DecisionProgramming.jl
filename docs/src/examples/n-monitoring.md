@@ -15,8 +15,8 @@ $$f(A_k=yes) = c_k$$
 $$f(A_k=no) = 0$$
 
 ```julia
-using Logging, Random
-using JuMP, Gurobi
+using Random
+using JuMP, HiGHS
 using DecisionProgramming
 
 const N = 4
@@ -31,7 +31,7 @@ fortification(k, a) = [c_k[k], 0][a]
 We initialise the influence diagram before adding nodes to it.
 
 ```julia
-diagram = InfluenceDiagram
+diagram = InfluenceDiagram()
 ```
 
 ### Adding nodes
@@ -91,7 +91,7 @@ In Decision Programming we add these probabilities by declaring probabilty matri
 
 ```julia
 for i in 1:N
-    x, y = rand(2)
+    x_R, y_R = rand(2)
     X_R = ProbabilityMatrix(diagram, "R$i")
     X_R["high", "high"] = max(x_R, 1-x_R)
     X_R["high", "low"] = 1 - max(x_R, 1-x_R)
@@ -192,8 +192,7 @@ EV = expected_value(model, diagram, x_s)
 
 
 optimizer = optimizer_with_attributes(
-    () -> Gurobi.Optimizer(Gurobi.Env()),
-    "IntFeasTol"      => 1e-9,
+    () -> HiGHS.Optimizer()
 )
 set_optimizer(model, optimizer)
 optimize!(model)
@@ -205,7 +204,7 @@ optimize!(model)
 We obtain the decision strategy, state probabilities and utility distribution from the solution.
 
 ```julia
-Z = DecisionStrategy(z)
+Z = DecisionStrategy(diagram, z)
 U_distribution = UtilityDistribution(diagram, Z)
 S_probabilities = StateProbabilities(diagram, Z)
 ```

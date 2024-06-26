@@ -28,8 +28,8 @@ $$d_k^A∈D^A=\{[q_1^A, q_2^A), [q_2^A, q_3^A), ..., [q_{|D^A|}^A, q_{|D^A|+1}^A
 Chance states of market size $c_l^M∈C_l^M$
 
 ```julia
-using Logging, Random
-using JuMP, Gurobi
+using Random
+using JuMP, HiGHS
 using DecisionProgramming
 
 Random.seed!(42)
@@ -123,6 +123,14 @@ Decision variables $x^T(t)∈\{0, 1\}$ indicate which technologies are selected.
 Decision variables $x^A(a∣d_i^P,c_j^T)∈\{0, 1\}$ indicate which applications are selected.
 
 ```julia
+function variables(model::Model, dims::AbstractVector{Int}; binary::Bool=false)
+    v = Array{VariableRef}(undef, dims...)
+    for i in eachindex(v)
+        v[i] = @variable(model, binary=binary)
+    end
+    return v
+end
+
 x_T = variables(model, [n_DP, n_T]; binary=true)
 x_A = variables(model, [n_DP, n_CT, n_DA, n_A]; binary=true)
 ```
@@ -152,8 +160,8 @@ q_A = [0, 5, 10, 15]        # limits of the application intervals
 Shorthand for the decision variables $z$
 
 ```julia
-z_dP = z.z[1]
-z_dA = z.z[2]
+z_dP = z["DP"].z
+z_dA = z["DA"].z
 ```
 
 
@@ -232,9 +240,7 @@ application_value = @expression(model, [i=1:n_DP, j=1:n_CT, k=1:n_DA, l=1:n_CM],
 
 ```julia
 optimizer = optimizer_with_attributes(
-    () -> Gurobi.Optimizer(Gurobi.Env()),
-    "IntFeasTol"      => 1e-9,
-    "LazyConstraints" => 1,
+    () -> HiGHS.Optimizer()
 )
 set_optimizer(model, optimizer)
 optimize!(model)
@@ -245,7 +251,7 @@ optimize!(model)
 The optimal decision strategy and the utility distribution are printed. The strategy is to make 6-9 patents (state 3 in node 1) and 10-15 applications. The expected utility for this strategy is 1.71.
 
 ```julia
-Z = DecisionStrategy(z)
+Z = DecisionStrategy(diagram, z)
 S_probabilities = StateProbabilities(diagram, Z)
 ```
 
@@ -276,8 +282,8 @@ Base.getindex(U::PathUtility, I::Vararg{State,N}) where N = getindex(U.data, I..
 (U::PathUtility)(s::Path) = value.(U[s...])
 
 path_utility = [@expression(model,
-    sum(x_A[s[index_of(diagram, "DP")], s[index_of(diagram, "CT")], s[index_of(diagram, "DA")], a] * (V_A[s[index_of(diagram, "CM")], a] - I_a[a]) for a in 1:n_A) -
-    sum(x_T[s[index_of(diagram, "DP")], t] * I_t[t] for t in 1:n_T)) for s in paths(diagram.S)]
+    sum(x_A[s[diagram.Nodes["DP"].index], s[diagram.Nodes["CT"].index], s[diagram.Nodes["DA"].index], a] * (V_A[s[diagram.Nodes["CM"].index], a] - I_a[a]) for a in 1:n_A) -
+    sum(x_T[s[diagram.Nodes["DP"].index], t] * I_t[t] for t in 1:n_T)) for s in paths(get_values(diagram.S))]
 diagram.U = PathUtility(path_utility)
 ```
 

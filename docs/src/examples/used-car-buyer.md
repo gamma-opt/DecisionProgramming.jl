@@ -19,7 +19,7 @@ We start by defining the influence diagram structure. The nodes, as well as thei
 
 
 ```julia
-using JuMP, Gurobi
+using JuMP, HiGHS
 using DecisionProgramming
 diagram = InfluenceDiagram()
 ```
@@ -143,8 +143,7 @@ We can perform the optimization using an optimizer such as Gurobi.
 
 ```julia
 optimizer = optimizer_with_attributes(
-    () -> Gurobi.Optimizer(Gurobi.Env()),
-    "IntFeasTol"      => 1e-9,
+    () -> HiGHS.Optimizer()
 )
 set_optimizer(model, optimizer)
 optimize!(model)
@@ -155,7 +154,7 @@ optimize!(model)
 Once the model is solved, we extract the results.
 
 ```julia
-Z = DecisionStrategy(z)
+Z = DecisionStrategy(diagram, z)
 S_probabilities = StateProbabilities(diagram, Z)
 U_distribution = UtilityDistribution(diagram, Z)
 ```

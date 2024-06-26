@@ -21,7 +21,6 @@ The value nodes in the model are $TC$ and $HB$. Node $TC$ represents the testing
 We begin by declaring the chosen prior risk level and reading the conditional probability data for the tests. Note that the sample data in this repository is dummy data due to distribution restrictions on the real data. We also define functions ```update_risk_distribution ``` and ```state_probabilities```. These functions will be discussed in the following sections.
 
 ```julia
-using Logging
 using JuMP, Gurobi
 using DecisionProgramming
 using CSV, DataFrames, PrettyTables
@@ -213,7 +212,6 @@ EV = expected_value(model, diagram, x_s, probability_scale_factor = scale_factor
 
 We set up the solver for the problem and optimise it.
 ```julia
-@info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
     () -> Gurobi.Optimizer(Gurobi.Env()),
     "MIPFocus" => 3,
