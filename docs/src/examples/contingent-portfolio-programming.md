@@ -297,9 +297,9 @@ julia> print_utility_distribution(U_distribution)
 │   Utility │ Probability │
 │   Float64 │     Float64 │
 ├───────────┼─────────────┤
-│ -1.243076 │    0.152778 │
-│  0.605287 │    0.291667 │
-│  3.110470 │    0.555556 │
+│ -2.338179 │    0.152778 │
+│ -0.130143 │    0.291667 │
+│  2.650091 │    0.555556 │
 └───────────┴─────────────┘
 ```
 
@@ -309,10 +309,10 @@ julia> print_statistics(U_distribution)
 │     Name │ Statistics │
 │   String │    Float64 │
 ├──────────┼────────────┤
-│     Mean │   1.714666 │
-│      Std │   1.666694 │
-│ Skewness │  -0.613535 │
-│ Kurtosis │  -1.154244 │
+│     Mean │   1.077093 │
+│      Std │   1.892543 │
+│ Skewness │  -0.654557 │
+│ Kurtosis │  -1.066341 │
 └──────────┴────────────┘
 ```
 
