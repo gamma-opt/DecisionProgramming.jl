@@ -10,9 +10,9 @@ An influence diagram $G = (N, A)$ can be represented as a directed rooted tree $
 
 In order to reformulate this tree into a MIP model, additional constraints need to be imposed, making $\mathscr{G}$ a *gradual rooted junction tree*. A directed rooted tree $\mathscr{G} = (\mathscr{V}, \mathscr{A})$ consisting of clusters $C \in \mathscr{V}$ of nodes $j \in N$ is a gradual rooted junction tree corresponding to the influence diagram $G$ if:
 
- 1. Given two clusters $C1$ and $C2$ in the junction tree, any cluster $C$ on the unique undirected path between $C1$ and $C2$ satisfies $C1 \cap C2 \subset C$. 
+ 1. Given two clusters $C_1$ and $C_2$ in the junction tree, any cluster $C$ on the unique undirected path between $C_1$ and $C_2$ satisfies $C_1 \cap C_2 \subset C$. 
  2. Each cluster $C \in \mathscr{V}$ is the root cluster of exactly one node $j \in N$ (that is, the root of the subgraph induced by the clusters with node $j$) and all nodes $j \in N$ appear in at least one of the clusters.
- 3. For each cluster, $I(j) \in Cj$, where $Cj$ is the _root cluster_ of $j \in N$.
+ 3. For each cluster, $I(j) \in C_j$, where $C_j$ is the _root cluster_ of $j \in N$.
 
 A rooted tree satisfying condition (1) is said to satisfy the *running intersection property*. This condition is sufficient for making $\mathscr{G}$ a rooted junction tree (RJT). In addition, as a consequence of condition (2), we see that a gradual RJT has as many clusters as the original influence diagram has nodes, and each node $j \in N$ can be thought as corresponding to one of the clusters $C \in \mathscr{V}$. Because of this, we refer to clusters using the corresponding nodes $j \in N$ in the influence diagram as the *root cluster* of node $j \in N$, which is denoted as $C_j \in \mathscr{V}$.
 
@@ -55,7 +55,7 @@ $$\sum_{s_j \in S_{I(j)}}\delta (s_j \mid s_{I(j)})=1, \ \forall j \in N^D, s_{I
 
 $$\sum_{s_{C_j} \in S_{C_j}} \mu_{C_j}(s_{C_j}) = 1, \ \forall j \in N\\\tag{3}$$
 
-We use moments $\mu_{\overline{C}_j}$ to ease the notation. These are defined as
+We use moments $\mu_{\overline{C}_j}$ (μ_bar in the code) to ease the notation. These are defined as
 
 $$\mu_{\overline{C}_j}(s_{\overline{C}_j}) = \sum_{s_j \in S_j} \mu_{C_j}(s_{C_j})\tag{4}$$
 
@@ -89,7 +89,7 @@ $$\mu_{C_j}(s_{C_j}) \ge 0, \ \forall j \in N, s_{C_j} \in S_{C_j}\tag{8}$$
 
 $$\delta(s_j \mid s_{I(j)}) \in \{0,1\}, \ \forall j \in N^D, s_j \in S_j, s_{I(j)} \in S_{I(j)}\tag{9}$$
 
-
+## Computational considerations
 
 
 
