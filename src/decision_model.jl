@@ -35,7 +35,6 @@ Create decision variables and constraints.
 - `model::Model`: JuMP model into which variables are added.
 - `diagram::InfluenceDiagram`: Influence diagram structure.
 - `names::Bool`: Use names or have JuMP variables be anonymous.
-- `name::String`: Prefix for predefined decision variable naming convention.
 
 
 # Examples
@@ -104,7 +103,7 @@ end
 """
     PathCompatibilityVariables(model::Model,
         diagram::InfluenceDiagram,
-        z::DecisionVariables;
+        z::OrderedDict{Name, DecisionVariable};
         names::Bool=false,
         name::String="x",
         forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
@@ -176,7 +175,7 @@ function PathCompatibilityVariables(model::Model,
         @constraint(model, sum(x * diagram.P(s) * probability_scale_factor for (s, x) in x_s) == 1.0 * probability_scale_factor)
     end
 
-    x_s
+    return x_s
 end
 
 """
@@ -320,7 +319,7 @@ end
 # --- Construct decision strategy from JuMP variables ---
 
 """
-    LocalDecisionStrategy(j::Node, z::Array{VariableRef})
+    LocalDecisionStrategy(d::Node, z::Array{VariableRef})
 
 Construct decision strategy from variable refs.
 """
@@ -329,13 +328,13 @@ function LocalDecisionStrategy(d::Node, z::Array{VariableRef})
 end
 
 """
-    DecisionStrategy(z::DecisionVariables)
+    DecisionStrategy(diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable})
 
 Extract values for decision variables from solved decision model.
 
 # Examples
 ```julia
-Z = DecisionStrategy(z)
+Z = DecisionStrategy(diagram, z)
 ```
 """
 function DecisionStrategy(diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable})
@@ -349,11 +348,10 @@ function DecisionStrategy(diagram::InfluenceDiagram, z::OrderedDict{Name, Decisi
 end
 
 
-
-# RJT MODEL
+# --- RJT MODEL ---
 
 # Implements Algorithm 1 from Parmentier et al. (2020)
-function ID_to_RJT(diagram)
+function ID_to_RJT(diagram::InfluenceDiagram)
     C_rjt = Dict{String, Vector{String}}()
     A_rjt = []
     names = get_keys(diagram.Nodes)
@@ -375,7 +373,6 @@ function ID_to_RJT(diagram)
             push!(A_rjt, (names[u], names[j]))
         end
     end
-    println(C_rjt)
     return C_rjt, A_rjt
     
 end
@@ -383,7 +380,7 @@ end
 
 function add_variable(model::Model, states::Vector, name::Name)
     variable = @variable(model, [1:prod(length.(states))], lower_bound = 0)
-    #DO WE WANT NAMING LIKE THIS?
+    #DO WE WANT NAMING LIKE THIS? NAMES ARE GENERALLY INFORMATIVE WHEN DONE LIKE THIS, BUT CAN BE QUITE LONG
     for (variable_i, states_i) in zip(variable, Iterators.product(states...))
         set_name(variable_i, "$name[$(join(states_i, ", "))]")
     end
@@ -395,40 +392,23 @@ function μ_variable(model::Model, name::Name, S::OrderedDict{Name, Vector{Name}
     μ_statevars = add_variable(model, getindex.(Ref(S), C_rjt[name]), name)
     # Probability distributions μ sum to 1
     @constraint(model, sum(μ_statevars) == 1)
-
-    #=
-    # Create μ-variables
-    μ_statevars = Array{VariableRef}(undef, Tuple(length.([getindex.(Ref(S), C_rjt[name])]...)))
-    for index in CartesianIndices(μ_statevars)
-        μ_statevars[index] = @variable(model, base_name="μ_$name($(join(Tuple(index),',')))", lower_bound=0)
-    end
-    # Probability distributions μ sum to 1
-    @constraint(model, sum(μ_statevars) == 1)
-    =#
-
-    #println(μ_statevars)
     return μ_statevars
 end
 
 function μ_bar_variable(model::Model, name::Name, S::OrderedDict{Name, Vector{Name}}, C_rjt::Dict{Name, Vector{Name}}, μ_statevars::Array{VariableRef})
     μ_bar_statevars = add_variable(model, getindex.(Ref(S), setdiff(C_rjt[name], [name])), name)
     for index in CartesianIndices(μ_bar_statevars)
+        # μ_bar defined as marginal distribution for μ-variables with one dimension marginalized out
         @constraint(model, μ_bar_statevars[index] .== dropdims(sum(μ_statevars, dims=findfirst(isequal(name), C_rjt[name])), dims=findfirst(isequal(name), C_rjt[name]))[index])
     end
-
-    #=
-    # Create μ_bar-variables
-    μ_bar_statevars = Array{VariableRef}(undef, Tuple(length.([getindex.(Ref(S), setdiff(C_rjt[name], [name]))]...)))
-    for index in CartesianIndices(μ_bar_statevars)
-        # Moments μ_{\breve{C}_v} (the moments from above, but with the last variable dropped out)
-        μ_bar_statevars[index] = @variable(model, base_name="μ_bar_$name($(join(Tuple(index),',')))", lower_bound=0)
-        @constraint(model, μ_bar_statevars[index] .== dropdims(sum(μ_statevars, dims=findfirst(isequal(name), C_rjt[name])), dims=findfirst(isequal(name), C_rjt[name]))[index])
-    end
-    =#
-
     return μ_bar_statevars
 end
 
+"""
+    struct μVariable
+
+A struct for μ and μ_bar variables in the RJT model. 
+"""
 
 struct μVariable
     node::Name
@@ -448,11 +428,10 @@ end
 
 function probability_and_decision_constraints(model::Model, diagram::InfluenceDiagram, name::Name, μ_statevars::Array{VariableRef}, μ_bar_statevars::Array{VariableRef}, z::OrderedDict{String, DecisionVariable})
     I_j_mapping_in_cluster = [findfirst(isequal(node), diagram.C_rjt[name]) for node in diagram.I_j[name]] # Map the information set to the variables in the cluster
-    println(I_j_mapping_in_cluster)
     for index in CartesianIndices(μ_bar_statevars)
         for s_j in 1:length(diagram.States[name])
             if isa(diagram.Nodes[name], ChanceNode)
-                # μ_{C_v} = p*μ_{\breve{C}_v}
+                # μ_{C_v} = μ_{\breve{C}_v}*p
                 @constraint(model, μ_statevars[Tuple(index)...,s_j] == diagram.X[name][Tuple(index)[I_j_mapping_in_cluster]...,s_j]*μ_bar_statevars[index])
             elseif isa(diagram.Nodes[name], DecisionNode)
                 # μ_{C_v} ≤ z
@@ -462,13 +441,27 @@ function probability_and_decision_constraints(model::Model, diagram::InfluenceDi
     end
 end
 
+"""
+    cluster_variables_and_constraints(model, diagram, z)
 
-# Using the influence diagram and decision variables z from DecisionProgramming.jl,  
-# adds the variables and constraints of the corresponding RJT model
-function cluster_variables_and_constraints(model, diagram, z)
+Using the influence diagram and decision variables z from DecisionProgramming.jl, adds the 
+variables and constraints of the corresponding RJT model.
+
+# Arguments
+- `model::Model`: JuMP model into which variables are added.
+- `diagram::InfluenceDiagram`: Influence diagram structure.
+- `z::OrderedDict{Name, DecisionVariable}`: Decision variables from `DecisionVariables` function.
+
+# Examples
+```julia
+μVars = cluster_variables_and_constraints(model, diagram, z)
+```
+"""
+
+function cluster_variables_and_constraints(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable})
     # Get the RJT structure
-    # ARE THESE NECESSARY TO DEFINE AS PART OF THE DIAGRAM. MAYBE LOGICAL BUT POSSIBLY NOT PRACTICAL IF NOT NEEDED IN OTHER FUNCTIONS, NOW NEEDED IN RJT_objective THOUGH
-    # BETTER NAMES FOR THESE, E.G. diagram.clusters and diagram.arcs?
+    # SHOULD WE DEFINE C_rjt and A_rjt AS PART OF THE INFLUENCE DIAGRAM STRUCT OR AS THEIR OWN, MAYBE BETTER TO DEFINE AS PART OF INFLUENCE DIAGRAM IF THERE IS NEVER A NEED
+    # TO HAVE AN INDEPENDENT RJT NOT LINKED TO AN INFLUENCE DIAGRAM
     diagram.C_rjt, diagram.A_rjt = ID_to_RJT(diagram)
 
     #μ- AND μ_bar-VARIABLES IN THE SAME LOOP, OTHERWISE NOT A PROBLEM, BUT DIFFERENT ORDER COMPARED TO PAPER AND ALSO SLIGHTLY WEIRD ORDER OF EQUATIONS IN MODEL PRINTOUT
@@ -481,6 +474,8 @@ function cluster_variables_and_constraints(model, diagram, z)
         μ_barVars[name] = μVariable(name, μ_bar_variable(model, name, diagram.States, diagram.C_rjt, μVars[name].statevars))
     end
 
+    # Enforcing local consistency between clusters, meaning that for a pair of adjacent clusters, 
+    # the marginal distribution for nodes that are included in both, must be the same.
     for arc in diagram.A_rjt
         if !isa(diagram.Nodes[arc[2]], ValueNode)
             local_consistency_constraint(model, arc, diagram.C_rjt, μVars)
@@ -488,65 +483,41 @@ function cluster_variables_and_constraints(model, diagram, z)
     end
 
     # Add in the conditional probabilities and decision strategies
-    # In our structure, value nodes are not stochastic and the whole objective thing doesn't really work in this context
+    # In our structure, value nodes are not stochastic and the objective function doesn't really work in this context. 
+    # However, adding a chance node representing stochasticity before the value node is a possibility.
     for name in union(keys(diagram.C), keys(diagram.D))
         probability_and_decision_constraints(model, diagram, name, μVars[name].statevars, μ_barVars[name].statevars, z)
     end
-    #μ_barVars MAYBE NOT NEEDED AS OUTPUT???
     return μVars
 end
 
+"""
+    RJT_objective(model::Model, diagram::InfluenceDiagram, μVars::Dict{Name, μVariable})
 
-#IS THIS FUNCTION NECESSARY TO HAVE SEPARATELY, I DID IT BECAUSE PATH-VERSION WAS BUILT SOMEWHAT SIMILARLY TO EXPECTED_VALUE-FUNCTION
-function RJT_objective(model, diagram, μVars)
+Construct the RJT objective function.
+
+# Arguments
+- `model::Model`: JuMP model into which variables are added.
+- `diagram::InfluenceDiagram`: Influence diagram structure.
+- `μVars::Dict{Name, μVariable}`: Vector of moments.
+
+# Examples
+```julia
+RJT_objective(model, diagram, μVars)
+```
+"""
+
+function RJT_objective(model::Model, diagram::InfluenceDiagram, μVars::Dict{Name, μVariable})
     # Build the objective. The key observation here is that the information set
-    # of a value node is always included in the previous cluster by construction
-    
-    @objective(model, Max, 0)
-    """
-    expr = :()
-    """
+    # of a value node is always included in the previous cluster by construction.
+    @expression(model, EV, 0)
     for V_name in keys(diagram.V)
         V_determining_node_name = diagram.A_rjt[findfirst(a -> a[2] == V_name, diagram.A_rjt)][1]
         V_determining_node_index_in_cluster = [findfirst(isequal(node), diagram.C_rjt[V_determining_node_name]) for node in diagram.I_j[V_name]]
         for index in CartesianIndices(μVars[V_determining_node_name].statevars)
-            
-            #Find existing coefficient if a coefficient has been added to variable currently being modified before
-            obj_func = objective_function(model)
-            coefficient = 0.0  # Initialize the coefficient to zero
-            for v in keys(obj_func.terms)
-                if v === μVars[V_determining_node_name].statevars[index]
-                    coefficient = obj_func.terms[v]
-                    break
-                end
-            end
-
-            set_objective_coefficient(model, μVars[V_determining_node_name].statevars[index], coefficient + diagram.Y[V_name][Tuple(index)[V_determining_node_index_in_cluster]...])
-
-            """
-            println("muuttujat:")
-            println(all_variables(model))
-            println(all_variables(model)[1])
-            println(typeof(all_variables(model)[1]))
-            println(μVars)
-            println(expr)
-            println(diagram.Y[V_name][Tuple(index)[V_determining_index_in_cluster]...])
-            println(typeof(diagram.Y[V_name][Tuple(index)[V_determining_index_in_cluster]...]))
-            println(μVars[V_determining_name].statevars[index])
-            println(typeof(μVars[V_determining_name].statevars[index]))
-            #@variable(model, μVars[V_determining_name].statevars[index])
-            #@variable(model, diagram.Y[V_name][Tuple(index)[V_determining_index_in_cluster]...])
-            args = expr.args
-            println(args)
-            push!(args, :(diagram.Y[V_name][Tuple(index)[V_determining_index_in_cluster]...])*(μVars[V_determining_name].statevars[index]))
-            #expr = Expr(:call, args...)
-            #expr = (diagram.Y[V_name][Tuple(index)[V_determining_index_in_cluster]...])*(μVars[V_determining_name].statevars[index])
-            """
+            #Find existing coefficient if a coefficient has been added to variable currently being modified before.
+            EV += diagram.Y[V_name][Tuple(index)[V_determining_node_index_in_cluster]...]*μVars[V_determining_node_name].statevars[index]
         end
     end
-    """
-    println("expr:")
-    println(expr)
-    #set_objective_coefficient(model, , Float32(100))
-    """
+    @objective(model, Max, EV)
 end

@@ -26,7 +26,7 @@ generate_arcs!(diagram)
 # Add probabilities for node H1
 add_probabilities!(diagram, "H1", [0.1, 0.9])
 
-# Declare proability matrix for health nodes H_2, ... H_N-1, which have identical information sets and states
+# Declare probability matrix for health nodes H_2, ... H_N-1, which have identical information sets and states
 X_H = ProbabilityMatrix(diagram, "H2")
 X_H["healthy", "pass", :] = [0.2, 0.8]
 X_H["healthy", "treat", :] = [0.1, 0.9]
@@ -51,16 +51,12 @@ end
 
 add_utilities!(diagram, "MP", [300.0, 1000.0])
 
-
-
 generate_diagram!(diagram, positive_path_utility = true)
-#println(diagram)
 
 @info("Creating the decision model.")
 model = Model()
 
 z = DecisionVariables(model, diagram, names=true)
-#println(z)
 
 """
 x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
@@ -70,8 +66,7 @@ EV = expected_value(model, diagram, x_s)
 
 μVars = cluster_variables_and_constraints(model, diagram, z)
 RJT_objective(model, diagram, μVars)
-#println("model:")
-#println(model)
+
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
@@ -79,8 +74,11 @@ optimizer = optimizer_with_attributes(
 )
 set_optimizer(model, optimizer)
 
-#spu = singlePolicyUpdate(diagram, model, z, x_s)
-#@info("Single policy update found solution $(spu[end][1]) in $(spu[end][2]/1000) seconds.")
+#=
+spu = singlePolicyUpdate(diagram, model, z, x_s)
+@info("Single policy update found solution $(spu[end][1]) in $(spu[end][2]/1000) seconds.")
+=#
+
 optimize!(model)
 
 @info("Extracting results.")

@@ -123,7 +123,7 @@ The purpose of all this output is to allow us to examine how fast the method fin
 # Arguments
 - `diagram::InfluenceDiagram`: Influence diagram structure.
 - `model::Model`: The decision model, modelled in JuMP
-- `z::DecisionVariables`: The decision variables
+- `z::OrderedDict{Name, DecisionVariable}`: The decision variables
 - `x_s::PathCompatibilityVariables`: The path compatibility variables
 
 !!! warning
