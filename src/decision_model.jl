@@ -9,7 +9,7 @@ function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node}, 
             name = join([base_name, s...], "_")
             z_d[s...] = @variable(model, binary=true, base_name=name)
         else
-            z_d[s...] = @variable(model, binary=true, base_name=base_name)
+            z_d[s...] = @variable(model, binary=true)
         end
     end
     # Constraints to one decision per decision strategy.
