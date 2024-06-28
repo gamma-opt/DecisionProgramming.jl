@@ -201,7 +201,7 @@ optimize!(model)
 
 ## Analyzing Results
 
-We obtain the decision strategy, state probabilities and utility distribution from the solution.
+We obtain the decision strategy, state probabilities and utility distribution from the solution. Julia version 1.10.3 was used in random number generation (the version used might affect the results).
 
 ```julia
 Z = DecisionStrategy(diagram, z)
