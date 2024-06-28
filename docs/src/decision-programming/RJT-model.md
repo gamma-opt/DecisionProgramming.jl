@@ -95,7 +95,7 @@ Currently, the RJT formulation commands in the package do not support forbidden 
 
 ## Computational considerations
 
-Around 2-3 magnitudes faster solving times are expected using RJT formulations. [^1] Especially in problems with small treewidths, such as the pig breeding problem, the solution times hardly even change when increasing the number of nodes.
+Around 2-3 magnitudes faster solving times are expected using RJT formulations. [^1] In problems with small treewidths, such as the pig breeding problem, the solution times hardly even change when increasing the number of nodes.
 
 ## References
 
