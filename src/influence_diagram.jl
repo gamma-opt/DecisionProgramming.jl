@@ -1010,12 +1010,9 @@ julia> D_indices = indices(diagram.D)
 """
 #function indices(dict::OrderedDict{Any, Any}), MIKSEI TÄMÄ TOIMI, NYT TÄYTYY VAIN MÄÄRITELLÄ DICT ILMAN TYYPPIÄ JA TARVITAAN ERROR KÄSITTELIJÄ
 #MIETIN TÄMÄN JA INDICES_IN_VECTOR -FUNKTION YHDISTÄMISTÄ, MUTTA ERI INPUTIT JA PITÄISI KÄSITELLÄ DATATYYPIT ERIKSEEN. OLISIKO SELKEÄMPI KUITENKIN ERI FUNKTIOINA
-function indices(dict::OrderedDict)
+function indices(dict::OrderedDict{K, V}) where {K, V <: AbstractNode}
     indices = Vector{Node}()
     for node in values(dict)
-        if !(node isa AbstractNode)
-            error("Node is not a subtype of AbstractNode")
-        end
         push!(indices, node.index)
     end
     return indices
@@ -1061,15 +1058,9 @@ julia> C_I_j_indices = I_j_indices(diagram, diagram.C)
 """
 
 #function I_j_indices_(diagram::InfluenceDiagram, dict::OrderedDict{Name, AbstractNode}), SAMA KUIN YLLÄ
-function I_j_indices(diagram::InfluenceDiagram, dict)
-    if !(dict isa Dict || dict isa OrderedDict)
-        error("dict-input must be a Dict or an OrderedDict")
-    end
+function I_j_indices(diagram::InfluenceDiagram, dict::OrderedDict{K, V}) where {K, V <: AbstractNode}
     I_j_indices = Vector{Vector{Node}}()
     for node in values(dict)
-        if !(node isa AbstractNode)
-            error("Node is not a subtype of AbstractNode")
-        end
         I_j_indices_single_node = Vector{Node}()
         for I_j_node in node.I_j
             push!(I_j_indices_single_node, diagram.Nodes[I_j_node].index)
