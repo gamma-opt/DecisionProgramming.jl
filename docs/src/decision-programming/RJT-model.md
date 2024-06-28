@@ -89,12 +89,13 @@ $$\mu_{C_j}(s_{C_j}) \ge 0, \ \forall j \in N, s_{C_j} \in S_{C_j}\tag{8}$$
 
 $$\delta(s_j \mid s_{I(j)}) \in \{0,1\}, \ \forall j \in N^D, s_j \in S_j, s_{I(j)} \in S_{I(j)}\tag{9}$$
 
+## Limitations
+
+Currently, the RJT formulation commands in the package do not support forbidden path or fixed path features.
+
 ## Computational considerations
 
-
-
-
-
+Around 2-3 magnitudes faster solving times are expected using RJT formulations. [^1] Especially in problems with small treewidths, such as the pig breeding problem, the solution times hardly even change when increasing the number of nodes.
 
 ## References
 
