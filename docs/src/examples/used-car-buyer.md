@@ -139,7 +139,7 @@ EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
 ```
 
-We can perform the optimization using an optimizer such as Gurobi.
+We can perform the optimization using an optimizer such as HiGHS.
 
 ```julia
 optimizer = optimizer_with_attributes(
