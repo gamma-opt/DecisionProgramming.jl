@@ -45,7 +45,7 @@ This represents an expected utility maximization problem where $u_{C_j}$ represe
 ### Constraints
 #### Decision variables
 
-Only one decision can be taken given the same information:
+Only one positive decision can be taken given the same information:
 
 $$\sum_{s_j \in S_{I(j)}}\delta (s_j \mid s_{I(j)})=1, \ \forall j \in N^D, s_{I(j)} \in S_{I(j)}\tag{3}$$
 

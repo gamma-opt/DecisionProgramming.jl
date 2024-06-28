@@ -139,6 +139,15 @@ EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
 ```
 
+Alternatively, RJT formulation can be used by replacing commands on path compatibility variables and objective function creation with commands
+
+```julia
+μVars = cluster_variables_and_constraints(model, diagram, z)
+RJT_objective(model, diagram, μVars)
+```
+
+and then solving using the solver. Significantly faster solving times are expected using RJT formulation.
+
 We can perform the optimization using an optimizer such as Gurobi.
 
 ```julia
