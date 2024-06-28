@@ -1010,7 +1010,7 @@ julia> D_indices = indices(diagram.D)
 """
 #function indices(dict::OrderedDict{Any, Any}), MIKSEI TÄMÄ TOIMI, NYT TÄYTYY VAIN MÄÄRITELLÄ DICT ILMAN TYYPPIÄ JA TARVITAAN ERROR KÄSITTELIJÄ
 #MIETIN TÄMÄN JA INDICES_IN_VECTOR -FUNKTION YHDISTÄMISTÄ, MUTTA ERI INPUTIT JA PITÄISI KÄSITELLÄ DATATYYPIT ERIKSEEN. OLISIKO SELKEÄMPI KUITENKIN ERI FUNKTIOINA
-function indices(dict::OrderedDict{Any, Any})
+function indices(dict)
     if !(dict isa Dict || dict isa OrderedDict)
         error("Input must be a Dict or an OrderedDict")
     end
