@@ -2,7 +2,7 @@ module DecisionProgramming
 
 include("influence_diagram.jl")
 include("decision_model.jl")
-include("random.jl")
+#include("random.jl")
 include("analysis.jl")
 include("heuristics.jl")
 include("printing.jl")
@@ -30,7 +30,11 @@ export Node,
     InfluenceDiagram,
     generate_arcs!,
     generate_diagram!,
-    index_of,
+    indices,
+    I_j_indices,
+    indices_in_vector,
+    get_values,
+    get_keys,
     num_states,
     add_node!,
     ProbabilityMatrix,

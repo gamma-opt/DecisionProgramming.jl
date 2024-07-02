@@ -1,5 +1,5 @@
 using Logging, Random
-using JuMP, Gurobi
+using JuMP, HiGHS
 using DecisionProgramming
 
 Random.seed!(42)
@@ -75,8 +75,8 @@ M = 20                      # a large constant
 
 q_P = [0, 3, 6, 9]          # limits of the technology intervals
 q_A = [0, 5, 10, 15]        # limits of the application intervals
-z_dP = z.z[1]
-z_dA = z.z[2]
+z_dP = z["DP"].z
+z_dA = z["DA"].z
 
 @constraint(model, [i=1:n_DP],
     sum(x_T[i,t] for t in 1:n_T) <= z_dP[i]*n_T)            #(25)
@@ -110,16 +110,15 @@ application_value = @expression(model, [i=1:n_DP, j=1:n_CT, k=1:n_DA, l=1:n_CM],
 
 
 @info("Starting the optimization process.")
+
 optimizer = optimizer_with_attributes(
-    () -> Gurobi.Optimizer(Gurobi.Env()),
-    "IntFeasTol"      => 1e-9,
-    "LazyConstraints" => 1,
+    () -> HiGHS.Optimizer()
 )
 set_optimizer(model, optimizer)
 optimize!(model)
 
 @info("Extracting results.")
-Z = DecisionStrategy(z)
+Z = DecisionStrategy(diagram, z)
 S_probabilities = StateProbabilities(diagram, Z)
 
 @info("Printing decision strategy:")
@@ -135,8 +134,8 @@ Base.getindex(U::PathUtility, I::Vararg{State,N}) where N = getindex(U.data, I..
 (U::PathUtility)(s::Path) = value.(U[s...])
 
 path_utility = [@expression(model,
-    sum(x_A[s[index_of(diagram, "DP")], s[index_of(diagram, "CT")], s[index_of(diagram, "DA")], a] * (V_A[s[index_of(diagram, "CM")], a] - I_a[a]) for a in 1:n_A) -
-    sum(x_T[s[index_of(diagram, "DP")], t] * I_t[t] for t in 1:n_T)) for s in paths(diagram.S)]
+    sum(x_A[s[diagram.Nodes["DP"].index], s[diagram.Nodes["CT"].index], s[diagram.Nodes["DA"].index], a] * (V_A[s[diagram.Nodes["CM"].index], a] - I_a[a]) for a in 1:n_A) -
+    sum(x_T[s[diagram.Nodes["DP"].index], t] * I_t[t] for t in 1:n_T)) for s in paths(get_values(diagram.S))]
 diagram.U = PathUtility(path_utility)
 
 @info("Computing utility distribution.")
