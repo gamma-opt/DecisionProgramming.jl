@@ -1096,7 +1096,7 @@ function ForbiddenPath(diagram::InfluenceDiagram, nodes::Vector{Name}, paths::Ve
     for s in paths
         s_states = Vector{State}()
         for (i, s_i) in enumerate(s)
-            s_i_index = findfirst(x -> x == s_i, diagram.States[node_indices[i]])
+            s_i_index = findfirst(x -> x == s_i, get_values(diagram.States)[node_indices[i]])
             if isnothing(s_i_index)
                 throw(DomainError("Node $(nodes[i]) does not have a state called $s_i."))
             end
@@ -1141,7 +1141,7 @@ function FixedPath(diagram::InfluenceDiagram, fixed::Dict{Name, Name})
             throw(DomainError("Node $j does not exist."))
         end
 
-        s_j_index = findfirst(s -> s == s_j, diagram.States[j_index])
+        s_j_index = findfirst(s -> s == s_j, get_values(diagram.States)[j_index])
         if isnothing(s_j_index)
             throw(DomainError("Node $j does not have a state called $s_j."))
         end

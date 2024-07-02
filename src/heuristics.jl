@@ -100,15 +100,17 @@ function get_value(diagram, S_active, j, s_j, s_Ij, EU)
     return EU, S_active_new
 end
 
-function set_MIP_start(diagram, Z, S_active, z_z, x_s)
+function set_MIP_start(diagram, Z, S_active, z_z; x_s)
     for (k,j) in enumerate(Z.D)
         for s_Ij in paths(get_values(diagram.S)[Z.I_d[k]])
                 set_start_value(z_z[k][s_Ij..., Z.Z_d[k](s_Ij)], 1)
         end
     end
 
-    for s in S_active
-        set_start_value(x_s[s], 1)
+    if x_s != nothing
+        for s in S_active
+            set_start_value(x_s[s], 1)
+        end
     end
 end
 
@@ -124,7 +126,7 @@ The purpose of all this output is to allow us to examine how fast the method fin
 - `diagram::InfluenceDiagram`: Influence diagram structure.
 - `model::Model`: The decision model, modelled in JuMP
 - `z::OrderedDict{Name, DecisionVariable}`: The decision variables
-- `x_s::PathCompatibilityVariables`: The path compatibility variables
+- `x_s::Union{PathCompatibilityVariables, Nothing}`: The path compatibility variables if used.
 
 !!! warning
     This function does not exclude forbidden paths: the strategies explored by this function might be forbidden if the diagram has forbidden state combinations.
@@ -134,7 +136,7 @@ The purpose of all this output is to allow us to examine how fast the method fin
 solutionhistory = singlePolicyUpdate(diagram, model)
 ```
 """
-function singlePolicyUpdate(diagram::InfluenceDiagram, model::Model, z::OrderedDict{Name, DecisionVariable}, x_s::PathCompatibilityVariables)
+function singlePolicyUpdate(diagram::InfluenceDiagram, model::Model, z::OrderedDict{Name, DecisionVariable}; x_s::Union{PathCompatibilityVariables, Nothing}=nothing)
     t1 = time_ns() # Start time
 
     # Initialize empty values
@@ -161,7 +163,7 @@ function singlePolicyUpdate(diagram::InfluenceDiagram, model::Model, z::OrderedD
                 # If not, the algorithm terminates with a locally optimal solution
                 if iter >= 2
                     if lastchange == (j, s_Ij)
-                        set_MIP_start(diagram, solutionhistory[end][3], S_active, z_z, x_s)
+                        set_MIP_start(diagram, solutionhistory[end][3], S_active, z_z; x_s)
                         return solutionhistory
                     end
                 end
@@ -184,7 +186,6 @@ function singlePolicyUpdate(diagram::InfluenceDiagram, model::Model, z::OrderedD
     end
 
     # Set the best found solution as the MIP start to the model
-    set_MIP_start(diagram, solutionhistory[end][3], S_active, z_z, x_s)
-
+    set_MIP_start(diagram, solutionhistory[end][3], S_active, z_z; x_s)
     return solutionhistory
 end
