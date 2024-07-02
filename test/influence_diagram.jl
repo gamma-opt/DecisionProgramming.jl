@@ -1,7 +1,8 @@
 using Test, Logging, Random
 using DecisionProgramming
+using DataStructures
 
-@info "Testing ChandeNode"
+@info "Testing ChanceNode"
 @test isa(ChanceNode("A", [], ["a", "b"]), ChanceNode)
 @test isa(ChanceNode("B", [], ["x", "y", "z"]), ChanceNode)
 @test_throws MethodError ChanceNode(1, [], ["x", "y", "z"])
@@ -61,13 +62,13 @@ U = DefaultPathUtility(
 @info "Testing InfluenceDiagram"
 diagram = InfluenceDiagram()
 @test isa(diagram, InfluenceDiagram)
-push!(diagram.Nodes, ChanceNode("A", [], ["a", "b"]))
+diagram.Nodes["A"] = ChanceNode("A", [], ["a", "b"])
 @test isa(diagram, InfluenceDiagram)
 
 @info "Testing add_node! and validate_node"
 diagram = InfluenceDiagram()
 add_node!(diagram, ChanceNode("A", [], ["a", "b"]))
-@test isa(diagram.Nodes[1], ChanceNode)
+@test isa(diagram.Nodes["A"], ChanceNode)
 @test_throws DomainError add_node!(diagram, ChanceNode("A", [], ["a", "b"]))
 @test_throws DomainError add_node!(diagram, ChanceNode("C", ["B", "B"], ["a", "b"]))
 @test_throws DomainError add_node!(diagram, ChanceNode("C", ["C", "B"], ["a", "b"]))
@@ -83,8 +84,8 @@ add_node!(diagram, ChanceNode("C", ["A"], ["a", "b"]))
 add_node!(diagram, DecisionNode("D", ["A"], ["c", "d"]))
 add_node!(diagram, ValueNode("V", ["A"]))
 @test length(diagram.Nodes) == 4
-@test isa(diagram.Nodes[3], DecisionNode)
-@test isa(diagram.Nodes[4], ValueNode)
+@test isa(diagram.Nodes["D"], DecisionNode)
+@test isa(diagram.Nodes["V"], ValueNode)
 
 @info "Testing generate_arcs!"
 diagram = InfluenceDiagram()
@@ -93,15 +94,16 @@ add_node!(diagram, ChanceNode("A", [], ["a", "b"]))
 add_node!(diagram, ChanceNode("C", ["A"], ["a", "b", "c"]))
 add_node!(diagram, ValueNode("V", ["A", "C"]))
 generate_arcs!(diagram)
+
 @test diagram.Names == ["A", "C", "V"]
-@test diagram.I_j == [[], Node[1], Node[1, 2]]
-@test diagram.States == [["a", "b"], ["a", "b", "c"]]
-@test diagram.S == [State(2), State(3)]
-@test diagram.C == Node[1, 2]
-@test diagram.D == Node[]
-@test diagram.V == Node[3]
-@test diagram.X == Probabilities[]
-@test diagram.Y == Utilities[]
+@test diagram.I_j == OrderedDict("A" => [], "C" => ["A"], "V" => ["A", "C"])
+@test diagram.States == OrderedDict("A" => ["a", "b"], "C" => ["a", "b", "c"])
+@test diagram.S == OrderedDict{String, Int16}("A" => 2, "C" => 3)
+@test string(diagram.C) == string(OrderedDict{String, ChanceNode}("A" => ChanceNode("A", String[], ["a", "b"]), "C" => ChanceNode("C", ["A"], ["a", "b", "c"])))
+@test diagram.D == OrderedDict{String, DecisionNode}()
+@test string(diagram.V) == string(OrderedDict{String, ValueNode}("V" => ValueNode("V", ["A", "C"])))
+@test diagram.X == OrderedDict{String, Probabilities}()
+@test diagram.Y == OrderedDict{String, Utilities}()
 
 #Non-existent node B
 diagram = InfluenceDiagram()
@@ -110,7 +112,7 @@ add_node!(diagram, ChanceNode("C", ["B"], ["a", "b", "c"]))
 add_node!(diagram, ValueNode("V", ["A", "C"]))
 @test_throws DomainError generate_arcs!(diagram)
 
-#Cylic
+#Cyclic
 diagram = InfluenceDiagram()
 add_node!(diagram, ChanceNode("A", ["R"], ["a", "b"]))
 add_node!(diagram, ChanceNode("R", ["C", "A"], ["a", "b", "c"]))
@@ -143,7 +145,7 @@ X_A["b"] = 0.9
 @test X_A  == [0.2, 0.9]
 @test_throws DomainError add_probabilities!(diagram, "A", X_A)
 X_A["b"] = 0.8
-@test add_probabilities!(diagram, "A", X_A) == [[0.2, 0.8]]
+@test add_probabilities!(diagram, "A", X_A) == [0.2, 0.8]
 @test_throws DomainError add_probabilities!(diagram, "A", X_A)
 
 @info "Testing UtilityMatrix"
@@ -163,9 +165,9 @@ Y_V["b", "a"] = 5
 Y_V["b", "b"] = 6
 @test Y_V  == [1 2 3; 5 6 4]
 add_utilities!(diagram, "V", Y_V)
-@test diagram.Y == [[1 2 3; 5 6 4]]
-@test_throws DomainError add_utilities!(diagram, "V", Y_V)
 
+@test string(values(diagram.Y)) == "Utilities[[1.0 2.0 3.0; 5.0 6.0 4.0]]"
+@test_throws DomainError add_utilities!(diagram, "V", Y_V)
 
 @info "Testing generate_diagram!"
 diagram = InfluenceDiagram()
@@ -181,7 +183,7 @@ generate_diagram!(diagram)
 @info "Testing positive and negative path utility translations"
 generate_diagram!(diagram, positive_path_utility=true)
 @test diagram.translation == Utility(2)
-@test all(diagram.U(s, diagram.translation) > 0 for s in paths(diagram.S))
+@test all(diagram.U(s, diagram.translation) > 0 for s in paths(get_values(diagram.S)))
 generate_diagram!(diagram, negative_path_utility=true)
 @test diagram.translation == Utility(-7)
-@test all(diagram.U(s, diagram.translation) < 0 for s in paths(diagram.S))
+@test all(diagram.U(s, diagram.translation) < 0 for s in paths(get_values(diagram.S)))

@@ -1,11 +1,17 @@
 using JuMP
 
-function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node}, base_name::String="")
+function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node}, names::Bool, base_name::String="")
     # Create decision variables.
     dims = S[[I_d; d]]
     z_d = Array{VariableRef}(undef, dims...)
     for s in paths(dims)
-        z_d[s...] = @variable(model, binary=true, base_name=base_name)
+        #TÄHÄNKIN HAKASULKEET ALAVIIVAN SIJASTA?
+        name = join([base_name, s...], "_")
+        if names == true
+            z_d[s...] = @variable(model, binary=true, base_name=name)
+        else
+            z_d[s...] = @variable(model, binary=true, base_name=base_name)
+        end
     end
     # Constraints to one decision per decision strategy.
     for s_I in paths(S[I_d])
@@ -14,10 +20,10 @@ function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node}, 
     return z_d
 end
 
-struct DecisionVariables
-    D::Vector{Node}
-    I_d::Vector{Vector{Node}}
-    z::Vector{<:Array{VariableRef}}
+struct DecisionVariable
+    D::Name
+    I_d::Vector{Name}
+    z::Array{VariableRef}
 end
 
 """
@@ -29,7 +35,6 @@ Create decision variables and constraints.
 - `model::Model`: JuMP model into which variables are added.
 - `diagram::InfluenceDiagram`: Influence diagram structure.
 - `names::Bool`: Use names or have JuMP variables be anonymous.
-- `name::String`: Prefix for predefined decision variable naming convention.
 
 
 # Examples
@@ -37,8 +42,19 @@ Create decision variables and constraints.
 z = DecisionVariables(model, diagram)
 ```
 """
-function DecisionVariables(model::Model, diagram::InfluenceDiagram; names::Bool=false, name::String="z")
-    DecisionVariables(diagram.D, diagram.I_j[diagram.D], [decision_variable(model, diagram.S, d, I_d, (names ? "$(name)_$(d.j)$(s)" : "")) for (d, I_d) in zip(diagram.D, diagram.I_j[diagram.D])])
+function DecisionVariables(model::Model, diagram::InfluenceDiagram; names::Bool=true)
+    decVars = OrderedDict{Name, DecisionVariable}()
+
+    for key in get_keys(diagram.D)
+        states = States(get_values(diagram.S))
+        node_index = Node(index_of(diagram, key))
+        I_d = convert(Vector{Node}, indices_of(diagram, diagram.D[key].I_j))
+        base_name = names ? "$(diagram.D[key].name)" : ""
+
+        decVars[key] = DecisionVariable(key, diagram.D[key].I_j, decision_variable(model, states, node_index, I_d, names, base_name)) 
+    end
+
+    return decVars 
 end
 
 function is_forbidden(s::Path, forbidden_paths::Vector{ForbiddenPath})
@@ -80,7 +96,6 @@ function decision_strategy_constraint(model::Model, S::States, d::Node, I_d::Vec
     for s_d_s_Id in paths(dims) # iterate through all information states and states of d
         # paths with (s_d | s_I(d)) information structure
         feasible_paths = filter(s -> s[[I_d; d]] == s_d_s_Id, existing_paths)
-
         @constraint(model, sum(get(x_s, s, 0) for s in feasible_paths) ≤ z[s_d_s_Id...] * min(length(feasible_paths), theoretical_ub))
     end
 end
@@ -88,7 +103,7 @@ end
 """
     PathCompatibilityVariables(model::Model,
         diagram::InfluenceDiagram,
-        z::DecisionVariables;
+        z::OrderedDict{Name, DecisionVariable};
         names::Bool=false,
         name::String="x",
         forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
@@ -120,7 +135,7 @@ x_s = PathCompatibilityVariables(model, diagram; probability_cut = false)
 """
 function PathCompatibilityVariables(model::Model,
     diagram::InfluenceDiagram,
-    z::DecisionVariables;
+    z::OrderedDict{Name, DecisionVariable};
     names::Bool=false,
     name::String="x",
     forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
@@ -140,22 +155,27 @@ function PathCompatibilityVariables(model::Model,
     N = length(diagram.S)
     variables_x_s = Dict{Path{N}, VariableRef}(
         s => path_compatibility_variable(model, (names ? "$(name)$(s)" : ""))
-        for s in paths(diagram.S, fixed)
+        for s in paths(get_values(diagram.S), fixed)
         if !iszero(diagram.P(s)) && !is_forbidden(s, forbidden_paths)
     )
 
     x_s = PathCompatibilityVariables{N}(variables_x_s)
 
     # Add decision strategy constraints for each decision node
-    for (d, z_d) in zip(z.D, z.z)
-        decision_strategy_constraint(model, diagram.S, d, diagram.I_j[d], z.D, z_d, x_s)
+    I_j_indexed = Vector{Node}.([indices_of(diagram, nodes) for nodes in get_values(diagram.I_j)])
+    z_keys_indexed = Node.([index_of(diagram, node) for node in get_keys(diagram.D)])
+
+    z_z = [decision_node.z for decision_node in get_values(z)]
+
+    for (d, z_d) in zip(z_keys_indexed, z_z)
+        decision_strategy_constraint(model, States(get_values(diagram.S)), d, I_j_indexed[d], z_keys_indexed, z_d, x_s)
     end
 
     if probability_cut
         @constraint(model, sum(x * diagram.P(s) * probability_scale_factor for (s, x) in x_s) == 1.0 * probability_scale_factor)
     end
 
-    x_s
+    return x_s
 end
 
 """
@@ -299,7 +319,7 @@ end
 # --- Construct decision strategy from JuMP variables ---
 
 """
-    LocalDecisionStrategy(j::Node, z::Array{VariableRef})
+    LocalDecisionStrategy(d::Node, z::Array{VariableRef})
 
 Construct decision strategy from variable refs.
 """
@@ -308,15 +328,196 @@ function LocalDecisionStrategy(d::Node, z::Array{VariableRef})
 end
 
 """
-    DecisionStrategy(z::DecisionVariables)
+    DecisionStrategy(diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable})
 
 Extract values for decision variables from solved decision model.
 
 # Examples
 ```julia
-Z = DecisionStrategy(z)
+Z = DecisionStrategy(diagram, z)
 ```
 """
-function DecisionStrategy(z::DecisionVariables)
-    DecisionStrategy(z.D, z.I_d, [LocalDecisionStrategy(d, z_var) for (d, z_var) in zip(z.D, z.z)])
+function DecisionStrategy(diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable})
+    z_D = convert(Vector{Node}, indices_of(diagram, get_keys(z)))
+    z_I_d_Names = [decision_node.I_d for decision_node in get_values(z)]
+
+    z_I_d_indices = [indices_of(diagram, I_j) for I_j in z_I_d_Names]
+    z_z = [decision_node.z for decision_node in get_values(z)]
+
+    DecisionStrategy(z_D, z_I_d_indices, [LocalDecisionStrategy(d, z_var) for (d, z_var) in zip(z_D, z_z)])
+end
+
+
+# --- RJT MODEL ---
+
+# Implements Algorithm 1 from Parmentier et al. (2020)
+function ID_to_RJT(diagram::InfluenceDiagram)
+    C_rjt = Dict{String, Vector{String}}()
+    A_rjt = []
+    names = get_keys(diagram.Nodes)
+    for j in length(diagram.Nodes):-1:1
+        C_j = copy(get_values(diagram.I_j)[j])
+        push!(C_j, names[j])
+        for a in A_rjt 
+            if a[1] == names[j]
+                push!(C_j, setdiff(C_rjt[a[2]], [a[2]])...)
+            end
+        end
+        C_j = unique(C_j)
+        C_j_aux = sort([(elem, findfirst(isequal(elem), names)) for elem in C_j], by = last)
+        C_j = [C_j_tuple[1] for C_j_tuple in C_j_aux]
+        C_rjt[names[j]] = C_j
+        
+        if length(C_rjt[names[j]]) > 1
+            u = maximum([findfirst(isequal(name), names) for name in setdiff(C_j, [names[j]])])
+            push!(A_rjt, (names[u], names[j]))
+        end
+    end
+    return C_rjt, A_rjt
+    
+end
+
+
+function add_variable(model::Model, states::Vector, name::Name)
+    variable = @variable(model, [1:prod(length.(states))], lower_bound = 0)
+    #DO WE WANT NAMING LIKE THIS? NAMES ARE GENERALLY INFORMATIVE WHEN DONE LIKE THIS, BUT CAN BE QUITE LONG
+    for (variable_i, states_i) in zip(variable, Iterators.product(states...))
+        set_name(variable_i, "$name[$(join(states_i, ", "))]")
+    end
+    return Containers.DenseAxisArray(reshape(variable, length.(states)...), states...)
+end
+
+
+function μ_variable(model::Model, name::Name, S::OrderedDict{Name, Vector{Name}}, C_rjt::Dict{Name, Vector{Name}})
+    μ_statevars = add_variable(model, getindex.(Ref(S), C_rjt[name]), name)
+    # Probability distributions μ sum to 1
+    @constraint(model, sum(μ_statevars) == 1)
+    return μ_statevars
+end
+
+function μ_bar_variable(model::Model, name::Name, S::OrderedDict{Name, Vector{Name}}, C_rjt::Dict{Name, Vector{Name}}, μ_statevars::Array{VariableRef})
+    μ_bar_statevars = add_variable(model, getindex.(Ref(S), setdiff(C_rjt[name], [name])), name)
+    for index in CartesianIndices(μ_bar_statevars)
+        # μ_bar defined as marginal distribution for μ-variables with one dimension marginalized out
+        @constraint(model, μ_bar_statevars[index] .== dropdims(sum(μ_statevars, dims=findfirst(isequal(name), C_rjt[name])), dims=findfirst(isequal(name), C_rjt[name]))[index])
+    end
+    return μ_bar_statevars
+end
+
+"""
+    struct μVariable
+
+A struct for μ and μ_bar variables in the RJT model. 
+"""
+
+struct μVariable
+    node::Name
+    statevars::Array{VariableRef}
+end
+
+
+function local_consistency_constraint(model::Model, arc::Tuple{Name, Name}, C_rjt::Dict{Name, Vector{Name}}, μVars::Dict{Name, μVariable})
+    intersection = C_rjt[arc[1]] ∩ C_rjt[arc[2]]
+    C1_minus_C2 = Tuple(setdiff(collect(1:length(C_rjt[arc[1]])), indexin(intersection, C_rjt[arc[1]])))
+    C2_minus_C1 = Tuple(setdiff(collect(1:length(C_rjt[arc[2]])), indexin(intersection, C_rjt[arc[2]])))
+    @constraint(model, 
+        dropdims(sum(μVars[arc[1]].statevars, dims=C1_minus_C2), dims=C1_minus_C2) .== 
+        dropdims(sum(μVars[arc[2]].statevars, dims=C2_minus_C1), dims=C2_minus_C1))
+end
+
+
+function probability_and_decision_constraints(model::Model, diagram::InfluenceDiagram, name::Name, μ_statevars::Array{VariableRef}, μ_bar_statevars::Array{VariableRef}, z::OrderedDict{String, DecisionVariable})
+    I_j_mapping_in_cluster = [findfirst(isequal(node), diagram.C_rjt[name]) for node in diagram.I_j[name]] # Map the information set to the variables in the cluster
+    for index in CartesianIndices(μ_bar_statevars)
+        for s_j in 1:length(diagram.States[name])
+            if isa(diagram.Nodes[name], ChanceNode)
+                # μ_{C_v} = μ_{\breve{C}_v}*p
+                @constraint(model, μ_statevars[Tuple(index)...,s_j] == diagram.X[name][Tuple(index)[I_j_mapping_in_cluster]...,s_j]*μ_bar_statevars[index])
+            elseif isa(diagram.Nodes[name], DecisionNode)
+                # μ_{C_v} ≤ z
+                @constraint(model, μ_statevars[Tuple(index)...,s_j] <= z[name].z[Tuple(index)[I_j_mapping_in_cluster]...,s_j])
+            end
+        end
+    end
+end
+
+"""
+    cluster_variables_and_constraints(model, diagram, z)
+
+Using the influence diagram and decision variables z from DecisionProgramming.jl, adds the 
+variables and constraints of the corresponding RJT model.
+
+# Arguments
+- `model::Model`: JuMP model into which variables are added.
+- `diagram::InfluenceDiagram`: Influence diagram structure.
+- `z::OrderedDict{Name, DecisionVariable}`: Decision variables from `DecisionVariables` function.
+
+# Examples
+```julia
+μVars = cluster_variables_and_constraints(model, diagram, z)
+```
+"""
+
+function cluster_variables_and_constraints(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable})
+    # Get the RJT structure
+    # SHOULD WE DEFINE C_rjt and A_rjt AS PART OF THE INFLUENCE DIAGRAM STRUCT OR AS THEIR OWN, MAYBE BETTER TO DEFINE AS PART OF INFLUENCE DIAGRAM IF THERE IS NEVER A NEED
+    # TO HAVE AN INDEPENDENT RJT NOT LINKED TO AN INFLUENCE DIAGRAM
+    diagram.C_rjt, diagram.A_rjt = ID_to_RJT(diagram)
+
+    #μ- AND μ_bar-VARIABLES IN THE SAME LOOP, OTHERWISE NOT A PROBLEM, BUT DIFFERENT ORDER COMPARED TO PAPER AND ALSO SLIGHTLY WEIRD ORDER OF EQUATIONS IN MODEL PRINTOUT
+    # Variables corresponding to the nodes in the RJT
+    μVars = Dict{Name, μVariable}()
+    # Variables μ_{\breve{C}_v} = ∑_{x_v} μ_{C_v}
+    μ_barVars = Dict{Name, μVariable}()
+    for name in union(keys(diagram.C), keys(diagram.D))
+        μVars[name] = μVariable(name, μ_variable(model, name, diagram.States, diagram.C_rjt))
+        μ_barVars[name] = μVariable(name, μ_bar_variable(model, name, diagram.States, diagram.C_rjt, μVars[name].statevars))
+    end
+
+    # Enforcing local consistency between clusters, meaning that for a pair of adjacent clusters, 
+    # the marginal distribution for nodes that are included in both, must be the same.
+    for arc in diagram.A_rjt
+        if !isa(diagram.Nodes[arc[2]], ValueNode)
+            local_consistency_constraint(model, arc, diagram.C_rjt, μVars)
+        end
+    end
+
+    # Add in the conditional probabilities and decision strategies
+    # In our structure, value nodes are not stochastic and the objective function doesn't really work in this context. 
+    # However, adding a chance node representing stochasticity before the value node is a possibility.
+    for name in union(keys(diagram.C), keys(diagram.D))
+        probability_and_decision_constraints(model, diagram, name, μVars[name].statevars, μ_barVars[name].statevars, z)
+    end
+    return μVars
+end
+
+"""
+    RJT_objective(model::Model, diagram::InfluenceDiagram, μVars::Dict{Name, μVariable})
+
+Construct the RJT objective function.
+
+# Arguments
+- `model::Model`: JuMP model into which variables are added.
+- `diagram::InfluenceDiagram`: Influence diagram structure.
+- `μVars::Dict{Name, μVariable}`: Vector of moments.
+
+# Examples
+```julia
+RJT_objective(model, diagram, μVars)
+```
+"""
+
+function RJT_objective(model::Model, diagram::InfluenceDiagram, μVars::Dict{Name, μVariable})
+    # Build the objective. The key observation here is that the information set
+    # of a value node is always included in the previous cluster by construction.
+    @expression(model, EV, 0)
+    for V_name in keys(diagram.V)
+        V_determining_node_name = diagram.A_rjt[findfirst(a -> a[2] == V_name, diagram.A_rjt)][1]
+        V_determining_node_index_in_cluster = [findfirst(isequal(node), diagram.C_rjt[V_determining_node_name]) for node in diagram.I_j[V_name]]
+        for index in CartesianIndices(μVars[V_determining_node_name].statevars)
+            #Find existing coefficient if a coefficient has been added to variable currently being modified before.
+            EV += diagram.Y[V_name][Tuple(index)[V_determining_node_index_in_cluster]...]*μVars[V_determining_node_name].statevars[index]
+        end
+    end
+    @objective(model, Max, EV)
 end

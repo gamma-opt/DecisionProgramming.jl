@@ -2,7 +2,7 @@ module DecisionProgramming
 
 include("influence_diagram.jl")
 include("decision_model.jl")
-include("random.jl")
+#include("random.jl")
 include("analysis.jl")
 include("heuristics.jl")
 include("printing.jl")
@@ -26,11 +26,14 @@ export Node,
     DefaultPathProbability,
     AbstractPathUtility,
     DefaultPathUtility,
-    validate_influence_diagram,
+    validate_structure,
     InfluenceDiagram,
     generate_arcs!,
     generate_diagram!,
     index_of,
+    indices_of,
+    get_values,
+    get_keys,
     num_states,
     add_node!,
     ProbabilityMatrix,
@@ -44,7 +47,10 @@ export DecisionVariables,
     PathCompatibilityVariables,
     lazy_probability_cut,
     expected_value,
-    conditional_value_at_risk
+    conditional_value_at_risk,
+    ID_to_RJT,
+    cluster_variables_and_constraints,
+    RJT_objective
 
 export random_diagram!,
     random_probabilities!,

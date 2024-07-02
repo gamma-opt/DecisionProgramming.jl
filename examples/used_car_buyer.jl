@@ -1,6 +1,5 @@
-
 using Logging
-using JuMP, Gurobi
+using JuMP, HiGHS
 using DecisionProgramming
 
 @info("Creating the influence diagram.")
@@ -53,20 +52,25 @@ generate_diagram!(diagram)
 @info("Creating the decision model.")
 model = Model()
 z = DecisionVariables(model, diagram)
+
+"""
 x_s = PathCompatibilityVariables(model, diagram, z)
 EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
+"""
+
+μVars = cluster_variables_and_constraints(model, diagram, z)
+RJT_objective(model, diagram, μVars)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
-    () -> Gurobi.Optimizer(Gurobi.Env()),
-    "IntFeasTol"      => 1e-9,
+    () -> HiGHS.Optimizer()
 )
 set_optimizer(model, optimizer)
 optimize!(model)
 
 @info("Extracting results.")
-Z = DecisionStrategy(z)
+Z = DecisionStrategy(diagram, z)
 S_probabilities = StateProbabilities(diagram, Z)
 U_distribution = UtilityDistribution(diagram, Z)
 

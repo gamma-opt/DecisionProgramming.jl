@@ -1,3 +1,4 @@
+#=
 using Random
 
 """
@@ -221,7 +222,8 @@ diagram = InfluenceDiagram()
 random_diagram!(rng, diagram, 5, 2, 3, 2, 2, rand(rng, [2,3], 5))
 LocalDecisionStrategy(rng, diagram, diagram.D[1])
 ```
-"""
+
+
 function LocalDecisionStrategy(rng::AbstractRNG, diagram::InfluenceDiagram, d::Node)
     I_d = diagram.I_j[d]
     states = diagram.S[I_d]
@@ -233,3 +235,5 @@ function LocalDecisionStrategy(rng::AbstractRNG, diagram::InfluenceDiagram, d::N
     end
     LocalDecisionStrategy(d, data)
 end
+"""
+=#

@@ -21,20 +21,20 @@ function print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy,
     probs = state_probabilities.probs
 
     for (d, I_d, Z_d) in zip(Z.D, Z.I_d, Z.Z_d)
-        s_I = vec(collect(paths(diagram.S[I_d])))
+        s_I = vec(collect(paths(get_values(diagram.S)[I_d])))
         s_d = [Z_d(s) for s in s_I]
 
         if !isempty(I_d)
-            informations_states = [join([String(diagram.States[i][s_i]) for (i, s_i) in zip(I_d, s)], ", ") for s in s_I]
+            informations_states = [join([String(get_values(diagram.States)[i][s_i]) for (i, s_i) in zip(I_d, s)], ", ") for s in s_I]
             decision_probs = [ceil(prod(probs[i][s1] for (i, s1) in zip(I_d, s))) for s in s_I]
-            decisions = collect(p == 0 ? "--" : diagram.States[d][s] for (s, p) in zip(s_d, decision_probs))
+            decisions = collect(p == 0 ? "--" : get_values(diagram.States)[d][s] for (s, p) in zip(s_d, decision_probs))
             df = DataFrame(informations_states = informations_states, decisions = decisions)
             if !show_incompatible_states
                  filter!(row -> row.decisions != "--", df)
             end
             pretty_table(df, header = ["State(s) of $(join([diagram.Names[i] for i in I_d], ", "))", "Decision in $(diagram.Names[d])"], alignment=:l)
         else
-            df = DataFrame(decisions = diagram.States[d][s_d])
+            df = DataFrame(decisions = get_values(diagram.States)[d][s_d])
             pretty_table(df, header = ["Decision in $(diagram.Names[d])"], alignment=:l)
         end
     end
@@ -73,7 +73,7 @@ print_state_probabilities(S_probabilities, ["A"])
 """
 function print_state_probabilities(diagram::InfluenceDiagram, state_probabilities::StateProbabilities, nodes::Vector{Name}; prob_fmt="%f")
     node_indices = [findfirst(j -> j==node, diagram.Names) for node in nodes]
-    states_list = diagram.States[node_indices]
+    states_list = get_values(diagram.States)[node_indices]
     state_sets = unique(states_list)
     n = length(states_list)
 
@@ -81,12 +81,12 @@ function print_state_probabilities(diagram::InfluenceDiagram, state_probabilitie
     fixed = state_probabilities.fixed
 
     prob(p, state) = if 1≤state≤length(p) p[state] else NaN end
-    fix_state(i) = if i∈keys(fixed) string(diagram.States[i][fixed[i]]) else "" end
+    fix_state(i) = if i∈keys(fixed) string(get_values(diagram.States)[i][fixed[i]]) else "" end
 
 
     for state_set in state_sets
-        node_indices2 = filter(i -> diagram.States[i] == state_set, node_indices)
-        state_names = diagram.States[node_indices2[1]]
+        node_indices2 = filter(i -> get_values(diagram.States)[i] == state_set, node_indices)
+        state_names = get_values(diagram.States)[node_indices2[1]]
         states = 1:length(state_names)
         df = DataFrame()
         df[!, :Node] = diagram.Names[node_indices2]

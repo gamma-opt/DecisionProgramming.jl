@@ -1,5 +1,5 @@
 using Logging, Random
-using JuMP, Gurobi
+using JuMP, HiGHS
 using DecisionProgramming
 
 Random.seed!(13)
@@ -66,21 +66,26 @@ generate_diagram!(diagram, positive_path_utility=true)
 
 model = Model()
 z = DecisionVariables(model, diagram)
+
+"""
 x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
 EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
+"""
+
+μVars = cluster_variables_and_constraints(model, diagram, z)
+RJT_objective(model, diagram, μVars)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
-    () -> Gurobi.Optimizer(Gurobi.Env()),
-    "IntFeasTol"      => 1e-9,
+    () -> HiGHS.Optimizer()
 )
 set_optimizer(model, optimizer)
 
 optimize!(model)
 
 @info("Extracting results.")
-Z = DecisionStrategy(z)
+Z = DecisionStrategy(diagram, z)
 U_distribution = UtilityDistribution(diagram, Z)
 S_probabilities = StateProbabilities(diagram, Z)
 
