@@ -228,7 +228,6 @@ EV = expected_value(model, diagram, x_s)
 function expected_value(model::Model,
     diagram::InfluenceDiagram,
     x_s::PathCompatibilityVariables)
-
     @expression(model, sum(diagram.P(s) * x * diagram.U(s, diagram.translation) for (s, x) in x_s))
 end
 
@@ -374,7 +373,6 @@ function ID_to_RJT(diagram::InfluenceDiagram)
         end
     end
     return C_rjt, A_rjt
-    
 end
 
 

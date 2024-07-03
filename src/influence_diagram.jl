@@ -962,8 +962,8 @@ function generate_diagram!(diagram::InfluenceDiagram;
         C_I_j_indexed = [indices_of(diagram, nodes) for nodes in C_I_j]
 
         diagram.P = DefaultPathProbability(
-            C_keys_indexed, 
-            C_I_j_indexed, 
+            C_keys_indexed,
+            C_I_j_indexed,
             get_values(diagram.X)
         )
     end
@@ -974,9 +974,10 @@ function generate_diagram!(diagram::InfluenceDiagram;
 
         diagram.U = DefaultPathUtility(V_I_j_indexed, get_values(diagram.Y))
         if positive_path_utility
-            diagram.translation = 1 -  minimum(diagram.U(s) for s in paths(get_values(diagram.S)))
+            #DOES CHANGING THE DIAGRAM.TRANSLATION CALCULATION LIKE THIS CAUSE ANY ISSUES IF THERE ARE E.G. FORBIDDEN PATHS OR PATHS THAT NEVER HAPPEN. GUESS IT DEPENDS ON HOW THIS IS USED.
+            diagram.translation = 1 - sum(minimum.(diagram.U.Y))
         elseif negative_path_utility
-            diagram.translation = -1 - maximum(diagram.U(s) for s in paths(get_values(diagram.S)))
+            diagram.translation = -1 - sum(maximum.(diagram.U.Y))
         else
             diagram.translation = 0
         end
