@@ -525,12 +525,6 @@ function validate_node(diagram::InfluenceDiagram,
         throw(DomainError("Node should not be included in its own information set."))
     end
 
-    if !value_node
-        if length(states) < 2
-            throw(DomainError("Each chance and decision node should have more than one state."))
-        end
-    end
-
     if value_node
         if isempty(I_j)
             @warn("Value node $name is redundant.")
