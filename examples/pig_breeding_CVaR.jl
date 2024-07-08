@@ -79,7 +79,9 @@ EV = expected_value(model, diagram, x_s)
 
 μVars = cluster_variables_and_constraints(model, diagram, z)
 
-p, p_bar, p_u = RJT_conditional_value_at_risk(model, diagram, μVars, 0.05, 201.0)
+α = 0.05
+CVaR_value = 200.0
+p, p_bar, p_u = RJT_conditional_value_at_risk(model, diagram, μVars, α, CVaR_value)
 
 RJT_objective_function(model, diagram, μVars)
 
@@ -124,4 +126,5 @@ for state in ["ill", "healthy"]
 end
 
 CVaR = sum(value.(ρ_bar) * u for (u, ρ_bar) in p_bar)/0.05
+println("CVaR output:")
 println(CVaR)

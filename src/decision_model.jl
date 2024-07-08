@@ -233,7 +233,7 @@ end
 
 """
     conditional_value_at_risk(model::Model,
-        diagram,
+        diagram::InfluenceDiagram,
         x_s::PathCompatibilityVariables{N},
         α::Float64;
         probability_scale_factor::Float64=1.0) where N
@@ -528,29 +528,30 @@ end
 
 
 """
-    conditional_value_at_risk(model::Model,
-        diagram,
-        x_s::PathCompatibilityVariables{N},
+    RJT_conditional_value_at_risk(model::Model,
+        diagram::InfluenceDiagram,
+        μVars::Dict{Name, μVariable},
         α::Float64;
-        probability_scale_factor::Float64=1.0) where N
+        CVaR_value::Float64)
 
-Create a conditional value-at-risk (CVaR) objective.
+Create a conditional value-at-risk (CVaR) objective based on RJT model.
+
+The model can't have more than one value node.
+
+ALSO NOT MORE THAN ONE ARC TO VALUE NODE????
 
 # Arguments
 - `model::Model`: JuMP model into which variables are added.
 - `diagram::InfluenceDiagram`: Influence diagram structure.
-- `x_s::PathCompatibilityVariables`: Path compatibility variables.
+- `μVars::Dict{Name, μVariable}`: Vector of moments.
 - `α::Float64`: Probability level at which conditional value-at-risk is optimised.
-- `probability_scale_factor::Float64`: Adjusts conditional value at risk model to
-   be compatible with the expected value expression if the probabilities were scaled there.
-
-
+- `CVaR_value::Float64`: CVaR value.
 
 # Examples
 ```julia
 α = 0.05  # Parameter such that 0 ≤ α ≤ 1
-CVaR = conditional_value_at_risk(model, x_s, U, P, α)
-CVaR = conditional_value_at_risk(model, x_s, U, P, α; probability_scale_factor = 10.0)
+CVaR_value = 200.0
+p, p_bar, p_u = RJT_conditional_value_at_risk(model, diagram, μVars, α, CVaR_value)
 ```
 """
 
