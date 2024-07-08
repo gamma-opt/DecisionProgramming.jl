@@ -81,7 +81,7 @@ EV = expected_value(model, diagram, x_s)
 
 p, p_bar, p_u = RJT_conditional_value_at_risk(model, diagram, μVars, 0.05, 201.0)
 
-RJT_objective(model, diagram, μVars)
+RJT_objective_function(model, diagram, μVars)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(

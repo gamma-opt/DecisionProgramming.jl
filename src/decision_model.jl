@@ -257,6 +257,8 @@ CVaR = conditional_value_at_risk(model, x_s, U, P, α)
 CVaR = conditional_value_at_risk(model, x_s, U, P, α; probability_scale_factor = 10.0)
 ```
 """
+
+#IS THIS NEEDED ANYMORE?
 function conditional_value_at_risk(model::Model,
     diagram::InfluenceDiagram,
     x_s::PathCompatibilityVariables{N},
@@ -509,7 +511,7 @@ RJT_objective(model, diagram, μVars)
 ```
 """
 
-function RJT_objective(model::Model, diagram::InfluenceDiagram, μVars::Dict{Name, μVariable})
+function RJT_objective_function(model::Model, diagram::InfluenceDiagram, μVars::Dict{Name, μVariable})
     # Build the objective. The key observation here is that the information set
     # of a value node is always included in the previous cluster by construction.
     @expression(model, EV, 0)
@@ -524,6 +526,33 @@ function RJT_objective(model::Model, diagram::InfluenceDiagram, μVars::Dict{Nam
     @objective(model, Max, EV)
 end
 
+
+"""
+    conditional_value_at_risk(model::Model,
+        diagram,
+        x_s::PathCompatibilityVariables{N},
+        α::Float64;
+        probability_scale_factor::Float64=1.0) where N
+
+Create a conditional value-at-risk (CVaR) objective.
+
+# Arguments
+- `model::Model`: JuMP model into which variables are added.
+- `diagram::InfluenceDiagram`: Influence diagram structure.
+- `x_s::PathCompatibilityVariables`: Path compatibility variables.
+- `α::Float64`: Probability level at which conditional value-at-risk is optimised.
+- `probability_scale_factor::Float64`: Adjusts conditional value at risk model to
+   be compatible with the expected value expression if the probabilities were scaled there.
+
+
+
+# Examples
+```julia
+α = 0.05  # Parameter such that 0 ≤ α ≤ 1
+CVaR = conditional_value_at_risk(model, x_s, U, P, α)
+CVaR = conditional_value_at_risk(model, x_s, U, P, α; probability_scale_factor = 10.0)
+```
+"""
 
 function RJT_conditional_value_at_risk(model::Model,
     diagram::InfluenceDiagram,
