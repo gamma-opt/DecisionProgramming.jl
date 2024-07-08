@@ -48,6 +48,7 @@ export DecisionVariables,
     lazy_probability_cut,
     expected_value,
     conditional_value_at_risk,
+    RJT_conditional_value_at_risk,
     ID_to_RJT,
     cluster_variables_and_constraints,
     RJT_objective

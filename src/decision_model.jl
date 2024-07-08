@@ -315,6 +315,9 @@ function conditional_value_at_risk(model::Model,
     return CVaR
 end
 
+
+
+
 # --- Construct decision strategy from JuMP variables ---
 
 """
@@ -424,12 +427,12 @@ function local_consistency_constraint(model::Model, arc::Tuple{Name, Name}, C_rj
 end
 
 
-function probability_and_decision_constraints(model::Model, diagram::InfluenceDiagram, name::Name, μ_statevars::Array{VariableRef}, μ_bar_statevars::Array{VariableRef}, z::OrderedDict{String, DecisionVariable})
+function factorization_constraints(model::Model, diagram::InfluenceDiagram, name::Name, μ_statevars::Array{VariableRef}, μ_bar_statevars::Array{VariableRef}, z::OrderedDict{String, DecisionVariable})
     I_j_mapping_in_cluster = [findfirst(isequal(node), diagram.C_rjt[name]) for node in diagram.I_j[name]] # Map the information set to the variables in the cluster
     for index in CartesianIndices(μ_bar_statevars)
         for s_j in 1:length(diagram.States[name])
             if isa(diagram.Nodes[name], ChanceNode)
-                # μ_{C_v} = μ_{\breve{C}_v}*p
+                # μ_{C_v} = μ_{\bar{C}_v}*p
                 @constraint(model, μ_statevars[Tuple(index)...,s_j] == diagram.X[name][Tuple(index)[I_j_mapping_in_cluster]...,s_j]*μ_bar_statevars[index])
             elseif isa(diagram.Nodes[name], DecisionNode)
                 # μ_{C_v} ≤ z
@@ -465,9 +468,10 @@ function cluster_variables_and_constraints(model::Model, diagram::InfluenceDiagr
     #μ- AND μ_bar-VARIABLES IN THE SAME LOOP, OTHERWISE NOT A PROBLEM, BUT DIFFERENT ORDER COMPARED TO PAPER AND ALSO SLIGHTLY WEIRD ORDER OF EQUATIONS IN MODEL PRINTOUT
     # Variables corresponding to the nodes in the RJT
     μVars = Dict{Name, μVariable}()
-    # Variables μ_{\breve{C}_v} = ∑_{x_v} μ_{C_v}
+    # Variables μ_{\bar{C}_v} = ∑_{x_v} μ_{C_v}
     μ_barVars = Dict{Name, μVariable}()
     for name in union(keys(diagram.C), keys(diagram.D))
+    #for name in union(keys(diagram.C), keys(diagram.D), keys(diagram.V))
         μVars[name] = μVariable(name, μ_variable(model, name, diagram.States, diagram.C_rjt))
         μ_barVars[name] = μVariable(name, μ_bar_variable(model, name, diagram.States, diagram.C_rjt, μVars[name].statevars))
     end
@@ -484,7 +488,7 @@ function cluster_variables_and_constraints(model::Model, diagram::InfluenceDiagr
     # In our structure, value nodes are not stochastic and the objective function doesn't really work in this context. 
     # However, adding a chance node representing stochasticity before the value node is a possibility.
     for name in union(keys(diagram.C), keys(diagram.D))
-        probability_and_decision_constraints(model, diagram, name, μVars[name].statevars, μ_barVars[name].statevars, z)
+        factorization_constraints(model, diagram, name, μVars[name].statevars, μ_barVars[name].statevars, z)
     end
     return μVars
 end
@@ -518,4 +522,70 @@ function RJT_objective(model::Model, diagram::InfluenceDiagram, μVars::Dict{Nam
         end
     end
     @objective(model, Max, EV)
+end
+
+
+function RJT_conditional_value_at_risk(model::Model,
+    diagram::InfluenceDiagram,
+    μVars::Dict{Name, μVariable},
+    α::Float64,
+    CVaR_value::Float64)
+
+    if length(diagram.V) != 1
+        throw(DomainError("The number of value nodes should be 1 in VaR and CVaR models."))
+    end
+
+    M = maximum(diagram.U.Y[1]) - minimum(diagram.U.Y[1])
+    ϵ = minimum(diff(unique(diagram.U.Y[1]))) / 2
+    η = @variable(model)
+    ρ′_s = Dict{Int64, VariableRef}()
+    ρ_s = Dict{Int64, VariableRef}()
+    p_u = Dict{Int64, AffExpr}()
+
+    value_node_name = first(n for (n, node) in diagram.Nodes if isa(node, ValueNode))
+    #Assuming only one preceding node
+    preceding_node_name = first(filter(tuple -> tuple[2]=="MP", diagram.A_rjt))[1]
+
+    #Finding the name and index of differing element between value nodes' information set and its preceding nodes rjt cluster. 
+    #This is needed in conditional sums for constraints.
+    missing_element = setdiff(diagram.C_rjt[preceding_node_name], diagram.Nodes[value_node_name].I_j)[1]
+    index_to_remove = findfirst(x -> x == missing_element, diagram.C_rjt[preceding_node_name])
+
+    statevars = μVars[preceding_node_name].statevars
+    statevars_dims = collect(size(statevars))
+    statevars_dims_ranges = [1:d for d in statevars_dims]
+    
+    function rmv_index(old_tuple::NTuple{N, Int64}, index::Int64) where N
+        return collect(ntuple(i -> i >= index ? old_tuple[i + 1] : old_tuple[i], N-1))
+    end
+
+    for u in unique(diagram.U.Y[1])
+        λ = @variable(model, binary=true)
+        λ′ = @variable(model, binary=true)
+        ρ = @variable(model)
+        ρ′ = @variable(model)
+        @constraint(model, η - u ≤ M * λ)
+        @constraint(model, η - u ≥ (M + ϵ) * λ - M)
+        @constraint(model, η - u ≤ (M + ϵ) * λ′ - ϵ)
+        @constraint(model, η - u ≥ M * (λ′ - 1))
+        @constraint(model, 0 ≤ ρ)
+        @constraint(model, 0 ≤ ρ′)
+        @constraint(model, ρ ≤ λ)
+        @constraint(model, ρ′ ≤ λ′)
+        @constraint(model, ρ ≤ ρ′)
+
+        p = @expression(model, sum(statevars[indices...] for indices in product(statevars_dims_ranges...) if diagram.U.Y[1][rmv_index(indices, index_to_remove)...] == u))
+        @constraint(model, ρ′ ≤ p)
+        @constraint(model, (p - (1 - λ)) ≤ ρ)
+
+        ρ′_s[u] = ρ′
+        ρ_s[u] = ρ
+        p_u[u] = p
+    end
+
+    @constraint(model, sum(values(ρ′_s)) == α)
+    @constraint(model, (sum(ρ_bar * u for (u, ρ_bar) in ρ′_s)/α) >= CVaR_value)
+
+    #WHICH ONES OF THESE ARE NEEDED?
+    return ρ_s, ρ′_s, p_u
 end
