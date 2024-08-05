@@ -74,7 +74,7 @@ EV = expected_value(model, diagram, x_s)
 """
 
 μVars = cluster_variables_and_constraints(model, diagram, z)
-RJT_objective_function(model, diagram, μVars)
+RJT_expected_value(model, diagram, μVars)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(

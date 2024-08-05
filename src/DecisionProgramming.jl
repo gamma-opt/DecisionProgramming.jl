@@ -51,7 +51,7 @@ export DecisionVariables,
     RJT_conditional_value_at_risk,
     ID_to_RJT,
     cluster_variables_and_constraints,
-    RJT_objective_function
+    RJT_expected_value
 
 export random_diagram!,
     random_probabilities!,

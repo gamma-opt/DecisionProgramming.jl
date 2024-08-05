@@ -511,7 +511,7 @@ RJT_objective(model, diagram, μVars)
 ```
 """
 
-function RJT_objective_function(model::Model, diagram::InfluenceDiagram, μVars::Dict{Name, μVariable})
+function RJT_expected_value(model::Model, diagram::InfluenceDiagram, μVars::Dict{Name, μVariable})
     # Build the objective. The key observation here is that the information set
     # of a value node is always included in the previous cluster by construction.
     @expression(model, EV, 0)
