@@ -1116,8 +1116,7 @@ julia> D_indices = indices(diagram.D)
  9
 ```
 """
-#function indices(dict::OrderedDict{Any, Any}), MIKSEI TÄMÄ TOIMI, NYT TÄYTYY VAIN MÄÄRITELLÄ DICT ILMAN TYYPPIÄ JA TARVITAAN ERROR KÄSITTELIJÄ
-#MIETIN TÄMÄN JA INDICES_IN_VECTOR -FUNKTION YHDISTÄMISTÄ, MUTTA ERI INPUTIT JA PITÄISI KÄSITELLÄ DATATYYPIT ERIKSEEN. OLISIKO SELKEÄMPI KUITENKIN ERI FUNKTIOINA
+
 function indices(dict::OrderedDict{K, V}) where {K, V <: AbstractNode}
     indices = Vector{Node}()
     for node in values(dict)
@@ -1125,26 +1124,6 @@ function indices(dict::OrderedDict{K, V}) where {K, V <: AbstractNode}
     end
     return indices
 end
-
-#VAIHTOEHTOINEN VERSIO TÄSSÄ (TOIMIMATON)
-"""
-function indices(data; diagram::InfluenceDiagram=nothing)
-    indices = Vector{Node}()
-    if (data isa OrderedDict)
-        for node in values(data)
-            if !(node isa AbstractNode)
-                error("Node is not a subtype of AbstractNode")
-            end
-            push!(indices, node.index)
-        end
-        return indices
-    end
-    if (data isa AbstractArray)
-        return [diagram.Nodes[node].index for node in nodes]
-    end
-end
-"""
-
 
 """
     function I_j_indices(diagram::InfluenceDiagram, dict)
