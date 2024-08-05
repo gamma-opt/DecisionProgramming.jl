@@ -25,6 +25,33 @@ Node type for directed, acyclic graph.
 """
 abstract type AbstractNode end
 
+
+Base.show(io::IO, node::AbstractNode) = begin
+    node_type = "Unknown"
+    node_states = "n/a"
+    
+    if node isa ChanceNode
+        node_type = "ChanceNode"
+        node_states = node.states
+    elseif node isa DecisionNode
+        node_type = "DecisionNode"
+        node_states = node.states
+    elseif node isa ValueNode
+        node_type = "ValueNode"
+    end
+
+    node_info_set = isempty(node.I_j) ? "empty" : node.I_j
+
+    println(io, "An influence diagram node")
+    println(io, "Name: ", node.name)
+    println(io, "Type: ", node_type)
+    println(io, "Information Set: ", node_info_set)
+    
+    if node_type != "ValueNode"
+        println(io, "States: ", node_states)
+    end
+end
+
 """
     struct ChanceNode <: AbstractNode
 
@@ -503,6 +530,91 @@ mutable struct InfluenceDiagram
         new(OrderedDict{String, AbstractNode}())
     end
 end
+
+
+Base.show(io::IO, diagram::InfluenceDiagram) = begin
+    println(io, "An influence diagram\n")
+    println(io, "Node names:\n", diagram.Names, "\n")
+    println(io, "Nodes:")
+    for node in values(diagram.Nodes)
+        println(io, node)
+    end
+    println(io, "Probabilities:\n", diagram.X, "\n")
+    println(io, "Utilities:\n", diagram.Y, "\n")
+end
+
+
+#=
+function node_info(node)
+    node_type = "Unknown"
+    if node isa ChanceNode
+        node_type = "ChanceNode"
+        node_states = string(node.states)
+    elseif node isa DecisionNode
+        node_type = "DecisionNode"
+        node_states = string(node.states)
+    elseif node isa ValueNode
+        node_type = "ValueNode"
+    end
+
+    node_info_set = isempty(node.I_j) ? "empty" : node.I_j
+    if !(node isa ValueNode)
+        "Name: $(node.name)\nType: $node_type\nInformation Set: $node_info_set\nStates: $node_states"
+    else
+        "Name: $(node.name)\nType: $node_type\nInformation Set: $node_info_set"
+    end
+end
+
+Base.show(io::IO, diagram::InfluenceDiagram) = begin
+    println(io, "An influence diagram\n")
+    println(io, "Node names:\n", diagram.Names, "\n")
+    println(io, "Nodes:")
+    for node in values(diagram.Nodes)
+        println(io, node_info(node), "\n")
+    end
+    println(io, "Probabilities:")
+    println(io, diagram.X)
+end
+
+
+
+
+Base.show(io::IO, diagram::InfluenceDiagram) = begin
+    println(io, "An influence diagram")
+    println(io, "")
+    println(io, "Node names:")
+    println(io, diagram.Names)
+    println(io, "")
+
+    println(io, "Nodes:")
+
+    for node in values(diagram.Nodes)
+        node_type = "Unknown"
+        node_states = "n/a"
+        
+        if node isa ChanceNode
+            node_type = "ChanceNode"
+            node_states = node.states
+        elseif node isa DecisionNode
+            node_type = "DecisionNode"
+            node_states = node.states
+        elseif node isa ValueNode
+            node_type = "ValueNode"
+        end
+    
+        node_info_set = isempty(node.I_j) ? "empty" : node.I_j
+    
+        println(io, "Name: ", node.name)
+        println(io, "Type: ", node_type)
+        println(io, "Information Set: ", node_info_set)
+        
+        if node_type != "ValueNode"
+            println(io, "States: ", node_states)
+        end
+        println(io, "")
+    end
+end
+=#
 
 
 # --- Adding nodes ---
