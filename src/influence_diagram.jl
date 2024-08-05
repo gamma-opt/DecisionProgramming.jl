@@ -1000,7 +1000,6 @@ function generate_arcs!(diagram::InfluenceDiagram)
     D = OrderedDict{Name, DecisionNode}()
     V = OrderedDict{Name, ValueNode}()
 
-    #LINE BELOW WAS NEEDED FOR REORDERING OF NODES, UNLIKE WHAT WE THOUGHT
     diagram.Nodes = merge(C_and_D, V_)
 
     #Assigning indices for all nodes (by constructing new nodes, because node-structs are immutable)
@@ -1166,7 +1165,6 @@ julia> C_I_j_indices = I_j_indices(diagram, diagram.C)
 ```
 """
 
-#function I_j_indices_(diagram::InfluenceDiagram, dict::OrderedDict{Name, AbstractNode}), SAMA KUIN YLLÄ
 function I_j_indices(diagram::InfluenceDiagram, dict::OrderedDict{K, V}) where {K, V <: AbstractNode}
     I_j_indices = Vector{Vector{Node}}()
     for node in values(dict)

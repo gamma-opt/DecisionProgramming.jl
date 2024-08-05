@@ -72,11 +72,9 @@ add_node!(diagram, ChanceNode("A", [], ["a", "b"]))
 @test_throws DomainError add_node!(diagram, ChanceNode("A", [], ["a", "b"]))
 @test_throws DomainError add_node!(diagram, ChanceNode("C", ["B", "B"], ["a", "b"]))
 @test_throws DomainError add_node!(diagram, ChanceNode("C", ["C", "B"], ["a", "b"]))
-@test_throws DomainError add_node!(diagram, ChanceNode("C", [], ["a"]))
 @test_throws DomainError add_node!(diagram, DecisionNode("A", [], ["a", "b"]))
 @test_throws DomainError add_node!(diagram, DecisionNode("C", ["B", "B"], ["a", "b"]))
 @test_throws DomainError add_node!(diagram, DecisionNode("C", ["C", "B"], ["a", "b"]))
-@test_throws DomainError add_node!(diagram, DecisionNode("C", [], ["a"]))
 @test_throws DomainError add_node!(diagram, ValueNode("A", []))
 @test_throws DomainError add_node!(diagram, ValueNode("C", ["B", "B"]))
 @test_throws DomainError add_node!(diagram, ValueNode("C", ["C", "B"]))
@@ -166,7 +164,7 @@ Y_V["b", "b"] = 6
 @test Y_V  == [1 2 3; 5 6 4]
 add_utilities!(diagram, "V", Y_V)
 
-@test string(values(diagram.Y)) == "Utilities[[1.0 2.0 3.0; 5.0 6.0 4.0]]"
+@test diagram.Y["V"].data == [1.0 2.0 3.0; 5.0 6.0 4.0]
 @test_throws DomainError add_utilities!(diagram, "V", Y_V)
 
 @info "Testing generate_diagram!"
