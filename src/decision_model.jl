@@ -562,7 +562,7 @@ function RJT_conditional_value_at_risk(model::Model,
     CVaR_value::Float64)
 
     if length(diagram.V) != 1
-        throw(DomainError("The number of value nodes should be 1 in VaR and CVaR models."))
+        throw(DomainError("In order to create CVaR constraints, the number of value nodes should be 1."))
     end
 
     M = maximum(diagram.U.Y[1]) - minimum(diagram.U.Y[1])
@@ -585,7 +585,7 @@ function RJT_conditional_value_at_risk(model::Model,
     statevars_dims = collect(size(statevars))
     statevars_dims_ranges = [1:d for d in statevars_dims]
     
-    function rmv_index(old_tuple::NTuple{N, Int64}, index::Int64) where N
+    function remove_index(old_tuple::NTuple{N, Int64}, index::Int64) where N
         return collect(ntuple(i -> i >= index ? old_tuple[i + 1] : old_tuple[i], N-1))
     end
 
@@ -604,7 +604,7 @@ function RJT_conditional_value_at_risk(model::Model,
         @constraint(model, ρ′ ≤ λ′)
         @constraint(model, ρ ≤ ρ′)
 
-        p = @expression(model, sum(statevars[indices...] for indices in product(statevars_dims_ranges...) if diagram.U.Y[1][rmv_index(indices, index_to_remove)...] == u))
+        p = @expression(model, sum(statevars[indices...] for indices in product(statevars_dims_ranges...) if diagram.U.Y[1][remove_index(indices, index_to_remove)...] == u))
         @constraint(model, ρ′ ≤ p)
         @constraint(model, (p - (1 - λ)) ≤ ρ)
 
