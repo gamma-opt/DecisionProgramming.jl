@@ -248,7 +248,7 @@ optimize!(model)
 
 ## Analyzing results
 
-The optimal decision strategy and the utility distribution are printed. The strategy is to make 6-9 patents (state 3 in node 1) and 10-15 applications. The expected utility for this strategy is 1.71. Julia version 1.10.3 was used in random number generation (the version used might affect the results).
+The optimal decision strategy and the utility distribution are printed. The strategy is to make 6-9 patents (state 3 in node 1) and 10-15 applications. The expected utility for this strategy is 1.08. Julia version 1.10.3 was used in random number generation (the version used might affect the results).
 
 ```julia
 Z = DecisionStrategy(diagram, z)
