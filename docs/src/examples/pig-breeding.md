@@ -187,7 +187,7 @@ Alternatively, RJT formulation can be used by replacing commands on path compati
 
 ```julia
 μVars = cluster_variables_and_constraints(model, diagram, z)
-RJT_objective(model, diagram, μVars)
+RJT_objective_function(model, diagram, μVars)
 ```
 
 and then solving using the solver. Significantly faster solving times are expected using RJT formulation.
@@ -206,6 +206,15 @@ spu = singlePolicyUpdate(diagram, model, z, x_s)
 optimize!(model)
 ```
 
+<!-- Onko tämä hyvä, voisi tehdä kunnon esimerkin myös CVaRista, mutta onko nyt tarpeen? -->
+
+CVaR model can be created by adding the lines below in front of RJT_objective_function row. However, the model has to be built so that there is only one value node. Also, the values below are for model with N = 6.
+
+```
+α = 0.05
+CVaR_value = 200.0
+p, p_bar, p_u = RJT_conditional_value_at_risk(model, diagram, μVars, α, CVaR_value)
+```
 
 ## Analyzing results
 
