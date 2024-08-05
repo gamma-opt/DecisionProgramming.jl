@@ -184,7 +184,6 @@ fixed_R0 = FixedPath(diagram, Dict("R0" => chosen_risk_level))
 scale_factor = 10000.0
 x_s = PathCompatibilityVariables(model, diagram, z; fixed = fixed_R0, forbidden_paths = [forbidden_tests], probability_cut=false)
 
-#EV = expected_value(model, diagram, x_s, probability_scale_factor = scale_factor)
 EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
 
