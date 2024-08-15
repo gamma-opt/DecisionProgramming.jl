@@ -356,7 +356,7 @@ end
 
 # Implements Algorithm 1 from Parmentier et al. (2020)
 function ID_to_RJT(diagram::InfluenceDiagram)
-    C_rjt = Dict{String, Vector{String}}()
+    C_rjt = Dict{Name, Vector{Name}}()
     A_rjt = []
     names = get_keys(diagram.Nodes)
     for j in length(diagram.Nodes):-1:1
@@ -429,7 +429,7 @@ function local_consistency_constraint(model::Model, arc::Tuple{Name, Name}, C_rj
 end
 
 
-function factorization_constraints(model::Model, diagram::InfluenceDiagram, name::Name, μ_statevars::Array{VariableRef}, μ_bar_statevars::Array{VariableRef}, z::OrderedDict{String, DecisionVariable})
+function factorization_constraints(model::Model, diagram::InfluenceDiagram, name::Name, μ_statevars::Array{VariableRef}, μ_bar_statevars::Array{VariableRef}, z::OrderedDict{Name, DecisionVariable})
     I_j_mapping_in_cluster = [findfirst(isequal(node), diagram.C_rjt[name]) for node in diagram.I_j[name]] # Map the information set to the variables in the cluster
     for index in CartesianIndices(μ_bar_statevars)
         for s_j in 1:length(diagram.States[name])
@@ -445,7 +445,7 @@ function factorization_constraints(model::Model, diagram::InfluenceDiagram, name
 end
 
 """
-    cluster_variables_and_constraints(model, diagram, z)
+    RJTVariables(model, diagram, z)
 
 Using the influence diagram and decision variables z from DecisionProgramming.jl, adds the 
 variables and constraints of the corresponding RJT model.
@@ -457,11 +457,11 @@ variables and constraints of the corresponding RJT model.
 
 # Examples
 ```julia
-μVars = cluster_variables_and_constraints(model, diagram, z)
+μVars = RJTVariables(model, diagram, z)
 ```
 """
 
-function cluster_variables_and_constraints(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable})
+function RJTVariables(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable})
     # Get the RJT structure
     # SHOULD WE DEFINE C_rjt and A_rjt AS PART OF THE INFLUENCE DIAGRAM STRUCT OR AS THEIR OWN, MAYBE BETTER TO DEFINE AS PART OF INFLUENCE DIAGRAM IF THERE IS NEVER A NEED
     # TO HAVE AN INDEPENDENT RJT NOT LINKED TO AN INFLUENCE DIAGRAM
@@ -496,7 +496,7 @@ function cluster_variables_and_constraints(model::Model, diagram::InfluenceDiagr
 end
 
 """
-    RJT_objective(model::Model, diagram::InfluenceDiagram, μVars::Dict{Name, μVariable})
+    RJT_expected_value(model::Model, diagram::InfluenceDiagram, μVars::Dict{Name, μVariable})
 
 Construct the RJT objective function.
 
@@ -507,7 +507,7 @@ Construct the RJT objective function.
 
 # Examples
 ```julia
-RJT_objective(model, diagram, μVars)
+RJT_expected_value(model, diagram, μVars)
 ```
 """
 
@@ -523,7 +523,7 @@ function RJT_expected_value(model::Model, diagram::InfluenceDiagram, μVars::Dic
             EV += diagram.Y[V_name][Tuple(index)[V_determining_node_index_in_cluster]...]*μVars[V_determining_node_name].statevars[index]
         end
     end
-    @objective(model, Max, EV)
+    return EV
 end
 
 

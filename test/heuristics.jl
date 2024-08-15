@@ -62,7 +62,7 @@ EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
 
 
-spu = singlePolicyUpdate(diagram, model, z, x_s)
+spu = singlePolicyUpdate(diagram, model, z; x_s)
 @info("Single policy update found solution $(spu[end][1]) in $(spu[end][2]/1000) seconds.")
 
 @test spu[end][1] <= 726.8121 + 1E-9 # Result is not better than the known optimal value

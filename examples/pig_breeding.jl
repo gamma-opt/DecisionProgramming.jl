@@ -33,7 +33,7 @@ X_H["healthy", "treat", :] = [0.1, 0.9]
 X_H["ill", "pass", :] = [0.9, 0.1]
 X_H["ill", "treat", :] = [0.5, 0.5]
 
-# Declare proability matrix for test result nodes T_1...T_N
+# Declare probability matrix for test result nodes T_1...T_N
 X_T = ProbabilityMatrix(diagram, "T1")
 X_T["ill", "positive"] = 0.8
 X_T["ill", "negative"] = 0.2
@@ -66,9 +66,9 @@ EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
 """
 
-μVars = cluster_variables_and_constraints(model, diagram, z)
-RJT_expected_value(model, diagram, μVars)
-
+μVars = RJTVariables(model, diagram, z)
+EV = RJT_expected_value(model, diagram, μVars)
+@objective(model, Max, EV)
 
 
 @info("Starting the optimization process.")

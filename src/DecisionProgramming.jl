@@ -50,7 +50,7 @@ export DecisionVariables,
     conditional_value_at_risk,
     RJT_conditional_value_at_risk,
     ID_to_RJT,
-    cluster_variables_and_constraints,
+    RJTVariables,
     RJT_expected_value
 
 export random_diagram!,

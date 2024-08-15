@@ -24,6 +24,7 @@ const Name = String
 
 Node type for directed, acyclic graph.
 """
+
 abstract type AbstractNode end
 
 """
@@ -31,6 +32,7 @@ abstract type AbstractNode end
 
 A struct for chance nodes, includes the name, information set and states of the node
 """
+
 struct ChanceNode <: AbstractNode
     name::Name
     I_j::Vector{Name}
@@ -496,7 +498,7 @@ mutable struct InfluenceDiagram
     C_rjt::Dict{Name, Vector{Name}}
     A_rjt::Vector{Tuple{Name, Name}}
     function InfluenceDiagram()
-        new(OrderedDict{String, AbstractNode}())
+        new(OrderedDict{Name, AbstractNode}())
     end
 end
 
@@ -826,7 +828,7 @@ end
 
 # --- Generating Arcs ---
 
-function validate_structure(Nodes::OrderedDict{String, AbstractNode}, C_and_D::OrderedDict{String, AbstractNode}, n_CD::Int, V::OrderedDict{String, AbstractNode}, n_V::Int)
+function validate_structure(Nodes::OrderedDict{Name, AbstractNode}, C_and_D::OrderedDict{Name, AbstractNode}, n_CD::Int, V::OrderedDict{Name, AbstractNode}, n_V::Int)
     # Validating node structure
     if n_CD == 0
         throw(DomainError("The influence diagram must have at least one chance or decision node."))
@@ -1193,7 +1195,7 @@ LocalDecisionStrategy(rng, diagram, diagram.D[1])
 
 function LocalDecisionStrategy(rng::AbstractRNG, diagram::InfluenceDiagram, d::Name)
     I_d = diagram.I_j[d]
-    states = Int16[diagram.S[s] for s in I_d]
+    states = State[diagram.S[s] for s in I_d]
     state = diagram.S[d]
     data = zeros(Int, states..., state)
     for s in CartesianIndices((states...,))
