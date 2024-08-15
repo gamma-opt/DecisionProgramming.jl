@@ -35,3 +35,5 @@ Manifest.toml
 
 # VSCode settings of the local Julia environment
 .vscode/settings.json
+examples/graphtest.jl
+examples/graphtest2.jl
