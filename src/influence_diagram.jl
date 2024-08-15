@@ -61,7 +61,7 @@ struct ChanceNode <: AbstractNode
     name::Name
     I_j::Vector{Name}
     states::Vector{Name}
-    index::Int16
+    index::Node
     function ChanceNode(name, I_j, states)
         return new(name, I_j, states, 0)
     end
@@ -79,7 +79,7 @@ struct DecisionNode <: AbstractNode
     name::Name
     I_j::Vector{Name}
     states::Vector{Name}
-    index::Int16
+    index::Node
     function DecisionNode(name, I_j, states)
         return new(name, I_j, states, 0)
     end
@@ -96,7 +96,7 @@ A struct for value nodes, includes the name, information set and index of the no
 struct ValueNode <: AbstractNode
     name::Name
     I_j::Vector{Name}
-    index::Int16
+    index::Node
     function ValueNode(name, I_j)
         return new(name, I_j, 0)
     end
