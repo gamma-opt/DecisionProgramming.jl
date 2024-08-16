@@ -1,5 +1,7 @@
 using DataFrames, PrettyTables
 using StatsBase, StatsBase.Statistics
+using DecisionProgramming
+using Base64
 
 """
     print_decision_strategy(diagram::InfluenceDiagram, Z::DecisionStrategy, state_probabilities::StateProbabilities; show_incompatible_states::Bool = false)
@@ -122,4 +124,69 @@ function print_risk_measures(U_distribution::UtilityDistribution, αs::Vector{Fl
     CVaR = [conditional_value_at_risk(U_distribution, α) for α in αs]
     df = DataFrame(α = αs, VaR = VaR, CVaR = CVaR)
     pretty_table(df, formatters = ft_printf(fmt))
+end
+
+
+#--- MERMAID GRAPH PRINTING FUNCTIONS ---
+
+function nodes(diagram::InfluenceDiagram, class::String, edge::String; S::Union{Nothing, Vector{State}}=nothing)
+    lines = []
+    I_j = I_j_indices(diagram, diagram.Nodes)
+    if class == "chance"
+        N = indices(diagram.C)
+        left = "(("
+        right = "))"
+    elseif class == "decision"
+        N = indices(diagram.D)
+        left = "["
+        right = "]"
+    elseif class == "value"
+        N = indices(diagram.V)
+        left = "{"
+        right = "}"
+    else
+        throw(DomainError("Unknown class $(class)"))
+    end
+    for n in N
+        if S === nothing
+            push!(lines, "$(n)$(left)Node: $(diagram.Names[n])$(right)")
+        else
+            push!(lines, "$(n)$(left)Node: $(diagram.Names[n]) <br> $(S[n]) states$(right)")
+        end
+        if !isempty(I_j[n])
+            I_j_joined = join(I_j[n], " & ")
+            push!(lines, "$(I_j_joined) $(edge) $(n)")
+        end
+    end
+    js = join([n for n in N], ",")
+    push!(lines, "class $(js) $(class)")
+    return join(lines, "\n")
+end
+
+function graph(diagram::InfluenceDiagram)
+    return """
+    graph LR
+    %% Chance nodes
+    $(nodes(diagram, "chance", "-->"; S=get_values(diagram.S)))
+
+    %% Decision nodes
+    $(nodes(diagram, "decision", "-->"; S=get_values(diagram.S)))
+
+    %% Value nodes
+    $(nodes(diagram, "value", "-.->"))
+
+    %% Styles
+    classDef chance fill:#F5F5F5 ,stroke:#666666,stroke-width:2px;
+    classDef decision fill:#D5E8D4 ,stroke:#82B366,stroke-width:2px;
+    classDef value fill:#FFE6CC ,stroke:#D79B00,stroke-width:2px;
+    """
+end
+
+function mermaid(diagram::InfluenceDiagram, filename::String="mermaid_graph.png")
+    graph_output = graph(diagram)
+    graphbytes = codeunits(graph_output)
+    base64_bytes = base64encode(graphbytes)
+    img_url = "https://mermaid.ink/img/" * base64_bytes
+
+    download(img_url, filename)
 end

@@ -68,7 +68,10 @@ export print_decision_strategy,
     print_utility_distribution,
     print_state_probabilities,
     print_statistics,
-    print_risk_measures
+    print_risk_measures,
+    nodes,
+    graph,
+    mermaid
 
 # For API docs
 export AbstractRNG, Model, VariableRef

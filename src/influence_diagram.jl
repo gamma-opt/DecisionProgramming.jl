@@ -44,12 +44,17 @@ Base.show(io::IO, node::AbstractNode) = begin
 
     println(io, "An influence diagram node")
     println(io, "Name: ", node.name)
+    println(io, "Index: ", node.index)
     println(io, "Type: ", node_type)
     println(io, "Information Set: ", node_info_set)
     
     if node_type != "ValueNode"
         println(io, "States: ", node_states)
     end
+
+    #println(io, "Probabilities:\n", diagram.X, "\n")
+    #println(io, "Utilities:\n", diagram.Y, "\n")
+
 end
 
 """
@@ -531,7 +536,7 @@ mutable struct InfluenceDiagram
     end
 end
 
-
+#=
 Base.show(io::IO, diagram::InfluenceDiagram) = begin
     println(io, "An influence diagram\n")
     println(io, "Node names:\n", diagram.Names, "\n")
@@ -544,7 +549,7 @@ Base.show(io::IO, diagram::InfluenceDiagram) = begin
 end
 
 
-#=
+
 function node_info(node)
     node_type = "Unknown"
     if node isa ChanceNode
@@ -575,7 +580,7 @@ Base.show(io::IO, diagram::InfluenceDiagram) = begin
     println(io, "Probabilities:")
     println(io, diagram.X)
 end
-
+=#
 
 
 
@@ -587,6 +592,7 @@ Base.show(io::IO, diagram::InfluenceDiagram) = begin
     println(io, "")
 
     println(io, "Nodes:")
+    println(io, "")
 
     for node in values(diagram.Nodes)
         node_type = "Unknown"
@@ -605,6 +611,7 @@ Base.show(io::IO, diagram::InfluenceDiagram) = begin
         node_info_set = isempty(node.I_j) ? "empty" : node.I_j
     
         println(io, "Name: ", node.name)
+        println(io, "Index: ", node.index)
         println(io, "Type: ", node_type)
         println(io, "Information Set: ", node_info_set)
         
@@ -614,7 +621,7 @@ Base.show(io::IO, diagram::InfluenceDiagram) = begin
         println(io, "")
     end
 end
-=#
+
 
 
 # --- Adding nodes ---
