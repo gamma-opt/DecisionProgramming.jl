@@ -51,10 +51,6 @@ Base.show(io::IO, node::AbstractNode) = begin
     if node_type != "ValueNode"
         println(io, "States: ", node_states)
     end
-
-    #println(io, "Probabilities:\n", diagram.X, "\n")
-    #println(io, "Utilities:\n", diagram.Y, "\n")
-
 end
 
 """
@@ -536,53 +532,6 @@ mutable struct InfluenceDiagram
     end
 end
 
-#=
-Base.show(io::IO, diagram::InfluenceDiagram) = begin
-    println(io, "An influence diagram\n")
-    println(io, "Node names:\n", diagram.Names, "\n")
-    println(io, "Nodes:")
-    for node in values(diagram.Nodes)
-        println(io, node)
-    end
-    println(io, "Probabilities:\n", diagram.X, "\n")
-    println(io, "Utilities:\n", diagram.Y, "\n")
-end
-
-
-
-function node_info(node)
-    node_type = "Unknown"
-    if node isa ChanceNode
-        node_type = "ChanceNode"
-        node_states = string(node.states)
-    elseif node isa DecisionNode
-        node_type = "DecisionNode"
-        node_states = string(node.states)
-    elseif node isa ValueNode
-        node_type = "ValueNode"
-    end
-
-    node_info_set = isempty(node.I_j) ? "empty" : node.I_j
-    if !(node isa ValueNode)
-        "Name: $(node.name)\nType: $node_type\nInformation Set: $node_info_set\nStates: $node_states"
-    else
-        "Name: $(node.name)\nType: $node_type\nInformation Set: $node_info_set"
-    end
-end
-
-Base.show(io::IO, diagram::InfluenceDiagram) = begin
-    println(io, "An influence diagram\n")
-    println(io, "Node names:\n", diagram.Names, "\n")
-    println(io, "Nodes:")
-    for node in values(diagram.Nodes)
-        println(io, node_info(node), "\n")
-    end
-    println(io, "Probabilities:")
-    println(io, diagram.X)
-end
-=#
-
-
 
 Base.show(io::IO, diagram::InfluenceDiagram) = begin
     println(io, "An influence diagram")
@@ -617,6 +566,13 @@ Base.show(io::IO, diagram::InfluenceDiagram) = begin
         
         if node_type != "ValueNode"
             println(io, "States: ", node_states)
+        end
+
+        if haskey(diagram.X, node.name)
+            println(io, "Probabilities: ", diagram.X[node.name])
+        end
+        if haskey(diagram.Y, node.name)
+            println(io, "Utilities: ", diagram.Y[node.name])
         end
         println(io, "")
     end
@@ -782,6 +738,7 @@ julia> add_probabilities!(diagram, "O", X_O)
 !!! note
     The function `generate_arcs!` must be called before probabilities or utilities can be added to the influence diagram.
 """
+
 function add_probabilities!(diagram::InfluenceDiagram, node::Name, probabilities::AbstractArray{Float64, N}) where N
     if haskey(diagram.X, node)
         throw(DomainError("Probabilities should be added only once for each node."))
@@ -919,6 +876,7 @@ julia> add_utilities!(diagram, "V1", [0, -25])
 !!! note
     The function `generate_arcs!` must be called before probabilities or utilities can be added to the influence diagram.
 """
+
 function add_utilities!(diagram::InfluenceDiagram, node::Name, utilities::AbstractArray{T, N}) where {N,T<:Real}
     if haskey(diagram.Y, node)
         throw(DomainError("Utilities should be added only once for each node."))

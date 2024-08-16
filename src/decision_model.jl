@@ -173,7 +173,7 @@ function PathCompatibilityVariables(model::Model,
         @constraint(model, sum(x * diagram.P(s) * probability_scale_factor for (s, x) in x_s) == 1.0 * probability_scale_factor)
     end
 
-    x_s
+    return x_s
 end
 
 """
