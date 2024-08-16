@@ -461,6 +461,10 @@ variables and constraints of the corresponding RJT model.
 ```
 """
 
+struct μVariables
+    data::Dict{Name, μVariable}
+end
+
 function RJTVariables(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable})
     # Get the RJT structure
     # SHOULD WE DEFINE C_rjt and A_rjt AS PART OF THE INFLUENCE DIAGRAM STRUCT OR AS THEIR OWN, MAYBE BETTER TO DEFINE AS PART OF INFLUENCE DIAGRAM IF THERE IS NEVER A NEED
@@ -471,11 +475,11 @@ function RJTVariables(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Na
     # Variables corresponding to the nodes in the RJT
     μVars = Dict{Name, μVariable}()
     # Variables μ_{\bar{C}_v} = ∑_{x_v} μ_{C_v}
-    μ_barVars = Dict{Name, μVariable}()
+    μBarVars = Dict{Name, μVariable}()
     for name in union(keys(diagram.C), keys(diagram.D))
     #for name in union(keys(diagram.C), keys(diagram.D), keys(diagram.V))
         μVars[name] = μVariable(name, μ_variable(model, name, diagram.States, diagram.C_rjt))
-        μ_barVars[name] = μVariable(name, μ_bar_variable(model, name, diagram.States, diagram.C_rjt, μVars[name].statevars))
+        μBarVars[name] = μVariable(name, μ_bar_variable(model, name, diagram.States, diagram.C_rjt, μVars[name].statevars))
     end
 
     # Enforcing local consistency between clusters, meaning that for a pair of adjacent clusters, 
@@ -490,9 +494,10 @@ function RJTVariables(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Na
     # In our structure, value nodes are not stochastic and the objective function doesn't really work in this context. 
     # However, adding a chance node representing stochasticity before the value node is a possibility.
     for name in union(keys(diagram.C), keys(diagram.D))
-        factorization_constraints(model, diagram, name, μVars[name].statevars, μ_barVars[name].statevars, z)
+        factorization_constraints(model, diagram, name, μVars[name].statevars, μBarVars[name].statevars, z)
     end
-    return μVars
+    μ_s = μVariables(μVars)
+    return μ_s
 end
 
 """
@@ -511,16 +516,16 @@ RJT_expected_value(model, diagram, μVars)
 ```
 """
 
-function RJT_expected_value(model::Model, diagram::InfluenceDiagram, μVars::Dict{Name, μVariable})
+function expected_value(model::Model, diagram::InfluenceDiagram, μVars::μVariables)
     # Build the objective. The key observation here is that the information set
     # of a value node is always included in the previous cluster by construction.
     @expression(model, EV, 0)
     for V_name in keys(diagram.V)
         V_determining_node_name = diagram.A_rjt[findfirst(a -> a[2] == V_name, diagram.A_rjt)][1]
         V_determining_node_index_in_cluster = [findfirst(isequal(node), diagram.C_rjt[V_determining_node_name]) for node in diagram.I_j[V_name]]
-        for index in CartesianIndices(μVars[V_determining_node_name].statevars)
+        for index in CartesianIndices(μVars.data[V_determining_node_name].statevars)
             #Find existing coefficient if a coefficient has been added to variable currently being modified before.
-            EV += diagram.Y[V_name][Tuple(index)[V_determining_node_index_in_cluster]...]*μVars[V_determining_node_name].statevars[index]
+            EV += diagram.Y[V_name][Tuple(index)[V_determining_node_index_in_cluster]...]*μVars.data[V_determining_node_name].statevars[index]
         end
     end
     return EV
@@ -555,9 +560,9 @@ p, p_bar, p_u = RJT_conditional_value_at_risk(model, diagram, μVars, α, CVaR_v
 ```
 """
 
-function RJT_conditional_value_at_risk(model::Model,
+function conditional_value_at_risk(model::Model,
     diagram::InfluenceDiagram,
-    μVars::Dict{Name, μVariable},
+    μVars::μVariables,
     α::Float64,
     CVaR_value::Float64)
 
@@ -581,7 +586,7 @@ function RJT_conditional_value_at_risk(model::Model,
     missing_element = setdiff(diagram.C_rjt[preceding_node_name], diagram.Nodes[value_node_name].I_j)[1]
     index_to_remove = findfirst(x -> x == missing_element, diagram.C_rjt[preceding_node_name])
 
-    statevars = μVars[preceding_node_name].statevars
+    statevars = μVars.data[preceding_node_name].statevars
     statevars_dims = collect(size(statevars))
     statevars_dims_ranges = [1:d for d in statevars_dims]
     
@@ -618,4 +623,18 @@ function RJT_conditional_value_at_risk(model::Model,
 
     #WHICH ONES OF THESE ARE NEEDED?
     return ρ_s, ρ′_s, p_u
+end
+
+function generate_variables!(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable}; model_type::String)
+    if model_type=="RJT"
+        μ_s = RJTVariables(model, diagram, z)
+        EV = expected_value(model, diagram, μ_s)
+        @objective(model, Max, EV)
+    elseif model_type=="path"
+        x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
+        EV = expected_value(model, diagram, x_s)
+        @objective(model, Max, EV)     
+    else
+        error("Invalid model_type '$model_type'. It should be either 'RJT' or 'path'.")
+    end
 end

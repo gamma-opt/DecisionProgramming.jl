@@ -60,16 +60,17 @@ model = Model()
 
 z = DecisionVariables(model, diagram, names=true)
 
+generate_variables!(model, diagram, z; model_type="RJT")
+
 """
 x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
 EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
-"""
 
-μVars = RJTVariables(model, diagram, z)
-EV = RJT_expected_value(model, diagram, μVars)
+μ_s = RJTVariables(model, diagram, z)
+EV = expected_value(model, diagram, μ_s)
 @objective(model, Max, EV)
-
+"""
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(

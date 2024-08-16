@@ -77,13 +77,14 @@ EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
 """
 
-μVars = cluster_variables_and_constraints(model, diagram, z)
+μ_s = RJTVariables(model, diagram, z)
 
 α = 0.05
 CVaR_value = 200.0
-p, p_bar, p_u = RJT_conditional_value_at_risk(model, diagram, μVars, α, CVaR_value)
+p, p_bar, p_u = conditional_value_at_risk(model, diagram, μ_s, α, CVaR_value)
 
-RJT_expected_value(model, diagram, μVars)
+EV = expected_value(model, diagram, μ_s)
+@objective(model, Max, EV)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
@@ -92,8 +93,8 @@ optimizer = optimizer_with_attributes(
 set_optimizer(model, optimizer)
 
 #spu = singlePolicyUpdate(diagram, model, z; x_s)
-spu = singlePolicyUpdate(diagram, model, z)
-@info("Single policy update found solution $(spu[end][1]) in $(spu[end][2]/1000) seconds.")
+#spu = singlePolicyUpdate(diagram, model, z)
+#@info("Single policy update found solution $(spu[end][1]) in $(spu[end][2]/1000) seconds.")
 
 optimize!(model)
 
@@ -125,6 +126,6 @@ for state in ["ill", "healthy"]
     print_state_probabilities(diagram, S_probabilities2, [["D$i" for i in 1:N-1]...])
 end
 
-CVaR = sum(value.(ρ_bar) * u for (u, ρ_bar) in p_bar)/0.05
-println("CVaR output:")
-println(CVaR)
+#CVaR = sum(value.(ρ_bar) * u for (u, ρ_bar) in p_bar)/0.05
+#println("CVaR output:")
+#println(CVaR)

@@ -51,6 +51,7 @@ generate_diagram!(diagram)
 
 @info("Creating the decision model.")
 model = Model()
+
 z = DecisionVariables(model, diagram)
 
 """
@@ -59,8 +60,9 @@ EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
 """
 
-μVars = cluster_variables_and_constraints(model, diagram, z)
-RJT_expected_value(model, diagram, μVars)
+μ_s = RJTVariables(model, diagram, z)
+EV = expected_value(model, diagram, μ_s)
+@objective(model, Max, EV)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
