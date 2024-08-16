@@ -144,7 +144,7 @@ $$\operatorname{CVaR}_α(Z)=\frac{1}{α}∑_{𝐬∈𝐒}\bar{ρ}(𝐬) \mathcal
 
 ### RJT model
 
-CVaR formulation for the RJT model is close to that of path-based model.
+CVaR formulation for the RJT model is close to that of path-based model. A diagram can have only a single value node, when using RJT-based CVaR. Trying to call the RJT-based CVaR function using a diagram with more than one value node results in an error.
 
 We denote the possible utility values with $u ∈ U$ and suppose we can define the probability $p(u)$ of attaining a given utility value. In the presence of a single value node, we define $p(u) = ∑_{s_{C_v}∈ \text{\{} S_{C_v} \vert U(s_{C_v})=u \text{\}} }µ(s_{C_v})$. We can then pose the constraints
 
