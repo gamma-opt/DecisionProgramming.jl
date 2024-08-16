@@ -270,6 +270,7 @@ function graph(diagram::InfluenceDiagram)
     """
 end
 
+#NOTE TO USER: This function accesses url mermaid.ink, which is used for graphing
 function mermaid(diagram::InfluenceDiagram, filename::String="mermaid_graph.png")
     graph_output = graph(diagram)
     graphbytes = codeunits(graph_output)
