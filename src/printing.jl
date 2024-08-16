@@ -127,6 +127,94 @@ function print_risk_measures(U_distribution::UtilityDistribution, αs::Vector{Fl
 end
 
 
+function print_node_io(io::IO, node::AbstractNode)
+    node_type = "Unknown"
+    node_states = "n/a"
+    
+    if node isa ChanceNode
+        node_type = "ChanceNode"
+        node_states = node.states
+    elseif node isa DecisionNode
+        node_type = "DecisionNode"
+        node_states = node.states
+    elseif node isa ValueNode
+        node_type = "ValueNode"
+    end
+
+    node_info_set = isempty(node.I_j) ? "empty" : node.I_j
+
+    println(io, "An influence diagram node")
+    println(io, "Name: ", node.name)
+    println(io, "Index: ", node.index)
+    println(io, "Type: ", node_type)
+    println(io, "Information Set: ", node_info_set)
+    
+    if node_type != "ValueNode"
+        println(io, "States: ", node_states)
+    end
+end
+
+function print_node(node_name::String, diagram::InfluenceDiagram; print_tables::Bool=true)
+    if haskey(diagram.Nodes, node_name)
+        node = diagram.Nodes[node_name]
+    else
+        throw(ErrorException("Node '$node_name' does not exist."))
+    end
+
+    node_type = "Unknown"
+    node_states = "n/a"
+    
+    if node isa ChanceNode
+        node_type = "ChanceNode"
+        node_states = node.states
+    elseif node isa DecisionNode
+        node_type = "DecisionNode"
+        node_states = node.states
+    elseif node isa ValueNode
+        node_type = "ValueNode"
+    end
+
+    node_info_set = isempty(node.I_j) ? "empty" : node.I_j
+
+    println("An influence diagram node")
+    println("Name: ", node.name)
+    println("Index: ", node.index)
+    println("Type: ", node_type)
+    println("Information Set: ", node_info_set)
+    
+    if node_type != "ValueNode"
+        println("States: ", node_states)
+    end
+    println("")
+
+    if print_tables == true
+        if haskey(diagram.X, node.name)
+            println("Probabilities:")
+            display(diagram.X[node.name].data)
+            println("")
+        end
+        if haskey(diagram.Y, node.name)
+            println("Utilities:")
+            display(diagram.Y[node.name].data)
+            println("")
+        end
+    end
+end
+
+function print_diagram(diagram::InfluenceDiagram; print_tables::Bool=true)
+    println("An influence diagram")
+    println("")
+    println("Node names:")
+    println(diagram.Names)
+    println("")
+
+    println("Nodes:")
+    println("")
+    for node in keys(diagram.Nodes)
+        print_node(node, diagram; print_tables)
+    end
+end
+
 #--- MERMAID GRAPH PRINTING FUNCTIONS ---
 
 function nodes(diagram::InfluenceDiagram, class::String, edge::String; S::Union{Nothing, Vector{State}}=nothing)

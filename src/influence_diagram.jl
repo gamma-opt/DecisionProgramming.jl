@@ -25,33 +25,10 @@ Node type for directed, acyclic graph.
 """
 abstract type AbstractNode end
 
-
 Base.show(io::IO, node::AbstractNode) = begin
-    node_type = "Unknown"
-    node_states = "n/a"
-    
-    if node isa ChanceNode
-        node_type = "ChanceNode"
-        node_states = node.states
-    elseif node isa DecisionNode
-        node_type = "DecisionNode"
-        node_states = node.states
-    elseif node isa ValueNode
-        node_type = "ValueNode"
-    end
-
-    node_info_set = isempty(node.I_j) ? "empty" : node.I_j
-
-    println(io, "An influence diagram node")
-    println(io, "Name: ", node.name)
-    println(io, "Index: ", node.index)
-    println(io, "Type: ", node_type)
-    println(io, "Information Set: ", node_info_set)
-    
-    if node_type != "ValueNode"
-        println(io, "States: ", node_states)
-    end
+    print_node_io(io, node)
 end
+
 
 """
     struct ChanceNode <: AbstractNode
@@ -544,36 +521,7 @@ Base.show(io::IO, diagram::InfluenceDiagram) = begin
     println(io, "")
 
     for node in values(diagram.Nodes)
-        node_type = "Unknown"
-        node_states = "n/a"
-        
-        if node isa ChanceNode
-            node_type = "ChanceNode"
-            node_states = node.states
-        elseif node isa DecisionNode
-            node_type = "DecisionNode"
-            node_states = node.states
-        elseif node isa ValueNode
-            node_type = "ValueNode"
-        end
-    
-        node_info_set = isempty(node.I_j) ? "empty" : node.I_j
-    
-        println(io, "Name: ", node.name)
-        println(io, "Index: ", node.index)
-        println(io, "Type: ", node_type)
-        println(io, "Information Set: ", node_info_set)
-        
-        if node_type != "ValueNode"
-            println(io, "States: ", node_states)
-        end
-
-        if haskey(diagram.X, node.name)
-            println(io, "Probabilities: ", diagram.X[node.name])
-        end
-        if haskey(diagram.Y, node.name)
-            println(io, "Utilities: ", diagram.Y[node.name])
-        end
+        print_node_io(io, node)
         println(io, "")
     end
 end
