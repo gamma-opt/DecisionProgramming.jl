@@ -194,8 +194,9 @@ EV = expected_value(model, diagram, x_s)
 Alternatively, RJT formulation can be used by replacing commands on path compatibility variables and objective function creation with commands
 
 ```julia
-μVars = cluster_variables_and_constraints(model, diagram, z)
-RJT_expected_value(model, diagram, μVars)
+μ_s = RJTVariables(model, diagram, z)
+EV = expected_value(model, diagram, μ_s)
+@objective(model, Max, EV)
 ```
 
 and then solving using the solver. Significantly faster solving times are expected using RJT formulation.
