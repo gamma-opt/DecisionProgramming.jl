@@ -69,6 +69,7 @@ DecisionStrategy
 ## `decision_model.jl`
 ### Decision Model
 ```@docs
+DecisionVariable
 DecisionVariables
 PathCompatibilityVariables
 lazy_probability_cut
