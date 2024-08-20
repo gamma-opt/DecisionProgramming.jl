@@ -686,7 +686,6 @@ julia> add_probabilities!(diagram, "O", X_O)
 !!! note
     The function `generate_arcs!` must be called before probabilities or utilities can be added to the influence diagram.
 """
-
 function add_probabilities!(diagram::InfluenceDiagram, node::Name, probabilities::AbstractArray{Float64, N}) where N
     if haskey(diagram.X, node)
         throw(DomainError("Probabilities should be added only once for each node."))
@@ -824,7 +823,6 @@ julia> add_utilities!(diagram, "V1", [0, -25])
 !!! note
     The function `generate_arcs!` must be called before probabilities or utilities can be added to the influence diagram.
 """
-
 function add_utilities!(diagram::InfluenceDiagram, node::Name, utilities::AbstractArray{T, N}) where {N,T<:Real}
     if haskey(diagram.Y, node)
         throw(DomainError("Utilities should be added only once for each node."))

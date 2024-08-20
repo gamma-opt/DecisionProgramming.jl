@@ -56,7 +56,6 @@ ProbabilityMatrix
 add_probabilities!
 UtilityMatrix
 add_utilities!
-index_of
 num_states
 ```
 
@@ -84,7 +83,7 @@ conditional_value_at_risk(::Model, ::InfluenceDiagram, ::PathCompatibilityVariab
 ### Decision Strategy from Variables
 ```@docs
 LocalDecisionStrategy(::Node, ::Vector{VariableRef})
-DecisionStrategy(::DecisionVariables)
+DecisionStrategy(::InfluenceDiagram, ::OrderedDict{Name, DecisionVariable})
 ```
 
 ## `heuristics.jl`
@@ -114,14 +113,4 @@ print_utility_distribution
 print_state_probabilities
 print_statistics
 print_risk_measures
-```
-
-## `random.jl`
-```@docs
-random_diagram!
-random_probabilities!
-random_utilities!
-LocalDecisionStrategy(::AbstractRNG, ::InfluenceDiagram, ::Node)
-DecisionProgramming.information_set(::AbstractRNG, ::Node, ::Int64)
-DecisionProgramming.information_set(::AbstractRNG, ::Vector{Node}, ::Int64)
 ```
