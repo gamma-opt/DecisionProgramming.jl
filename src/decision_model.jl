@@ -19,11 +19,6 @@ function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node}, 
     return z_d
 end
 
-"""
-    DecisionVariable
-
-Decision variable type.
-"""
 struct DecisionVariable
     D::Name
     I_d::Vector{Name}
