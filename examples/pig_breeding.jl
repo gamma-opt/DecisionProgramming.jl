@@ -60,7 +60,7 @@ model = Model()
 
 z = DecisionVariables(model, diagram, names=true)
 
-generate_variables!(model, diagram, z; model_type="RJT")
+generate_model!(model, diagram, z; model_type="RJT")
 
 """
 x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)

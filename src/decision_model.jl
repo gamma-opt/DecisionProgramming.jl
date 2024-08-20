@@ -258,7 +258,6 @@ CVaR = conditional_value_at_risk(model, x_s, U, P, α; probability_scale_factor 
 ```
 """
 
-#IS THIS NEEDED ANYMORE?
 function conditional_value_at_risk(model::Model,
     diagram::InfluenceDiagram,
     x_s::PathCompatibilityVariables{N},
@@ -407,12 +406,6 @@ function μ_bar_variable(model::Model, name::Name, S::OrderedDict{Name, Vector{N
     return μ_bar_statevars
 end
 
-"""
-    struct μVariable
-
-A struct for μ and μ_bar variables in the RJT model. 
-"""
-
 struct μVariable
     node::Name
     statevars::Array{VariableRef}
@@ -444,6 +437,11 @@ function factorization_constraints(model::Model, diagram::InfluenceDiagram, name
     end
 end
 
+
+struct RJTVariables
+    data::Dict{Name, μVariable}
+end
+
 """
     RJTVariables(model, diagram, z)
 
@@ -457,14 +455,9 @@ variables and constraints of the corresponding RJT model.
 
 # Examples
 ```julia
-μVars = RJTVariables(model, diagram, z)
+μ_s = RJTVariables(model, diagram, z)
 ```
 """
-
-struct μVariables
-    data::Dict{Name, μVariable}
-end
-
 function RJTVariables(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable})
     # Get the RJT structure
     # SHOULD WE DEFINE C_rjt and A_rjt AS PART OF THE INFLUENCE DIAGRAM STRUCT OR AS THEIR OWN, MAYBE BETTER TO DEFINE AS PART OF INFLUENCE DIAGRAM IF THERE IS NEVER A NEED
@@ -496,12 +489,12 @@ function RJTVariables(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Na
     for name in union(keys(diagram.C), keys(diagram.D))
         factorization_constraints(model, diagram, name, μVars[name].statevars, μBarVars[name].statevars, z)
     end
-    μ_s = μVariables(μVars)
+    μ_s = RJTVariables(μVars)
     return μ_s
 end
 
 """
-    RJT_expected_value(model::Model, diagram::InfluenceDiagram, μVars::Dict{Name, μVariable})
+    expected_value(model::Model, diagram::InfluenceDiagram, μVars::Dict{Name, μVariable})
 
 Construct the RJT objective function.
 
@@ -512,11 +505,10 @@ Construct the RJT objective function.
 
 # Examples
 ```julia
-RJT_expected_value(model, diagram, μVars)
+EV = expected_value(model, diagram, μ_s)
 ```
 """
-
-function expected_value(model::Model, diagram::InfluenceDiagram, μVars::μVariables)
+function expected_value(model::Model, diagram::InfluenceDiagram, μVars::RJTVariables)
     # Build the objective. The key observation here is that the information set
     # of a value node is always included in the previous cluster by construction.
     @expression(model, EV, 0)
@@ -533,38 +525,31 @@ end
 
 
 """
-    RJT_conditional_value_at_risk(model::Model,
+    conditional_value_at_risk(model::Model,
         diagram::InfluenceDiagram,
         μVars::Dict{Name, μVariable},
-        α::Float64;
-        CVaR_value::Float64)
+        α::Float64)
 
 Create a conditional value-at-risk (CVaR) objective based on RJT model.
 
 The model can't have more than one value node.
-
-ALSO NOT MORE THAN ONE ARC TO VALUE NODE????
 
 # Arguments
 - `model::Model`: JuMP model into which variables are added.
 - `diagram::InfluenceDiagram`: Influence diagram structure.
 - `μVars::Dict{Name, μVariable}`: Vector of moments.
 - `α::Float64`: Probability level at which conditional value-at-risk is optimised.
-- `CVaR_value::Float64`: CVaR value.
 
 # Examples
 ```julia
 α = 0.05  # Parameter such that 0 ≤ α ≤ 1
-CVaR_value = 200.0
-p, p_bar, p_u = RJT_conditional_value_at_risk(model, diagram, μVars, α, CVaR_value)
+CVaR = conditional_value_at_risk(model, diagram, μ_s, α)
 ```
 """
-
 function conditional_value_at_risk(model::Model,
     diagram::InfluenceDiagram,
-    μVars::μVariables,
-    α::Float64,
-    CVaR_value::Float64)
+    μVars::RJTVariables,
+    α::Float64)
 
     if length(diagram.V) != 1
         throw(DomainError("In order to create CVaR constraints, the number of value nodes should be 1."))
@@ -574,8 +559,6 @@ function conditional_value_at_risk(model::Model,
     ϵ = minimum(diff(unique(diagram.U.Y[1]))) / 2
     η = @variable(model)
     ρ′_s = Dict{Int64, VariableRef}()
-    ρ_s = Dict{Int64, VariableRef}()
-    p_u = Dict{Int64, AffExpr}()
 
     value_node_name = first(n for (n, node) in diagram.Nodes if isa(node, ValueNode))
     #Assuming only one preceding node
@@ -614,18 +597,25 @@ function conditional_value_at_risk(model::Model,
         @constraint(model, (p - (1 - λ)) ≤ ρ)
 
         ρ′_s[u] = ρ′
-        ρ_s[u] = ρ
-        p_u[u] = p
     end
 
     @constraint(model, sum(values(ρ′_s)) == α)
-    @constraint(model, (sum(ρ_bar * u for (u, ρ_bar) in ρ′_s)/α) >= CVaR_value)
+    CVaR = @expression(model, (sum(ρ_bar * u for (u, ρ_bar) in ρ′_s)/α))
 
-    #WHICH ONES OF THESE ARE NEEDED?
-    return ρ_s, ρ′_s, p_u
+    return CVaR
 end
 
-function generate_variables!(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable}; model_type::String)
+"""
+    function generate_model!(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable}; model_type::String)
+
+Generate either path-based or RJT variables and the respective objective function
+
+# Examples
+```julia-repl
+julia> generate_model!(model, diagram, z; model_type="RJT")
+```
+"""
+function generate_model!(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable}; model_type::String)
     if model_type=="RJT"
         μ_s = RJTVariables(model, diagram, z)
         EV = expected_value(model, diagram, μ_s)

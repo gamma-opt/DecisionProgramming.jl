@@ -77,14 +77,22 @@ lazy_probability_cut
 
 ### Objective Functions
 ```@docs
-expected_value(::Model, ::InfluenceDiagram, ::PathCompatibilityVariables; ::Float64)
+expected_value(::Model, ::InfluenceDiagram, ::PathCompatibilityVariables)
 conditional_value_at_risk(::Model, ::InfluenceDiagram, ::PathCompatibilityVariables{N}, ::Float64; ::Float64) where N
 ```
 
 ### Decision Strategy from Variables
 ```@docs
-LocalDecisionStrategy(::Node, ::Vector{VariableRef})
-DecisionStrategy(::DecisionVariables)
+LocalDecisionStrategy(::Node, ::Array{VariableRef})
+DecisionStrategy(::InfluenceDiagram, ::OrderedDict{Name, DecisionVariable})
+```
+
+### RJT model
+```@docs
+RJTVariables
+expected_value(::Model, ::InfluenceDiagram, ::μVariables)
+conditional_value_at_risk(::Model, ::InfluenceDiagram, ::μVariables, ::Float64)
+generate_model!
 ```
 
 ## `heuristics.jl`

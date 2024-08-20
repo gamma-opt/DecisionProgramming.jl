@@ -80,10 +80,10 @@ EV = expected_value(model, diagram, x_s)
 μ_s = RJTVariables(model, diagram, z)
 
 α = 0.05
-CVaR_value = 200.0
-p, p_bar, p_u = conditional_value_at_risk(model, diagram, μ_s, α, CVaR_value)
+CVaR = conditional_value_at_risk(model, diagram, μ_s, α)
 
 EV = expected_value(model, diagram, μ_s)
+@constraint(model, CVaR>=200.0)
 @objective(model, Max, EV)
 
 @info("Starting the optimization process.")
