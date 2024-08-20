@@ -1027,7 +1027,6 @@ julia> D_indices = indices(diagram.D)
  9
 ```
 """
-
 function indices(dict::OrderedDict{K, V}) where {K, V <: AbstractNode}
     indices = Vector{Node}()
     for node in values(dict)
@@ -1054,7 +1053,6 @@ julia> C_I_j_indices = I_j_indices(diagram, diagram.C)
  [7, 9]
 ```
 """
-
 function I_j_indices(diagram::InfluenceDiagram, dict::OrderedDict{K, V}) where {K, V <: AbstractNode}
     I_j_indices = Vector{Vector{Node}}()
     for node in values(dict)
@@ -1080,7 +1078,6 @@ julia> idcs_T1_H2 = indices_of(diagram, ["T1", "H2"])
  4
 ```
 """
-
 function indices_in_vector(diagram::InfluenceDiagram, nodes::AbstractArray)
     return [diagram.Nodes[node].index for node in nodes]
 end
@@ -1099,7 +1096,6 @@ julia> D_nodes = get_values(diagram.D)
  DecisionNode("D3", ["T3"], ["treat", "pass"], 9)
 ```
 """
-
 function get_values(dict::OrderedDict)
     return collect(values(dict))
 end
@@ -1118,7 +1114,6 @@ julia> D_values = get_keys(diagram.D)
  "D3"
 ```
 """
-
 function get_keys(dict::OrderedDict)
     return collect(keys(dict))
 end
@@ -1232,7 +1227,6 @@ end
 
 Local decision strategy type.
 """
-
 struct LocalDecisionStrategy{N} <: AbstractArray{Int, N}
     d::Node
     data::Array{Int, N}
@@ -1262,7 +1256,6 @@ random_diagram!(rng, diagram, 5, 2, 3, 2, 2, rand(rng, [2,3], 5))
 LocalDecisionStrategy(rng, diagram, diagram.D[1])
 ```
 """
-
 function LocalDecisionStrategy(rng::AbstractRNG, diagram::InfluenceDiagram, d::Name)
     I_d = diagram.I_j[d]
     states = Int16[diagram.S[s] for s in I_d]

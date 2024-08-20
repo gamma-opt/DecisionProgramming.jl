@@ -154,6 +154,15 @@ function print_node_io(io::IO, node::AbstractNode)
     end
 end
 
+"""
+    print_node(node_name::String, diagram::InfluenceDiagram; print_tables::Bool=true)
+
+Print node information. print_tables determines whether probability and utility values for the node are printed.
+
+# Examples
+```julia
+print_node("H2", diagram)
+"""
 function print_node(node_name::String, diagram::InfluenceDiagram; print_tables::Bool=true)
     if haskey(diagram.Nodes, node_name)
         node = diagram.Nodes[node_name]
@@ -201,6 +210,15 @@ function print_node(node_name::String, diagram::InfluenceDiagram; print_tables::
     end
 end
 
+"""
+    print_diagram(diagram::InfluenceDiagram; print_tables::Bool=true)
+
+Print diagram. print_tables determines whether probability and utility values for the nodes in the diagram are printed.
+
+# Examples
+```julia
+print_diagram(diagram)
+"""
 function print_diagram(diagram::InfluenceDiagram; print_tables::Bool=true)
     println("An influence diagram")
     println("")
@@ -270,7 +288,11 @@ function graph(diagram::InfluenceDiagram)
     """
 end
 
-#NOTE TO USER: This function accesses url mermaid.ink, which is used for graphing
+"""
+    mermaid(diagram::InfluenceDiagram, filename::String="mermaid_graph.png")
+
+Print mermaid graph. NOTE TO USER: Accesses the url mermaid.ink, which is used for graphing.
+"""
 function mermaid(diagram::InfluenceDiagram, filename::String="mermaid_graph.png")
     graph_output = graph(diagram)
     graphbytes = codeunits(graph_output)
