@@ -127,6 +127,7 @@ function print_risk_measures(U_distribution::UtilityDistribution, αs::Vector{Fl
 end
 
 
+
 function print_node_io(io::IO, node::AbstractNode)
     node_type = "Unknown"
     node_states = "n/a"
@@ -154,10 +155,12 @@ function print_node_io(io::IO, node::AbstractNode)
     end
 end
 
+
+
 """
     print_node(node_name::String, diagram::InfluenceDiagram; print_tables::Bool=true)
 
-Print node information. print_tables determines whether probability and utility values for the node are printed.
+Print node information. print_tables determines whether probability and utility tables for the node are printed.
 
 # Examples
 ```julia
@@ -196,16 +199,70 @@ function print_node(node_name::String, diagram::InfluenceDiagram; print_tables::
     end
     println("")
 
+    function print_table(table_type::String)
+        table_I_j = []
+        for I_j_node_name in node.I_j
+            push!(table_I_j, diagram.Nodes[I_j_node_name].states)
+        end
+
+        if table_type == "probabilities"
+            column_names_I_j = node.I_j
+            column_name_node = node_name
+            table_node = diagram.Nodes[node_name].states
+            tables = vcat(table_I_j, [table_node])
+            columns = vcat(column_names_I_j, column_name_node)
+            columns = map(x -> x * " state", columns)
+        elseif table_type == "utilities"
+            columns = node.I_j
+            tables = table_I_j
+            columns = map(x -> x * " state", columns)
+        else
+            throw(ArgumentError("Invalid table type. Expected 'probabilities' or 'utilities'"))
+        end
+
+        if table_type == "probabilities"
+            matrix = diagram.X[node.name].data
+        elseif table_type == "utilities"
+            matrix = diagram.Y[node.name].data
+        else
+            throw(ArgumentError("Invalid table type. Expected 'probabilities' or 'utilities'"))
+        end
+        permuted = permutedims(matrix, reverse(1:ndims(matrix)))
+        converted_data = vec(permuted)
+
+        function all_combinations(tables)
+            function inner(idx, current)
+                if idx > length(tables)
+                    return [current]
+                end
+                results = []
+                for value in tables[idx]
+                    results = vcat(results, inner(idx + 1, vcat(current, value)))
+                end
+                return results
+            end
+            return inner(1, [])
+        end
+        
+        combinations = all_combinations(tables)
+        
+        df = DataFrame()
+        for (i, c) in enumerate(columns)
+            df[!, Symbol(c)] = [comb[i] for comb in combinations]
+        end
+        
+        df[!, :Value] = converted_data
+
+        pretty_table(df, title = uppercasefirst(table_type) * ":")
+        println("")
+    end
+
     if print_tables == true
         if haskey(diagram.X, node.name)
-            println("Probabilities:")
-            display(diagram.X[node.name].data)
-            println("")
+            print_table("probabilities")
         end
         if haskey(diagram.Y, node.name)
-            println("Utilities:")
-            display(diagram.Y[node.name].data)
-            println("")
+            print_table("utilities")
         end
     end
 end
