@@ -1,4 +1,4 @@
-using JuMP
+using JuMP, DataStructures
 
 function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node}, names::Bool, base_name::String="")
     # Create decision variables.
