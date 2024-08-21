@@ -83,7 +83,7 @@ EV = expected_value(model, diagram, x_s)
 CVaR = conditional_value_at_risk(model, diagram, μ_s, α)
 
 EV = expected_value(model, diagram, μ_s)
-@constraint(model, CVaR>=200.0)
+@constraint(model, CVaR>=300.0)
 @objective(model, Max, EV)
 
 @info("Starting the optimization process.")
@@ -125,7 +125,3 @@ for state in ["ill", "healthy"]
     print_state_probabilities(diagram, S_probabilities2, [["T$i" for i in 1:N-1]...])
     print_state_probabilities(diagram, S_probabilities2, [["D$i" for i in 1:N-1]...])
 end
-
-#CVaR = sum(value.(ρ_bar) * u for (u, ρ_bar) in p_bar)/0.05
-#println("CVaR output:")
-#println(CVaR)

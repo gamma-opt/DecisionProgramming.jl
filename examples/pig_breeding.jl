@@ -58,7 +58,7 @@ add_utilities!(diagram, "MP", [300.0, 1000.0])
 #model = Model()
 #z = DecisionVariables(model, diagram, names=true)
 
-model, z, variables = generate_model(diagram; model_type="path")
+model, z, variables = generate_model(diagram; model_type="RJT")
 
 """
 x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)

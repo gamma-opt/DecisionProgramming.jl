@@ -5,7 +5,7 @@ function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node}, 
     dims = S[[I_d; d]]
     z_d = Array{VariableRef}(undef, dims...)
     for s in paths(dims)
-        #TÄHÄNKIN HAKASULKEET ALAVIIVAN SIJASTA?
+        #SQUARE BRACKETS OR UNDERSCORE?
         name = join([base_name, s...], "_")
         if names == true
             z_d[s...] = @variable(model, binary=true, base_name=name)
@@ -317,8 +317,6 @@ function conditional_value_at_risk(model::Model,
 end
 
 
-
-
 # --- Construct decision strategy from JuMP variables ---
 
 """
@@ -382,7 +380,7 @@ end
 
 function add_variable(model::Model, states::Vector, name::Name)
     variable = @variable(model, [1:prod(length.(states))], lower_bound = 0)
-    #DO WE WANT NAMING LIKE THIS? NAMES ARE GENERALLY INFORMATIVE WHEN DONE LIKE THIS, BUT CAN BE QUITE LONG
+    #DO WE WANT NAMING LIKE THIS? VARIABLE NAMES ARE INFORMATIVE WHEN NAMED LIKE THIS, BUT CAN BE QUITE LONG
     for (variable_i, states_i) in zip(variable, Iterators.product(states...))
         set_name(variable_i, "$name[$(join(states_i, ", "))]")
     end
@@ -464,7 +462,7 @@ function RJTVariables(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Na
     # TO HAVE AN INDEPENDENT RJT NOT LINKED TO AN INFLUENCE DIAGRAM
     diagram.C_rjt, diagram.A_rjt = ID_to_RJT(diagram)
 
-    #μ- AND μ_bar-VARIABLES IN THE SAME LOOP, OTHERWISE NOT A PROBLEM, BUT DIFFERENT ORDER COMPARED TO PAPER AND ALSO SLIGHTLY WEIRD ORDER OF EQUATIONS IN MODEL PRINTOUT
+    #μ- AND μ_bar-VARIABLES IN THE SAME LOOP, OTHERWISE NOT A PROBLEM, BUT DIFFERENT ORDER COMPARED TO PAPER AND LIKEWISE SLIGHTLY WEIRD ORDER OF EQUATIONS IN MODEL PRINTOUT
     # Variables corresponding to the nodes in the RJT
     μVars = Dict{Name, μVariable}()
     # Variables μ_{\bar{C}_v} = ∑_{x_v} μ_{C_v}
