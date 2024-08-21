@@ -51,16 +51,14 @@ end
 
 add_utilities!(diagram, "MP", [300.0, 1000.0])
 
-#positive_path_utility isn't relevant anymore with rjt? slows down generate_diagram! a lot with large N
-#generate_diagram!(diagram, positive_path_utility = true)
-generate_diagram!(diagram)
+#generate_diagram!(diagram)
 
 @info("Creating the decision model.")
-model = Model()
 
-z = DecisionVariables(model, diagram, names=true)
+#model = Model()
+#z = DecisionVariables(model, diagram, names=true)
 
-generate_model!(model, diagram, z; model_type="RJT")
+model, z, variables = generate_model(diagram; model_type="path")
 
 """
 x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)

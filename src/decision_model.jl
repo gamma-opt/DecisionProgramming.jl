@@ -608,23 +608,27 @@ end
 """
     function generate_model!(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable}; model_type::String)
 
-Generate either path-based or RJT variables and the respective objective function
+Generate either decision programming based or RJT based variables and the respective objective function
 
 # Examples
 ```julia-repl
 julia> generate_model!(model, diagram, z; model_type="RJT")
 ```
 """
-function generate_model!(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable}; model_type::String)
+function generate_model(diagram::InfluenceDiagram, names::Bool=true; model_type::String)
+    generate_diagram!(diagram)
+    model = Model()
+    z = DecisionVariables(model, diagram, names=names)
     if model_type=="RJT"
-        μ_s = RJTVariables(model, diagram, z)
-        EV = expected_value(model, diagram, μ_s)
+        variables = RJTVariables(model, diagram, z)
+        EV = expected_value(model, diagram, variables)
         @objective(model, Max, EV)
-    elseif model_type=="path"
-        x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
-        EV = expected_value(model, diagram, x_s)
+    elseif model_type=="DP"
+        variables = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
+        EV = expected_value(model, diagram, variables)
         @objective(model, Max, EV)     
     else
-        error("Invalid model_type '$model_type'. It should be either 'RJT' or 'path'.")
+        error("Invalid model_type '$model_type'. It should be either 'RJT' or 'DP'.")
     end
+    return model, z, variables
 end

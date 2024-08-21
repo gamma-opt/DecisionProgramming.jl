@@ -61,20 +61,22 @@ for s in paths([State(2) for i in 1:N])
 end
 add_utilities!(diagram, "T", Y_T)
 
-generate_diagram!(diagram, positive_path_utility=true)
-
-
-model = Model()
-z = DecisionVariables(model, diagram)
+model, z = generate_model(diagram, model_type="RJT")
 
 """
+#generate_diagram!(diagram, positive_path_utility=true)
+
+#model = Model()
+#z = DecisionVariables(model, diagram)
+
 x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
 EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
-"""
+
 
 μ_s = RJTVariables(model, diagram, z)
 EV = expected_value(model, diagram, μ_s)
+"""
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(

@@ -51,7 +51,7 @@ export DecisionVariables,
     RJT_conditional_value_at_risk,
     ID_to_RJT,
     RJTVariables,
-    generate_model!
+    generate_model
 
 export random_diagram!,
     random_probabilities!,
