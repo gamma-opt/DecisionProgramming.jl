@@ -101,7 +101,7 @@ end
 """
     PathCompatibilityVariables(model::Model,
         diagram::InfluenceDiagram,
-        z::DecisionVariables;
+        z::OrderedDict{Name, DecisionVariable};
         names::Bool=false,
         name::String="x",
         forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
@@ -114,7 +114,7 @@ Create path compatibility variables and constraints.
 # Arguments
 - `model::Model`: JuMP model into which variables are added.
 - `diagram::InfluenceDiagram`: Influence diagram structure.
-- `z::DecisionVariables`: Decision variables from `DecisionVariables` function.
+- `z::OrderedDict{Name, DecisionVariable}`: Ordered dictionary of decision variables.
 - `names::Bool`: Use names or have JuMP variables be anonymous.
 - `name::String`: Prefix for predefined decision variable naming convention.
 - `forbidden_paths::Vector{ForbiddenPath}`: The forbidden subpath structures.
