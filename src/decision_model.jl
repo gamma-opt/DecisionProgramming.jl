@@ -26,7 +26,7 @@ struct DecisionVariable
 end
 
 """
-    DecisionVariables(model::Model,  diagram::InfluenceDiagram; names::Bool=false, name::String="z")
+    DecisionVariables(model::Model,  diagram::InfluenceDiagram; names::Bool=true)
 
 Create decision variables and constraints.
 
@@ -34,7 +34,6 @@ Create decision variables and constraints.
 - `model::Model`: JuMP model into which variables are added.
 - `diagram::InfluenceDiagram`: Influence diagram structure.
 - `names::Bool`: Use names or have JuMP variables be anonymous.
-- `name::String`: Prefix for predefined decision variable naming convention.
 
 
 # Examples
@@ -129,7 +128,7 @@ Create path compatibility variables and constraints.
 
 # Examples
 ```julia
-x_s = PathCompatibilityVariables(model, diagram; probability_cut = false)
+x_s = PathCompatibilityVariables(model, diagram, z; probability_cut = false)
 ```
 """
 function PathCompatibilityVariables(model::Model,
@@ -317,7 +316,7 @@ end
 # --- Construct decision strategy from JuMP variables ---
 
 """
-    LocalDecisionStrategy(j::Node, z::Array{VariableRef})
+    LocalDecisionStrategy(d::Node, z::Array{VariableRef})
 
 Construct decision strategy from variable refs.
 """
@@ -326,13 +325,13 @@ function LocalDecisionStrategy(d::Node, z::Array{VariableRef})
 end
 
 """
-    DecisionStrategy(z::DecisionVariables)
+    DecisionStrategy(diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable})
 
 Extract values for decision variables from solved decision model.
 
 # Examples
 ```julia
-Z = DecisionStrategy(z)
+Z = DecisionStrategy(diagram, z)
 ```
 """
 function DecisionStrategy(diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable})

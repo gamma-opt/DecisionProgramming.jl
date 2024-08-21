@@ -116,7 +116,7 @@ function set_MIP_start(diagram, Z, S_active, z_z, x_s)
 end
 
 """
-    singlePolicyUpdate(diagram::InfluenceDiagram, model::Model)
+    singlePolicyUpdate(diagram::InfluenceDiagram, model::Model, z::OrderedDict{Name, DecisionVariable}, x_s::PathCompatibilityVariables)
 
 Finds a feasible solution using single policy update and sets the model start values to that solution.
 Returns a vector of tuples consisting of the value of each improved solution starting from a random policy, 
@@ -134,7 +134,7 @@ The purpose of all this output is to allow us to examine how fast the method fin
 
 # Examples
 ```julia
-solutionhistory = singlePolicyUpdate(diagram, model)
+solutionhistory = singlePolicyUpdate(diagram, model, z, x_s)
 ```
 """
 function singlePolicyUpdate(diagram::InfluenceDiagram, model::Model, z::OrderedDict{Name, DecisionVariable}, x_s::PathCompatibilityVariables)

@@ -86,7 +86,7 @@ end
 
 
 """
-    const State = Int
+    const State = Int16
 
 Primitive type for the number of states. Alias for `Int16`.
 """
@@ -1085,7 +1085,7 @@ end
 """
     function get_values(dict::OrderedDict)
 
-generic function to get values from an OrderedDict
+Generic function to get values from an OrderedDict.
 
 # Example
 ```julia-repl
@@ -1101,9 +1101,9 @@ function get_values(dict::OrderedDict)
 end
 
 """
-    function get_values(dict::OrderedDict)
+    function get_keys(dict::OrderedDict)
 
-generic function to get values from an OrderedDict
+Generic function to get keys from an OrderedDict.
 
 # Example
 ```julia-repl
@@ -1120,7 +1120,7 @@ end
 
 
 """
-    function num_states(diagram::InfluenceDiagram, node::Name)
+    function num_states(diagram::InfluenceDiagram, name::Name)
 
 Get the number of states in a given node.
 
