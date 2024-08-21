@@ -1,11 +1,16 @@
 using JuMP
 
-function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node}, base_name::String="")
+function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node}, names::Bool, base_name::String="")
     # Create decision variables.
     dims = S[[I_d; d]]
     z_d = Array{VariableRef}(undef, dims...)
     for s in paths(dims)
-        z_d[s...] = @variable(model, binary=true, base_name=base_name)
+        if names == true
+            name = join([base_name, s...], "_")
+            z_d[s...] = @variable(model, binary=true, base_name=name)
+        else
+            z_d[s...] = @variable(model, binary=true)
+        end
     end
     # Constraints to one decision per decision strategy.
     for s_I in paths(S[I_d])
@@ -14,14 +19,14 @@ function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node}, 
     return z_d
 end
 
-struct DecisionVariables
-    D::Vector{Node}
-    I_d::Vector{Vector{Node}}
-    z::Vector{<:Array{VariableRef}}
+struct DecisionVariable
+    D::Name
+    I_d::Vector{Name}
+    z::Array{VariableRef}
 end
 
 """
-    DecisionVariables(model::Model,  diagram::InfluenceDiagram; names::Bool=false, name::String="z")
+    DecisionVariables(model::Model,  diagram::InfluenceDiagram; names::Bool=true)
 
 Create decision variables and constraints.
 
@@ -29,7 +34,6 @@ Create decision variables and constraints.
 - `model::Model`: JuMP model into which variables are added.
 - `diagram::InfluenceDiagram`: Influence diagram structure.
 - `names::Bool`: Use names or have JuMP variables be anonymous.
-- `name::String`: Prefix for predefined decision variable naming convention.
 
 
 # Examples
@@ -37,8 +41,18 @@ Create decision variables and constraints.
 z = DecisionVariables(model, diagram)
 ```
 """
-function DecisionVariables(model::Model, diagram::InfluenceDiagram; names::Bool=false, name::String="z")
-    DecisionVariables(diagram.D, diagram.I_j[diagram.D], [decision_variable(model, diagram.S, d, I_d, (names ? "$(name)_$(d.j)$(s)" : "")) for (d, I_d) in zip(diagram.D, diagram.I_j[diagram.D])])
+function DecisionVariables(model::Model, diagram::InfluenceDiagram; names::Bool=true)
+    decVars = OrderedDict{Name, DecisionVariable}()
+
+    for (key, node) in diagram.D
+        states = States(get_values(diagram.S))
+        I_d = convert(Vector{Node}, indices_in_vector(diagram, diagram.D[key].I_j))
+        base_name = names ? "$(diagram.D[key].name)" : ""
+
+        decVars[key] = DecisionVariable(key, diagram.D[key].I_j, decision_variable(model, states, node.index, I_d, names, base_name)) 
+    end
+
+    return decVars
 end
 
 function is_forbidden(s::Path, forbidden_paths::Vector{ForbiddenPath})
@@ -80,7 +94,6 @@ function decision_strategy_constraint(model::Model, S::States, d::Node, I_d::Vec
     for s_d_s_Id in paths(dims) # iterate through all information states and states of d
         # paths with (s_d | s_I(d)) information structure
         feasible_paths = filter(s -> s[[I_d; d]] == s_d_s_Id, existing_paths)
-
         @constraint(model, sum(get(x_s, s, 0) for s in feasible_paths) ≤ z[s_d_s_Id...] * min(length(feasible_paths), theoretical_ub))
     end
 end
@@ -88,7 +101,7 @@ end
 """
     PathCompatibilityVariables(model::Model,
         diagram::InfluenceDiagram,
-        z::DecisionVariables;
+        z::OrderedDict{Name, DecisionVariable};
         names::Bool=false,
         name::String="x",
         forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
@@ -101,7 +114,7 @@ Create path compatibility variables and constraints.
 # Arguments
 - `model::Model`: JuMP model into which variables are added.
 - `diagram::InfluenceDiagram`: Influence diagram structure.
-- `z::DecisionVariables`: Decision variables from `DecisionVariables` function.
+- `z::OrderedDict{Name, DecisionVariable}`: Ordered dictionary of decision variables.
 - `names::Bool`: Use names or have JuMP variables be anonymous.
 - `name::String`: Prefix for predefined decision variable naming convention.
 - `forbidden_paths::Vector{ForbiddenPath}`: The forbidden subpath structures.
@@ -115,12 +128,12 @@ Create path compatibility variables and constraints.
 
 # Examples
 ```julia
-x_s = PathCompatibilityVariables(model, diagram; probability_cut = false)
+x_s = PathCompatibilityVariables(model, diagram, z; probability_cut = false)
 ```
 """
 function PathCompatibilityVariables(model::Model,
     diagram::InfluenceDiagram,
-    z::DecisionVariables;
+    z::OrderedDict{Name, DecisionVariable};
     names::Bool=false,
     name::String="x",
     forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
@@ -140,22 +153,26 @@ function PathCompatibilityVariables(model::Model,
     N = length(diagram.S)
     variables_x_s = Dict{Path{N}, VariableRef}(
         s => path_compatibility_variable(model, (names ? "$(name)$(s)" : ""))
-        for s in paths(diagram.S, fixed)
+        for s in paths(get_values(diagram.S), fixed)
         if !iszero(diagram.P(s)) && !is_forbidden(s, forbidden_paths)
     )
 
     x_s = PathCompatibilityVariables{N}(variables_x_s)
 
     # Add decision strategy constraints for each decision node
-    for (d, z_d) in zip(z.D, z.z)
-        decision_strategy_constraint(model, diagram.S, d, diagram.I_j[d], z.D, z_d, x_s)
+    I_j_indices_result = I_j_indices(diagram, diagram.Nodes)
+    z_indices = indices(diagram.D)
+    z_z = [decision_node.z for decision_node in get_values(z)]
+
+    for (d, z_d) in zip(z_indices, z_z)
+        decision_strategy_constraint(model, States(get_values(diagram.S)), d, I_j_indices_result[d], z_indices, z_d, x_s)
     end
 
     if probability_cut
         @constraint(model, sum(x * diagram.P(s) * probability_scale_factor for (s, x) in x_s) == 1.0 * probability_scale_factor)
     end
 
-    x_s
+    return x_s
 end
 
 """
@@ -299,7 +316,7 @@ end
 # --- Construct decision strategy from JuMP variables ---
 
 """
-    LocalDecisionStrategy(j::Node, z::Array{VariableRef})
+    LocalDecisionStrategy(d::Node, z::Array{VariableRef})
 
 Construct decision strategy from variable refs.
 """
@@ -308,15 +325,23 @@ function LocalDecisionStrategy(d::Node, z::Array{VariableRef})
 end
 
 """
-    DecisionStrategy(z::DecisionVariables)
+    DecisionStrategy(diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable})
 
 Extract values for decision variables from solved decision model.
 
 # Examples
 ```julia
-Z = DecisionStrategy(z)
+Z = DecisionStrategy(diagram, z)
 ```
 """
-function DecisionStrategy(z::DecisionVariables)
-    DecisionStrategy(z.D, z.I_d, [LocalDecisionStrategy(d, z_var) for (d, z_var) in zip(z.D, z.z)])
+function DecisionStrategy(diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable})
+    z_D = convert(Vector{Node}, indices_in_vector(diagram, get_keys(z)))
+    z_I_d_Names = [decision_node.I_d for decision_node in get_values(z)]
+
+    z_I_d_indices = [indices_in_vector(diagram, I_j) for I_j in z_I_d_Names]
+    z_z = [decision_node.z for decision_node in get_values(z)]
+
+    DecisionStrategy(z_D, z_I_d_indices, [LocalDecisionStrategy(d, z_var) for (d, z_var) in zip(z_D, z_z)])
 end
+
+

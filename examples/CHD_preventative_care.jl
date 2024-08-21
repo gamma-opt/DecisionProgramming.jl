@@ -1,5 +1,5 @@
 using Logging
-using JuMP, Gurobi
+using JuMP, HiGHS
 using DecisionProgramming
 using CSV, DataFrames, PrettyTables
 
@@ -7,7 +7,7 @@ using CSV, DataFrames, PrettyTables
 
 # Setting subproblem specific parameters
 const chosen_risk_level = "12%"
-
+cd(@__DIR__)
 
 # Reading tests' technical performance data (dummy data in this case)
 data = CSV.read("CHD_preventative_care_data.csv", DataFrame)
@@ -184,14 +184,12 @@ fixed_R0 = FixedPath(diagram, Dict("R0" => chosen_risk_level))
 scale_factor = 10000.0
 x_s = PathCompatibilityVariables(model, diagram, z; fixed = fixed_R0, forbidden_paths = [forbidden_tests], probability_cut=false)
 
-EV = expected_value(model, diagram, x_s, probability_scale_factor = scale_factor)
+EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
-    () -> Gurobi.Optimizer(Gurobi.Env()),
-    "MIPFocus" => 3,
-    "MIPGap" => 1e-6,
+    () -> HiGHS.Optimizer()
 )
 set_optimizer(model, optimizer)
 

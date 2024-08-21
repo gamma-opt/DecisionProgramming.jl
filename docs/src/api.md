@@ -49,23 +49,33 @@ DefaultPathUtility
 ### InfluenceDiagram
 ```@docs
 InfluenceDiagram
-generate_arcs!
-generate_diagram!
 add_node!
 ProbabilityMatrix
+ProbabilityMatrix(::InfluenceDiagram, ::Name)
 add_probabilities!
 UtilityMatrix
+UtilityMatrix(::InfluenceDiagram, ::Name)
 add_utilities!
-index_of
+generate_arcs!
+generate_diagram!
+indices
+I_j_indices
+indices_in_vector
+get_values
+get_keys
 num_states
 ```
+
+### ForbiddenPath and FixedPath outer construction functions
+ForbiddenPath(::InfluenceDiagram, ::Vector{Name}, ::Vector{NTuple{N, Name}}) where N
+FixedPath(::InfluenceDiagram, ::Dict{Name, Name})
 
 ### Decision Strategy
 ```@docs
 LocalDecisionStrategy
+LocalDecisionStrategy(::AbstractRNG, ::InfluenceDiagram, ::Name)
 DecisionStrategy
 ```
-
 
 ## `decision_model.jl`
 ### Decision Model
@@ -77,14 +87,14 @@ lazy_probability_cut
 
 ### Objective Functions
 ```@docs
-expected_value(::Model, ::InfluenceDiagram, ::PathCompatibilityVariables; ::Float64)
+expected_value(::Model, ::InfluenceDiagram, ::PathCompatibilityVariables)
 conditional_value_at_risk(::Model, ::InfluenceDiagram, ::PathCompatibilityVariables{N}, ::Float64; ::Float64) where N
 ```
 
 ### Decision Strategy from Variables
 ```@docs
 LocalDecisionStrategy(::Node, ::Vector{VariableRef})
-DecisionStrategy(::DecisionVariables)
+DecisionStrategy(::InfluenceDiagram, ::OrderedDict{Name, DecisionProgramming.DecisionVariable})
 ```
 
 ## `heuristics.jl`
@@ -114,14 +124,7 @@ print_utility_distribution
 print_state_probabilities
 print_statistics
 print_risk_measures
-```
-
-## `random.jl`
-```@docs
-random_diagram!
-random_probabilities!
-random_utilities!
-LocalDecisionStrategy(::AbstractRNG, ::InfluenceDiagram, ::Node)
-DecisionProgramming.information_set(::AbstractRNG, ::Node, ::Int64)
-DecisionProgramming.information_set(::AbstractRNG, ::Vector{Node}, ::Int64)
+print_node
+print_diagram
+mermaid
 ```
