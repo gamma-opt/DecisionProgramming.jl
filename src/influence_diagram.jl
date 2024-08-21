@@ -601,7 +601,7 @@ function Base.setindex!(PM::ProbabilityMatrix, p::T, I::Vararg{Union{String, Int
     for i in 1:N
         if isa(I[i], String)
             if get(PM.indices[i], I[i], 0) == 0
-                throw(DomainError("Node $(probability_matrix.nodes[i]) does not have state $(I[i])."))
+                throw(DomainError("Node $(PM.nodes[i]) does not have state $(I[i])."))
             end
             push!(I2, PM.indices[i][I[i]])
         else
@@ -617,7 +617,7 @@ function Base.setindex!(PM::ProbabilityMatrix{N}, P::Array{T}, I::Vararg{Union{S
             push!(I2, :)
         elseif isa(I[i], String)
             if get(PM.indices[i], I[i], 0) == 0
-                throw(DomainError("Node $(probability_matrix.nodes[i]) does not have state $(I[i])."))
+                throw(DomainError("Node $(PM.nodes[i]) does not have state $(I[i])."))
             end
             push!(I2, PM.indices[i][I[i]])
         else
@@ -728,7 +728,7 @@ function Base.setindex!(UM::UtilityMatrix{N}, y::T, I::Vararg{Union{String, Int}
     for i in 1:N
         if isa(I[i], String)
             if get(UM.indices[i], I[i], 0) == 0
-                throw(DomainError("Node $(probability_matrix.nodes[i]) does not have state $(I[i])."))
+                throw(DomainError("Node $(UM.I_v[i]) does not have state $(I[i])."))
             end
             push!(I2, UM.indices[i][I[i]])
         else
@@ -744,7 +744,7 @@ function Base.setindex!(UM::UtilityMatrix{N}, Y::Array{T}, I::Vararg{Union{Strin
             push!(I2, :)
         elseif isa(I[i], String)
             if get(UM.indices[i], I[i], 0) == 0
-                throw(DomainError("Node $(probability_matrix.nodes[i]) does not have state $(I[i])."))
+                throw(DomainError("Node $(UM.I_v[i]) does not have state $(I[i])."))
             end
             push!(I2, UM.indices[i][I[i]])
         else
