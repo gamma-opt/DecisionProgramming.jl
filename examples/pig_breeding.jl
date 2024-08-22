@@ -51,12 +51,14 @@ end
 
 add_utilities!(diagram, "MP", [300.0, 1000.0])
 
-#generate_diagram!(diagram)
+"""
+generate_diagram!(diagram)
 
 @info("Creating the decision model.")
+model = Model()
 
-#model = Model()
-#z = DecisionVariables(model, diagram, names=true)
+z = DecisionVariables(model, diagram, names=true)
+"""
 
 model, z, variables = generate_model(diagram; model_type="RJT")
 

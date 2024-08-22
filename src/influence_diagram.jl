@@ -976,7 +976,7 @@ function generate_diagram!(diagram::InfluenceDiagram;
 
         diagram.U = DefaultPathUtility(V_I_j_indexed, get_values(diagram.Y))
         if positive_path_utility
-            #DOES CHANGING THE DIAGRAM.TRANSLATION CALCULATION LIKE THIS CAUSE ANY ISSUES IF THERE ARE E.G. FORBIDDEN PATHS OR PATHS THAT NEVER HAPPEN. GUESS IT DEPENDS ON HOW THIS IS USED.
+            #DOES CHANGING THE DIAGRAM.TRANSLATION CALCULATION LIKE THIS CAUSE ANY ISSUES IF THERE ARE E.G. FORBIDDEN PATHS OR PATHS THAT NEVER HAPPEN. PROBABLY DEPENDS ON HOW THIS IS USED.
             diagram.translation = 1 - sum(minimum.(diagram.U.Y))
         elseif negative_path_utility
             diagram.translation = -1 - sum(maximum.(diagram.U.Y))

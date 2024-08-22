@@ -172,7 +172,8 @@ function PathCompatibilityVariables(model::Model,
     end
 
     if probability_cut
-        @constraint(model, sum(x * diagram.P(s) * probability_scale_factor for (s, x) in x_s) == 1.0 * probability_scale_factor)
+        cons = sum(x * diagram.P(s) * probability_scale_factor for (s, x) in x_s)
+        @constraint(model, probability_cut, cons == 1.0 * probability_scale_factor)
     end
 
     return x_s
@@ -228,6 +229,19 @@ EV = expected_value(model, diagram, x_s)
 function expected_value(model::Model,
     diagram::InfluenceDiagram,
     x_s::PathCompatibilityVariables)
+
+    diff_sign_utilities = false
+    if minimum.(diagram.U.Y)[1]*maximum.(diagram.U.Y)[1] < 0.0
+        diff_sign_utilities = true
+    end
+
+    println(diff_sign_utilities)
+    println(isnothing(constraint_by_name(model, "probability_cut")))
+
+    if isnothing(constraint_by_name(model, "probability_cut")) && diff_sign_utilities
+        throw(DomainError("The model contains both negative and positive utilities and no probability cut, which can lead to wrong results. Probability cut constraint can be added using function PathCompatibilityVariables."))
+    end
+
     @expression(model, sum(diagram.P(s) * x * diagram.U(s, diagram.translation) for (s, x) in x_s))
 end
 
@@ -257,7 +271,6 @@ CVaR = conditional_value_at_risk(model, x_s, U, P, α)
 CVaR = conditional_value_at_risk(model, x_s, U, P, α; probability_scale_factor = 10.0)
 ```
 """
-
 function conditional_value_at_risk(model::Model,
     diagram::InfluenceDiagram,
     x_s::PathCompatibilityVariables{N},
@@ -269,6 +282,10 @@ function conditional_value_at_risk(model::Model,
     end
     if !(0 < α ≤ 1)
         throw(DomainError("α should be 0 < α ≤ 1"))
+    end
+
+    if isnothing(constraint_by_name(model, "probability_cut"))
+        throw(DomainError("A probability cut constraint using PathCompatibilityVariables has to be created in order for decision programming path based CVaR to work."))
     end
 
     # Pre-computed parameters
@@ -315,7 +332,6 @@ function conditional_value_at_risk(model::Model,
 
     return CVaR
 end
-
 
 # --- Construct decision strategy from JuMP variables ---
 
@@ -555,6 +571,7 @@ function conditional_value_at_risk(model::Model,
 
     M = maximum(diagram.U.Y[1]) - minimum(diagram.U.Y[1])
     ϵ = minimum(diff(unique(diagram.U.Y[1]))) / 2
+
     η = @variable(model)
     ρ′_s = Dict{Int64, VariableRef}()
 
@@ -602,6 +619,7 @@ function conditional_value_at_risk(model::Model,
 
     return CVaR
 end
+
 
 """
     function generate_model!(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable}; model_type::String)

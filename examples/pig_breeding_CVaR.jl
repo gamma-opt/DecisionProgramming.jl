@@ -4,7 +4,7 @@ using DecisionProgramming
 using DataStructures
 using IterTools
 
-const N = 6
+const N = 3
 
 @info("Creating the influence diagram.")
 diagram = InfluenceDiagram()
@@ -71,20 +71,24 @@ model = Model()
 
 z = DecisionVariables(model, diagram, names=true)
 
-"""
-x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
-EV = expected_value(model, diagram, x_s)
-@objective(model, Max, EV)
-"""
 
+x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = true)
+α = 0.05
+CVaR = conditional_value_at_risk(model, diagram, x_s, α; probability_scale_factor = 1.0)
+EV = expected_value(model, diagram, x_s)
+@constraint(model, CVaR>=300.0)
+@objective(model, Max, EV)
+
+"""
 μ_s = RJTVariables(model, diagram, z)
 
 α = 0.05
 CVaR = conditional_value_at_risk(model, diagram, μ_s, α)
 
 EV = expected_value(model, diagram, μ_s)
-@constraint(model, CVaR>=300.0)
+@constraint(model, CVaR>=100.0)
 @objective(model, Max, EV)
+"""
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
