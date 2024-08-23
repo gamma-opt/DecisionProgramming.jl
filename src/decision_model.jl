@@ -392,7 +392,6 @@ end
 
 function add_variable(model::Model, states::Vector, name::Name, names::Bool)
     variable = @variable(model, [1:prod(length.(states))], lower_bound = 0)
-    #DO WE WANT NAMING LIKE THIS? VARIABLE NAMES ARE INFORMATIVE WHEN NAMED LIKE THIS, BUT CAN BE QUITE LONG
     if names==true
         for (variable_i, states_i) in zip(variable, Iterators.product(states...))
             set_name(variable_i, "$name[$(join(states_i, ", "))]")
@@ -472,11 +471,8 @@ variables and constraints of the corresponding RJT model.
 """
 function RJTVariables(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable}; names=names::Bool)
     # Get the RJT structure
-    # SHOULD WE DEFINE C_rjt and A_rjt AS PART OF THE INFLUENCE DIAGRAM STRUCT OR AS THEIR OWN, MAYBE BETTER TO DEFINE AS PART OF INFLUENCE DIAGRAM IF THERE IS NEVER A NEED
-    # TO HAVE AN INDEPENDENT RJT NOT LINKED TO AN INFLUENCE DIAGRAM
     diagram.C_rjt, diagram.A_rjt = ID_to_RJT(diagram)
 
-    #μ- AND μ_bar-VARIABLES IN THE SAME LOOP, OTHERWISE NOT A PROBLEM, BUT DIFFERENT ORDER COMPARED TO PAPER AND LIKEWISE SLIGHTLY WEIRD ORDER OF EQUATIONS IN MODEL PRINTOUT
     # Variables corresponding to the nodes in the RJT
     μVars = Dict{Name, μVariable}()
     # Variables μ_{\bar{C}_v} = ∑_{x_v} μ_{C_v}
@@ -496,8 +492,7 @@ function RJTVariables(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Na
     end
 
     # Add in the conditional probabilities and decision strategies
-    # In our structure, value nodes are not stochastic and the objective function doesn't really work in this context. 
-    # However, adding a chance node representing stochasticity before the value node is a possibility.
+    # In our structure, value nodes are not stochastic. However, adding a chance node representing stochasticity before the value node is a possibility.
     for name in union(keys(diagram.C), keys(diagram.D))
         factorization_constraints(model, diagram, name, μVars[name].statevars, μBarVars[name].statevars, z)
     end
