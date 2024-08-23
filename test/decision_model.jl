@@ -2,7 +2,7 @@ using Test, Logging, Random, JuMP
 using DecisionProgramming
 
 
-function influence_diagram()
+function influence_diagram(diff_sign_utils::Bool)
     diagram = InfluenceDiagram()
     #Creating an experimental influence diagram with nodes having varying amounts of states and nodes in their information sets
     add_node!(diagram, ChanceNode("H1", [], ["1", "2"]))
@@ -34,7 +34,11 @@ function influence_diagram()
     add_probabilities!(diagram, "H3", [H3_probs, H3_probs, H3_probs])
 
     C1_util_matrix = UtilityMatrix(diagram, "C1")
-    C1_util_matrix["1", :] = [0.0, 0.0, 0.0, 0.0]
+    if diff_sign_utils==true
+        C1_util_matrix["1", :] = [1.0, -1.0, 0.0, 0.0]
+    else
+        C1_util_matrix["1", :] = [1.0, 1.0, 0.0, 0.0]
+    end
     C1_util_matrix["2", :] = [0.0, 0.0, 0.0, 0.0]
     C1_util_matrix["3", :] = [0.0, 0.0, 0.0, 0.0]
     add_utilities!(diagram, "C1", C1_util_matrix)
@@ -59,19 +63,29 @@ function test_decision_model(diagram, probability_scale_factor, probability_cut)
         @test_throws DomainError x_s = PathCompatibilityVariables(model, diagram, z; probability_cut = probability_cut, probability_scale_factor = probability_scale_factor)
     end
 
+    model = Model()
+    z = DecisionVariables(model, diagram)
     x_s = PathCompatibilityVariables(model, diagram, z; probability_cut = probability_cut, probability_scale_factor = 1.0)    
 
     @info "Testing probability_cut"
     lazy_probability_cut(model, diagram, x_s)
 
     @info "Testing expected_value"
-    EV = expected_value(model, diagram, x_s)
+    if (minimum.(diagram.U.Y)[1]*maximum.(diagram.U.Y)[1] < 0.0) && isnothing(constraint_by_name(model, "probability_cut"))
+        @test_throws DomainError EV = expected_value(model, diagram, x_s)
+    else
+        EV = expected_value(model, diagram, x_s)
+    end
 
     @info "Testing conditional_value_at_risk"
-    if probability_scale_factor > 0
-        CVaR = conditional_value_at_risk(model, diagram, x_s, 0.2; probability_scale_factor = probability_scale_factor)
-    else
+    if probability_cut == false
         @test_throws DomainError conditional_value_at_risk(model, diagram, x_s, 0.2; probability_scale_factor = probability_scale_factor)
+    else
+        if probability_scale_factor > 0
+            CVaR = conditional_value_at_risk(model, diagram, x_s, 0.2; probability_scale_factor = probability_scale_factor)
+        else
+            @test_throws DomainError conditional_value_at_risk(model, diagram, x_s, 0.2; probability_scale_factor = probability_scale_factor)
+        end
     end
 
     @test true
@@ -116,17 +130,14 @@ end
 
 
 @info "Testing model construction"
-rng = MersenneTwister(4)
-for (probability_scale_factor, probability_cut) in [
-        (1.0, true),
-        (-1.0, true),
-        (100.0, true),
-        (-1.0, false),
-        (10.0, false)
+for (probability_scale_factor, probability_cut, diff_sign_utils) in [
+        (1.0, true, false),
+        (-1.0, true, true),
+        (100.0, true, false),
+        (-1.0, false, false),
+        (10.0, false, true)
     ]
-    diagram = influence_diagram()
+    diagram = influence_diagram(diff_sign_utils)
     test_decision_model(diagram, probability_scale_factor, probability_cut)
     test_analysis_and_printing(diagram)
 end
-
-

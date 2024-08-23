@@ -234,7 +234,7 @@ function expected_value(model::Model,
     end
 
     if isnothing(constraint_by_name(model, "probability_cut")) && diff_sign_utilities
-        throw(DomainError("The model contains both negative and positive utilities and no probability cut, which can lead to wrong results. Probability cut constraint can be added using function PathCompatibilityVariables."))
+        throw(DomainError("The model contains both negative and positive utilities and no probability cut, which can lead to incorrect results. Probability cut constraint can be added using function PathCompatibilityVariables."))
     end
 
     @expression(model, sum(diagram.P(s) * x * diagram.U(s, diagram.translation) for (s, x) in x_s))
