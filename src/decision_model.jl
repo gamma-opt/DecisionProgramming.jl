@@ -5,7 +5,6 @@ function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node}, 
     dims = S[[I_d; d]]
     z_d = Array{VariableRef}(undef, dims...)
     for s in paths(dims)
-        #SQUARE BRACKETS OR UNDERSCORE?
         name = join([base_name, s...], "_")
         if names == true
             z_d[s...] = @variable(model, binary=true, base_name=name)
