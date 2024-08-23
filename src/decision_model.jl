@@ -82,7 +82,6 @@ Base.iterate(x_s::PathCompatibilityVariables, i) = iterate(x_s.data, i)
 
 
 function decision_strategy_constraint(model::Model, S::States, d::Node, I_d::Vector{Node}, D::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables)
-
     # states of nodes in information structure (s_d | s_I(d))
     dims = S[[I_d; d]]
 
@@ -391,25 +390,27 @@ function ID_to_RJT(diagram::InfluenceDiagram)
 end
 
 
-function add_variable(model::Model, states::Vector, name::Name)
+function add_variable(model::Model, states::Vector, name::Name, names::Bool)
     variable = @variable(model, [1:prod(length.(states))], lower_bound = 0)
     #DO WE WANT NAMING LIKE THIS? VARIABLE NAMES ARE INFORMATIVE WHEN NAMED LIKE THIS, BUT CAN BE QUITE LONG
-    for (variable_i, states_i) in zip(variable, Iterators.product(states...))
-        set_name(variable_i, "$name[$(join(states_i, ", "))]")
+    if names==true
+        for (variable_i, states_i) in zip(variable, Iterators.product(states...))
+            set_name(variable_i, "$name[$(join(states_i, ", "))]")
+        end
     end
     return Containers.DenseAxisArray(reshape(variable, length.(states)...), states...)
 end
 
 
-function μ_variable(model::Model, name::Name, S::OrderedDict{Name, Vector{Name}}, C_rjt::Dict{Name, Vector{Name}})
-    μ_statevars = add_variable(model, getindex.(Ref(S), C_rjt[name]), name)
+function μ_variable(model::Model, name::Name, S::OrderedDict{Name, Vector{Name}}, C_rjt::Dict{Name, Vector{Name}}, names::Bool)
+    μ_statevars = add_variable(model, getindex.(Ref(S), C_rjt[name]), name, names::Bool)
     # Probability distributions μ sum to 1
     @constraint(model, sum(μ_statevars) == 1)
     return μ_statevars
 end
 
-function μ_bar_variable(model::Model, name::Name, S::OrderedDict{Name, Vector{Name}}, C_rjt::Dict{Name, Vector{Name}}, μ_statevars::Array{VariableRef})
-    μ_bar_statevars = add_variable(model, getindex.(Ref(S), setdiff(C_rjt[name], [name])), name)
+function μ_bar_variable(model::Model, name::Name, S::OrderedDict{Name, Vector{Name}}, C_rjt::Dict{Name, Vector{Name}}, μ_statevars::Array{VariableRef}, names::Bool)
+    μ_bar_statevars = add_variable(model, getindex.(Ref(S), setdiff(C_rjt[name], [name])), name, names::Bool)
     for index in CartesianIndices(μ_bar_statevars)
         # μ_bar defined as marginal distribution for μ-variables with one dimension marginalized out
         @constraint(model, μ_bar_statevars[index] .== dropdims(sum(μ_statevars, dims=findfirst(isequal(name), C_rjt[name])), dims=findfirst(isequal(name), C_rjt[name]))[index])
@@ -469,7 +470,7 @@ variables and constraints of the corresponding RJT model.
 μ_s = RJTVariables(model, diagram, z)
 ```
 """
-function RJTVariables(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable})
+function RJTVariables(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable}; names=names::Bool)
     # Get the RJT structure
     # SHOULD WE DEFINE C_rjt and A_rjt AS PART OF THE INFLUENCE DIAGRAM STRUCT OR AS THEIR OWN, MAYBE BETTER TO DEFINE AS PART OF INFLUENCE DIAGRAM IF THERE IS NEVER A NEED
     # TO HAVE AN INDEPENDENT RJT NOT LINKED TO AN INFLUENCE DIAGRAM
@@ -482,8 +483,8 @@ function RJTVariables(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Na
     μBarVars = Dict{Name, μVariable}()
     for name in union(keys(diagram.C), keys(diagram.D))
     #for name in union(keys(diagram.C), keys(diagram.D), keys(diagram.V))
-        μVars[name] = μVariable(name, μ_variable(model, name, diagram.States, diagram.C_rjt))
-        μBarVars[name] = μVariable(name, μ_bar_variable(model, name, diagram.States, diagram.C_rjt, μVars[name].statevars))
+        μVars[name] = μVariable(name, μ_variable(model, name, diagram.States, diagram.C_rjt, names))
+        μBarVars[name] = μVariable(name, μ_bar_variable(model, name, diagram.States, diagram.C_rjt, μVars[name].statevars, names))
     end
 
     # Enforcing local consistency between clusters, meaning that for a pair of adjacent clusters, 
@@ -628,12 +629,12 @@ Generate either decision programming based or RJT based variables and the respec
 julia> generate_model!(model, diagram, z; model_type="RJT")
 ```
 """
-function generate_model(diagram::InfluenceDiagram, names::Bool=true; model_type::String)
+function generate_model(diagram::InfluenceDiagram; names::Bool=true, model_type::String)
     generate_diagram!(diagram)
     model = Model()
     z = DecisionVariables(model, diagram, names=names)
     if model_type=="RJT"
-        variables = RJTVariables(model, diagram, z)
+        variables = RJTVariables(model, diagram, z, names=names)
         EV = expected_value(model, diagram, variables)
         @objective(model, Max, EV)
     elseif model_type=="DP"

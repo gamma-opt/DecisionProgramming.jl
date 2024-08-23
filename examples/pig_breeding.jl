@@ -51,7 +51,7 @@ end
 
 add_utilities!(diagram, "MP", [300.0, 1000.0])
 
-model, z, variables = generate_model(diagram; model_type="RJT")
+model, z, variables = generate_model(diagram, model_type="RJT")
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
