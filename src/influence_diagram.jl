@@ -313,7 +313,6 @@ struct DefaultPathProbability <: AbstractPathProbability
             new(C, I_c, X)
         end
     end
-
 end
 
 function (P::DefaultPathProbability)(s::Path)
@@ -955,6 +954,9 @@ function generate_diagram!(diagram::InfluenceDiagram;
     default_utility::Bool=true,
     positive_path_utility::Bool=false,
     negative_path_utility::Bool=false)
+
+    #Reordering diagram.X to the order of diagram.Names
+    diagram.X = OrderedDict(key => diagram.X[key] for key in diagram.Names if haskey(diagram.X, key))
 
     # Declare P and U if defaults are used
     if default_probability

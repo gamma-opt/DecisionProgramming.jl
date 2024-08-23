@@ -51,26 +51,7 @@ end
 
 add_utilities!(diagram, "MP", [300.0, 1000.0])
 
-"""
-generate_diagram!(diagram)
-
-@info("Creating the decision model.")
-model = Model()
-
-z = DecisionVariables(model, diagram, names=true)
-"""
-
 model, z, variables = generate_model(diagram; model_type="RJT")
-
-"""
-x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
-EV = expected_value(model, diagram, x_s)
-@objective(model, Max, EV)
-
-μ_s = RJTVariables(model, diagram, z)
-EV = expected_value(model, diagram, μ_s)
-@objective(model, Max, EV)
-"""
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(

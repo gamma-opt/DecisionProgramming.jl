@@ -235,9 +235,6 @@ function expected_value(model::Model,
         diff_sign_utilities = true
     end
 
-    println(diff_sign_utilities)
-    println(isnothing(constraint_by_name(model, "probability_cut")))
-
     if isnothing(constraint_by_name(model, "probability_cut")) && diff_sign_utilities
         throw(DomainError("The model contains both negative and positive utilities and no probability cut, which can lead to wrong results. Probability cut constraint can be added using function PathCompatibilityVariables."))
     end
