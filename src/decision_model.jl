@@ -477,7 +477,6 @@ function RJTVariables(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Na
     # Variables μ_{\bar{C}_v} = ∑_{x_v} μ_{C_v}
     μBarVars = Dict{Name, μVariable}()
     for name in union(keys(diagram.C), keys(diagram.D))
-    #for name in union(keys(diagram.C), keys(diagram.D), keys(diagram.V))
         μVars[name] = μVariable(name, μ_variable(model, name, diagram.States, diagram.C_rjt, names))
         μBarVars[name] = μVariable(name, μ_bar_variable(model, name, diagram.States, diagram.C_rjt, μVars[name].statevars, names))
     end
@@ -500,14 +499,14 @@ function RJTVariables(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Na
 end
 
 """
-    expected_value(model::Model, diagram::InfluenceDiagram, μVars::Dict{Name, μVariable})
+    expected_value(model::Model, diagram::InfluenceDiagram, μVars::RJTVariables)
 
 Construct the RJT objective function.
 
 # Arguments
 - `model::Model`: JuMP model into which variables are added.
 - `diagram::InfluenceDiagram`: Influence diagram structure.
-- `μVars::Dict{Name, μVariable}`: Vector of moments.
+- `μVars::RJTVariables`: Vector of moments.
 
 # Examples
 ```julia
@@ -533,7 +532,7 @@ end
 """
     conditional_value_at_risk(model::Model,
         diagram::InfluenceDiagram,
-        μVars::Dict{Name, μVariable},
+        μVars::RJTVariables,
         α::Float64)
 
 Create a conditional value-at-risk (CVaR) objective based on RJT model.
@@ -543,7 +542,7 @@ The model can't have more than one value node.
 # Arguments
 - `model::Model`: JuMP model into which variables are added.
 - `diagram::InfluenceDiagram`: Influence diagram structure.
-- `μVars::Dict{Name, μVariable}`: Vector of moments.
+- `μVars::RJTVariables`: Vector of moments.
 - `α::Float64`: Probability level at which conditional value-at-risk is optimised.
 
 # Examples
@@ -614,16 +613,16 @@ end
 
 
 """
-    function generate_model!(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable}; model_type::String)
+    generate_model(diagram::InfluenceDiagram; names::Bool=true, model_type::String, probability_cut::Bool=false)
 
 Generate either decision programming based or RJT based variables and the respective objective function
 
 # Examples
 ```julia-repl
-julia> generate_model!(model, diagram, z; model_type="RJT")
+julia> generate_model(diagram, model_type="RJT")
 ```
 """
-function generate_model(diagram::InfluenceDiagram; names::Bool=true, model_type::String)
+function generate_model(diagram::InfluenceDiagram; names::Bool=true, model_type::String, probability_cut::Bool=false)
     generate_diagram!(diagram)
     model = Model()
     z = DecisionVariables(model, diagram, names=names)
@@ -632,7 +631,7 @@ function generate_model(diagram::InfluenceDiagram; names::Bool=true, model_type:
         EV = expected_value(model, diagram, variables)
         @objective(model, Max, EV)
     elseif model_type=="DP"
-        variables = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
+        variables = PathCompatibilityVariables(model, diagram, z, probability_cut = probability_cut)
         EV = expected_value(model, diagram, variables)
         @objective(model, Max, EV)     
     else
