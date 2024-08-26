@@ -468,7 +468,7 @@ variables and constraints of the corresponding RJT model.
 μ_s = RJTVariables(model, diagram, z)
 ```
 """
-function RJTVariables(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable}; names=names::Bool)
+function RJTVariables(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable}; names::Bool=true)
     # Get the RJT structure
     diagram.C_rjt, diagram.A_rjt = ID_to_RJT(diagram)
 

@@ -4,7 +4,7 @@ using DecisionProgramming
 using DataStructures
 using IterTools
 
-const N = 3
+const N = 6
 
 @info("Creating the influence diagram.")
 diagram = InfluenceDiagram()
@@ -15,7 +15,6 @@ for i in 1:N-1
     add_node!(diagram, ChanceNode("T$i", ["H$i"], ["positive", "negative"]))
     # Decision to treat
     add_node!(diagram, DecisionNode("D$i", ["T$i"], ["treat", "pass"]))
-    # Cost of treatment
     # Health of next period
     add_node!(diagram, ChanceNode("H$(i+1)", ["H$(i)", "D$(i)"], ["ill", "healthy"]))
 end
@@ -62,43 +61,25 @@ utilities = [sum(comb) for comb in product(utility_elements...)]
 
 add_utilities!(diagram, "MP", utilities)
 
-#positive_path_utility isn't relevant anymore with rjt? slows down generate_diagram! a lot with large N
-#generate_diagram!(diagram, positive_path_utility = true)
 generate_diagram!(diagram)
 
 @info("Creating the decision model.")
 model = Model()
 
-z = DecisionVariables(model, diagram, names=true)
+z = DecisionVariables(model, diagram)
 
-
-x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = true)
-α = 0.05
-CVaR = conditional_value_at_risk(model, diagram, x_s, α; probability_scale_factor = 1.0)
-EV = expected_value(model, diagram, x_s)
-@constraint(model, CVaR>=300.0)
-@objective(model, Max, EV)
-
-"""
 μ_s = RJTVariables(model, diagram, z)
-
 α = 0.05
 CVaR = conditional_value_at_risk(model, diagram, μ_s, α)
-
 EV = expected_value(model, diagram, μ_s)
-@constraint(model, CVaR>=100.0)
+@constraint(model, CVaR>=300.0)
 @objective(model, Max, EV)
-"""
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
     () -> HiGHS.Optimizer()
 )
 set_optimizer(model, optimizer)
-
-#spu = singlePolicyUpdate(diagram, model, z; x_s)
-#spu = singlePolicyUpdate(diagram, model, z)
-#@info("Single policy update found solution $(spu[end][1]) in $(spu[end][2]/1000) seconds.")
 
 optimize!(model)
 
