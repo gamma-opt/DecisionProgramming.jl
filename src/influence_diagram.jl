@@ -436,7 +436,7 @@ end
 A struct for rooted junction trees.
 """
 struct RJT
-    nodes::Dict{Name, Vector{Name}}
+    clusters::Dict{Name, Vector{Name}}
     arcs::Vector{Tuple{Name, Name}}
 end
 
