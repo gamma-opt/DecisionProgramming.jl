@@ -209,12 +209,12 @@ optimize!(model)
 
 <!-- Onko tämä hyvä, voisi tehdä kunnon esimerkin myös CVaRista, mutta onko nyt tarpeen? -->
 
-CVaR model can be created by adding the lines below in front of RJT_objective_function row. However, the model has to be built so that there is only one value node. Also, the values below are for model with N = 6.
+CVaR model can be created by adding the following constraint to the model. The model has to be built so that there is only one value node. The constraint with this specific numerical value here is tested and meaningful for N = 6.
 
 ```
 α = 0.05
-CVaR_value = 200.0
-p, p_bar, p_u = RJT_conditional_value_at_risk(model, diagram, μVars, α, CVaR_value)
+CVaR = conditional_value_at_risk(model, diagram, μ_s, α; probability_scale_factor = 1.0)
+@constraint(model, CVaR>=300.0)
 ```
 
 ## Analyzing results
