@@ -430,6 +430,17 @@ function (U::DefaultPathUtility)(s::Path, t::Utility)
     U(s) + t
 end
 
+"""
+    struct RJT
+
+A struct for rooted junction trees.
+"""
+struct RJT
+    nodes::Dict{Name, Vector{Name}}
+    arcs::Vector{Tuple{Name, Name}}
+end
+
+
 # --- Influence diagram ---
 """
     mutable struct InfluenceDiagram
@@ -494,8 +505,7 @@ mutable struct InfluenceDiagram
     U::AbstractPathUtility
     translation::Utility
 
-    C_rjt::Dict{Name, Vector{Name}}
-    A_rjt::Vector{Tuple{Name, Name}}
+    RJT::RJT
     function InfluenceDiagram()
         new(OrderedDict{Name, AbstractNode}())
     end
@@ -916,6 +926,7 @@ function generate_arcs!(diagram::InfluenceDiagram)
    # Declaring X and Y
    diagram.X = OrderedDict{Name, Probabilities}()
    diagram.Y = OrderedDict{Name, Utilities}()
+   
 end
 
 # --- Generating Diagram ---

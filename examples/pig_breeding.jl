@@ -59,8 +59,8 @@ optimizer = optimizer_with_attributes(
 )
 set_optimizer(model, optimizer)
 
-spu = singlePolicyUpdate(diagram, model, z)
-@info("Single policy update found solution $(spu[end][1]) in $(spu[end][2]/1000) seconds.")
+#spu = singlePolicyUpdate(diagram, model, z)
+#@info("Single policy update found solution $(spu[end][1]) in $(spu[end][2]/1000) seconds.")
 
 optimize!(model)
 

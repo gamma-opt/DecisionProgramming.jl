@@ -362,6 +362,7 @@ end
 
 # --- RJT MODEL ---
 
+
 # Implements Algorithm 1 from Parmentier et al. (2020)
 function ID_to_RJT(diagram::InfluenceDiagram)
     C_rjt = Dict{Name, Vector{Name}}()
@@ -433,7 +434,7 @@ end
 
 
 function factorization_constraints(model::Model, diagram::InfluenceDiagram, name::Name, μ_statevars::Array{VariableRef}, μ_bar_statevars::Array{VariableRef}, z::OrderedDict{Name, DecisionVariable})
-    I_j_mapping_in_cluster = [findfirst(isequal(node), diagram.C_rjt[name]) for node in diagram.I_j[name]] # Map the information set to the variables in the cluster
+    I_j_mapping_in_cluster = [findfirst(isequal(node), diagram.RJT.nodes[name]) for node in diagram.I_j[name]] # Map the information set to the variables in the cluster
     for index in CartesianIndices(μ_bar_statevars)
         for s_j in 1:length(diagram.States[name])
             if isa(diagram.Nodes[name], ChanceNode)
@@ -470,22 +471,24 @@ variables and constraints of the corresponding RJT model.
 """
 function RJTVariables(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable}; names::Bool=true)
     # Get the RJT structure
-    diagram.C_rjt, diagram.A_rjt = ID_to_RJT(diagram)
+    arcs, nodes = ID_to_RJT(diagram)
+    diagram.RJT = RJT(arcs, nodes)
+    ID_to_RJT(diagram)
 
     # Variables corresponding to the nodes in the RJT
     μVars = Dict{Name, μVariable}()
     # Variables μ_{\bar{C}_v} = ∑_{x_v} μ_{C_v}
     μBarVars = Dict{Name, μVariable}()
     for name in union(keys(diagram.C), keys(diagram.D))
-        μVars[name] = μVariable(name, μ_variable(model, name, diagram.States, diagram.C_rjt, names))
-        μBarVars[name] = μVariable(name, μ_bar_variable(model, name, diagram.States, diagram.C_rjt, μVars[name].statevars, names))
+        μVars[name] = μVariable(name, μ_variable(model, name, diagram.States, diagram.RJT.nodes, names))
+        μBarVars[name] = μVariable(name, μ_bar_variable(model, name, diagram.States, diagram.RJT.nodes, μVars[name].statevars, names))
     end
 
     # Enforcing local consistency between clusters, meaning that for a pair of adjacent clusters, 
     # the marginal distribution for nodes that are included in both, must be the same.
-    for arc in diagram.A_rjt
+    for arc in diagram.RJT.arcs
         if !isa(diagram.Nodes[arc[2]], ValueNode)
-            local_consistency_constraint(model, arc, diagram.C_rjt, μVars)
+            local_consistency_constraint(model, arc, diagram.RJT.nodes, μVars)
         end
     end
 
@@ -518,8 +521,8 @@ function expected_value(model::Model, diagram::InfluenceDiagram, μVars::RJTVari
     # of a value node is always included in the previous cluster by construction.
     @expression(model, EV, 0)
     for V_name in keys(diagram.V)
-        V_determining_node_name = diagram.A_rjt[findfirst(a -> a[2] == V_name, diagram.A_rjt)][1]
-        V_determining_node_index_in_cluster = [findfirst(isequal(node), diagram.C_rjt[V_determining_node_name]) for node in diagram.I_j[V_name]]
+        V_determining_node_name = diagram.RJT.arcs[findfirst(a -> a[2] == V_name, diagram.RJT.arcs)][1]
+        V_determining_node_index_in_cluster = [findfirst(isequal(node), diagram.RJT.nodes[V_determining_node_name]) for node in diagram.I_j[V_name]]
         for index in CartesianIndices(μVars.data[V_determining_node_name].statevars)
             #Find existing coefficient if a coefficient has been added to variable currently being modified before.
             EV += diagram.Y[V_name][Tuple(index)[V_determining_node_index_in_cluster]...]*μVars.data[V_determining_node_name].statevars[index]
@@ -568,12 +571,12 @@ function conditional_value_at_risk(model::Model,
 
     value_node_name = first(n for (n, node) in diagram.Nodes if isa(node, ValueNode))
     #Assuming only one preceding node
-    preceding_node_name = first(filter(tuple -> tuple[2]=="MP", diagram.A_rjt))[1]
+    preceding_node_name = first(filter(tuple -> tuple[2]=="MP", diagram.RJT.arcs))[1]
 
     #Finding the name and index of differing element between value nodes' information set and its preceding nodes rjt cluster. 
     #This is needed in conditional sums for constraints.
-    missing_element = setdiff(diagram.C_rjt[preceding_node_name], diagram.Nodes[value_node_name].I_j)[1]
-    index_to_remove = findfirst(x -> x == missing_element, diagram.C_rjt[preceding_node_name])
+    missing_element = setdiff(diagram.RJT.nodes[preceding_node_name], diagram.Nodes[value_node_name].I_j)[1]
+    index_to_remove = findfirst(x -> x == missing_element, diagram.RJT.nodes[preceding_node_name])
 
     statevars = μVars.data[preceding_node_name].statevars
     statevars_dims = collect(size(statevars))
