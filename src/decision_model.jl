@@ -473,7 +473,6 @@ function RJTVariables(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Na
     # Get the RJT structure
     arcs, nodes = ID_to_RJT(diagram)
     diagram.RJT = RJT(arcs, nodes)
-    ID_to_RJT(diagram)
 
     # Variables corresponding to the nodes in the RJT
     μVars = Dict{Name, μVariable}()
