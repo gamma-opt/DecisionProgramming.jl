@@ -51,7 +51,19 @@ end
 
 add_utilities!(diagram, "MP", [300.0, 1000.0])
 
-model, z, variables = generate_model(diagram, model_type="RJT")
+generate_diagram!(diagram)
+
+#Decision programming model is used here instead of RJT as an example. The solution times are generally slower for DP models (which is true also here).
+
+@info("Creating the decision model.")
+model = Model()
+
+z = DecisionVariables(model, diagram)
+
+x_s = PathCompatibilityVariables(model, diagram, z)
+EV = expected_value(model, diagram, x_s)
+
+@objective(model, Max, EV)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
@@ -59,8 +71,8 @@ optimizer = optimizer_with_attributes(
 )
 set_optimizer(model, optimizer)
 
-#spu = singlePolicyUpdate(diagram, model, z)
-#@info("Single policy update found solution $(spu[end][1]) in $(spu[end][2]/1000) seconds.")
+spu = singlePolicyUpdate(diagram, model, z; x_s)
+@info("Single policy update found solution $(spu[end][1]) in $(spu[end][2]/1000) seconds.")
 
 optimize!(model)
 

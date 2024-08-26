@@ -566,11 +566,11 @@ function conditional_value_at_risk(model::Model,
     ϵ = minimum(diff(unique(diagram.U.Y[1]))) / 2
 
     η = @variable(model)
-    ρ′_s = Dict{Int64, VariableRef}()
+    ρ′_s = Dict{Float64, VariableRef}()
 
     value_node_name = first(n for (n, node) in diagram.Nodes if isa(node, ValueNode))
     #Assuming only one preceding node
-    preceding_node_name = first(filter(tuple -> tuple[2]=="MP", diagram.RJT.arcs))[1]
+    preceding_node_name = first(filter(tuple -> tuple[2]==collect(keys(diagram.V))[1], diagram.RJT.arcs))[1]
 
     #Finding the name and index of differing element between value nodes' information set and its preceding nodes rjt cluster. 
     #This is needed in conditional sums for constraints.

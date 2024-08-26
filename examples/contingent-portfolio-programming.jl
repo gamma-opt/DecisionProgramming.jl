@@ -42,7 +42,7 @@ z = DecisionVariables(model, diagram)
 
 @info("Creating problem specific constraints and expressions")
 
-function variables(model::Model, dims::AbstractVector{Int}; binary::Bool=false)
+function model_variables(model::Model, dims::AbstractVector{Int}; binary::Bool=false)
     v = Array{VariableRef}(undef, dims...)
     for i in eachindex(v)
         v[i] = @variable(model, binary=binary)
@@ -67,8 +67,8 @@ V_A = rand(n_CM, n_A).+0.5 # Value of an application
 V_A[1, :] .+= -0.5          # Low market share: less value
 V_A[3, :] .+= 0.5           # High market share: more value
 
-x_T = variables(model, [n_DP, n_T]; binary=true)
-x_A = variables(model, [n_DP, n_CT, n_DA, n_A]; binary=true)
+x_T = model_variables(model, [n_DP, n_T]; binary=true)
+x_A = model_variables(model, [n_DP, n_CT, n_DA, n_A]; binary=true)
 
 M = 20                      # a large constant
 ε = 0.5*minimum([O_t O_a])  # a helper variable, allows using ≤ instead of < in constraints (28b) and (29b)

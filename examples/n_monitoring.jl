@@ -59,8 +59,19 @@ for s in paths([State(2) for i in 1:N])
 end
 add_utilities!(diagram, "T", Y_T)
 
-#Decision programming model is used here instead of RJT as an example. The solution times are generally slower for DP models (which is true also here).
-model, z, variables = generate_model(diagram, model_type="DP", probability_cut=true)
+generate_diagram!(diagram)
+
+@info("Creating the decision model.")
+model = Model()
+
+z = DecisionVariables(model, diagram)
+
+μ_s = RJTVariables(model, diagram, z)
+α = 0.15
+CVaR = conditional_value_at_risk(model, diagram, μ_s, α)
+EV = expected_value(model, diagram, μ_s)
+@constraint(model, CVaR>=-1.0)
+@objective(model, Max, EV)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
