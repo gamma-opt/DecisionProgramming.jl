@@ -441,6 +441,17 @@ function (U::DefaultPathUtility)(s::Path, t::Utility)
     U(s) + t
 end
 
+"""
+    struct RJT
+
+A struct for rooted junction trees.
+"""
+struct RJT
+    clusters::Dict{Name, Vector{Name}}
+    arcs::Vector{Tuple{Name, Name}}
+end
+
+
 # --- Influence diagram ---
 """
     mutable struct InfluenceDiagram
@@ -504,8 +515,10 @@ mutable struct InfluenceDiagram
     P::AbstractPathProbability
     U::AbstractPathUtility
     translation::Utility
+
+    RJT::RJT
     function InfluenceDiagram()
-        new(OrderedDict{String, AbstractNode}())
+        new(OrderedDict{Name, AbstractNode}())
     end
 end
 
@@ -847,7 +860,7 @@ end
 
 # --- Generating Arcs ---
 
-function validate_structure(Nodes::OrderedDict{String, AbstractNode}, C_and_D::OrderedDict{String, AbstractNode}, n_CD::Int, V::OrderedDict{String, AbstractNode}, n_V::Int)
+function validate_structure(Nodes::OrderedDict{Name, AbstractNode}, C_and_D::OrderedDict{Name, AbstractNode}, n_CD::Int, V::OrderedDict{Name, AbstractNode}, n_V::Int)
     # Validating node structure
     if n_CD == 0
         throw(DomainError("The influence diagram must have at least one chance or decision node."))
@@ -1003,9 +1016,9 @@ function generate_diagram!(diagram::InfluenceDiagram;
 
         diagram.U = DefaultPathUtility(V_I_j_indices, get_values(diagram.Y))
         if positive_path_utility
-            diagram.translation = 1 -  minimum(diagram.U(s) for s in paths(get_values(diagram.S)))
+            diagram.translation = 1 - sum(minimum.(diagram.U.Y))
         elseif negative_path_utility
-            diagram.translation = -1 - maximum(diagram.U(s) for s in paths(get_values(diagram.S)))
+            diagram.translation = -1 - sum(maximum.(diagram.U.Y))
         else
             diagram.translation = 0
         end
@@ -1258,7 +1271,7 @@ LocalDecisionStrategy(rng, diagram, diagram.D[1])
 """
 function LocalDecisionStrategy(rng::AbstractRNG, diagram::InfluenceDiagram, d::Name)
     I_d = diagram.I_j[d]
-    states = Int16[diagram.S[s] for s in I_d]
+    states = State[diagram.S[s] for s in I_d]
     state = diagram.S[d]
     data = zeros(Int, states..., state)
     for s in CartesianIndices((states...,))

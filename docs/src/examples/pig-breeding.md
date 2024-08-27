@@ -185,6 +185,16 @@ EV = expected_value(model, diagram, x_s)
 
 and set up the solver.
 
+Alternatively, RJT formulation can be used by replacing commands on path compatibility variables and objective function creation with commands
+
+```julia
+μ_s = RJTVariables(model, diagram, z)
+EV = expected_value(model, diagram, μ_s)
+@objective(model, Max, EV)
+```
+
+and then solving using the solver. Significantly faster solving times are expected using RJT formulation.
+
 ```julia
 optimizer = optimizer_with_attributes(
     () -> HiGHS.Optimizer()
@@ -198,6 +208,15 @@ spu = singlePolicyUpdate(diagram, model, z, x_s)
 optimize!(model)
 ```
 
+<!-- Onko tämä hyvä, voisi tehdä kunnon esimerkin myös CVaRista, mutta onko nyt tarpeen? -->
+
+CVaR model can be created by adding the following constraint to the model. The model has to be built so that there is only one value node. The constraint with this specific numerical value here is tested and meaningful for N = 6.
+
+```
+α = 0.05
+CVaR = conditional_value_at_risk(model, diagram, μ_s, α; probability_scale_factor = 1.0)
+@constraint(model, CVaR>=300.0)
+```
 
 ## Analyzing results
 

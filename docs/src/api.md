@@ -58,6 +58,7 @@ UtilityMatrix(::InfluenceDiagram, ::Name)
 add_utilities!
 generate_arcs!
 generate_diagram!
+RJT
 indices
 I_j_indices
 indices_in_vector
@@ -93,8 +94,16 @@ conditional_value_at_risk(::Model, ::InfluenceDiagram, ::PathCompatibilityVariab
 
 ### Decision Strategy from Variables
 ```@docs
-LocalDecisionStrategy(::Node, ::Vector{VariableRef})
+LocalDecisionStrategy(::Node, ::Array{VariableRef})
 DecisionStrategy(::InfluenceDiagram, ::OrderedDict{Name, DecisionProgramming.DecisionVariable})
+```
+
+### RJT model
+```@docs
+RJTVariables
+expected_value(::Model, ::InfluenceDiagram, ::DecisionProgramming.RJTVariables)
+conditional_value_at_risk(::Model, ::InfluenceDiagram, ::DecisionProgramming.RJTVariables, ::Float64)
+generate_model
 ```
 
 ## `heuristics.jl`

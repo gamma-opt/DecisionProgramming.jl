@@ -171,21 +171,12 @@ Y_HB["no CHD", "treatment"] = 7.64528451705134
 Y_HB["no CHD", "no treatment"] = 7.70088349200034
 add_utilities!(diagram, "HB", Y_HB)
 
-generate_diagram!(diagram)
-
-
-@info("Creating the decision model.")
-model = Model()
-z = DecisionVariables(model, diagram)
-
 # Defining forbidden paths to include all those where a test is repeated twice
 forbidden_tests = ForbiddenPath(diagram, ["T1","T2"], [("TRS", "TRS"),("GRS", "GRS"),("no test", "TRS"), ("no test", "GRS")])
 fixed_R0 = FixedPath(diagram, Dict("R0" => chosen_risk_level))
-scale_factor = 10000.0
-x_s = PathCompatibilityVariables(model, diagram, z; fixed = fixed_R0, forbidden_paths = [forbidden_tests], probability_cut=false)
 
-EV = expected_value(model, diagram, x_s)
-@objective(model, Max, EV)
+@info("Creating the decision model.")
+model, z, x_s = generate_model(diagram, model_type="DP", forbidden_paths=[forbidden_tests], fixed=fixed_R0)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(

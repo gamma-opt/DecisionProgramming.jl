@@ -80,7 +80,6 @@ Base.iterate(x_s::PathCompatibilityVariables, i) = iterate(x_s.data, i)
 
 
 function decision_strategy_constraint(model::Model, S::States, d::Node, I_d::Vector{Node}, D::Vector{Node}, z::Array{VariableRef}, x_s::PathCompatibilityVariables)
-
     # states of nodes in information structure (s_d | s_I(d))
     dims = S[[I_d; d]]
 
@@ -169,7 +168,8 @@ function PathCompatibilityVariables(model::Model,
     end
 
     if probability_cut
-        @constraint(model, sum(x * diagram.P(s) * probability_scale_factor for (s, x) in x_s) == 1.0 * probability_scale_factor)
+        cons = sum(x * diagram.P(s) * probability_scale_factor for (s, x) in x_s)
+        @constraint(model, probability_cut, cons == 1.0 * probability_scale_factor)
     end
 
     return x_s
@@ -226,12 +226,21 @@ function expected_value(model::Model,
     diagram::InfluenceDiagram,
     x_s::PathCompatibilityVariables)
 
+    diff_sign_utilities = false
+    if minimum.(diagram.U.Y)[1]*maximum.(diagram.U.Y)[1] < 0.0
+        diff_sign_utilities = true
+    end
+
+    if isnothing(constraint_by_name(model, "probability_cut")) && diff_sign_utilities
+        throw(DomainError("The model contains both negative and positive utilities and no probability cut, which can lead to incorrect results. Probability cut constraint can be added using function PathCompatibilityVariables."))
+    end
+
     @expression(model, sum(diagram.P(s) * x * diagram.U(s, diagram.translation) for (s, x) in x_s))
 end
 
 """
     conditional_value_at_risk(model::Model,
-        diagram,
+        diagram::InfluenceDiagram,
         x_s::PathCompatibilityVariables{N},
         α::Float64;
         probability_scale_factor::Float64=1.0) where N
@@ -266,6 +275,10 @@ function conditional_value_at_risk(model::Model,
     end
     if !(0 < α ≤ 1)
         throw(DomainError("α should be 0 < α ≤ 1"))
+    end
+
+    if isnothing(constraint_by_name(model, "probability_cut"))
+        throw(DomainError("A probability cut constraint using PathCompatibilityVariables has to be created in order for decision programming path based CVaR to work."))
     end
 
     # Pre-computed parameters
@@ -345,3 +358,293 @@ function DecisionStrategy(diagram::InfluenceDiagram, z::OrderedDict{Name, Decisi
 end
 
 
+# --- RJT MODEL ---
+
+
+# Implements Algorithm 1 from Parmentier et al. (2020)
+function ID_to_RJT(diagram::InfluenceDiagram)
+    C_rjt = Dict{Name, Vector{Name}}()
+    A_rjt = []
+    names = get_keys(diagram.Nodes)
+    for j in length(diagram.Nodes):-1:1
+        C_j = copy(get_values(diagram.I_j)[j])
+        push!(C_j, names[j])
+        for a in A_rjt 
+            if a[1] == names[j]
+                push!(C_j, setdiff(C_rjt[a[2]], [a[2]])...)
+            end
+        end
+        C_j = unique(C_j)
+        C_j_aux = sort([(elem, findfirst(isequal(elem), names)) for elem in C_j], by = last)
+        C_j = [C_j_tuple[1] for C_j_tuple in C_j_aux]
+        C_rjt[names[j]] = C_j
+        
+        if length(C_rjt[names[j]]) > 1
+            u = maximum([findfirst(isequal(name), names) for name in setdiff(C_j, [names[j]])])
+            push!(A_rjt, (names[u], names[j]))
+        end
+    end
+    return C_rjt, A_rjt
+end
+
+
+function add_variable(model::Model, states::Vector, name::Name, names::Bool)
+    variable = @variable(model, [1:prod(length.(states))], lower_bound = 0)
+    if names==true
+        if !isempty(states) #if a variable is created (only exception should be the μ_bar variable for the root cluster)
+            for (variable_i, states_i) in zip(variable, Iterators.product(states...))
+                set_name(variable_i, "$name[$(join(states_i, ", "))]")
+            end
+        end
+    end
+    return Containers.DenseAxisArray(reshape(variable, length.(states)...), states...)
+end
+
+
+function μ_variable(model::Model, name::Name, S::OrderedDict{Name, Vector{Name}}, C_rjt::Dict{Name, Vector{Name}}, names::Bool)
+    μ_statevars = add_variable(model, getindex.(Ref(S), C_rjt[name]), name, names::Bool)
+    # Probability distributions μ sum to 1
+    @constraint(model, sum(μ_statevars) == 1)
+    return μ_statevars
+end
+
+function μ_bar_variable(model::Model, name::Name, S::OrderedDict{Name, Vector{Name}}, C_rjt::Dict{Name, Vector{Name}}, μ_statevars::Array{VariableRef}, names::Bool)
+    μ_bar_statevars = add_variable(model, getindex.(Ref(S), setdiff(C_rjt[name], [name])), name, names::Bool)
+    for index in CartesianIndices(μ_bar_statevars)
+        # μ_bar defined as marginal distribution for μ-variables with one dimension marginalized out
+        @constraint(model, μ_bar_statevars[index] .== dropdims(sum(μ_statevars, dims=findfirst(isequal(name), C_rjt[name])), dims=findfirst(isequal(name), C_rjt[name]))[index])
+    end
+    return μ_bar_statevars
+end
+
+struct μVariable
+    node::Name
+    statevars::Array{VariableRef}
+end
+
+
+function local_consistency_constraint(model::Model, arc::Tuple{Name, Name}, C_rjt::Dict{Name, Vector{Name}}, μVars::Dict{Name, μVariable})
+    intersection = C_rjt[arc[1]] ∩ C_rjt[arc[2]]
+    C1_minus_C2 = Tuple(setdiff(collect(1:length(C_rjt[arc[1]])), indexin(intersection, C_rjt[arc[1]])))
+    C2_minus_C1 = Tuple(setdiff(collect(1:length(C_rjt[arc[2]])), indexin(intersection, C_rjt[arc[2]])))
+    @constraint(model, 
+        dropdims(sum(μVars[arc[1]].statevars, dims=C1_minus_C2), dims=C1_minus_C2) .== 
+        dropdims(sum(μVars[arc[2]].statevars, dims=C2_minus_C1), dims=C2_minus_C1))
+end
+
+
+function factorization_constraints(model::Model, diagram::InfluenceDiagram, name::Name, μ_statevars::Array{VariableRef}, μ_bar_statevars::Array{VariableRef}, z::OrderedDict{Name, DecisionVariable})
+    I_j_mapping_in_cluster = [findfirst(isequal(node), diagram.RJT.clusters[name]) for node in diagram.I_j[name]] # Map the information set to the variables in the cluster
+    for index in CartesianIndices(μ_bar_statevars)
+        for s_j in 1:length(diagram.States[name])
+            if isa(diagram.Nodes[name], ChanceNode)
+                # μ_{C_v} = μ_{\bar{C}_v}*p
+                @constraint(model, μ_statevars[Tuple(index)...,s_j] == diagram.X[name][Tuple(index)[I_j_mapping_in_cluster]...,s_j]*μ_bar_statevars[index])
+            elseif isa(diagram.Nodes[name], DecisionNode)
+                # μ_{C_v} ≤ z
+                @constraint(model, μ_statevars[Tuple(index)...,s_j] <= z[name].z[Tuple(index)[I_j_mapping_in_cluster]...,s_j])
+            end
+        end
+    end
+end
+
+
+struct RJTVariables
+    data::Dict{Name, μVariable}
+end
+
+"""
+    RJTVariables(model, diagram, z)
+
+Using the influence diagram and decision variables z from DecisionProgramming.jl, adds the 
+variables and constraints of the corresponding RJT model.
+
+# Arguments
+- `model::Model`: JuMP model into which variables are added.
+- `diagram::InfluenceDiagram`: Influence diagram structure.
+- `z::OrderedDict{Name, DecisionVariable}`: Decision variables from `DecisionVariables` function.
+
+# Examples
+```julia
+μ_s = RJTVariables(model, diagram, z)
+```
+"""
+function RJTVariables(model::Model, diagram::InfluenceDiagram, z::OrderedDict{Name, DecisionVariable}; names::Bool=true)
+    # Get the RJT structure
+    arcs, clusters = ID_to_RJT(diagram)
+    diagram.RJT = RJT(arcs, clusters)
+
+    # Variables corresponding to the nodes in the RJT
+    μVars = Dict{Name, μVariable}()
+    # Variables μ_{\bar{C}_v} = ∑_{x_v} μ_{C_v}
+    μBarVars = Dict{Name, μVariable}()
+    for name in union(keys(diagram.C), keys(diagram.D))
+        μVars[name] = μVariable(name, μ_variable(model, name, diagram.States, diagram.RJT.clusters, names))
+        μBarVars[name] = μVariable(name, μ_bar_variable(model, name, diagram.States, diagram.RJT.clusters, μVars[name].statevars, names))
+    end
+
+    # Enforcing local consistency between clusters, meaning that for a pair of adjacent clusters, 
+    # the marginal distribution for nodes that are included in both, must be the same.
+    for arc in diagram.RJT.arcs
+        if !isa(diagram.Nodes[arc[2]], ValueNode)
+            local_consistency_constraint(model, arc, diagram.RJT.clusters, μVars)
+        end
+    end
+
+    # Add in the conditional probabilities and decision strategies
+    # In our structure, value nodes are not stochastic. However, adding a chance node representing stochasticity before the value node is a possibility.
+    for name in union(keys(diagram.C), keys(diagram.D))
+        factorization_constraints(model, diagram, name, μVars[name].statevars, μBarVars[name].statevars, z)
+    end
+    μ_s = RJTVariables(μVars)
+    return μ_s
+end
+
+"""
+    expected_value(model::Model, diagram::InfluenceDiagram, μVars::RJTVariables)
+
+Construct the RJT objective function.
+
+# Arguments
+- `model::Model`: JuMP model into which variables are added.
+- `diagram::InfluenceDiagram`: Influence diagram structure.
+- `μVars::RJTVariables`: Vector of moments.
+
+# Examples
+```julia
+EV = expected_value(model, diagram, μ_s)
+```
+"""
+function expected_value(model::Model, diagram::InfluenceDiagram, μVars::RJTVariables)
+    # Build the objective. The key observation here is that the information set
+    # of a value node is always included in the previous cluster by construction.
+    @expression(model, EV, 0)
+    for V_name in keys(diagram.V)
+        V_determining_node_name = diagram.RJT.arcs[findfirst(a -> a[2] == V_name, diagram.RJT.arcs)][1]
+        V_determining_node_index_in_cluster = [findfirst(isequal(node), diagram.RJT.clusters[V_determining_node_name]) for node in diagram.I_j[V_name]]
+        for index in CartesianIndices(μVars.data[V_determining_node_name].statevars)
+            EV += diagram.Y[V_name][Tuple(index)[V_determining_node_index_in_cluster]...]*μVars.data[V_determining_node_name].statevars[index]
+        end
+    end
+    return EV
+end
+
+
+"""
+    conditional_value_at_risk(model::Model,
+        diagram::InfluenceDiagram,
+        μVars::RJTVariables,
+        α::Float64)
+
+Create a conditional value-at-risk (CVaR) objective based on RJT model.
+
+The model can't have more than one value node.
+
+# Arguments
+- `model::Model`: JuMP model into which variables are added.
+- `diagram::InfluenceDiagram`: Influence diagram structure.
+- `μVars::RJTVariables`: Vector of moments.
+- `α::Float64`: Probability level at which conditional value-at-risk is optimised.
+
+# Examples
+```julia
+α = 0.05  # Parameter such that 0 ≤ α ≤ 1
+CVaR = conditional_value_at_risk(model, diagram, μ_s, α)
+```
+"""
+function conditional_value_at_risk(model::Model,
+    diagram::InfluenceDiagram,
+    μVars::RJTVariables,
+    α::Float64)
+
+    if length(diagram.V) != 1
+        throw(DomainError("In order to create CVaR constraints, the number of value nodes should be 1."))
+    end
+
+    M = maximum(diagram.U.Y[1]) - minimum(diagram.U.Y[1])
+    ϵ = minimum(diff(unique(diagram.U.Y[1]))) / 2
+
+    η = @variable(model)
+    ρ′_s = Dict{Float64, VariableRef}()
+
+    value_node_name = first(n for (n, node) in diagram.Nodes if isa(node, ValueNode))
+    #Assuming only one preceding node
+    preceding_node_name = first(filter(tuple -> tuple[2]==collect(keys(diagram.V))[1], diagram.RJT.arcs))[1]
+
+    #Finding the name and index of differing element between value nodes' information set and its preceding nodes rjt cluster. 
+    #This is needed in conditional sums for constraints.
+    missing_element = setdiff(diagram.RJT.clusters[preceding_node_name], diagram.Nodes[value_node_name].I_j)[1]
+    index_to_remove = findfirst(x -> x == missing_element, diagram.RJT.clusters[preceding_node_name])
+
+    statevars = μVars.data[preceding_node_name].statevars
+    statevars_dims = collect(size(statevars))
+    statevars_dims_ranges = [1:d for d in statevars_dims]
+    
+    function remove_index(old_tuple::NTuple{N, Int64}, index::Int64) where N
+        return collect(ntuple(i -> i >= index ? old_tuple[i + 1] : old_tuple[i], N-1))
+    end
+
+    for u in unique(diagram.U.Y[1])
+        λ = @variable(model, binary=true)
+        λ′ = @variable(model, binary=true)
+        ρ = @variable(model)
+        ρ′ = @variable(model)
+        @constraint(model, η - u ≤ M * λ)
+        @constraint(model, η - u ≥ (M + ϵ) * λ - M)
+        @constraint(model, η - u ≤ (M + ϵ) * λ′ - ϵ)
+        @constraint(model, η - u ≥ M * (λ′ - 1))
+        @constraint(model, 0 ≤ ρ)
+        @constraint(model, 0 ≤ ρ′)
+        @constraint(model, ρ ≤ λ)
+        @constraint(model, ρ′ ≤ λ′)
+        @constraint(model, ρ ≤ ρ′)
+
+        p = @expression(model, sum(statevars[indices...] for indices in product(statevars_dims_ranges...) if diagram.U.Y[1][remove_index(indices, index_to_remove)...] == u))
+        @constraint(model, ρ′ ≤ p)
+        @constraint(model, (p - (1 - λ)) ≤ ρ)
+
+        ρ′_s[u] = ρ′
+    end
+
+    @constraint(model, sum(values(ρ′_s)) == α)
+    CVaR = @expression(model, (sum(ρ_bar * u for (u, ρ_bar) in ρ′_s)/α))
+
+    return CVaR
+end
+
+
+"""
+    generate_model(diagram::InfluenceDiagram; names::Bool=true, model_type::String, probability_cut::Bool=false)
+
+Generate either decision programming based or RJT based variables and the respective objective function
+
+# Examples
+```julia-repl
+julia> generate_model(diagram, model_type="RJT")
+```
+"""
+function generate_model(
+    diagram::InfluenceDiagram;
+    names::Bool=true,
+    model_type::String,
+    forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
+    fixed::FixedPath=Dict{Node, State}(),
+    probability_cut::Bool=false
+    )
+
+    generate_diagram!(diagram)
+    model = Model()
+    z = DecisionVariables(model, diagram, names=names)
+    if model_type=="RJT"
+        variables = RJTVariables(model, diagram, z, names=names)
+        EV = expected_value(model, diagram, variables)
+        @objective(model, Max, EV)
+    elseif model_type=="DP"
+        variables = PathCompatibilityVariables(model, diagram, z, probability_cut = probability_cut, forbidden_paths = forbidden_paths, fixed=fixed)
+        EV = expected_value(model, diagram, variables)
+        @objective(model, Max, EV)     
+    else
+        error("Invalid model_type '$model_type'. It should be either 'RJT' or 'DP'.")
+    end
+    return model, z, variables
+end

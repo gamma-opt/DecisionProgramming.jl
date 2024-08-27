@@ -189,8 +189,19 @@ The expected utility is used as the objective and the problem is solved using Gu
 ```julia
 EV = expected_value(model, diagram, x_s)
 @objective(model, Max, EV)
+```
 
+Alternatively, RJT formulation can be used by replacing commands on path compatibility variables and objective function creation with commands
 
+```julia
+μ_s = RJTVariables(model, diagram, z)
+EV = expected_value(model, diagram, μ_s)
+@objective(model, Max, EV)
+```
+
+and then solving using the solver. Significantly faster solving times are expected using RJT formulation.
+
+```julia
 optimizer = optimizer_with_attributes(
     () -> HiGHS.Optimizer()
 )

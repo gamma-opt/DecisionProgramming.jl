@@ -39,7 +39,6 @@ for i in 1:N
     add_probabilities!(diagram, "R$i", X_R)
 end
 
-
 X_F = ProbabilityMatrix(diagram, "F")
 x_F, y_F = rand(2)
 for s in paths([State(2) for i in 1:N])
@@ -52,7 +51,6 @@ for s in paths([State(2) for i in 1:N])
 end
 add_probabilities!(diagram, "F", X_F)
 
-
 Y_T = UtilityMatrix(diagram, "T")
 for s in paths([State(2) for i in 1:N])
     cost = sum(-fortification(k, a) for (k, a) in enumerate(s))
@@ -61,14 +59,12 @@ for s in paths([State(2) for i in 1:N])
 end
 add_utilities!(diagram, "T", Y_T)
 
-generate_diagram!(diagram, positive_path_utility=true)
+@info("Creating the decision model.")
+model, z, μ_s = generate_model(diagram, model_type="RJT")
 
-
-model = Model()
-z = DecisionVariables(model, diagram)
-x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
-EV = expected_value(model, diagram, x_s)
-@objective(model, Max, EV)
+α = 0.15
+CVaR = conditional_value_at_risk(model, diagram, μ_s, α)
+@constraint(model, CVaR>=-1.0)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(

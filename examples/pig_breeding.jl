@@ -48,19 +48,11 @@ for i in 1:N-1
     add_utilities!(diagram, "V$i", [-100.0, 0.0])
 end
 
+
 add_utilities!(diagram, "V4", [300.0, 1000.0])
 
-generate_diagram!(diagram, positive_path_utility = true)
-
 @info("Creating the decision model.")
-model = Model()
-
-z = DecisionVariables(model, diagram, names=true)
-
-x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
-EV = expected_value(model, diagram, x_s)
-@objective(model, Max, EV)
-
+model, z, x_s = generate_model(diagram, model_type="DP")
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
@@ -68,8 +60,9 @@ optimizer = optimizer_with_attributes(
 )
 set_optimizer(model, optimizer)
 
-spu = singlePolicyUpdate(diagram, model, z, x_s)
+spu = singlePolicyUpdate(diagram, model, z; x_s)
 @info("Single policy update found solution $(spu[end][1]) in $(spu[end][2]/1000) seconds.")
+
 optimize!(model)
 
 @info("Extracting results.")

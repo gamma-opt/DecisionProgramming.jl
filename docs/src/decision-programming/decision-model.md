@@ -74,6 +74,10 @@ $$\mathcal{U}^-(𝐬) = \mathcal{U}(𝐬) - \max_{𝐬∈𝐒} \mathcal{U}(𝐬)
 ## Conditional Value-at-Risk
 The section [Measuring Risk](@ref) explains and visualizes the relationships between the formulation of expected value, value-at-risk and conditional value-at-risk for discrete probability distribution.
 
+In this section, CVaR models are defined for both path-based and RJT models.
+
+### Path-based model
+
 Given decision strategy $Z,$ we define the cumulative distribution of compatible paths' probabilities as
 
 $$F_Z(t) = ∑_{𝐬∈𝐒∣\mathcal{U}(𝐬)≤t} x(𝐬) p(𝐬).$$
@@ -138,10 +142,44 @@ We can express the conditional value-at-risk objective as
 
 $$\operatorname{CVaR}_α(Z)=\frac{1}{α}∑_{𝐬∈𝐒}\bar{ρ}(𝐬) \mathcal{U}(𝐬)\tag{25}.$$
 
+### RJT model
+
+CVaR formulation for the RJT model is close to that of path-based model. A diagram can have only a single value node, when using RJT-based CVaR. Trying to call the RJT-based CVaR function using a diagram with more than one value node results in an error.
+
+We denote the possible utility values with $u ∈ U$ and suppose we can define the probability $p(u)$ of attaining a given utility value. In the presence of a single value node, we define $p(u) = ∑_{s_{C_v}∈ \text{\{} S_{C_v} \vert U(s_{C_v})=u \text{\}} }µ(s_{C_v})$. We can then pose the constraints
+
+$$η-u≤M λ(u),\quad ∀u∈U \tag{26}$$
+
+$$η-u≥(M+ϵ) λ(u) - M,\quad ∀u∈U \tag{27}$$
+
+$$η-u≤(M+ϵ) \bar{λ}(u) - ϵ,\quad ∀u∈U \tag{28}$$
+
+$$η-u≥M (\bar{λ}(u) - 1),\quad ∀u∈U \tag{29}$$
+
+$$\bar{ρ}(u) ≤ \bar{λ}(u),\quad ∀u∈U \tag{30}$$
+
+$$p(u) - (1 - λ(u)) ≤ ρ(u) ≤ λ(u),\quad ∀u∈U \tag{31}$$
+
+$$ρ(u) ≤ \bar{ρ}(u) ≤ p(u),\quad ∀u∈U \tag{32}$$
+
+$$∑_{u∈U}\bar{ρ}(u) = α \tag{33}$$
+
+$$\bar{λ}(u), λ(u)∈\{0, 1\},\quad ∀u∈U \tag{34}$$
+
+$$\bar{ρ}(u),ρ(u)∈[0, 1],\quad ∀u∈U \tag{35}$$
+
+$$η∈\mathbb{R} \tag{36}$$
+
+where where α is the probability level in VaR<sub>α</sub>.
+
+$CVaR_α$ can be obtained as $1/α ∑_{u∈U} \bar{ρ}(u)u$.
+
+More details, including explanations of variables and constraints, can be found from Herrala et al. (2024)[^4].
+
 ## Convex Combination
 We can combine expected value and conditional value-at-risk using a convex combination at a fixed probability level $α∈(0, 1]$ as follows
 
-$$w \operatorname{E}(Z) + (1-w) \operatorname{CVaR}_α(Z), \tag{26}$$
+$$w \operatorname{E}(Z) + (1-w) \operatorname{CVaR}_α(Z), \tag{37}$$
 
 where the parameter $w∈[0, 1]$ expresses the decision maker's **risk tolerance**.
 
@@ -152,3 +190,5 @@ where the parameter $w∈[0, 1]$ expresses the decision maker's **risk tolerance
 [^2]: Hölsä, O. (2020). Decision Programming Framework for Evaluating Testing Costs of Disease-Prone Pigs. Retrieved from [http://urn.fi/URN:NBN:fi:aalto-202009295618](http://urn.fi/URN:NBN:fi:aalto-202009295618)
 
 [^3]: Hankimaa, H., Herrala, O., Oliveira, F., Tollander de Balsch, J. (2023). DecisionProgramming.jl -- A framework for modelling decision problems using mathematical programming. Retrieved from [https://arxiv.org/abs/2307.13299](https://arxiv.org/abs/2307.13299)
+
+[^4]: Herrala, O., Terho, T., Oliveira, F., 2024. Risk-averse decision strategies for influence diagrams using rooted junction trees. Retrieved from [https://arxiv.org/abs/2401.03734]

@@ -46,15 +46,9 @@ Y_V3["lemon", "don't buy"] = 0
 Y_V3["peach", :] = [-40, -20, 0]
 add_utilities!(diagram, "V3", Y_V3)
 
-generate_diagram!(diagram)
-
-
 @info("Creating the decision model.")
-model = Model()
-z = DecisionVariables(model, diagram)
-x_s = PathCompatibilityVariables(model, diagram, z)
-EV = expected_value(model, diagram, x_s)
-@objective(model, Max, EV)
+
+model, z, variables = generate_model(diagram, model_type="RJT")
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
