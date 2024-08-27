@@ -59,19 +59,12 @@ for s in paths([State(2) for i in 1:N])
 end
 add_utilities!(diagram, "T", Y_T)
 
-generate_diagram!(diagram)
-
 @info("Creating the decision model.")
-model = Model()
+model, z, μ_s = generate_model(diagram, model_type="RJT")
 
-z = DecisionVariables(model, diagram)
-
-μ_s = RJTVariables(model, diagram, z)
 α = 0.15
 CVaR = conditional_value_at_risk(model, diagram, μ_s, α)
-EV = expected_value(model, diagram, μ_s)
 @constraint(model, CVaR>=-1.0)
-@objective(model, Max, EV)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
