@@ -94,7 +94,7 @@ conditional_value_at_risk(::Model, ::InfluenceDiagram, ::PathCompatibilityVariab
 ### Decision Strategy from Variables
 ```@docs
 LocalDecisionStrategy(::Node, ::Array{VariableRef})
-DecisionStrategy(::InfluenceDiagram, ::OrderedDict{Name, DecisionVariable})
+DecisionStrategy(::InfluenceDiagram, ::OrderedDict{Name, DecisionProgramming.DecisionVariable})
 ```
 
 ### RJT model
