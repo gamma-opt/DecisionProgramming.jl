@@ -58,6 +58,7 @@ UtilityMatrix(::InfluenceDiagram, ::Name)
 add_utilities!
 generate_arcs!
 generate_diagram!
+RJT
 indices
 I_j_indices
 indices_in_vector
@@ -102,7 +103,7 @@ DecisionStrategy(::InfluenceDiagram, ::OrderedDict{Name, DecisionProgramming.Dec
 RJTVariables
 expected_value(::Model, ::InfluenceDiagram, ::DecisionProgramming.RJTVariables)
 conditional_value_at_risk(::Model, ::InfluenceDiagram, ::DecisionProgramming.RJTVariables, ::Float64)
-generate_model!
+generate_model
 ```
 
 ## `heuristics.jl`
