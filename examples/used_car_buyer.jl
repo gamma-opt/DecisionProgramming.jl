@@ -1,6 +1,5 @@
-
 using Logging
-using JuMP, Gurobi
+using JuMP, HiGHS
 using DecisionProgramming
 
 @info("Creating the influence diagram.")
@@ -47,26 +46,19 @@ Y_V3["lemon", "don't buy"] = 0
 Y_V3["peach", :] = [-40, -20, 0]
 add_utilities!(diagram, "V3", Y_V3)
 
-generate_diagram!(diagram)
-
-
 @info("Creating the decision model.")
-model = Model()
-z = DecisionVariables(model, diagram)
-x_s = PathCompatibilityVariables(model, diagram, z)
-EV = expected_value(model, diagram, x_s)
-@objective(model, Max, EV)
+
+model, z, variables = generate_model(diagram, model_type="RJT")
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
-    () -> Gurobi.Optimizer(Gurobi.Env()),
-    "IntFeasTol"      => 1e-9,
+    () -> HiGHS.Optimizer()
 )
 set_optimizer(model, optimizer)
 optimize!(model)
 
 @info("Extracting results.")
-Z = DecisionStrategy(z)
+Z = DecisionStrategy(diagram, z)
 S_probabilities = StateProbabilities(diagram, Z)
 U_distribution = UtilityDistribution(diagram, Z)
 

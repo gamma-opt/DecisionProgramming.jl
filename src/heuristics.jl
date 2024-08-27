@@ -20,25 +20,29 @@ function randomStrategy(diagram::InfluenceDiagram)
     # Initialize empty vector for local decision strategies
     # Z_d = Vector{LocalDecisionStrategy}[] # Doesn't work for some reason...
     Z_d = []
-
+    #I_j_indexed = Vector{Node}.([indices_of(diagram, nodes) for nodes in get_values(diagram.I_j)])
+    I_j_indices_result = I_j_indices(diagram, diagram.Nodes)
+    #D_keys_indexed = Node.([index_of(diagram, node) for node in get_keys(diagram.D)])
+    D_indices = indices(diagram.D)
+    
     # Loop through all decision nodes and set local decision strategies
-    for j in diagram.D
-        I_j = diagram.I_j[j]
+    for j in D_indices
+        I_j = I_j_indices_result[j]
 
         # Generate a matrix of correct dimensions to represent the strategy
-        dims = diagram.S[[I_j; j]]
+        dims = get_values(diagram.S)[[I_j; j]]
         data = zeros(Int, Tuple(dims))
         n_states = size(data)[end]
 
         # For each information state, choose a random decision state 
-        for s_Ij in paths(diagram.S[I_j])
+        for s_Ij in paths(get_values(diagram.S)[I_j])
             data[s_Ij..., rand(1:n_states)] = 1
         end
         push!(Z_d, LocalDecisionStrategy(j,data))
     end
 
     # Construct a decision strategy and obtain the compatible paths
-    Z = DecisionStrategy(diagram.D, diagram.I_j[diagram.D], Z_d)
+    Z = DecisionStrategy(D_indices, I_j_indices_result[D_indices], Z_d)
     S_active = CompatiblePaths(diagram, Z)
 
     # Calculate the expected utility corresponding to the strategy
@@ -80,7 +84,9 @@ end
 
 
 function get_value(diagram, S_active, j, s_j, s_Ij, EU)
-    I_j = diagram.I_j[j] # Information set of node j
+    #I_j_indexed = Vector{Node}.([indices_of(diagram, nodes) for nodes in get_values(diagram.I_j)])
+    I_j_indices_result = I_j_indices(diagram, diagram.Nodes)
+    I_j = I_j_indices_result[j] # Information set of node j
     # Loop through all compatible paths and update the ones that correspond to the given information state s_Ij
     # and update the expected utility whenever a path is updated
     S_active_new = copy(S_active)
@@ -94,24 +100,25 @@ function get_value(diagram, S_active, j, s_j, s_Ij, EU)
             EU += diagram.P(s_new)*diagram.U(s_new)
         end
     end
-
     return EU, S_active_new
 end
 
-function set_MIP_start(diagram, Z, S_active, z, x_s)
+function set_MIP_start(diagram, Z, S_active, z_z; x_s)
     for (k,j) in enumerate(Z.D)
-        for s_Ij in paths(diagram.S[Z.I_d[k]])
-                set_start_value(z.z[k][s_Ij..., Z.Z_d[k](s_Ij)], 1)
+        for s_Ij in paths(get_values(diagram.S)[Z.I_d[k]])
+                set_start_value(z_z[k][s_Ij..., Z.Z_d[k](s_Ij)], 1)
         end
     end
 
-    for s in S_active
-        set_start_value(x_s[s], 1)
+    if x_s != nothing
+        for s in S_active
+            set_start_value(x_s[s], 1)
+        end
     end
 end
 
 """
-    singlePolicyUpdate(diagram::InfluenceDiagram, model::Model)
+    singlePolicyUpdate(diagram::InfluenceDiagram, model::Model, z::OrderedDict{Name, DecisionVariable}, x_s::PathCompatibilityVariables)
 
 Finds a feasible solution using single policy update and sets the model start values to that solution.
 Returns a vector of tuples consisting of the value of each improved solution starting from a random policy, 
@@ -121,18 +128,18 @@ The purpose of all this output is to allow us to examine how fast the method fin
 # Arguments
 - `diagram::InfluenceDiagram`: Influence diagram structure.
 - `model::Model`: The decision model, modelled in JuMP
-- `z::DecisionVariables`: The decision variables
-- `x_s::PathCompatibilityVariables`: The path compatibility variables
+- `z::OrderedDict{Name, DecisionVariable}`: The decision variables
+- `x_s::Union{PathCompatibilityVariables, Nothing}`: The path compatibility variables if used.
 
 !!! warning
     This function does not exclude forbidden paths: the strategies explored by this function might be forbidden if the diagram has forbidden state combinations.
 
 # Examples
 ```julia
-solutionhistory = singlePolicyUpdate(diagram, model)
+solutionhistory = singlePolicyUpdate(diagram, model, z, x_s)
 ```
 """
-function singlePolicyUpdate(diagram::InfluenceDiagram, model::Model, z::DecisionVariables, x_s::PathCompatibilityVariables)
+function singlePolicyUpdate(diagram::InfluenceDiagram, model::Model, z::OrderedDict{Name, DecisionVariable}; x_s::Union{PathCompatibilityVariables, Nothing}=nothing)
     t1 = time_ns() # Start time
 
     # Initialize empty values
@@ -143,19 +150,23 @@ function singlePolicyUpdate(diagram::InfluenceDiagram, model::Model, z::Decision
     EU, strategy, S_active = randomStrategy(diagram)
     push!(solutionhistory, (EU, (time_ns()-t1)/1E6, deepcopy(strategy)))
 
+    I_j_indices_result = I_j_indices(diagram, diagram.Nodes)
+    D_indices = indices(diagram.D)
+
+    z_z = [decision_node.z for decision_node in get_values(z)]
+
     # In principle, this always converges, but we set a maximum number of iterations anyway to avoid very long solution times
     for iter in 1:20
         # Loop through all nodes
-        for (idx, j) in enumerate(diagram.D)
-            # println("Node $(diagram.Names[j]), iteration $iter")
-            I_j = diagram.I_j[j]
+        for (idx, j) in enumerate(D_indices)
+            I_j = I_j_indices_result[j]
             # Loop through all information states
-            for s_Ij in paths(diagram.S[I_j])
+            for s_Ij in paths(get_values(diagram.S)[I_j])
                 # Check if any improvement has happened since the last time this node and information state was visited
                 # If not, the algorithm terminates with a locally optimal solution
                 if iter >= 2
                     if lastchange == (j, s_Ij)
-                        set_MIP_start(diagram, solutionhistory[end][3], S_active, z, x_s)
+                        set_MIP_start(diagram, solutionhistory[end][3], S_active, z_z; x_s)
                         return solutionhistory
                     end
                 end
@@ -178,7 +189,6 @@ function singlePolicyUpdate(diagram::InfluenceDiagram, model::Model, z::Decision
     end
 
     # Set the best found solution as the MIP start to the model
-    set_MIP_start(diagram, solutionhistory[end][3], S_active, z, x_s)
-
+    set_MIP_start(diagram, solutionhistory[end][3], S_active, z_z; x_s)
     return solutionhistory
 end

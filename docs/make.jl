@@ -1,5 +1,5 @@
 using Documenter
-using DecisionProgramming
+using DecisionProgramming, DataStructures
 
 makedocs(
     sitename = "DecisionProgramming.jl",
