@@ -30,7 +30,7 @@ end
 # plot!([0.001,7200], [0.001,7200], ls=:dash, lc=:black, label=false)
 
 # log-axis, >1s
-scatter(t1[t2.<7200], t2[t2.<7200], xlabel="v1.2.0", ylabel="v0.1.0", markershape=:x, label="Solution time (seconds)", xlim=[1,7200], ylim=[1,7200], legend=:right, xaxis=:log, yaxis=:log, yticks=[10^k for k in 0:3], xticks=[10^k for k in 0:3])
+scatter(t1[t2.<7200], t2[t2.<7200], xlabel="(18)-(23)", ylabel="(5)-(10)", markershape=:x, label="Solution time (seconds)", xlim=[1,7200], ylim=[1,7200], legend=:right, xaxis=:log, yaxis=:log, yticks=[10^k for k in 0:3], xticks=[10^k for k in 0:3])
 scatter!(t1[t2.>=7200], t2[t2.>=7200], markershape=:x, label=false)
 plot!([1,7200], [1,7200], ls=:dash, lc=:black, label=false)
 Plots.pdf("CHD_log")
