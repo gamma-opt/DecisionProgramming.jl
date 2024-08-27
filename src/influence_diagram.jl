@@ -23,7 +23,6 @@ const Name = String
 
 Node type for directed, acyclic graph.
 """
-
 abstract type AbstractNode end
 
 Base.show(io::IO, node::AbstractNode) = begin
@@ -36,7 +35,6 @@ end
 
 A struct for chance nodes, includes the name, information set, states and index of the node
 """
-
 struct ChanceNode <: AbstractNode
     name::Name
     I_j::Vector{Name}
