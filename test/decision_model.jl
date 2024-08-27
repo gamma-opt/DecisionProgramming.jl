@@ -118,6 +118,16 @@ function test_decision_model_rjt(diagram, names)
     @test true
 end
 
+function test_decision_model_function(diagram, names, model_type, probability_cut)
+    if model_type!="DP" && model_type!="RJT"
+        @test_throws ErrorException model, z, variables = generate_model(diagram, names=names, model_type=model_type, probability_cut=probability_cut)
+    else
+        model, z, variables = generate_model(diagram, names=names, model_type=model_type, probability_cut=probability_cut)
+    end
+
+    @test true
+end
+
 function test_analysis_and_printing(diagram)
     @info("Creating random decision strategy")
     Z_j = [LocalDecisionStrategy(rng, diagram, d) for d in keys(diagram.D)]
@@ -166,7 +176,7 @@ for (probability_scale_factor, probability_cut, diff_sign_utils, names) in [
         (10.0, false, true, false)
     ]
     diagram = influence_diagram(diff_sign_utils, false)
-    test_decision_model_dp(diagram, probability_scale_factor, probability_cut)
+    test_decision_model_dp(diagram, probability_scale_factor, probability_cut, names)
     test_analysis_and_printing(diagram)
 end
 
@@ -176,5 +186,17 @@ for (single_value_node, names) in [
 ]
     diagram = influence_diagram(false, single_value_node)
     test_decision_model_rjt(diagram, names)
+    test_analysis_and_printing(diagram)
+end
+
+for (names, model_type, probability_cut) in [
+    (true, "RJT", false),
+    (false, "RJT", false),
+    (false, "DP", false),
+    (false, "DP", true),
+    (true, "Torillatavataan", false)
+]
+    diagram = influence_diagram(false, false)
+    test_decision_model_function(diagram, names, model_type, probability_cut)
     test_analysis_and_printing(diagram)
 end
