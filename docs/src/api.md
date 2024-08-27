@@ -100,8 +100,8 @@ DecisionStrategy(::InfluenceDiagram, ::OrderedDict{Name, DecisionProgramming.Dec
 ### RJT model
 ```@docs
 RJTVariables
-expected_value(::Model, ::InfluenceDiagram, ::DecisionProgramming.μVariables)
-conditional_value_at_risk(::Model, ::InfluenceDiagram, ::DecisionProgramming.μVariables, ::Float64)
+expected_value(::Model, ::InfluenceDiagram, ::DecisionProgramming.RJTVariables)
+conditional_value_at_risk(::Model, ::InfluenceDiagram, ::DecisionProgramming.RJTVariables, ::Float64)
 generate_model!
 ```
 
