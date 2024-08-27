@@ -392,10 +392,8 @@ function add_variable(model::Model, states::Vector, name::Name, names::Bool)
     variable = @variable(model, [1:prod(length.(states))], lower_bound = 0)
     if names==true
         for (variable_i, states_i) in zip(variable, Iterators.product(states...))
-            if !isempty(states_i)
+            if !isempty(states_i) #if a variable is created (only exception should be the μ_bar variable for the root cluster)
                 set_name(variable_i, "$name[$(join(states_i, ", "))]")
-            else # for a μ_bar variable corresponding to the first cluster
-                set_name(variable_i, "$name")
             end
         end
     end
