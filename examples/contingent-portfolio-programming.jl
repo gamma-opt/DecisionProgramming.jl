@@ -32,13 +32,8 @@ X_CM[3, 2, :] = [1/6, 1/3, 1/2]
 X_CM[3, 3, :] = [1/12, 1/4, 2/3]
 add_probabilities!(diagram, "CM", X_CM)
 
-generate_diagram!(diagram, default_utility=false)
-
-
-
 @info("Creating the decision model.")
-model = Model()
-z = DecisionVariables(model, diagram)
+model, z, μ_s = generate_model(diagram, model_type="RJT")
 
 @info("Creating problem specific constraints and expressions")
 
