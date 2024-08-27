@@ -624,7 +624,15 @@ Generate either decision programming based or RJT based variables and the respec
 julia> generate_model(diagram, model_type="RJT")
 ```
 """
-function generate_model(diagram::InfluenceDiagram; names::Bool=true, model_type::String, probability_cut::Bool=false)
+function generate_model(
+    diagram::InfluenceDiagram;
+    names::Bool=true,
+    model_type::String,
+    forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
+    fixed::FixedPath=Dict{Node, State}(),
+    probability_cut::Bool=false
+    )
+
     generate_diagram!(diagram)
     model = Model()
     z = DecisionVariables(model, diagram, names=names)
@@ -633,7 +641,7 @@ function generate_model(diagram::InfluenceDiagram; names::Bool=true, model_type:
         EV = expected_value(model, diagram, variables)
         @objective(model, Max, EV)
     elseif model_type=="DP"
-        variables = PathCompatibilityVariables(model, diagram, z, probability_cut = probability_cut)
+        variables = PathCompatibilityVariables(model, diagram, z, probability_cut = probability_cut, forbidden_paths = forbidden_paths, fixed=fixed)
         EV = expected_value(model, diagram, variables)
         @objective(model, Max, EV)     
     else
