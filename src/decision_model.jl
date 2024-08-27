@@ -521,7 +521,6 @@ function expected_value(model::Model, diagram::InfluenceDiagram, μVars::RJTVari
         V_determining_node_name = diagram.RJT.arcs[findfirst(a -> a[2] == V_name, diagram.RJT.arcs)][1]
         V_determining_node_index_in_cluster = [findfirst(isequal(node), diagram.RJT.clusters[V_determining_node_name]) for node in diagram.I_j[V_name]]
         for index in CartesianIndices(μVars.data[V_determining_node_name].statevars)
-            #Find existing coefficient if a coefficient has been added to variable currently being modified before.
             EV += diagram.Y[V_name][Tuple(index)[V_determining_node_index_in_cluster]...]*μVars.data[V_determining_node_name].statevars[index]
         end
     end
