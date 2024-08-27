@@ -193,6 +193,8 @@ EV = expected_value(model, diagram, μ_s)
 @objective(model, Max, EV)
 ```
 
+## generate_model function
+
 and then solving using the solver. Significantly faster solving times are expected using RJT formulation.
 
 ```julia
