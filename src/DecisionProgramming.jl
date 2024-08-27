@@ -2,7 +2,6 @@ module DecisionProgramming
 
 include("influence_diagram.jl")
 include("decision_model.jl")
-#include("random.jl")
 include("analysis.jl")
 include("heuristics.jl")
 include("printing.jl")
@@ -31,8 +30,9 @@ export Node,
     InfluenceDiagram,
     generate_arcs!,
     generate_diagram!,
-    index_of,
-    indices_of,
+    indices,
+    I_j_indices,
+    indices_in_vector,
     get_values,
     get_keys,
     num_states,
@@ -72,7 +72,13 @@ export print_decision_strategy,
     print_utility_distribution,
     print_state_probabilities,
     print_statistics,
-    print_risk_measures
+    print_risk_measures,
+    print_node_io,
+    print_node,
+    print_diagram,
+    nodes,
+    graph,
+    mermaid
 
 # For API docs
 export AbstractRNG, Model, VariableRef

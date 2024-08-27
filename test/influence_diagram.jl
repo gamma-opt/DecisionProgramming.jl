@@ -34,27 +34,27 @@ using DataStructures
 @test vec(collect(paths(States(State[2, 3]), FixedPath(Dict(Node(1)=>State(2)))))) == [(2, 1), (2, 2), (2, 3)]
 
 @info "Testing Probabilities"
-@test isa(Probabilities(Node(1), [0.4 0.6; 0.3 0.7]), Probabilities)
-@test isa(Probabilities(Node(1), [0.0, 0.4, 0.6]), Probabilities)
-@test_throws DomainError Probabilities(Node(1), [1.1, 0.1])
+@test isa(Probabilities([0.4 0.6; 0.3 0.7]), Probabilities)
+@test isa(Probabilities([0.0, 0.4, 0.6]), Probabilities)
+@test_throws DomainError Probabilities([1.1, 0.1])
 
 @info "Testing DefaultPathProbability"
 P = DefaultPathProbability(
     [Node(1), Node(2)],
     [Node[], [Node(1)]],
-    [Probabilities(Node(1), [0.4, 0.6]), Probabilities(Node(2), [0.3 0.7; 0.9 0.1])]
+    [Probabilities([0.4, 0.6]), Probabilities([0.3 0.7; 0.9 0.1])]
 )
 @test isa(P, DefaultPathProbability)
 @test P((State(1), State(2))) == 0.4 * 0.7
 
 @info "Testing Utilities"
-@test isa(Utilities(Node(1), Utility[-1.1, 0.0, 2.7]), Utilities)
-@test isa(Utilities(Node(1), Utility[-1.1 0.0; 2.7 7.0]), Utilities)
+@test isa(Utilities(Utility[-1.1, 0.0, 2.7]), Utilities)
+@test isa(Utilities(Utility[-1.1 0.0; 2.7 7.0]), Utilities)
 
 @info "Testing DefaultPathUtility"
 U = DefaultPathUtility(
     [Node[2], Node[1, 2]],
-    [Utilities(Node(3), Utility[1.0, 1.4]), Utilities(Node(4), Utility[1.0 1.5; 0.6 3.4])]
+    [Utilities(Utility[1.0, 1.4]), Utilities(Utility[1.0 1.5; 0.6 3.4])]
 )
 @test isa(U, DefaultPathUtility)
 @test U((State(2), State(1))) == Utility(1.0 + 0.6)
@@ -72,11 +72,9 @@ add_node!(diagram, ChanceNode("A", [], ["a", "b"]))
 @test_throws DomainError add_node!(diagram, ChanceNode("A", [], ["a", "b"]))
 @test_throws DomainError add_node!(diagram, ChanceNode("C", ["B", "B"], ["a", "b"]))
 @test_throws DomainError add_node!(diagram, ChanceNode("C", ["C", "B"], ["a", "b"]))
-@test_throws DomainError add_node!(diagram, ChanceNode("C", [], ["a"]))
 @test_throws DomainError add_node!(diagram, DecisionNode("A", [], ["a", "b"]))
 @test_throws DomainError add_node!(diagram, DecisionNode("C", ["B", "B"], ["a", "b"]))
 @test_throws DomainError add_node!(diagram, DecisionNode("C", ["C", "B"], ["a", "b"]))
-@test_throws DomainError add_node!(diagram, DecisionNode("C", [], ["a"]))
 @test_throws DomainError add_node!(diagram, ValueNode("A", []))
 @test_throws DomainError add_node!(diagram, ValueNode("C", ["B", "B"]))
 @test_throws DomainError add_node!(diagram, ValueNode("C", ["C", "B"]))
@@ -99,9 +97,9 @@ generate_arcs!(diagram)
 @test diagram.I_j == OrderedDict("A" => [], "C" => ["A"], "V" => ["A", "C"])
 @test diagram.States == OrderedDict("A" => ["a", "b"], "C" => ["a", "b", "c"])
 @test diagram.S == OrderedDict{String, Int16}("A" => 2, "C" => 3)
-@test string(diagram.C) == string(OrderedDict{String, ChanceNode}("A" => ChanceNode("A", String[], ["a", "b"]), "C" => ChanceNode("C", ["A"], ["a", "b", "c"])))
+@test string(diagram.C) == string(OrderedDict{String, ChanceNode}("A" => ChanceNode("A", String[], ["a", "b"], 1), "C" => ChanceNode("C", ["A"], ["a", "b", "c"], 2)))
 @test diagram.D == OrderedDict{String, DecisionNode}()
-@test string(diagram.V) == string(OrderedDict{String, ValueNode}("V" => ValueNode("V", ["A", "C"])))
+@test string(diagram.V) == string(OrderedDict{String, ValueNode}("V" => ValueNode("V", ["A", "C"], 3)))
 @test diagram.X == OrderedDict{String, Probabilities}()
 @test diagram.Y == OrderedDict{String, Utilities}()
 
@@ -166,7 +164,7 @@ Y_V["b", "b"] = 6
 @test Y_V  == [1 2 3; 5 6 4]
 add_utilities!(diagram, "V", Y_V)
 
-@test string(values(diagram.Y)) == "Utilities[[1.0 2.0 3.0; 5.0 6.0 4.0]]"
+@test diagram.Y["V"].data == [1.0 2.0 3.0; 5.0 6.0 4.0]
 @test_throws DomainError add_utilities!(diagram, "V", Y_V)
 
 @info "Testing generate_diagram!"

@@ -15,8 +15,8 @@ $$f(A_k=yes) = c_k$$
 $$f(A_k=no) = 0$$
 
 ```julia
-using Logging, Random
-using JuMP, Gurobi
+using Random
+using JuMP, HiGHS
 using DecisionProgramming
 
 const N = 4
@@ -31,7 +31,7 @@ fortification(k, a) = [c_k[k], 0][a]
 We initialise the influence diagram before adding nodes to it.
 
 ```julia
-diagram = InfluenceDiagram
+diagram = InfluenceDiagram()
 ```
 
 ### Adding nodes
@@ -91,7 +91,7 @@ In Decision Programming we add these probabilities by declaring probabilty matri
 
 ```julia
 for i in 1:N
-    x, y = rand(2)
+    x_R, y_R = rand(2)
     X_R = ProbabilityMatrix(diagram, "R$i")
     X_R["high", "high"] = max(x_R, 1-x_R)
     X_R["high", "low"] = 1 - max(x_R, 1-x_R)
@@ -203,8 +203,7 @@ and then solving using the solver. Significantly faster solving times are expect
 
 ```julia
 optimizer = optimizer_with_attributes(
-    () -> Gurobi.Optimizer(Gurobi.Env()),
-    "IntFeasTol"      => 1e-9,
+    () -> HiGHS.Optimizer()
 )
 set_optimizer(model, optimizer)
 optimize!(model)
@@ -213,10 +212,10 @@ optimize!(model)
 
 ## Analyzing Results
 
-We obtain the decision strategy, state probabilities and utility distribution from the solution.
+We obtain the decision strategy, state probabilities and utility distribution from the solution. Julia version 1.10.3 was used in random number generation (the version used might affect the results).
 
 ```julia
-Z = DecisionStrategy(z)
+Z = DecisionStrategy(diagram, z)
 U_distribution = UtilityDistribution(diagram, Z)
 S_probabilities = StateProbabilities(diagram, Z)
 ```
@@ -229,13 +228,13 @@ julia> print_decision_strategy(diagram, Z, S_probabilities)
 │ State(s) of R1 │ Decision in A1 │
 ├────────────────┼────────────────┤
 │ high           │ yes            │
-│ low            │ yes            │
+│ low            │ no             │
 └────────────────┴────────────────┘
 ┌────────────────┬────────────────┐
 │ State(s) of R2 │ Decision in A2 │
 ├────────────────┼────────────────┤
 │ high           │ yes            │
-│ low            │ yes            │
+│ low            │ no             │
 └────────────────┴────────────────┘
 ┌────────────────┬────────────────┐
 │ State(s) of R3 │ Decision in A3 │
@@ -247,7 +246,7 @@ julia> print_decision_strategy(diagram, Z, S_probabilities)
 │ State(s) of R4 │ Decision in A4 │
 ├────────────────┼────────────────┤
 │ high           │ yes            │
-│ low            │ yes            │
+│ low            │ no             │
 └────────────────┴────────────────┘
 ```
 
@@ -260,34 +259,34 @@ julia> print_state_probabilities(diagram, S_probabilities, ["L"])
 │   Node │     high │      low │ Fixed state │
 │ String │  Float64 │  Float64 │      String │
 ├────────┼──────────┼──────────┼─────────────┤
-│      L │ 0.564449 │ 0.435551 │             │
+│      L │ 0.586000 │ 0.414000 │             │
 └────────┴──────────┴──────────┴─────────────┘
 julia> print_state_probabilities(diagram, S_probabilities, [["R$i" for i in 1:N]...])
 ┌────────┬──────────┬──────────┬─────────────┐
 │   Node │     high │      low │ Fixed state │
 │ String │  Float64 │  Float64 │      String │
 ├────────┼──────────┼──────────┼─────────────┤
-│     R1 │ 0.515575 │ 0.484425 │             │
-│     R2 │ 0.442444 │ 0.557556 │             │
-│     R3 │ 0.543724 │ 0.456276 │             │
-│     R4 │ 0.552515 │ 0.447485 │             │
+│     R1 │ 0.737028 │ 0.262972 │             │
+│     R2 │ 0.501345 │ 0.498655 │             │
+│     R3 │ 0.449940 │ 0.550060 │             │
+│     R4 │ 0.462002 │ 0.537998 │             │
 └────────┴──────────┴──────────┴─────────────┘
 julia> print_state_probabilities(diagram, S_probabilities, [["A$i" for i in 1:N]...])
 ┌────────┬──────────┬──────────┬─────────────┐
 │   Node │      yes │       no │ Fixed state │
 │ String │  Float64 │  Float64 │      String │
 ├────────┼──────────┼──────────┼─────────────┤
-│     A1 │ 1.000000 │ 0.000000 │             │
-│     A2 │ 1.000000 │ 0.000000 │             │
+│     A1 │ 0.737028 │ 0.262972 │             │
+│     A2 │ 0.501345 │ 0.498655 │             │
 │     A3 │ 1.000000 │ 0.000000 │             │
-│     A4 │ 1.000000 │ 0.000000 │             │
+│     A4 │ 0.462002 │ 0.537998 │             │
 └────────┴──────────┴──────────┴─────────────┘
 julia> print_state_probabilities(diagram, S_probabilities, ["F"])
 ┌────────┬──────────┬──────────┬─────────────┐
 │   Node │  failure │  success │ Fixed state │
 │ String │  Float64 │  Float64 │      String │
 ├────────┼──────────┼──────────┼─────────────┤
-│      F │ 0.633125 │ 0.366875 │             │
+│      F │ 0.395566 │ 0.604434 │             │
 └────────┴──────────┴──────────┴─────────────┘
 ```
 
@@ -299,8 +298,22 @@ julia> print_utility_distribution(U_distribution)
 │   Utility │ Probability │
 │   Float64 │     Float64 │
 ├───────────┼─────────────┤
-│ -2.881344 │    0.633125 │
-│ 97.118656 │    0.366875 │
+│ -1.806271 │    0.164580 │
+│ -1.715238 │    0.104478 │
+│ -1.654847 │    0.009397 │
+│ -1.563813 │    0.006952 │
+│ -0.924416 │    0.045627 │
+│ -0.833383 │    0.038920 │
+│ -0.772991 │    0.007659 │
+│ -0.681958 │    0.017953 │
+│ 98.193726 │    0.112766 │
+│ 98.284760 │    0.077866 │
+│ 98.345154 │    0.009793 │
+│ 98.436188 │    0.015513 │
+│ 99.075584 │    0.063066 │
+│ 99.166618 │    0.129725 │
+│ 99.227005 │    0.049114 │
+│ 99.318039 │    0.146591 │
 └───────────┴─────────────┘
 ```
 
@@ -310,10 +323,10 @@ julia> print_statistics(U_distribution)
 │     Name │ Statistics │
 │   String │    Float64 │
 ├──────────┼────────────┤
-│     Mean │  33.806192 │
-│      Std │  48.195210 │
-│ Skewness │   0.552439 │
-│ Kurtosis │  -1.694811 │
+│     Mean │  59.165647 │
+│      Std │  49.083835 │
+│ Skewness │  -0.427074 │
+│ Kurtosis │  -1.817258 │
 └──────────┴────────────┘
 ```
 

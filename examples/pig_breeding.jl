@@ -1,7 +1,6 @@
 using Logging
 using JuMP, HiGHS
 using DecisionProgramming
-using DataStructures
 
 const N = 4
 
@@ -15,11 +14,11 @@ for i in 1:N-1
     # Decision to treat
     add_node!(diagram, DecisionNode("D$i", ["T$i"], ["treat", "pass"]))
     # Cost of treatment
-    add_node!(diagram, ValueNode("C$i", ["D$i"]))
+    add_node!(diagram, ValueNode("V$i", ["D$i"]))
     # Health of next period
     add_node!(diagram, ChanceNode("H$(i+1)", ["H$(i)", "D$(i)"], ["ill", "healthy"]))
 end
-add_node!(diagram, ValueNode("MP", ["H$N"]))
+add_node!(diagram, ValueNode("V4", ["H$N"]))
 
 generate_arcs!(diagram)
 
@@ -46,10 +45,11 @@ for i in 1:N-1
 end
 
 for i in 1:N-1
-    add_utilities!(diagram, "C$i", [-100.0, 0.0])
+    add_utilities!(diagram, "V$i", [-100.0, 0.0])
 end
 
-add_utilities!(diagram, "MP", [300.0, 1000.0])
+
+add_utilities!(diagram, "V4", [300.0, 1000.0])
 
 @info("Creating the decision model.")
 model, z, x_s = generate_model(diagram, model_type="DP")

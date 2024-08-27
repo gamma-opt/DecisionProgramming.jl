@@ -38,8 +38,8 @@ end
 ```
 """
 function CompatiblePaths(diagram::InfluenceDiagram, Z::DecisionStrategy, fixed::FixedPath=Dict{Node, State}())
-    C_keys_indexed = Node.([index_of(diagram, node) for node in get_keys(diagram.C)])
-    CompatiblePaths(States(get_values(diagram.S)), C_keys_indexed, Z, fixed)
+    C_indices = indices(diagram.C)
+    CompatiblePaths(States(get_values(diagram.S)), C_indices, Z, fixed)
 end
 
 function compatible_path(S::States, C::Vector{Node}, Z::DecisionStrategy, s_C::Path)

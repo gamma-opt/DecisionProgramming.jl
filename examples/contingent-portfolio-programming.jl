@@ -129,8 +129,8 @@ Base.getindex(U::PathUtility, I::Vararg{State,N}) where N = getindex(U.data, I..
 (U::PathUtility)(s::Path) = value.(U[s...])
 
 path_utility = [@expression(model,
-    sum(x_A[s[index_of(diagram, "DP")], s[index_of(diagram, "CT")], s[index_of(diagram, "DA")], a] * (V_A[s[index_of(diagram, "CM")], a] - I_a[a]) for a in 1:n_A) -
-    sum(x_T[s[index_of(diagram, "DP")], t] * I_t[t] for t in 1:n_T)) for s in paths(get_values(diagram.S))]
+    sum(x_A[s[diagram.Nodes["DP"].index], s[diagram.Nodes["CT"].index], s[diagram.Nodes["DA"].index], a] * (V_A[s[diagram.Nodes["CM"].index], a] - I_a[a]) for a in 1:n_A) -
+    sum(x_T[s[diagram.Nodes["DP"].index], t] * I_t[t] for t in 1:n_T)) for s in paths(get_values(diagram.S))]
 diagram.U = PathUtility(path_utility)
 
 @info("Computing utility distribution.")

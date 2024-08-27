@@ -4,6 +4,7 @@ authors = ["Jaan Tollander de Balsch", "Helmi Hankimaa", "Olli Herrala", "Fabric
 version = "1.2.0"
 
 [deps]
+Base64 = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"

@@ -131,15 +131,14 @@ end
 function test_analysis_and_printing(diagram)
     @info("Creating random decision strategy")
     Z_j = [LocalDecisionStrategy(rng, diagram, d) for d in keys(diagram.D)]
-    D_keys_indexed = Int16.([index_of(diagram, node) for node in get_keys(diagram.D)])
-    D_I_j = [diagram.I_j[node] for node in get_keys(diagram.D)]
-    D_I_j_indexed = Vector{Int16}.([indices_of(diagram, nodes) for nodes in D_I_j])
-    Z = DecisionStrategy(D_keys_indexed, D_I_j_indexed, Z_j)
+    D_indices = indices(diagram.D)
+    D_I_j_indices = I_j_indices(diagram, diagram.D)
+    Z = DecisionStrategy(D_indices, D_I_j_indices, Z_j)
 
     @info "Testing CompatiblePaths"
     @test all(true for s in CompatiblePaths(diagram, Z))
-    @test_throws DomainError CompatiblePaths(diagram, Z, Dict(Node(index_of(diagram, "D1")) => State(1)))
-    node, state = (Node(index_of(diagram, "H1")), State(1))
+    @test_throws DomainError CompatiblePaths(diagram, Z, Dict(diagram.Nodes["D1"].index => State(1)))
+    node, state = (diagram.Nodes["H1"].index, State(1))
     @test all(s[node] == state for s in CompatiblePaths(diagram, Z, Dict(node => state)))
 
     @info "Testing UtilityDistribution"
