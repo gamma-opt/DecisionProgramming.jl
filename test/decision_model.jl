@@ -55,7 +55,7 @@ function influence_diagram(diff_sign_utils::Bool, single_value_node::Bool)
     return diagram
 end
 
-function test_decision_model_dp(diagram, probability_scale_factor, probability_cut)
+function test_decision_model_dp(diagram, probability_scale_factor, probability_cut, names)
     model = Model()
 
     @info "Testing DecisionVariables (DP)"
@@ -63,7 +63,7 @@ function test_decision_model_dp(diagram, probability_scale_factor, probability_c
 
     @info "Testing PathCompatibilityVariables"
     if probability_scale_factor > 0
-        x_s = PathCompatibilityVariables(model, diagram, z; probability_cut = probability_cut, probability_scale_factor = probability_scale_factor)
+        x_s = PathCompatibilityVariables(model, diagram, z; names=names, probability_cut = probability_cut, probability_scale_factor = probability_scale_factor)
     else
         @test_throws DomainError x_s = PathCompatibilityVariables(model, diagram, z; probability_cut = probability_cut, probability_scale_factor = probability_scale_factor)
     end
@@ -96,17 +96,17 @@ function test_decision_model_dp(diagram, probability_scale_factor, probability_c
     @test true
 end
 
-function test_decision_model_rjt(diagram)
+function test_decision_model_rjt(diagram, names)
     model = Model()
 
     @info "Testing DecisionVariables (RJT)"
     z = DecisionVariables(model, diagram)
 
     @info "Testing RJTVariables"
-    μ_s = RJTVariables(model, diagram, z) 
+    μ_s = RJTVariables(model, diagram, z, names=names) 
 
     @info "Testing expected_value (RJT)"
-    EV = expected_value(model, diagram, x_s)
+    EV = expected_value(model, diagram, μ_s)
 
     @info "Testing conditional_value_at_risk (RJT)"
     if length(diagram.V) != 1
@@ -158,23 +158,23 @@ end
 
 @info "Testing model construction"
 rng = MersenneTwister(4)
-for (probability_scale_factor, probability_cut, diff_sign_utils) in [
-        (1.0, true, false),
-        (-1.0, true, true),
-        (100.0, true, false),
-        (-1.0, false, false),
-        (10.0, false, true)
+for (probability_scale_factor, probability_cut, diff_sign_utils, names) in [
+        (1.0, true, false, true),
+        (-1.0, true, true, false),
+        (100.0, true, false, false),
+        (-1.0, false, false, false),
+        (10.0, false, true, false)
     ]
     diagram = influence_diagram(diff_sign_utils, false)
     test_decision_model_dp(diagram, probability_scale_factor, probability_cut)
     test_analysis_and_printing(diagram)
 end
 
-for (single_value_node) in [
-    (true),
-    (false)
+for (single_value_node, names) in [
+    (true, true),
+    (false, false)
 ]
     diagram = influence_diagram(false, single_value_node)
-    test_decision_model_rjt(diagram)
+    test_decision_model_rjt(diagram, names)
     test_analysis_and_printing(diagram)
 end
