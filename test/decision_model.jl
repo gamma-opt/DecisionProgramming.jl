@@ -2,18 +2,19 @@ using Test, Logging, Random, JuMP
 using DecisionProgramming
 
 
-function influence_diagram(diff_sign_utils::Bool)
+function influence_diagram(diff_sign_utils::Bool, single_value_node::Bool)
     diagram = InfluenceDiagram()
     #Creating an experimental influence diagram with nodes having varying amounts of states and nodes in their information sets
     add_node!(diagram, ChanceNode("H1", [], ["1", "2"]))
     add_node!(diagram, DecisionNode("D1", [], ["1", "2"]))
     add_node!(diagram, DecisionNode("D2", ["H1"], ["1", "2", "3"]))
     add_node!(diagram, ChanceNode("H2", ["D1", "D2"], ["1", "2", "3", "4"]))
-    add_node!(diagram, ChanceNode("H3", [], ["1", "2", "3"]))
-    add_node!(diagram, DecisionNode("D3", ["H2", "H3"], ["1", "2"]))
-
     add_node!(diagram, ValueNode("C1", ["D2", "H2"]))
-    add_node!(diagram, ValueNode("C2", ["D3"]))
+    if single_value_node == false
+        add_node!(diagram, ChanceNode("H3", [], ["1", "2", "3"]))
+        add_node!(diagram, DecisionNode("D3", ["H2", "H3"], ["1", "2"]))
+        add_node!(diagram, ValueNode("C2", ["D3"]))
+    end
 
     generate_arcs!(diagram)
 
@@ -30,8 +31,10 @@ function influence_diagram(diff_sign_utils::Bool)
     end
     add_probabilities!(diagram, "H2", H2_prob_matrix)
 
-    H3_probs = 1/length(diagram.Nodes["H3"].states)
-    add_probabilities!(diagram, "H3", [H3_probs, H3_probs, H3_probs])
+    if single_value_node == false
+        H3_probs = 1/length(diagram.Nodes["H3"].states)
+        add_probabilities!(diagram, "H3", [H3_probs, H3_probs, H3_probs])
+    end
 
     C1_util_matrix = UtilityMatrix(diagram, "C1")
     if diff_sign_utils==true
@@ -43,17 +46,19 @@ function influence_diagram(diff_sign_utils::Bool)
     C1_util_matrix["3", :] = [0.0, 0.0, 0.0, 0.0]
     add_utilities!(diagram, "C1", C1_util_matrix)
 
-    add_utilities!(diagram, "C2", [0.0, 0.0])
+    if single_value_node == false
+        add_utilities!(diagram, "C2", [0.0, 0.0])
+    end
 
     generate_diagram!(diagram, positive_path_utility = true)
 
     return diagram
 end
 
-function test_decision_model(diagram, probability_scale_factor, probability_cut)
+function test_decision_model_dp(diagram, probability_scale_factor, probability_cut)
     model = Model()
 
-    @info "Testing DecisionVariables"
+    @info "Testing DecisionVariables (DP)"
     z = DecisionVariables(model, diagram)
 
     @info "Testing PathCompatibilityVariables"
@@ -70,22 +75,44 @@ function test_decision_model(diagram, probability_scale_factor, probability_cut)
     @info "Testing probability_cut"
     lazy_probability_cut(model, diagram, x_s)
 
-    @info "Testing expected_value"
+    @info "Testing expected_value (DP)"
     if (minimum.(diagram.U.Y)[1]*maximum.(diagram.U.Y)[1] < 0.0) && isnothing(constraint_by_name(model, "probability_cut"))
         @test_throws DomainError EV = expected_value(model, diagram, x_s)
     else
         EV = expected_value(model, diagram, x_s)
     end
 
-    @info "Testing conditional_value_at_risk"
+    @info "Testing conditional_value_at_risk (DP)"
     if probability_cut == false
         @test_throws DomainError conditional_value_at_risk(model, diagram, x_s, 0.2; probability_scale_factor = probability_scale_factor)
     else
         if probability_scale_factor > 0
             CVaR = conditional_value_at_risk(model, diagram, x_s, 0.2; probability_scale_factor = probability_scale_factor)
         else
-            @test_throws DomainError conditional_value_at_risk(model, diagram, x_s, 0.2; probability_scale_factor = probability_scale_factor)
+            @test_throws DomainError CVaR = conditional_value_at_risk(model, diagram, x_s, 0.2; probability_scale_factor = probability_scale_factor)
         end
+    end
+
+    @test true
+end
+
+function test_decision_model_rjt(diagram)
+    model = Model()
+
+    @info "Testing DecisionVariables (RJT)"
+    z = DecisionVariables(model, diagram)
+
+    @info "Testing RJTVariables"
+    μ_s = RJTVariables(model, diagram, z) 
+
+    @info "Testing expected_value (RJT)"
+    EV = expected_value(model, diagram, x_s)
+
+    @info "Testing conditional_value_at_risk (RJT)"
+    if length(diagram.V) != 1
+        @test_throws DomainError CVaR = conditional_value_at_risk(model, diagram, μ_s, 0.05)
+    else
+        CVaR = conditional_value_at_risk(model, diagram, μ_s, 0.05)
     end
 
     @test true
@@ -130,6 +157,7 @@ end
 
 
 @info "Testing model construction"
+rng = MersenneTwister(4)
 for (probability_scale_factor, probability_cut, diff_sign_utils) in [
         (1.0, true, false),
         (-1.0, true, true),
@@ -137,7 +165,16 @@ for (probability_scale_factor, probability_cut, diff_sign_utils) in [
         (-1.0, false, false),
         (10.0, false, true)
     ]
-    diagram = influence_diagram(diff_sign_utils)
-    test_decision_model(diagram, probability_scale_factor, probability_cut)
+    diagram = influence_diagram(diff_sign_utils, false)
+    test_decision_model_dp(diagram, probability_scale_factor, probability_cut)
+    test_analysis_and_printing(diagram)
+end
+
+for (single_value_node) in [
+    (true),
+    (false)
+]
+    diagram = influence_diagram(false, single_value_node)
+    test_decision_model_rjt(diagram)
     test_analysis_and_printing(diagram)
 end
