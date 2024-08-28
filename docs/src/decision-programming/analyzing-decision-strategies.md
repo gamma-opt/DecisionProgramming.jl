@@ -1,6 +1,6 @@
 # [Analyzing Decision Strategies](@id analyzing-decision-strategies)
 ## Introduction
-This section focuses on how we can analyze fixed decision strategies $Z$ on an influence diagram $G$, such as ones obtained by solving the Decision Programming model described in [the previous section](@ref decision-model). We can rule out all incompatible and inactive paths from the analysis because they do not influence the outcomes of the strategy. This means that we only consider paths $𝐬$ that are compatible and active $𝐬 \in 𝐒(X) \cap 𝐒(Z)$.
+This section focuses on how we can analyze fixed decision strategies $Z$ on an influence diagram $G$, such as ones obtained by solving RJT or path based models described in the previous sections. For path-baseds models, we can rule out all incompatible and inactive paths from the analysis because they do not influence the outcomes of the strategy.
 
 
 ## Generating Compatible Paths

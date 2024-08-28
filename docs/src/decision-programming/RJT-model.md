@@ -1,6 +1,6 @@
 # [RJT model](@id RJT-model)
 ## Introduction
-Influence diagrams can be represented as directed rooted trees composed of clusters, which can be transformed into gradual rooted junction trees (RJTs) by imposing additional constraints. These can then be used to formulate an optimization model. Solving for optimal decision strategies using these formulations can be done with significantly less computing time than for full path based formulations. Using RJT based formulations is thus generally preferable.
+Influence diagrams can be represented as directed rooted trees composed of clusters, which can be transformed into gradual rooted junction trees (RJTs) by imposing additional constraints. These can then be used to formulate an optimization model. Solving for optimal decision strategies using these formulations can be done with significantly less computing time than for path based formulations. Using RJT based formulations is thus generally preferable.
 
 The explanations for RJT construction and RJT based model formulation largely follow that of Herrala et al. (2024). [^1]
 
@@ -95,7 +95,7 @@ Currently, the RJT formulation commands in the package do not support forbidden 
 
 ## Computational considerations
 
-Around 2-3 magnitudes faster solving times are expected using RJT formulations. [^1] In problems with small treewidths, such as the pig breeding problem, the solution times hardly even change when increasing the number of nodes.
+2-3 magnitudes faster solving times are expected using RJT formulations compared to path-based formulations. [^1] In problems with small treewidths, such as the pig breeding problem, the solution times can only increase linearly, which makes computational benefits even larger.
 
 ## References
 
