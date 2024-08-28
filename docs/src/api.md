@@ -68,8 +68,10 @@ num_states
 ```
 
 ### ForbiddenPath and FixedPath outer construction functions
+```@docs
 ForbiddenPath(::InfluenceDiagram, ::Vector{Name}, ::Vector{NTuple{N, Name}}) where N
 FixedPath(::InfluenceDiagram, ::Dict{Name, Name})
+```
 
 ### Decision Strategy
 ```@docs
