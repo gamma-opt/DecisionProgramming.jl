@@ -121,35 +121,15 @@ Y_V3["peach", :] = [-40, -20, 0]
 add_utilities!(diagram, "V3", Y_V3)
 ```
 
-### Generate influence diagram
-Finally, generate the full influence diagram before defining the decision model. By default this function uses the default path probabilities and utilities, which are defined as the joint probability of all chance events in the diagram and the sum of utilities in value nodes, respectively. In the [Contingent Portfolio Programming](contingent-portfolio-programming.md) example, we show how to use a user-defined custom path utility function.
+## Generating model
+Next we generate the decision model using RJT formulation.
 
 ```julia
-generate_diagram!(diagram)
+model, z, variables = generate_model(diagram, model_type="RJT")
 ```
 
-## Decision model
-We then construct the decision model by declaring a JuMP model and adding decision variables and path compatibility variables to the model. We define the objective function to be the expected value.
-
-```julia
-model = Model()
-z = DecisionVariables(model, diagram)
-x_s = PathCompatibilityVariables(model, diagram, z)
-EV = expected_value(model, diagram, x_s)
-@objective(model, Max, EV)
-```
-
-Alternatively, RJT formulation can be used by replacing commands on path compatibility variables and objective function creation with commands
-
-```julia
-μ_s = RJTVariables(model, diagram, z)
-EV = expected_value(model, diagram, μ_s)
-@objective(model, Max, EV)
-```
-
-and then solving using the solver. Significantly faster solving times are expected using RJT formulation.
-
-We can perform the optimization using an optimizer such as HiGHS.
+## Solving the model
+We set up the solver and optimize:
 
 ```julia
 optimizer = optimizer_with_attributes(
@@ -158,7 +138,6 @@ optimizer = optimizer_with_attributes(
 set_optimizer(model, optimizer)
 optimize!(model)
 ```
-
 
 ## Analyzing results
 Once the model is solved, we extract the results.

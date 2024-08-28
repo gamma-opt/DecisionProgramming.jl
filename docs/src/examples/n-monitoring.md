@@ -2,7 +2,6 @@
 ## Description
 The $N$-monitoring problem is described in [^1], sections 4.1 and 6.1.
 
-
 ## Influence Diagram
 ![](figures/n-monitoring.svg)
 
@@ -166,40 +165,24 @@ end
 add_utilities!(diagram, "T", Y_T)
 ```
 
-### Generate Influence Diagram
-The full influence diagram can now be generated. We use the default path probabilities and utilities, which are the default setting in this function. In the [Contingent Portfolio Programming](contingent-portfolio-programming.md) example, we show how to use a user-defined custom path utility function.
-
-In this particular problem, some of the path utilities are negative. In this case, we choose to use the [positive path utility](../decision-programming/decision-model.md) transformation, which translates the path utilities to positive values. This allows us to exclude the probability cut in the next section.
+## Generating the model
+The model can now be created.
 
 ```julia
-generate_diagram!(diagram, positive_path_utility = true)
+model, z, μ_s = generate_model(diagram, model_type="RJT")
 ```
 
-## Decision Model
-We initialise the JuMP model and declare the decision and path compatibility variables. Since we applied an affine transformation to the utility function, the probability cut can be excluded from the model formulation.
+## CVaR
+We also create and a conditional value-at-risk constraint and add it to the model. `conditional_value_at_risk` function returns an expression, which can also be included in objective function or used in other types of constraints.
 
 ```julia
-model = Model()
-z = DecisionVariables(model, diagram)
-x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
+α = 0.15
+CVaR = conditional_value_at_risk(model, diagram, μ_s, α)
+@constraint(model, CVaR>=-1.0)
 ```
 
-The expected utility is used as the objective and the problem is solved using Gurobi.
-
-```julia
-EV = expected_value(model, diagram, x_s)
-@objective(model, Max, EV)
-```
-
-Alternatively, RJT formulation can be used by replacing commands on path compatibility variables and objective function creation with commands
-
-```julia
-μ_s = RJTVariables(model, diagram, z)
-EV = expected_value(model, diagram, μ_s)
-@objective(model, Max, EV)
-```
-
-and then solving using the solver. Significantly faster solving times are expected using RJT formulation.
+## Solving the model
+Setting up the solver and solving:
 
 ```julia
 optimizer = optimizer_with_attributes(
@@ -208,7 +191,6 @@ optimizer = optimizer_with_attributes(
 set_optimizer(model, optimizer)
 optimize!(model)
 ```
-
 
 ## Analyzing Results
 

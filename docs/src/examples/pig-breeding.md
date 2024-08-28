@@ -155,8 +155,7 @@ In Decision Programming:
 add_utilities!(diagram, "V4", [300.0, 1000.0])
 ```
 
-## Generating and solving the model
-### Generating model
+## Generating the model
 
 After adding nodes, generating arcs and defining probability and utility values, we generate the model, which is done by `generate_model` function. In this example, we use the slower path-based formulation (model_type="DP").
 
@@ -177,7 +176,7 @@ optimizer = optimizer_with_attributes(
 set_optimizer(model, optimizer)
 ```
 
-### Heuristics
+## Solving the model
 
 We use the single policy update heuristic to obtain an initial solution and then solve the problem.
 ```julia
