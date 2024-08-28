@@ -629,10 +629,14 @@ function generate_model(
     model_type::String,
     forbidden_paths::Vector{ForbiddenPath}=ForbiddenPath[],
     fixed::FixedPath=Dict{Node, State}(),
-    probability_cut::Bool=false
+    probability_cut::Bool=false,
+    default_probability::Bool=true,
+    default_utility::Bool=true,
+    positive_path_utility::Bool=false,
+    negative_path_utility::Bool=false
     )
 
-    generate_diagram!(diagram)
+    generate_diagram!(diagram; default_probability, default_utility, positive_path_utility, negative_path_utility)
     model = Model()
     z = DecisionVariables(model, diagram, names=names)
     if model_type=="RJT"

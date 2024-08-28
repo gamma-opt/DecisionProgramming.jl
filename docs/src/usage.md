@@ -303,4 +303,6 @@ model, z, variables = generate_model(diagram, model_type="RJT")
 ```
 This function first generates the full influence diagram and creates model and decision variables. In this part, `generate_model` uses `generate_diagram!` to sort probability and utility matrices in fields `X` and `Y` according to diagram.Names and then adds the path probability and path utility types into fields `P` and `U`, respectively. After this, `generate_model` generates either RJT variables (model_type="RJT") or path compatibility variables (model_type="DP") based on the model type chosen. Finally, the expected value function and objective function for the model are created.
 
+`generate_model` has an optional argument names, which will name variables according to node names with state indices if set as true and just as simple indices if set as false. The latter might bring some performance improvements for very large models. The default value is true, which is generally preferable due to more clear naming of variables. 
+
 Practical examples of creating influence diagrams and solving them using `generate_model` are given in examples. More information on [RJT](@ref RJT-model) and [DP models](@ref path-based-model) are in Decision Programming section.

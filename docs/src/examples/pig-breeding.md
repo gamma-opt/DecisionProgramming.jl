@@ -2,7 +2,7 @@
 ## Description
 The pig breeding problem as described in [^1].
 
->A pig breeder is growing pigs for a period of four months and subsequently selling them. During this period the pig may or may not develop a certain disease. If the pig has the disease at the time it must be sold, the pig must be sold for slaughtering, and its expected market price is then 300 DKK (Danish kroner). If it is disease free, its expected market price as a breeding animal is 1000 DKK
+>A pig breeder is growing pigs for a period of four months and subsequently selling them. During this period the pig may or may not develop a certain disease. If the pig has the disease at the time it must be sold, the pig must be sold for slaughtering, and its expected market price is then 300 DKK (Danish kroner). If it is disease free, its expected market price as a breeding animal is 1000 DKK.
 >
 >Once a month, a veterinary doctor sees the pig and makes a test for presence of the disease. If the pig is ill, the test will indicate this with probability 0.80, and if the pig is healthy, the test will indicate this with probability 0.90. At each monthly visit, the doctor may or may not treat the pig for the disease by injecting a certain drug. The cost of an injection is 100 DKK.
 >
@@ -155,47 +155,30 @@ In Decision Programming:
 add_utilities!(diagram, "V4", [300.0, 1000.0])
 ```
 
-### Generate influence diagram
-After adding nodes, generating arcs and defining probability and utility values, we generate the full influence diagram. By default this function uses the default path probabilities and utilities, which are defined as the joint probability of all chance events in the diagram and the sum of utilities in value nodes, respectively. In the [Contingent Portfolio Programming](contingent-portfolio-programming.md) example, we show how to use a user-defined custom path utility function.
+## Generating and solving the model
+### Generating model
 
-In the pig breeding problem, when the $N$ is large some of the path utilities become negative. In this case, we choose to use the [positive path utility](../decision-programming/decision-model.md) transformation, which allows us to exclude the probability cut in the next section.
+After adding nodes, generating arcs and defining probability and utility values, we generate the model, which is done by `generate_model` function. In this example, we use the slower path-based formulation (model_type="DP") There are five parts in the execution of `generate_model`:
 
-```julia
-generate_diagram!(diagram, positive_path_utility = true)
-```
+1. Diagram generation using `generate_diagram!`. 
 
-## Decision model
+By default `generate_model` and `generate_diagram!` use the default path probabilities and utilities, which are defined as the joint probability of all chance events in the diagram and the sum of utilities in value nodes, respectively. In the [Contingent Portfolio Programming](contingent-portfolio-programming.md) example, we show how to use a user-defined custom path utility function. In the pig breeding problem, when the $N$ is large some of the path utilities become negative. In this case, we choose to use the [positive path utility](../decision-programming/decision-model.md) transformation, which allows us to exclude the probability cut in the next section.
 
-Next we initialise the JuMP model and add the decision variables. DecisionVariables has an optional argument names, which will name variables according to node names with state indices if set as true and just as simple indices if set as false. The latter might bring some performance improvements for very large models. The default value is true, which is generally preferable due to more clear naming of variables. 
+2. Initializing JuMP Model. 
 
-Then we add the path compatibility variables. Since we applied an affine transformation to the utility function, making all path utilities positive, the probability cut can be excluded from the model. The purpose of this is discussed in the [theoretical section](../decision-programming/decision-model.md) of this documentation.
+3. Initializing and adding decision variables.
 
-```julia
-model = Model()
-z = DecisionVariables(model, diagram, names=true)
-x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
-```
+4. Initializing and adding the path compatibility variables. 
 
-We create the objective function
+Since we applied an affine transformation to the utility function, making all path utilities positive, the probability cut can be excluded from the model (which is also the default setting as). The purpose of this is discussed in the [theoretical section](../decision-programming/decision-model.md) of this documentation.
+
+5. Objective function creation.
 
 ```julia
-EV = expected_value(model, diagram, x_s)
-@objective(model, Max, EV)
+model, z, x_s = generate_model(diagram, model_type="DP", positive_path_utility=true, probability_cut=false)
 ```
 
-and set up the solver.
-
-Alternatively, RJT formulation can be used by replacing commands on path compatibility variables and objective function creation with commands
-
-```julia
-μ_s = RJTVariables(model, diagram, z)
-EV = expected_value(model, diagram, μ_s)
-@objective(model, Max, EV)
-```
-
-## generate_model function
-
-and then solving using the solver. Significantly faster solving times are expected using RJT formulation.
+After this, we set up the solver
 
 ```julia
 optimizer = optimizer_with_attributes(
@@ -204,20 +187,12 @@ optimizer = optimizer_with_attributes(
 set_optimizer(model, optimizer)
 ```
 
-Finally, we use the single policy update heuristic to obtain an initial solution and then solve the problem.
+### Heuristics
+
+We use the single policy update heuristic to obtain an initial solution and then solve the problem.
 ```julia
-spu = singlePolicyUpdate(diagram, model, z, x_s)
+spu = singlePolicyUpdate(diagram, model, z; x_s)
 optimize!(model)
-```
-
-<!-- Onko tämä hyvä, voisi tehdä kunnon esimerkin myös CVaRista, mutta onko nyt tarpeen? -->
-
-CVaR model can be created by adding the following constraint to the model. The model has to be built so that there is only one value node. The constraint with this specific numerical value here is tested and meaningful for N = 6.
-
-```
-α = 0.05
-CVaR = conditional_value_at_risk(model, diagram, μ_s, α; probability_scale_factor = 1.0)
-@constraint(model, CVaR>=300.0)
 ```
 
 ## Analyzing results

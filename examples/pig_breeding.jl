@@ -48,11 +48,10 @@ for i in 1:N-1
     add_utilities!(diagram, "V$i", [-100.0, 0.0])
 end
 
-
 add_utilities!(diagram, "V4", [300.0, 1000.0])
 
 @info("Creating the decision model.")
-model, z, x_s = generate_model(diagram, model_type="DP")
+model, z, x_s = generate_model(diagram, model_type="DP", positive_path_utility=true, probability_cut=false)
 
 @info("Starting the optimization process.")
 optimizer = optimizer_with_attributes(
