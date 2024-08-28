@@ -37,14 +37,6 @@ model, z, μ_s = generate_model(diagram, model_type="RJT")
 
 @info("Creating problem specific constraints and expressions")
 
-function model_variables(model::Model, dims::AbstractVector{Int}; binary::Bool=false)
-    v = Array{VariableRef}(undef, dims...)
-    for i in eachindex(v)
-        v[i] = @variable(model, binary=binary)
-    end
-    return v
-end
-
 # Number of states in each node
 n_DP = num_states(diagram, "DP")
 n_CT = num_states(diagram, "CT")
@@ -61,6 +53,14 @@ O_a = rand(2:4,n_T)         # number of applications for each appl. project
 V_A = rand(n_CM, n_A).+0.5 # Value of an application
 V_A[1, :] .+= -0.5          # Low market share: less value
 V_A[3, :] .+= 0.5           # High market share: more value
+
+function model_variables(model::Model, dims::AbstractVector{Int}; binary::Bool=false)
+    v = Array{VariableRef}(undef, dims...)
+    for i in eachindex(v)
+        v[i] = @variable(model, binary=binary)
+    end
+    return v
+end
 
 x_T = model_variables(model, [n_DP, n_T]; binary=true)
 x_A = model_variables(model, [n_DP, n_CT, n_DA, n_A]; binary=true)
