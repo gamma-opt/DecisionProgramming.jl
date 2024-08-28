@@ -26,8 +26,8 @@ using DecisionProgramming
 using CSV, DataFrames, PrettyTables
 
 
-const chosen_risk_level = 12%
-const data = CSV.read("risk_prediction_data.csv", DataFrame)
+const chosen_risk_level = "12%"
+data = CSV.read("CHD_preventative_care_data.csv", DataFrame)
 
 function update_risk_distribution(prior::Int64, t::Int64)...
 end
@@ -169,17 +169,7 @@ Y_HB["no CHD", "no treatment"] = 7.70088349200034
 add_utilities!(diagram, "HB", Y_HB)
 ```
 
-### Generate influence diagram
-Finally, we generate the full influence diagram before defining the decision model. By default this function uses the default path probabilities and utilities, which are defined as the joint probability of all chance events in the diagram and the sum of utilities in value nodes, respectively. In the [Contingent Portfolio Programming](contingent-portfolio-programming.md) example, we show how to use a user-defined custom path utility function.
-
-
-
-## Decision Model
-We define the JuMP model and declare the decision variables.
-```julia
-model = Model()
-z = DecisionVariables(model, diagram)
-```
+## Generating the model
 
 In this problem, we want to forbid the model from choosing paths where the same test is repeated twice and where the first testing decision is not to perform a test but the second testing decision is to perform a test. We forbid the paths by declaring these combinations of states as forbidden paths.
 
@@ -193,23 +183,13 @@ We fix the state of the deterministic $R0$ node by declaring it as a fixed path.
 fixed_R0 = FixedPath(diagram, Dict("R0" => chosen_risk_level))
 ```
 
-We also choose a scale factor of 10000, which will be used to scale the path probabilities. The probabilities need to be scaled because in this specific problem they are very small since the $R$ nodes have a large number of states. Scaling the probabilities helps the solver find an optimal solution.
-
-We then declare the path compatibility variables. We fix the state of the deterministic $R0$ node , forbid the unwanted testing strategies and scale the probabilities by giving them as parameters in the function call.
+Next we generate the decision model. We use path-based formulation (model_type="DP") here, because forbidden and fixed paths are not yet a feature of RJT models.
 
 ```julia
-scale_factor = 10000.0
-x_s = PathCompatibilityVariables(model, diagram, z; fixed = fixed_R0, forbidden_paths = [forbidden_tests], probability_cut=false)
-
-
+model, z, x_s = generate_model(diagram, model_type="DP", forbidden_paths=[forbidden_tests], fixed=fixed_R0)
 ```
 
-We define the objective function as the expected value.
-```julia
-EV = expected_value(model, diagram, x_s, probability_scale_factor = scale_factor)
-@objective(model, Max, EV)
-```
-
+## Solving the model
 We set up the solver for the problem and optimise it.
 ```julia
 optimizer = optimizer_with_attributes(
@@ -218,8 +198,6 @@ optimizer = optimizer_with_attributes(
 set_optimizer(model, optimizer)
 optimize!(model)
 ```
-
-
 
 ## Analyzing results
 We extract the results in the following way.
