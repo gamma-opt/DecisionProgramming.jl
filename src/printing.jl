@@ -346,7 +346,10 @@ end
 """
     mermaid(diagram::InfluenceDiagram, filename::String="mermaid_graph.png")
 
-Print mermaid graph. NOTE TO USER: Accesses the url mermaid.ink, which is used for graphing.
+Print mermaid graph.
+
+!!! note
+    Accesses the url mermaid.ink, which is used for graphing.
 """
 function mermaid(diagram::InfluenceDiagram, filename::String="mermaid_graph.png")
     graph_output = graph(diagram)
