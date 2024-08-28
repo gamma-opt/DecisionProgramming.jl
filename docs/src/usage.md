@@ -301,8 +301,20 @@ The final part is generating and solving the model. Generating model is done usi
 ```julia
 model, z, variables = generate_model(diagram, model_type="RJT")
 ```
-This function first generates the full influence diagram and creates model and decision variables. In this part, `generate_model` uses `generate_diagram!` to sort probability and utility matrices in fields `X` and `Y` according to diagram.Names and then adds the path probability and path utility types into fields `P` and `U`, respectively. After this, `generate_model` generates either RJT variables (model_type="RJT") or path compatibility variables (model_type="DP") based on the model type chosen. Finally, the expected value function and objective function for the model are created.
+The execution of `generate_model` can be divided into six parts:
+
+1. Diagram generation using `generate_diagram!`. Generates the influence diagram. Probability and utility matrices are sorted in fields `X` and `Y` according to diagram.Names. Path probability and path utility types are initialized and added into fields `P` and `U`, respectively. By default `generate_model` and `generate_diagram!` use the default path probabilities and utilities, which are defined as the joint probability of all chance events in the diagram and the sum of utilities in value nodes, respectively.
+
+2. Initializing JuMP Model. 
+
+3. Initializing and adding decision variables.
+
+4. Initializing and adding either the RJT variables the path compatibility variables. Generates either RJT variables (model_type="RJT") or path compatibility variables (model_type="DP") based on the model type chosen.
+
+5. Expected value function creation. 
+
+5. Objective function creation. 
 
 `generate_model` has an optional argument names, which will name variables according to node names with state indices if set as true and just as simple indices if set as false. The latter might bring some performance improvements for very large models. The default value is true, which is generally preferable due to more clear naming of variables. 
 
-Practical examples of creating influence diagrams and solving them using `generate_model` are given in examples. More information on [RJT](@ref RJT-model) and [DP models](@ref path-based-model) are in Decision Programming section.
+Practical examples of creating influence diagrams and solving them using `generate_model` are given in examples. More information on both [RJT](@ref RJT-model) and [DP models](@ref path-based-model) are in Decision Programming section.

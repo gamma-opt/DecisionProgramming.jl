@@ -158,21 +158,11 @@ add_utilities!(diagram, "V4", [300.0, 1000.0])
 ## Generating and solving the model
 ### Generating model
 
-After adding nodes, generating arcs and defining probability and utility values, we generate the model, which is done by `generate_model` function. In this example, we use the slower path-based formulation (model_type="DP") There are five parts in the execution of `generate_model`:
-
-1. Diagram generation using `generate_diagram!`. 
+After adding nodes, generating arcs and defining probability and utility values, we generate the model, which is done by `generate_model` function. In this example, we use the slower path-based formulation (model_type="DP").
 
 By default `generate_model` and `generate_diagram!` use the default path probabilities and utilities, which are defined as the joint probability of all chance events in the diagram and the sum of utilities in value nodes, respectively. In the [Contingent Portfolio Programming](contingent-portfolio-programming.md) example, we show how to use a user-defined custom path utility function. In the pig breeding problem, when the $N$ is large some of the path utilities become negative. In this case, we choose to use the [positive path utility](../decision-programming/decision-model.md) transformation, which allows us to exclude the probability cut in the next section.
 
-2. Initializing JuMP Model. 
-
-3. Initializing and adding decision variables.
-
-4. Initializing and adding the path compatibility variables. 
-
 Since we applied an affine transformation to the utility function, making all path utilities positive, the probability cut can be excluded from the model (which is also the default setting as). The purpose of this is discussed in the [theoretical section](../decision-programming/decision-model.md) of this documentation.
-
-5. Objective function creation.
 
 ```julia
 model, z, x_s = generate_model(diagram, model_type="DP", positive_path_utility=true, probability_cut=false)
