@@ -28,7 +28,7 @@ $$\bar{ρ}(u),ρ(u)∈[0, 1],\quad ∀u∈U \tag{35}$$
 
 $$η∈\mathbb{R} \tag{36}$$
 
-where where α is the probability level in VaR<sub>α</sub>.
+where where α is the probability level in CVaR<sub>α</sub>.
 
 $CVaR_α$ can be obtained as $1/α ∑_{u∈U} \bar{ρ}(u)u$.
 
