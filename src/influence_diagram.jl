@@ -445,6 +445,12 @@ end
     struct RJT
 
 A struct for rooted junction trees.
+
+# Fields
+- `clusters::Dict{Name, Vector{Name}}`: Dictionary of clusters in an RJT with 
+    the root node as key and the names of nodes in a cluster as values.
+- `arcs::Vector{Tuple{Name, Name}}`: Arcs between clusters specified as a vector
+    tuples with root node names defining the clusters.
 """
 struct RJT
     clusters::Dict{Name, Vector{Name}}
@@ -493,6 +499,7 @@ and their respective abstract nodes as values.
 - `U::AbstractPathUtility`: Path utilities.
 - `translation::Utility`: Utility translation for storing the positive or negative
     utility translation.
+- `RJT::RJT`: Rooted junction tree associated with the diagram.
 
 
 # Examples
