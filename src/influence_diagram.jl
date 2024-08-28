@@ -1001,8 +1001,9 @@ function generate_diagram!(diagram::InfluenceDiagram;
     positive_path_utility::Bool=false,
     negative_path_utility::Bool=false)
 
-    #Reordering diagram.X to the order of diagram.Names
+    #Reordering diagram.X and diagram.V to the order of diagram.Names
     diagram.X = OrderedDict(key => diagram.X[key] for key in diagram.Names if haskey(diagram.X, key))
+    diagram.V = OrderedDict(key => diagram.V[key] for key in diagram.Names if haskey(diagram.V, key))
 
     # Declare P and U if defaults are used
     if default_probability
