@@ -328,3 +328,10 @@ We can omit the probability cut defined in constraint $(6)$ from the model if we
 $$\mathcal{U}^+(𝐬) = \mathcal{U}(𝐬) - \min_{𝐬∈𝐒} \mathcal{U}(𝐬) + 1. \tag{8}$$
 
 $$\mathcal{U}^-(𝐬) = \mathcal{U}(𝐬) - \max_{𝐬∈𝐒} \mathcal{U}(𝐬) - 1. \tag{9}$$
+
+## References
+[^1]: Salo, A., Andelmin, J., & Oliveira, F. (2022). Decision programming for mixed-integer multi-stage optimization under uncertainty. European Journal of Operational Research, 299(2), 550-565.
+
+[^2]: Hölsä, O. (2020). Decision Programming Framework for Evaluating Testing Costs of Disease-Prone Pigs. Retrieved from [http://urn.fi/URN:NBN:fi:aalto-202009295618](http://urn.fi/URN:NBN:fi:aalto-202009295618)
+
+[^3]: Hankimaa, H., Herrala, O., Oliveira, F., Tollander de Balsch, J. (2023). DecisionProgramming.jl -- A framework for modelling decision problems using mathematical programming. Retrieved from [https://arxiv.org/abs/2307.13299](https://arxiv.org/abs/2307.13299)

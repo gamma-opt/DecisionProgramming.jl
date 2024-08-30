@@ -32,7 +32,7 @@ where where α is the probability level in CVaR<sub>α</sub>.
 
 $CVaR_α$ can be obtained as $1/α ∑_{u∈U} \bar{ρ}(u)u$.
 
-More details, including explanations of variables and constraints, can be found from Herrala et al. (2024)[^4].
+More details, including explanations of variables and constraints, can be found from Herrala et al. (2024)[^1].
 
 ## Path-based model
 
@@ -109,10 +109,4 @@ where the parameter $w∈[0, 1]$ expresses the decision maker's **risk tolerance
 
 
 ## References
-[^1]: Salo, A., Andelmin, J., & Oliveira, F. (2022). Decision programming for mixed-integer multi-stage optimization under uncertainty. European Journal of Operational Research, 299(2), 550-565.
-
-[^2]: Hölsä, O. (2020). Decision Programming Framework for Evaluating Testing Costs of Disease-Prone Pigs. Retrieved from [http://urn.fi/URN:NBN:fi:aalto-202009295618](http://urn.fi/URN:NBN:fi:aalto-202009295618)
-
-[^3]: Hankimaa, H., Herrala, O., Oliveira, F., Tollander de Balsch, J. (2023). DecisionProgramming.jl -- A framework for modelling decision problems using mathematical programming. Retrieved from [https://arxiv.org/abs/2307.13299](https://arxiv.org/abs/2307.13299)
-
-[^4]: Herrala, O., Terho, T., Oliveira, F., 2024. Risk-averse decision strategies for influence diagrams using rooted junction trees. Retrieved from [https://arxiv.org/abs/2401.03734]
+[^1]: Herrala, O., Terho, T., Oliveira, F., 2024. Risk-averse decision strategies for influence diagrams using rooted junction trees. Retrieved from [https://arxiv.org/abs/2401.03734]
