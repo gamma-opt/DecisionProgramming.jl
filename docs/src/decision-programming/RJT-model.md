@@ -1,4 +1,4 @@
-# [RJT model](RJT-model.md)
+# [RJT model](@id RJT-model)
 ## Introduction
 Influence diagrams can be represented as directed rooted trees composed of clusters, which can be transformed into gradual rooted junction trees (RJTs) by imposing additional constraints. These can then be used to formulate an optimization model. Solving for optimal decision strategies using these formulations is computationally more efficient than for path based formulations. Using RJT based formulations is thus generally preferable.
 

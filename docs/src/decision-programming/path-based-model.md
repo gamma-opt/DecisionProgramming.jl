@@ -1,4 +1,4 @@
-# [Path-based model](path-based-model.md)
+# [Path-based model](@id path-based-model)
 ## Introduction
 
 This section introduces path variables and how to structure an optimization problem based on them. Generally solution times are slower for path based formulations than for RJT based formulations and thus using [RJT formulations](RJT-model.md) is recommended.
