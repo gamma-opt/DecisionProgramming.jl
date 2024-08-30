@@ -91,7 +91,7 @@ $$\delta(s_j \mid s_{I(j)}) \in \{0,1\}, \ \forall j \in N^D, s_j \in S_j, s_{I(
 
 ## Limitations
 
-Currently, the RJT formulation commands in the package do not support forbidden path or fixed path features. Explanations for them can be found from the [path-based model](@ref path-based-model) section. 
+Currently, the RJT formulation commands in the package do not support forbidden path or fixed path features. Explanations for them can be found from the [path-based model](path-based-model.md) section. 
 
 ## Computational considerations
 

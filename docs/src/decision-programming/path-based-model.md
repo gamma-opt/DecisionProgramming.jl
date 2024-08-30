@@ -1,7 +1,7 @@
 # [Path-based model](path-based-model.md)
 ## Introduction
 
-This section introduces path variables and how to structure an optimization problem based on them. Generally solution times are slower for path based formulations than for RJT based formulations and thus using [RJT formulations](@ref RJT-model) is recommended.
+This section introduces path variables and how to structure an optimization problem based on them. Generally solution times are slower for path based formulations than for RJT based formulations and thus using [RJT formulations](RJT-model.md) is recommended.
 
 ## Paths
 ![](figures/paths.svg)
@@ -68,7 +68,7 @@ The set of **all decision strategies** is denoted with $ℤ.$
 
 
 
-## Path Probability
+## Path Probability (@id path-probability-doc)
 The probability distributions at chance and decision nodes define the probability distribution over all paths $𝐬∈𝐒,$ which depends on the decision strategy $Z∈ℤ.$ We refer to it as the path probability
 
 $$ℙ(X=𝐬∣Z) = ∏_{j∈C∪D} ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)}).$$
