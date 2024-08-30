@@ -24,6 +24,23 @@ The Decision Programming framework is described in this publication. If you foun
 }
 ```
 
+If you use the rooted junction tree models, we kindly ask you to cite the following publication ([pdf](https://www.sciencedirect.com/science/article/pii/S0377221721010201/pdf)):
+```
+@article{Parmentier_et_al-2020,
+    title = {Integer programming on the junction tree polytope for influence diagrams},
+    journal = {INFORMS Journal on Optimization},
+    volume = {2},
+    number = {3},
+    pages = {209--228},
+    year = {2020},
+    issn = {0377-2217},
+    doi = {https://doi.org/10.1287/ijoo.2019.0036},
+    url = {https://pubsonline.informs.org/doi/epdf/10.1287/ijoo.2019.0036},
+    author = {Parmentier, Axel and Cohen, Victor and Lecl{\`e}re, Vincent and Obozinski, Guillaume and Salmon, Joseph},
+    keywords = {Influence diagrams, Partially observed Markov decision processes, probabilistic graphical models, Linear programming}
+}
+```
+
 ## Syntax
 ![](examples/figures/simple-id.svg)
 
