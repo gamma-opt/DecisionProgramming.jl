@@ -1,8 +1,12 @@
 # [Conditional value-at-risk](@id cvar)
 
+The section [Measuring Risk](@ref) explains and visualizes the relationships between the formulation of expected value, value-at-risk and conditional value-at-risk for discrete probability distribution.
+
+In this section, CVaR models are defined for both path-based and RJT models.
+
 ## RJT model
 
-CVaR formulation for the RJT model is close to that of path-based model. A diagram can have only a single value node, when using RJT-based CVaR. Trying to call the RJT-based CVaR function using a diagram with more than one value node results in an error.
+:warning: **WARNING**: A diagram can have only a single value node, when using RJT-based CVaR. Trying to call the RJT-based CVaR function using a diagram with more than one value node results in an error.
 
 We denote the possible utility values with $u ∈ U$ and suppose we can define the probability $p(u)$ of attaining a given utility value. In the presence of a single value node, we define $p(u) = ∑_{s_{C_v}∈ \text{\{} S_{C_v} \vert U(s_{C_v})=u \text{\}} }µ(s_{C_v})$. We can then pose the constraints
 
@@ -28,9 +32,9 @@ $$\bar{ρ}(u),ρ(u)∈[0, 1],\quad ∀u∈U \tag{35}$$
 
 $$η∈\mathbb{R} \tag{36}$$
 
-where where α is the probability level in CVaR<sub>α</sub>.
+where where α is the probability level in CVaR_α.
 
-$CVaR_α$ can be obtained as $1/α ∑_{u∈U} \bar{ρ}(u)u$.
+CVaR_α can be obtained as $1/α ∑_{u∈U} \bar{ρ}(u)u$.
 
 More details, including explanations of variables and constraints, can be found from Herrala et al. (2024)[^1].
 
