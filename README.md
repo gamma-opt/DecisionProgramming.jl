@@ -45,28 +45,21 @@ generate_arcs!(diagram)
 add_probabilities!(diagram, "B", [0.4 0.6; 0.6 0.4])
 add_probabilities!(diagram, "C", [0.7 0.3; 0.3 0.7])
 add_utilities!(diagram, "V", [1.5, 1.7])
-
-generate_diagram!(diagram)
 ```
 
-Using the influence diagram, we create the decision model as follow:
+Using the influence diagram, we generate the model as follows:
 
 ```julia
 using JuMP
-model = Model()
-z = DecisionVariables(model, diagram)
-x_s = PathCompatibilityVariables(model, diagram, z)
-EV = expected_value(model, diagram, x_s)
-@objective(model, Max, EV)
+model, z, variables = generate_model(diagram, model_type="RJT")
 ```
 
 We can optimize the model using MILP solver.
 
 ```julia
-using Gurobi
+using HiGHS
 optimizer = optimizer_with_attributes(
-    () -> Gurobi.Optimizer(Gurobi.Env()),
-    "IntFeasTol"      => 1e-9,
+    () -> HiGHS.Optimizer()
 )
 set_optimizer(model, optimizer)
 optimize!(model)
@@ -94,10 +87,10 @@ To run examples and develop and solve decision models, you have to install JuMP 
 pkg> add JuMP
 ```
 
-We recommend using the [Gurobi](https://www.gurobi.com/) solver, which is an efficient commercial solver. Academics use Gurobi for free with an academic license. You also need to install the Julia Gurobi package.
+We recommend using the [HiGHS](https://highs.dev/) solver, which is an efficient open-source solver.
 
 ```julia-repl
-pkg> add Gurobi
+pkg> add HiGHS
 ```
 
 Now you are ready to use decision programming.
