@@ -144,7 +144,7 @@ for i in 1:N-1
 end
 ```
 The market price of the pig given its health at month $N$ is
-
+@
 $$Y(h_N=ill) = 300,$$
 
 $$Y(h_N=healthy) = 1000.$$

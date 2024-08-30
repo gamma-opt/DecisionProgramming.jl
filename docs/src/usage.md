@@ -317,4 +317,4 @@ The execution of `generate_model` can be divided into six parts:
 
 `generate_model` has an optional argument names, which will name variables according to node names with state indices if set as true and just as simple indices if set as false. The latter might bring some performance improvements for very large models. The default value is true, which is generally preferable due to more clear naming of variables. 
 
-Practical examples of creating influence diagrams and solving them using `generate_model` are given in examples. More information on both [RJT](@ref RJT-model) and [DP models](@ref path-based-model) are in Decision Programming section.
+Practical examples of creating influence diagrams and solving them using `generate_model` are given in examples. More information on both [RJT](decision-programming/RJT-model.md) and [DP models](decision-programming/path-based-model.md) are in Decision Programming section.
