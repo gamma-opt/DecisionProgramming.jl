@@ -573,6 +573,10 @@ function validate_node(diagram::InfluenceDiagram,
             @warn("Value node $name is redundant.")
         end
     end
+    
+    if !all([haskey(diagram.Nodes, name) for name in I_j])
+        throw(DomainError("The nodes in the information set of node $name should be added before $name."))
+end
 end
 
 """

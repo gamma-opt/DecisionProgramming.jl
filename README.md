@@ -35,9 +35,9 @@ using DecisionProgramming
 diagram = InfluenceDiagram()
 
 add_node!(diagram, DecisionNode("A", [], ["a", "b"]))
-add_node!(diagram, DecisionNode("D", ["B", "C"], ["k", "l"]))
 add_node!(diagram, ChanceNode("B", ["A"], ["x", "y"]))
 add_node!(diagram, ChanceNode("C", ["A"], ["v", "w"]))
+add_node!(diagram, DecisionNode("D", ["B", "C"], ["k", "l"]))
 add_node!(diagram, ValueNode("V", ["D"]))
 
 generate_arcs!(diagram)

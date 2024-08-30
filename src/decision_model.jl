@@ -434,43 +434,15 @@ end
 
 
 function factorization_constraints(model::Model, diagram::InfluenceDiagram, name::Name, μ_statevars::Array{VariableRef}, μ_bar_statevars::Array{VariableRef}, z::OrderedDict{Name, DecisionVariable})
-    #I_j_mapping_in_cluster = [findfirst(isequal(node), diagram.RJT.clusters[name]) for node in diagram.I_j[name]] # Map the information set to the variables in the cluster
-    I_j_mapping_in_cluster = [findfirst(isequal(node), diagram.RJT.clusters[name]) for node in diagram.I_j[name]]
-    I_j_states_mapping_in_cluster = similar(I_j_mapping_in_cluster)
-    for node_index in 1:length(I_j_states_mapping_in_cluster)
-        I_j_states_mapping_in_cluster[node_index] = diagram.S[diagram.RJT.clusters[name][node_index]]
-    end
-    #println("kokeilu:")
-    #println(I_j_mapping_in_cluster)
-    #println(I_j_states_mapping_in_cluster)
-    #println("")
+    I_j_mapping_in_cluster = [findfirst(isequal(node), diagram.RJT.clusters[name]) for node in diagram.I_j[name]] # Map the information set to the variables in the cluster
     for index in CartesianIndices(μ_bar_statevars)
         for s_j in 1:length(diagram.States[name])
-            #println(s_j)
-            #println(Tuple(index)[I_j_states_mapping_in_cluster]...,s_j)
-            #println(diagram.X[name])
-            #println(typeof(diagram.X[name]))
             if isa(diagram.Nodes[name], ChanceNode)
                 # μ_{C_v} = μ_{\bar{C}_v}*p
                 @constraint(model, μ_statevars[Tuple(index)...,s_j] == diagram.X[name][Tuple(index)[I_j_mapping_in_cluster]...,s_j]*μ_bar_statevars[index])
             elseif isa(diagram.Nodes[name], DecisionNode)
                 # μ_{C_v} ≤ z
-                
-                #println(index)
-                #println(typeof(index))
-                #println(I_j_states_mapping_in_cluster)
-                #println(s_j)
-                #println(z[name])
-                #println(z[name].z)
-                #if I_j_mapping_in_cluster ==[2, 3]
-                #    println(z[name].z[1, 1, 1])
-                #end
-                #println([I_j_states_mapping_in_cluster]...,s_j)
-                #println(Tuple(index)[I_j_states_mapping_in_cluster]...,s_j)
-                #println(z[name].z[Tuple(index)[I_j_states_mapping_in_cluster]...,s_j])
-                #println("")
-
-                @constraint(model, μ_statevars[Tuple(index)...,s_j] <= z[name].z[Tuple(index)[I_j_states_mapping_in_cluster]...,s_j])
+                @constraint(model, μ_statevars[Tuple(index)...,s_j] <= z[name].z[Tuple(index)[I_j_mapping_in_cluster]...,s_j])
             end
         end
     end
