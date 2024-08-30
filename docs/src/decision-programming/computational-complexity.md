@@ -4,7 +4,7 @@ Decision programming relies on mixed-integer linear programming, which is known 
 
 ## RJT model
 
-2-3 magnitudes faster solving times are expected using RJT formulations compared to path-based formulations. [^1] In problems with small treewidths, such as the pig breeding problem, the solution times can only increase linearly, which makes computational benefits even larger. More analysis on computational complexity of RJT models can be found from Herrala et al. (2024) [^1].
+2-3 magnitudes faster solving times are expected using RJT formulations compared to path-based formulations. [^1] In problems with small treewidths, such as the pig breeding problem, the model size does not grow exponentially with diagram size, which makes computational benefits even larger. More analysis on computational complexity of RJT models can be found from Herrala et al. (2024) [^1].
 
 ## Path-based model
 ### Definitions
