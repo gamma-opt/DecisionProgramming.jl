@@ -1,12 +1,12 @@
 # [RJT model](RJT-model.md)
 ## Introduction
-Influence diagrams can be represented as directed rooted trees composed of clusters, which can be transformed into gradual rooted junction trees (RJTs) by imposing additional constraints. These can then be used to formulate an optimization model. Solving for optimal decision strategies using these formulations can be done with significantly less computing time than for path based formulations. Using RJT based formulations is thus generally preferable.
+Influence diagrams can be represented as directed rooted trees composed of clusters, which can be transformed into gradual rooted junction trees (RJTs) by imposing additional constraints. These can then be used to formulate an optimization model. Solving for optimal decision strategies using these formulations is computationally more efficient than for path based formulations. Using RJT based formulations is thus generally preferable.
 
 The explanations for RJT construction and RJT based model formulation largely follow that of Herrala et al. (2024). [^1]
 
 ## Converting influence diagrams to RJTs
 
-An influence diagram $G = (N, A)$ can be represented as a directed rooted tree $\mathscr{G} = (\mathscr{V}, \mathscr{A})$ composed of *clusters* $C \isin V$, which are subsets of the nodes of the ID, that is, $C \subset \mathscr{V}$. Both $G$ and $\mathscr{G}$ are directed acyclic graphs whose vertices are connected with directed arcs in $A$ and $\mathscr{A}$ , respectively. The main difference between these diagrams lies in the nature of the vertices. In an influence diagram, the set of nodes $N$ consists of individual chance events, decisions and consequences, while the clusters in $\mathscr{V}$ comprise multiple nodes, hence the notational distinction between $N$ and $\mathscr{V}$.
+An influence diagram $G = (N, A)$ can be represented as a directed rooted tree $\mathscr{G} = (\mathscr{V}, \mathscr{A})$ composed of *clusters* $C \isin V$, which are subsets of the nodes of the ID, that is, $C \subset N$. Both $G$ and $\mathscr{G}$ are directed acyclic graphs whose vertices are connected with directed arcs in $A$ and $\mathscr{A}$ , respectively. The main difference between these diagrams lies in the nature of the vertices. In an influence diagram, the set of nodes $N$ consists of individual chance events, decisions and consequences, while the clusters in $\mathscr{V}$ comprise multiple nodes, hence the notational distinction between $N$ and $\mathscr{V}$.
 
 In order to reformulate this tree into a MIP model, additional constraints need to be imposed, making $\mathscr{G}$ a *gradual rooted junction tree*. A directed rooted tree $\mathscr{G} = (\mathscr{V}, \mathscr{A})$ consisting of clusters $C \in \mathscr{V}$ of nodes $j \in N$ is a gradual rooted junction tree corresponding to the influence diagram $G$ if:
 
@@ -16,7 +16,7 @@ In order to reformulate this tree into a MIP model, additional constraints need 
 
 A rooted tree satisfying condition (1) is said to satisfy the *running intersection property*. This condition is sufficient for making $\mathscr{G}$ a rooted junction tree (RJT). In addition, as a consequence of condition (2), we see that a gradual RJT has as many clusters as the original influence diagram has nodes, and each node $j \in N$ can be thought as corresponding to one of the clusters $C \in \mathscr{V}$. Because of this, we refer to clusters using the corresponding nodes $j \in N$ in the influence diagram as the *root cluster* of node $j \in N$, which is denoted as $C_j \in \mathscr{V}$.
 
-An example of influence diagram (upper figure) conversion to RJT (lower figure) for pig breeding problem with $N=4$ is shown below.
+An example of influence diagram (upper figure) conversion to RJT (lower figure) for [pig breeding](@ref pig-breeding) problem with $N=4$ is shown below.
 
 <img src="figures/pig_breeding_N=4.jpg" width="400"> <br>
 
@@ -30,7 +30,7 @@ $$\mathbb{P}(X_N = s_N) = \prod_{j \in N}\mathbb{P}(X_j=s_j \mid X_{I(j)}=s_{I(j
 
 In the formulation, $\mu_{C_j}(s_{C_j})$ represents the probability of the nodes within the cluster $C_j$ being in states $s_{C_j}$ and condition (3) of definition above ensures that $\mathbb{P}(X_j=s_j \mid X_{I(j)}=s_{I(j)})$ can thus be obtained from $\mu_{C_j}(s_{C_j})$ for each $j \in N$.
 
-Variable definitions are given in the influence diagram section.
+Variable definitions are given in the [influence diagram section](@ref influence-diagram).
 
 ## MIP model formulation
 
@@ -73,13 +73,13 @@ $$\qquad\qquad\qquad\qquad  \ \forall (C_i,C_j) \in \mathscr{A}, s^*_{C_i \cap C
 
 #### Conditional probabilities and decision strategies
 
-Moments $\mu_{\overline{C}_j}$ defined above are used here. We get constraints:
+Using the moments $\mu_{\overline{C}_j}$ as defined above, we can formulate the chain rule for joint probabilities as
 
 $$\mu_{C_j}(s_{C_j}) = \mu_{\overline{C}_j}(s_{\overline{C}_j}) p(s_j \mid s_{I(j)}), \ \forall j \in N^C \cup N^V, s_{C_j} \in S_{C_j} \tag{6}\\$$
 
 $$\mu_{C_j}(s_{C_j}) \le \delta(s_j \mid s_{I(j)}), \ \forall j \in N^D, s_{C_j} \in S_{C_j} \tag{7}\\$$
 
-The value $p(s_j \mid s_{I(j)})$ is the conditional probability of a state $s_j$ given the information state $s_{I(j)}$ and $\delta(s_j \mid s_{I(j)})$ the decision strategy in node $j \in N^D$.
+Parmentier et al. (2020) uses a different constraint, but we use the ones above because they are linear. [^2] The value $p(s_j \mid s_{I(j)})$ is the conditional probability of a state $s_j$ given the information state $s_{I(j)}$ and $\delta(s_j \mid s_{I(j)})$ the decision strategy in node $j \in N^D$.
 
 #### Non-negativity and integer constraints
 
@@ -91,7 +91,7 @@ $$\delta(s_j \mid s_{I(j)}) \in \{0,1\}, \ \forall j \in N^D, s_j \in S_j, s_{I(
 
 ## Limitations
 
-Currently, the RJT formulation commands in the package do not support forbidden path or fixed path features.
+Currently, the RJT formulation commands in the package do not support forbidden path or fixed path features. Explanations for them can be found from the [path-based model](@ref path-based-model) section. 
 
 ## Computational considerations
 
