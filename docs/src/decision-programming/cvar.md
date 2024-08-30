@@ -99,9 +99,9 @@ $$\bar{ρ}(u),ρ(u)∈[0, 1],\quad ∀u∈U \tag{35}$$
 
 $$η∈\mathbb{R} \tag{36}$$
 
-where where α is the probability level in CVaR_α.
+where α is the probability level in CVaR_α.
 
-CVaR_α can be obtained as $1/α ∑_{u∈U} \bar{ρ}(u)u$.
+$CVaR_α$ can be obtained as $1/α ∑_{u∈U} \bar{ρ}(u)u$.
 
 More details, including explanations of variables and constraints, can be found from Herrala et al. (2024)[^1].
 
