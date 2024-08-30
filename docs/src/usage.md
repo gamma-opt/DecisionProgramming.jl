@@ -310,8 +310,8 @@ The execution of `generate_model` can be divided into six parts:
 
 5. Expected value function creation. 
 
-5. Objective function creation. 
+5. Objective function creation. Expected value function is set as the objective and set to be maximized in the model.
 
-`generate_model` has an optional argument names, which will name variables according to node names with state indices if set as true and just as simple indices if set as false. The latter might bring some performance improvements for very large models. The default value is true, which is generally preferable due to more clear naming of variables. 
+`generate_model` has an optional argument *names*, which will name variables according to node names with state indices if set as true and just as simple indices if set as false. The latter might bring some performance improvements for very large models. The default value is true, which is generally preferable due to more clear naming of variables. 
 
 Practical examples of creating influence diagrams and solving them using `generate_model` are given in examples. More information on both [RJT](decision-programming/RJT-model.md) and [DP models](decision-programming/path-based-model.md) are in Decision Programming section.
