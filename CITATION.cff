@@ -16,6 +16,12 @@ authors:
 - family-names: "Andelmin"
   given-names: "Juho"
   orcid: "https://orcid.org/0000-0003-3874-2029"
+- family-names: "Terho"
+  given-names: "Topias"
+  orcid: "https://orcid.org/0009-0001-0256-143X"
+- family-names: "Honkamaa"
+  given-names: "Esa"
+  orcid: "https://orcid.org/0009-0006-8115-677X"  
 title: "DecisionProgramming.jl"
 version: 1.0.0
 doi: 10.5281/zenodo.5591893

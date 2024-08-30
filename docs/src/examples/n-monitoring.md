@@ -2,7 +2,6 @@
 ## Description
 The $N$-monitoring problem is described in [^1], sections 4.1 and 6.1.
 
-
 ## Influence Diagram
 ![](figures/n-monitoring.svg)
 
@@ -166,40 +165,24 @@ end
 add_utilities!(diagram, "T", Y_T)
 ```
 
-### Generate Influence Diagram
-The full influence diagram can now be generated. We use the default path probabilities and utilities, which are the default setting in this function. In the [Contingent Portfolio Programming](contingent-portfolio-programming.md) example, we show how to use a user-defined custom path utility function.
-
-In this particular problem, some of the path utilities are negative. In this case, we choose to use the [positive path utility](../decision-programming/decision-model.md) transformation, which translates the path utilities to positive values. This allows us to exclude the probability cut in the next section.
+## Generating the model
+The model can now be created.
 
 ```julia
-generate_diagram!(diagram, positive_path_utility = true)
+model, z, μ_s = generate_model(diagram, model_type="RJT")
 ```
 
-## Decision Model
-We initialise the JuMP model and declare the decision and path compatibility variables. Since we applied an affine transformation to the utility function, the probability cut can be excluded from the model formulation.
+## CVaR
+We also create and a conditional value-at-risk constraint and add it to the model. `conditional_value_at_risk` function returns an expression, which can also be included in objective function or used in other types of constraints.
 
 ```julia
-model = Model()
-z = DecisionVariables(model, diagram)
-x_s = PathCompatibilityVariables(model, diagram, z, probability_cut = false)
+α = 0.15
+CVaR = conditional_value_at_risk(model, diagram, μ_s, α)
+@constraint(model, CVaR>=-1.0)
 ```
 
-The expected utility is used as the objective and the problem is solved using Gurobi.
-
-```julia
-EV = expected_value(model, diagram, x_s)
-@objective(model, Max, EV)
-```
-
-Alternatively, RJT formulation can be used by replacing commands on path compatibility variables and objective function creation with commands
-
-```julia
-μ_s = RJTVariables(model, diagram, z)
-EV = expected_value(model, diagram, μ_s)
-@objective(model, Max, EV)
-```
-
-and then solving using the solver. Significantly faster solving times are expected using RJT formulation.
+## Solving the model
+Setting up the solver and solving:
 
 ```julia
 optimizer = optimizer_with_attributes(
@@ -208,7 +191,6 @@ optimizer = optimizer_with_attributes(
 set_optimizer(model, optimizer)
 optimize!(model)
 ```
-
 
 ## Analyzing Results
 
@@ -227,7 +209,7 @@ julia> print_decision_strategy(diagram, Z, S_probabilities)
 ┌────────────────┬────────────────┐
 │ State(s) of R1 │ Decision in A1 │
 ├────────────────┼────────────────┤
-│ high           │ yes            │
+│ high           │ no             │
 │ low            │ no             │
 └────────────────┴────────────────┘
 ┌────────────────┬────────────────┐
@@ -276,7 +258,7 @@ julia> print_state_probabilities(diagram, S_probabilities, [["A$i" for i in 1:N]
 │   Node │      yes │       no │ Fixed state │
 │ String │  Float64 │  Float64 │      String │
 ├────────┼──────────┼──────────┼─────────────┤
-│     A1 │ 0.737028 │ 0.262972 │             │
+│     A1 │ 0.000000 │ 1.000000 │             │
 │     A2 │ 0.501345 │ 0.498655 │             │
 │     A3 │ 1.000000 │ 0.000000 │             │
 │     A4 │ 0.462002 │ 0.537998 │             │
@@ -286,7 +268,7 @@ julia> print_state_probabilities(diagram, S_probabilities, ["F"])
 │   Node │  failure │  success │ Fixed state │
 │ String │  Float64 │  Float64 │      String │
 ├────────┼──────────┼──────────┼─────────────┤
-│      F │ 0.395566 │ 0.604434 │             │
+│      F │ 0.397176 │ 0.602824 │             │
 └────────┴──────────┴──────────┴─────────────┘
 ```
 
@@ -298,22 +280,14 @@ julia> print_utility_distribution(U_distribution)
 │   Utility │ Probability │
 │   Float64 │     Float64 │
 ├───────────┼─────────────┤
-│ -1.806271 │    0.164580 │
-│ -1.715238 │    0.104478 │
-│ -1.654847 │    0.009397 │
-│ -1.563813 │    0.006952 │
-│ -0.924416 │    0.045627 │
-│ -0.833383 │    0.038920 │
-│ -0.772991 │    0.007659 │
-│ -0.681958 │    0.017953 │
-│ 98.193726 │    0.112766 │
-│ 98.284760 │    0.077866 │
-│ 98.345154 │    0.009793 │
-│ 98.436188 │    0.015513 │
-│ 99.075584 │    0.063066 │
-│ 99.166618 │    0.129725 │
-│ 99.227005 │    0.049114 │
-│ 99.318039 │    0.146591 │
+│ -1.654847 │    0.174726 │
+│ -1.563813 │    0.111906 │
+│ -0.772991 │    0.053494 │
+│ -0.681958 │    0.057050 │
+│ 98.345154 │    0.121809 │
+│ 98.436188 │    0.092903 │
+│ 99.227005 │    0.111972 │
+│ 99.318039 │    0.276139 │
 └───────────┴─────────────┘
 ```
 
@@ -323,10 +297,10 @@ julia> print_statistics(U_distribution)
 │     Name │ Statistics │
 │   String │    Float64 │
 ├──────────┼────────────┤
-│     Mean │  59.165647 │
-│      Std │  49.083835 │
-│ Skewness │  -0.427074 │
-│ Kurtosis │  -1.817258 │
+│     Mean │  59.116251 │
+│      Std │  49.099164 │
+│ Skewness │  -0.420214 │
+│ Kurtosis │  -1.823111 │
 └──────────┴────────────┘
 ```
 

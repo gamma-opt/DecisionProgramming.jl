@@ -165,6 +165,7 @@ Print node information. print_tables determines whether probability and utility 
 # Examples
 ```julia
 print_node("H2", diagram)
+```
 """
 function print_node(node_name::String, diagram::InfluenceDiagram; print_tables::Bool=true)
     if haskey(diagram.Nodes, node_name)
@@ -275,16 +276,13 @@ Print diagram. print_tables determines whether probability and utility values fo
 # Examples
 ```julia
 print_diagram(diagram)
+```
 """
 function print_diagram(diagram::InfluenceDiagram; print_tables::Bool=true)
-    println("An influence diagram")
-    println("")
+    println("An influence diagram\n")
     println("Node names:")
-    println(diagram.Names)
-    println("")
-
-    println("Nodes:")
-    println("")
+    println(diagram.Names, "\n")
+    println("Nodes:\n")
     for node in keys(diagram.Nodes)
         print_node(node, diagram; print_tables)
     end
@@ -348,7 +346,10 @@ end
 """
     mermaid(diagram::InfluenceDiagram, filename::String="mermaid_graph.png")
 
-Print mermaid graph. NOTE TO USER: Accesses the url mermaid.ink, which is used for graphing.
+Print mermaid graph.
+
+!!! note
+    Accesses the url mermaid.ink, which is used for graphing.
 """
 function mermaid(diagram::InfluenceDiagram, filename::String="mermaid_graph.png")
     graph_output = graph(diagram)

@@ -43,8 +43,7 @@ X_F = ProbabilityMatrix(diagram, "F")
 x_F, y_F = rand(2)
 for s in paths([State(2) for i in 1:N])
     denominator = exp(b * sum(fortification(k, a) for (k, a) in enumerate(s)))
-    s1 = [s...]
-    X_F[1, s1..., 1] = max(x_F, 1-x_F) / denominator
+    X_F[1, s..., 1] = max(x_F, 1-x_F) / denominator
     X_F[1, s..., 2] = 1.0 - X_F[1, s..., 1]
     X_F[2, s..., 1] = min(y_F, 1-y_F) / denominator
     X_F[2, s..., 2] = 1.0 - X_F[2, s..., 1]

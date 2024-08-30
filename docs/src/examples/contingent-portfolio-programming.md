@@ -74,19 +74,11 @@ X_CM[3, 3, :] = [1/12, 1/4, 2/3]
 add_probabilities!(diagram, "CM", X_CM)
 ```
 
-### Generating the Influence Diagram
+### Generating the model
 
-We are going to be using a custom objective function, and don't need the default path utilities for that.
+We generate the RJT model:
 ```julia
-generate_diagram!(diagram, default_utility=false)
-```
-
-## Decision Model: Portfolio Selection
-
-We create the decision variables $z(s_j|s_{I(j)})$ and notice that the activation of paths that are compatible with the decision strategy is handled by the problem specific variables and constraints together with the custom objective function, eliminating the need for separate variables representing path activation.
-```julia
-model = Model()
-z = DecisionVariables(model, diagram)
+model, z, μ_s = generate_model(diagram, model_type="RJT")
 ```
 
 ### Creating problem specific variables
@@ -123,7 +115,7 @@ Decision variables $x^T(t)∈\{0, 1\}$ indicate which technologies are selected.
 Decision variables $x^A(a∣d_i^P,c_j^T)∈\{0, 1\}$ indicate which applications are selected.
 
 ```julia
-function variables(model::Model, dims::AbstractVector{Int}; binary::Bool=false)
+function model_variables(model::Model, dims::AbstractVector{Int}; binary::Bool=false)
     v = Array{VariableRef}(undef, dims...)
     for i in eachindex(v)
         v[i] = @variable(model, binary=binary)
@@ -131,8 +123,8 @@ function variables(model::Model, dims::AbstractVector{Int}; binary::Bool=false)
     return v
 end
 
-x_T = variables(model, [n_DP, n_T]; binary=true)
-x_A = variables(model, [n_DP, n_CT, n_DA, n_A]; binary=true)
+x_T = model_variables(model, [n_DP, n_T]; binary=true)
+x_A = model_variables(model, [n_DP, n_CT, n_DA, n_A]; binary=true)
 ```
 
 Number of patents $x^T(t) = ∑_i x_i^T(t) z(d_i^P)$

@@ -28,47 +28,89 @@ Once all the nodes are added, we generate the arcs. This orders the nodes and nu
 ```julia
 generate_arcs!(diagram)
 ```
-Now the fields `Names`, `I_j`, `States`, `S`, `C`, `D` and `V` in the influence diagram structure have been properly filled. The `Names` field holds the names of all nodes in the order of their numbers. From this we can see that node D1 has been numbered 1, node C1 has been numbered 2 and node C2 has been numbered 3. Field `I_j` holds the information sets of each node. Notice, that the nodes are identified by their numbers. Field `States` holds the names of the states of each node and field `S` holds the number of states each node has. Fields `C`, `D` and `V` contain the chance, decision and value nodes respectively.
+Now the fields `Nodes`, `Names`, `I_j`, `States`, `S`, `C`, `D` and `V` in the influence diagram structure have been properly filled. The `Nodes` field holds all node information (name, index, type, information set and states). The `Names` field holds the names of all nodes. Field `I_j` holds the information sets of each node. Field `States` holds the names of the states of each node and field `S` holds the number of states each node has. Fields `C`, `D` and `V` contain the chance, decision and value nodes respectively. In all fields other than `Names`, the information is stored in OrderedDict with node name as key.
 
 ```julia
+julia> diagram
+An influence diagram
+
+Node names:
+["D1", "C2", "C1", "V"]
+
+Nodes:
+
+An influence diagram node
+Name: D1
+Index: 1
+Type: DecisionNode
+Information Set: empty
+States: ["a", "b"]
+
+An influence diagram node
+Name: C2
+Index: 2
+Type: ChanceNode
+Information Set: ["D1", "C1"]
+States: ["v", "w"]
+
+An influence diagram node
+Name: C1
+Index: 3
+Type: ChanceNode
+Information Set: empty
+States: ["x", "y", "z"]
+
+An influence diagram node
+Name: V
+Index: 4
+Type: ValueNode
+Information Set: ["C2"]
+
+julia> diagram.Nodes
+OrderedCollections.OrderedDict{String, AbstractNode} with 4 entries:
+  "D1" => An influence diagram node…
+  "C2" => An influence diagram node…
+  "C1" => An influence diagram node…
+  "V"  => An influence diagram node…
+
 julia> diagram.Names
-4-element Array{String,1}:
+4-element Vector{String}:
  "D1"
- "C1"
  "C2"
+ "C1"
  "V"
 
 julia> diagram.I_j
-4-element Array{Array{Int16,1},1}:
- []
- []
- [1, 2]
- [3]
+OrderedCollections.OrderedDict{String, Vector{String}} with 4 entries:
+  "D1" => []
+  "C2" => ["D1", "C1"]
+  "C1" => []
+  "V"  => ["C2"]
 
 julia> diagram.States
-3-element Array{Array{String,1},1}:
- ["a", "b"]
- ["x", "y", "z"]
- ["v", "w"]
+OrderedCollections.OrderedDict{String, Vector{String}} with 3 entries:
+  "D1" => ["a", "b"]
+  "C2" => ["v", "w"]
+  "C1" => ["x", "y", "z"]
 
 julia> diagram.S
-3-element States:
- 2
- 3
- 2
+OrderedCollections.OrderedDict{String, Int16} with 3 entries:
+  "D1" => 2
+  "C2" => 2
+  "C1" => 3
 
 julia> diagram.C
-2-element Array{Int16,1}:
- 2
- 3
+OrderedCollections.OrderedDict{String, ChanceNode} with 2 entries:
+  "C2" => An influence diagram node…
+  "C1" => An influence diagram node…
 
 julia> diagram.D
-1-element Array{Int16,1}:
- 1
+OrderedCollections.OrderedDict{String, DecisionNode} with 1 entry:
+  "D1" => An influence diagram node…
 
 julia> diagram.V
-1-element Array{Int16,1}:
- 4
+OrderedCollections.OrderedDict{String, ValueNode} with 1 entry:
+  "V" => An influence diagram node…
 ```
 
 ## Probability Matrices
@@ -92,32 +134,32 @@ add_probabilities!(diagram, "C1", X_C1)
 The `add_probabilities!` function adds the probability matrix as a `Probabilities` structure into the influence diagram's `X` field.
 ```julia
 julia> diagram.X
-1-element Array{Probabilities,1}:
- [0.1, 0.3, 0.6]
+OrderedCollections.OrderedDict{String, Probabilities} with 1 entry:
+  "C1" => [0.1, 0.3, 0.6]
 ```
 
 
-As another example, we will add the probability matrix of node C2. It has two nodes in its information set: C1 and D1. These nodes have 3 and 2 states, respectively. Node C2 itself has 2 states. Now, the question is: should the dimensions of the probability matrix be $(|S_{C1}|, |\ S_{D1}|, |\ S_{C2}|) = (3, 2, 2)$ or $(|S_{D1}|, |\ S_{C1}|, \ |S_{C2}|) = (2, 3, 2)$? The answer is that the dimensions should be in ascending order of the nodes' numbers that they correspond to. This is also the order that the information set is in in the field `I_j`. In this case the influence diagram looks like this:
+As another example, we will add the probability matrix of node C2. It has two nodes in its information set: C1 and D1. These nodes have 3 and 2 states, respectively. Node C2 itself has 2 states. Now, the question is: should the dimensions of the probability matrix be $(|S_{C1}|, |\ S_{D1}|, |\ S_{C2}|) = (3, 2, 2)$ or $(|S_{D1}|, |\ S_{C1}|, \ |S_{C2}|) = (2, 3, 2)$? The answer is that the dimensions should be in ascending order of the nodes' indices that they correspond to. This is also the order that the information set is in in the field `I_j`. In this case the influence diagram looks like this:
 ```julia
 julia> diagram.Names
-4-element Array{String,1}:
+4-element Vector{String}:
  "D1"
- "C1"
  "C2"
+ "C1"
  "V"
 
- julia> diagram.I_j
-4-element Array{Array{Int16,1},1}:
- []
- []
- [1, 2]
- [3]
+julia> diagram.I_j
+OrderedCollections.OrderedDict{String, Vector{String}} with 4 entries:
+  "D1" => []
+  "C2" => ["D1", "C1"]
+  "C1" => []
+  "V"  => ["C2"]
 
- julia> diagram.S
-3-element States:
- 2
- 3
- 2
+julia> diagram.S
+OrderedCollections.OrderedDict{String, Int16} with 3 entries:
+  "D1" => 2
+  "C2" => 2
+  "C1" => 3
 ```
 
 Therefore, the probability matrix of node C2 should have dimensions $(|S_{D1}|, |\ S_{C1}|, \ |S_{C2}|) = (2, 3, 2)$. The probability matrix can be added by declaring the matrix and then filling in the probability values as shown below.
@@ -132,10 +174,10 @@ add_probabilities!(diagram, "C2", X_C2)
 In order to be able to fill in the probability values, it is crucial to understand what the matrix indices represent. The indices represent a subpath in the influence diagram. The states in the path are referred to with their numbers instead of with their names. The states of a node are numbered according to their positions in the vector of states in field `States`. The order of the states of each node is seen below. From this, we can deduce that for nodes D1, C1, C2 the subpath `(1,1,1)` corresponds to subpath $(a, x, v)$ and subpath `(1, 3, 2)` corresponds to subpath $(a, z, w)$. Therefore, the probability value at `X_C2[1, 3, 2]` should be the probability of the scenario $(a, z, w)$ occuring.
 ```julia
 julia> diagram.States
-3-element Array{Array{String,1},1}:
- ["a", "b"]
- ["x", "y", "z"]
- ["v", "w"]
+OrderedCollections.OrderedDict{String, Vector{String}} with 3 entries:
+  "D1" => ["a", "b"]
+  "C2" => ["v", "w"]
+  "C1" => ["x", "y", "z"]
 ```
 ### Helper Syntax
 Figuring out the dimensions of a probability matrix and adding the probability values is difficult. Therefore, we have implemented an easier syntax.
@@ -250,12 +292,26 @@ julia> diagram.Y
  [-100.0, 400.0]
 ```
 
-## Generating the influence diagram
+## Generating and solving the model
 
-The final part of modeling an influence diagram using the Decision Programming package is generating the full influence diagram. This is done using the `generate_diagram!` function.
+The final part is generating and solving the model. Generating the model is done using the `generate_model` function.
 ```julia
-generate_diagram!(diagram)
+model, z, variables = generate_model(diagram, model_type="RJT")
 ```
-In this function, first, the probability and utility matrices in fields `X` and `Y` are sorted according to the chance and value nodes' indices.
+The execution of `generate_model` can be divided into six parts:
 
-Second, the path probability and path utility types are declared and added into fields `P` and `U` respectively. These types define how the path probability $p(𝐬)$ and path utility $\mathcal{U}(𝐬)$ are defined in the model. By default, the function will set them to default path probability and default path utility. See the [influence diagram](decision-programming/influence-diagram.md) for more information on default path probability and utility.
+1. Diagram generation using `generate_diagram!`. This part generates the influence diagram. Probability and utility matrices are sorted in fields `X` and `Y` according to diagram.Names. Path probability and path utility types are initialized and added into fields `P` and `U`, respectively. By default `generate_model` and `generate_diagram!` use the default path probabilities and utilities, which are defined as the joint probability of all chance events in the diagram and the sum of utilities in value nodes, respectively.
+
+2. Initializing JuMP Model. 
+
+3. Initializing and adding decision variables.
+
+4. Initializing and adding either the RJT variables the path compatibility variables. This part generates either RJT variables (model_type="RJT") or path compatibility variables (model_type="DP") based on the model type chosen.
+
+5. Expected value function creation. 
+
+5. Objective function creation. Expected value function is set as the objective and set to be maximized in the model.
+
+`generate_model` has an optional argument *names*, which will name variables according to node names with state indices if set as true and just as simple indices if set as false. The latter might bring some performance improvements for very large models. The default value is true, which is generally preferable due to more clear naming of variables. 
+
+Practical examples of creating influence diagrams and solving them using `generate_model` are given in examples. More information on both [RJT](decision-programming/RJT-model.md) and [DP models](decision-programming/path-based-model.md) are in Decision Programming section.

@@ -445,6 +445,12 @@ end
     struct RJT
 
 A struct for rooted junction trees.
+
+# Fields
+- `clusters::Dict{Name, Vector{Name}}`: Dictionary of clusters in an RJT with 
+    the root node as key and the names of nodes in a cluster as values.
+- `arcs::Vector{Tuple{Name, Name}}`: Arcs between clusters specified as a vector
+    tuples with root node names defining the clusters.
 """
 struct RJT
     clusters::Dict{Name, Vector{Name}}
@@ -493,6 +499,7 @@ and their respective abstract nodes as values.
 - `U::AbstractPathUtility`: Path utilities.
 - `translation::Utility`: Utility translation for storing the positive or negative
     utility translation.
+- `RJT::RJT`: Rooted junction tree associated with the diagram.
 
 
 # Examples
@@ -566,6 +573,10 @@ function validate_node(diagram::InfluenceDiagram,
             @warn("Value node $name is redundant.")
         end
     end
+    
+    if !all([haskey(diagram.Nodes, name) for name in I_j])
+        throw(DomainError("The nodes in the information set of node $name should be added before $name."))
+end
 end
 
 """
@@ -1001,8 +1012,9 @@ function generate_diagram!(diagram::InfluenceDiagram;
     positive_path_utility::Bool=false,
     negative_path_utility::Bool=false)
 
-    #Reordering diagram.X to the order of diagram.Names
+    #Reordering diagram.X and diagram.V to the order of diagram.Names
     diagram.X = OrderedDict(key => diagram.X[key] for key in diagram.Names if haskey(diagram.X, key))
+    diagram.V = OrderedDict(key => diagram.V[key] for key in diagram.Names if haskey(diagram.V, key))
 
     # Declare P and U if defaults are used
     if default_probability

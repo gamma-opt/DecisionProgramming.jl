@@ -103,27 +103,19 @@ generate_arcs!(diagram)
 @test diagram.X == OrderedDict{String, Probabilities}()
 @test diagram.Y == OrderedDict{String, Utilities}()
 
-#Non-existent node B
+#Nodes not added in topological order
 diagram = InfluenceDiagram()
 add_node!(diagram, ChanceNode("A", [], ["a", "b"]))
-add_node!(diagram, ChanceNode("C", ["B"], ["a", "b", "c"]))
-add_node!(diagram, ValueNode("V", ["A", "C"]))
-@test_throws DomainError generate_arcs!(diagram)
-
-#Cyclic
-diagram = InfluenceDiagram()
-add_node!(diagram, ChanceNode("A", ["R"], ["a", "b"]))
-add_node!(diagram, ChanceNode("R", ["C", "A"], ["a", "b", "c"]))
-add_node!(diagram, ChanceNode("C", ["A"], ["a", "b", "c"]))
-add_node!(diagram, ValueNode("V", ["A", "C"]))
-@test_throws DomainError generate_arcs!(diagram)
+@test_throws DomainError add_node!(diagram, ChanceNode("C", ["B"], ["a", "b", "c"]))
+@test_throws DomainError add_node!(diagram, ValueNode("V", ["A", "C"]))
 
 #Value node in I_j
 diagram = InfluenceDiagram()
-add_node!(diagram, ChanceNode("A", ["R"], ["a", "b"]))
-add_node!(diagram, ChanceNode("R", ["C", "A"], ["a", "b", "c"]))
-add_node!(diagram, ChanceNode("C", ["A", "V"], ["a", "b", "c"]))
+add_node!(diagram, ChanceNode("A", [], ["a", "b"]))
 add_node!(diagram, ValueNode("V", ["A"]))
+add_node!(diagram, ChanceNode("C", ["A", "V"], ["a", "b", "c"]))
+add_node!(diagram, ChanceNode("R", ["C", "A"], ["a", "b", "c"]))
+
 @test_throws DomainError generate_arcs!(diagram)
 
 @info "Testing ProbabilityMatrix"
