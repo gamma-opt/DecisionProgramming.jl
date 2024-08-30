@@ -66,7 +66,6 @@ Index: 4
 Type: ValueNode
 Information Set: ["C2"]
 
-```julia
 julia> diagram.Nodes
 OrderedCollections.OrderedDict{String, AbstractNode} with 4 entries:
   "D1" => An influence diagram node…
@@ -74,8 +73,6 @@ OrderedCollections.OrderedDict{String, AbstractNode} with 4 entries:
   "C1" => An influence diagram node…
   "V"  => An influence diagram node…
 
-
-```julia
 julia> diagram.Names
 4-element Vector{String}:
  "D1"
