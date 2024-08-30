@@ -121,7 +121,7 @@ Y_V3["peach", :] = [-40, -20, 0]
 add_utilities!(diagram, "V3", Y_V3)
 ```
 
-## Generating model
+## Generating the model
 Next we generate the decision model using RJT formulation.
 
 ```julia

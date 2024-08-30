@@ -161,7 +161,7 @@ After adding nodes, generating arcs and defining probability and utility values,
 
 By default `generate_model` and `generate_diagram!` use the default path probabilities and utilities, which are defined as the joint probability of all chance events in the diagram and the sum of utilities in value nodes, respectively. In the [Contingent Portfolio Programming](contingent-portfolio-programming.md) example, we show how to use a user-defined custom path utility function. In the pig breeding problem, when the $N$ is large some of the path utilities become negative. In this case, we choose to use the [positive path utility](../decision-programming/path-based-model.md) transformation, which allows us to exclude the probability cut in the next section.
 
-Since we applied an affine transformation to the utility function, making all path utilities positive, the probability cut can be excluded from the model (which is also the default setting as). The purpose of this is discussed in the [theoretical section](../decision-programming/path-based-model.md) of this documentation.
+Since we applied an affine transformation to the utility function, making all path utilities positive, the probability cut can be excluded from the model (which is also the default setting). The purpose of this is discussed in the [theoretical section](../decision-programming/path-based-model.md) of this documentation.
 
 ```julia
 model, z, x_s = generate_model(diagram, model_type="DP", positive_path_utility=true, probability_cut=false)

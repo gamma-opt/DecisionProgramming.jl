@@ -4,40 +4,6 @@ The section [Measuring Risk](@ref) explains and visualizes the relationships bet
 
 In this section, CVaR models are defined for both path-based and RJT models.
 
-## RJT model
-
-:warning: **WARNING**: A diagram can have only a single value node, when using RJT-based CVaR. Trying to call the RJT-based CVaR function using a diagram with more than one value node results in an error.
-
-We denote the possible utility values with $u ∈ U$ and suppose we can define the probability $p(u)$ of attaining a given utility value. In the presence of a single value node, we define $p(u) = ∑_{s_{C_v}∈ \text{\{} S_{C_v} \vert U(s_{C_v})=u \text{\}} }µ(s_{C_v})$. We can then pose the constraints
-
-$$η-u≤M λ(u),\quad ∀u∈U \tag{26}$$
-
-$$η-u≥(M+ϵ) λ(u) - M,\quad ∀u∈U \tag{27}$$
-
-$$η-u≤(M+ϵ) \bar{λ}(u) - ϵ,\quad ∀u∈U \tag{28}$$
-
-$$η-u≥M (\bar{λ}(u) - 1),\quad ∀u∈U \tag{29}$$
-
-$$\bar{ρ}(u) ≤ \bar{λ}(u),\quad ∀u∈U \tag{30}$$
-
-$$p(u) - (1 - λ(u)) ≤ ρ(u) ≤ λ(u),\quad ∀u∈U \tag{31}$$
-
-$$ρ(u) ≤ \bar{ρ}(u) ≤ p(u),\quad ∀u∈U \tag{32}$$
-
-$$∑_{u∈U}\bar{ρ}(u) = α \tag{33}$$
-
-$$\bar{λ}(u), λ(u)∈\{0, 1\},\quad ∀u∈U \tag{34}$$
-
-$$\bar{ρ}(u),ρ(u)∈[0, 1],\quad ∀u∈U \tag{35}$$
-
-$$η∈\mathbb{R} \tag{36}$$
-
-where where α is the probability level in CVaR_α.
-
-CVaR_α can be obtained as $1/α ∑_{u∈U} \bar{ρ}(u)u$.
-
-More details, including explanations of variables and constraints, can be found from Herrala et al. (2024)[^1].
-
 ## Path-based model
 
 Given decision strategy $Z,$ we define the cumulative distribution of compatible paths' probabilities as
@@ -103,6 +69,40 @@ $$η∈[u^-, u^+] \tag{24}$$
 We can express the conditional value-at-risk objective as
 
 $$\operatorname{CVaR}_α(Z)=\frac{1}{α}∑_{𝐬∈𝐒}\bar{ρ}(𝐬) \mathcal{U}(𝐬)\tag{25}.$$
+
+## RJT model
+
+:warning: **WARNING**: A diagram can have only a single value node, when using RJT-based CVaR. Trying to call the RJT-based CVaR function using a diagram with more than one value node results in an error.
+
+CVaR formulation for the RJT model is close to that of path-based model. We denote the possible utility values with $u ∈ U$ and suppose we can define the probability $p(u)$ of attaining a given utility value. In the presence of a single value node, we define $p(u) = ∑_{s_{C_v}∈ \text{\{} S_{C_v} \vert U(s_{C_v})=u \text{\}} }µ(s_{C_v})$. We can then pose the constraints
+
+$$η-u≤M λ(u),\quad ∀u∈U \tag{26}$$
+
+$$η-u≥(M+ϵ) λ(u) - M,\quad ∀u∈U \tag{27}$$
+
+$$η-u≤(M+ϵ) \bar{λ}(u) - ϵ,\quad ∀u∈U \tag{28}$$
+
+$$η-u≥M (\bar{λ}(u) - 1),\quad ∀u∈U \tag{29}$$
+
+$$\bar{ρ}(u) ≤ \bar{λ}(u),\quad ∀u∈U \tag{30}$$
+
+$$p(u) - (1 - λ(u)) ≤ ρ(u) ≤ λ(u),\quad ∀u∈U \tag{31}$$
+
+$$ρ(u) ≤ \bar{ρ}(u) ≤ p(u),\quad ∀u∈U \tag{32}$$
+
+$$∑_{u∈U}\bar{ρ}(u) = α \tag{33}$$
+
+$$\bar{λ}(u), λ(u)∈\{0, 1\},\quad ∀u∈U \tag{34}$$
+
+$$\bar{ρ}(u),ρ(u)∈[0, 1],\quad ∀u∈U \tag{35}$$
+
+$$η∈\mathbb{R} \tag{36}$$
+
+where where α is the probability level in CVaR_α.
+
+CVaR_α can be obtained as $1/α ∑_{u∈U} \bar{ρ}(u)u$.
+
+More details, including explanations of variables and constraints, can be found from Herrala et al. (2024)[^1].
 
 ## Convex Combination
 We can combine expected value and conditional value-at-risk using a convex combination at a fixed probability level $α∈(0, 1]$ as follows

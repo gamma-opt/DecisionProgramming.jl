@@ -294,19 +294,19 @@ julia> diagram.Y
 
 ## Generating and solving the model
 
-The final part is generating and solving the model. Generating model is done using the `generate_model` function.
+The final part is generating and solving the model. Generating the model is done using the `generate_model` function.
 ```julia
 model, z, variables = generate_model(diagram, model_type="RJT")
 ```
 The execution of `generate_model` can be divided into six parts:
 
-1. Diagram generation using `generate_diagram!`. Generates the influence diagram. Probability and utility matrices are sorted in fields `X` and `Y` according to diagram.Names. Path probability and path utility types are initialized and added into fields `P` and `U`, respectively. By default `generate_model` and `generate_diagram!` use the default path probabilities and utilities, which are defined as the joint probability of all chance events in the diagram and the sum of utilities in value nodes, respectively.
+1. Diagram generation using `generate_diagram!`. This part generates the influence diagram. Probability and utility matrices are sorted in fields `X` and `Y` according to diagram.Names. Path probability and path utility types are initialized and added into fields `P` and `U`, respectively. By default `generate_model` and `generate_diagram!` use the default path probabilities and utilities, which are defined as the joint probability of all chance events in the diagram and the sum of utilities in value nodes, respectively.
 
 2. Initializing JuMP Model. 
 
 3. Initializing and adding decision variables.
 
-4. Initializing and adding either the RJT variables the path compatibility variables. Generates either RJT variables (model_type="RJT") or path compatibility variables (model_type="DP") based on the model type chosen.
+4. Initializing and adding either the RJT variables the path compatibility variables. This part generates either RJT variables (model_type="RJT") or path compatibility variables (model_type="DP") based on the model type chosen.
 
 5. Expected value function creation. 
 

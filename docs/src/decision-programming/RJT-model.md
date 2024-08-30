@@ -95,7 +95,7 @@ Currently, the RJT formulation commands in the package do not support forbidden 
 
 ## Computational considerations
 
-2-3 magnitudes faster solving times are expected using RJT formulations compared to path-based formulations. [^1] In problems with small treewidths, such as the pig breeding problem, the solution times can only increase linearly, which makes computational benefits even larger.
+2-3 magnitudes faster solving times are expected using RJT formulations compared to path-based formulations. [^1] In problems with small treewidths, such as the pig breeding problem, the model size does not grow exponentially with diagram size, which makes computational benefits even larger.
 
 ## References
 
