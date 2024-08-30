@@ -68,7 +68,7 @@ The set of **all decision strategies** is denoted with $ℤ.$
 
 
 
-## Path Probability (@id path-probability-doc)
+## [Path Probability](@id path-probability-doc)
 The probability distributions at chance and decision nodes define the probability distribution over all paths $𝐬∈𝐒,$ which depends on the decision strategy $Z∈ℤ.$ We refer to it as the path probability
 
 $$ℙ(X=𝐬∣Z) = ∏_{j∈C∪D} ℙ(X_j=𝐬_j∣X_{I(j)}=𝐬_{I(j)}).$$
