@@ -18,9 +18,9 @@ A rooted tree satisfying condition (1) is said to satisfy the *running intersect
 
 An example of influence diagram (upper figure) conversion to RJT (lower figure) for [pig breeding](@ref pig-breeding) problem with $N=4$ is shown below.
 
-<img src="figures/pig_breeding_N=4.jpg" width="400"> <br>
+![](figures/pig_breeding_N=4.jpg)
 
-<img src="figures/pig_breeding_rjt_N=4.jpg" width="330">
+![](figures/pig_breeding_rjt_N=4.jpg)
 
 ## Formulating an optimization problem based on gradual RJT
 
