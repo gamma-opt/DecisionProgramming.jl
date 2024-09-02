@@ -1,4 +1,4 @@
-# [Path-based model](path-based-model.md)
+# [Path-based model](@id path-based-model)
 ## Introduction
 
 This section introduces path variables and how to structure an optimization problem based on them. Generally solution times are slower for path based formulations than for RJT based formulations and thus using [RJT formulations](RJT-model.md) is recommended.
@@ -126,7 +126,7 @@ The **default path utility** is the sum of node utilities $U_j$
 
 $$\mathcal{U}(𝐬) = ∑_{j∈V} U_j(Y_j(𝐬_{I(j)})).$$
 
-The utility function affects the objectives as discussed on the [Decision Model](#Decision Model) page. We can choose the utility function such that the path utility function either returns:
+The utility function affects the objectives as discussed on the [Decision Model](#Decision-Model) page. We can choose the utility function such that the path utility function either returns:
 
 * a numerical value, which leads to a mixed-integer linear programming (MILP) formulation or
 * a linear function with real and integer-valued variables, which leads to a mixed-integer quadratic programming (MIQP) formulation.
@@ -152,7 +152,7 @@ Formally, the path $𝐬$ is **ineffective** if and only if $𝐬_A∈𝐒_A^′
 
 $$𝐒^∗=\{𝐬∈𝐒∣𝐬_{A}∉𝐒_{A}^′\}⊆𝐒.$$
 
-The [Decision Model](#Decision Model) size depends on the number of effective paths, rather than the number of paths or size of the influence diagram directly.
+The [Decision Model](#Decision-Model) size depends on the number of effective paths, rather than the number of paths or size of the influence diagram directly.
 
 In Decision Programming, one can declare certain subpaths to be ineffective using the *fixed path* and *forbidden paths* sets.
 
@@ -196,7 +196,7 @@ If there are no other ineffective subpaths, we have
 
 $$𝐒^∗ = 𝐒(X).$$
 
-Notice that, the number of active paths affects the size of the [Decision Model](#Decision Model) because it depends on the number of effective paths.
+Notice that, the number of active paths affects the size of the [Decision Model](#Decision-Model) because it depends on the number of effective paths.
 
 
 ## Compatible Paths

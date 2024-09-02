@@ -1,4 +1,4 @@
-# [RJT model](RJT-model.md)
+# [RJT model](@id RJT-model)
 ## Introduction
 Influence diagrams can be represented as directed rooted trees composed of clusters, which can be transformed into gradual rooted junction trees (RJTs) by imposing additional constraints. These can then be used to formulate an optimization model. Solving for optimal decision strategies using these formulations is computationally more efficient than for path based formulations. Using RJT based formulations is thus generally preferable.
 
@@ -101,8 +101,6 @@ Currently, the RJT formulation commands in the package do not support forbidden 
 
 [^1]: Herrala, O., Terho, T., Oliveira, F., 2024. Risk-averse decision strategies for influence diagrams using rooted junction trees. Retrieved from [https://arxiv.org/abs/2401.03734]
 
-[^2]: Parmentier, A., Cohen, V., Leclere, V., Obozinski, G., Salmon, J., 2020. `
-Integer programming on the junction tree polytope for influence diagrams. INFORMS Journal on Optimization 2, 209–228.
+[^2]: Parmentier, A., Cohen, V., Leclere, V., Obozinski, G., Salmon, J., 2020. Integer programming on the junction tree polytope for influence diagrams. INFORMS Journal on Optimization 2, 209–228.
 
-[^3]: Koller, D., Friedman, N., 2009. Probabilistic graphical models: principles
-and techniques. MIT press
+[^3]: Koller, D., Friedman, N., 2009. Probabilistic graphical models: principles and techniques. MIT press
