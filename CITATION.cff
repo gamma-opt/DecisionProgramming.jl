@@ -23,7 +23,7 @@ authors:
   given-names: "Esa"
   orcid: "https://orcid.org/0009-0006-8115-677X"  
 title: "DecisionProgramming.jl"
-version: 1.0.0
-doi: 10.5281/zenodo.5591893
-date-released: 2021-10-22
+version: 2.0.0
+doi: 10.5281/zenodo.13639605
+date-released: 2024-09-03
 url: "https://github.com/gamma-opt/DecisionProgramming.jl"
