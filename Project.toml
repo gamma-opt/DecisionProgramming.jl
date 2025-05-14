@@ -1,7 +1,7 @@
 name = "DecisionProgramming"
 uuid = "0e836bf4-a496-11ea-2c13-edcbe498ce6b"
 authors = ["Jaan Tollander de Balsch", "Helmi Hankimaa", "Olli Herrala", "Fabricio Oliveira", "Esa Honkamaa", "Topias Terho"]
-version = "2.0.0"
+version = "2.0.1"
 
 [deps]
 Base64 = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
