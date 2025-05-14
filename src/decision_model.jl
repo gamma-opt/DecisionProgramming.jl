@@ -1,6 +1,6 @@
 using JuMP
 
-function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node}, names::Bool, base_name::String="")
+function decision_variable(model::Model, S::States, d::Node, I_d::Vector{Node}, names::Bool, base_name::String="z")
     # Create decision variables.
     dims = S[[I_d; d]]
     z_d = Array{VariableRef}(undef, dims...)
@@ -378,7 +378,6 @@ function ID_to_RJT(diagram::InfluenceDiagram)
         C_j_aux = sort([(elem, findfirst(isequal(elem), names)) for elem in C_j], by = last)
         C_j = [C_j_tuple[1] for C_j_tuple in C_j_aux]
         C_rjt[names[j]] = C_j
-        
         if length(C_rjt[names[j]]) > 1
             u = maximum([findfirst(isequal(name), names) for name in setdiff(C_j, [names[j]])])
             push!(A_rjt, (names[u], names[j]))
@@ -573,15 +572,16 @@ function conditional_value_at_risk(model::Model,
 
     #Finding the name and index of differing element between value nodes' information set and its preceding nodes rjt cluster. 
     #This is needed in conditional sums for constraints.
-    missing_element = setdiff(diagram.RJT.clusters[preceding_node_name], diagram.Nodes[value_node_name].I_j)[1]
-    index_to_remove = findfirst(x -> x == missing_element, diagram.RJT.clusters[preceding_node_name])
+    missing_element = setdiff(diagram.RJT.clusters[preceding_node_name], diagram.Nodes[value_node_name].I_j)
+    index_to_remove = findall(x -> x in missing_element, diagram.RJT.clusters[preceding_node_name])
 
     statevars = μVars.data[preceding_node_name].statevars
     statevars_dims = collect(size(statevars))
     statevars_dims_ranges = [1:d for d in statevars_dims]
     
-    function remove_index(old_tuple::NTuple{N, Int64}, index::Int64) where N
-        return collect(ntuple(i -> i >= index ? old_tuple[i + 1] : old_tuple[i], N-1))
+    function remove_index(old_tuple::NTuple{N, Int64}, index::Vector{Int64}) where N
+        vector = [old_tuple[i] for i in 1:length(old_tuple) if !(i in index)]
+        return collect(ntuple(i -> vector[i], N-length(index)))
     end
 
     for u in unique(diagram.U.Y[1])
