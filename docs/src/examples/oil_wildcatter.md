@@ -25,7 +25,7 @@ The wildcatter drilling decision is represented by the decision node $D = \{\tex
 The value nodes in the model are 
 - $C$: representing the cost of running the seismic survey.
 - $U$: represents the net value of drilling the well, accounting for the drilling cost. The revenue depends on the state of the site.
-# Initialise influence diagram
+### Initialise influence diagram
 
 We start defining the Decision Programming model by initialising the influence diagram.
 
