@@ -253,10 +253,10 @@ julia> print_statistics(U_distribution)
 
 ## References
 
-[^1]: Raiffa, H. (1968). Decision analysis: Introductory lectures on choices under uncertainty.
+1. Raiffa, H. (1968). *Decision Analysis: Introductory Lectures on Choices under Uncertainty.*
 
-[^2]: Milkov, A. V. (2015). Risk tables for less biased and more consistent estimation of probability of geological success (PoS) for segments with conventional oil and gas prospective resources. Earth-Science Reviews, 150, 453-476.
+2. Milkov, A. V. (2015). Risk tables for less biased and more consistent estimation of probability of geological success (PoS) for segments with conventional oil and gas prospective resources. *Earth-Science Reviews, 150*, 453–476.
 
-[^3]: Bielza, C., Gómez, M., & Shenoy, P. P. (2011). A review of representation issues and modeling challenges with influence diagrams. Omega, 39(3), 227-241.
+3. Bielza, C., Gómez, M., & Shenoy, P. P. (2011). A review of representation issues and modeling challenges with influence diagrams. *Omega, 39*(3), 227–241.
 
-[^4]: Terho, T., Oliveira, F., Salo, A., & Munari, P. (2026). An efficient mixed-integer linear programming formulation for solving influence diagrams. arXiv preprint arXiv:2601.08460.
+4. Terho, T., Oliveira, F., Salo, A., & Munari, P. (2026). An efficient mixed-integer linear programming formulation for solving influence diagrams. *arXiv preprint arXiv:2601.08460*.
