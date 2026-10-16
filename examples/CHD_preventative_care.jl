@@ -117,14 +117,12 @@ const R_states = [string(x) * "%" for x in [0:1:100;]]
 
 
 add_node!(diagram, ChanceNode("R0", [], R_states))
-add_node!(diagram, ChanceNode("R1", ["R0", "H", "T1"], R_states))
-add_node!(diagram, ChanceNode("R2", ["R1", "H", "T2"], R_states))
 add_node!(diagram, ChanceNode("H", ["R0"], H_states))
-
 add_node!(diagram, DecisionNode("T1", ["R0"], T_states))
+add_node!(diagram, ChanceNode("R1", ["R0", "H", "T1"], R_states))
 add_node!(diagram, DecisionNode("T2", ["R1"], T_states))
+add_node!(diagram, ChanceNode("R2", ["R1", "H", "T2"], R_states))
 add_node!(diagram, DecisionNode("TD", ["R2"], TD_states))
-
 add_node!(diagram, ValueNode("TC", ["T1", "T2"]))
 add_node!(diagram, ValueNode("HB", ["H", "TD"]))
 
@@ -187,7 +185,7 @@ set_optimizer(model, optimizer)
 optimize!(model)
 
 @info("Extracting results.")
-Z = DecisionStrategy(z)
+Z = DecisionStrategy(diagram,z)
 S_probabilities = StateProbabilities(diagram, Z)
 U_distribution = UtilityDistribution(diagram, Z)
 

@@ -53,16 +53,17 @@ const TD_states = ["treatment", "no treatment"]
 const R_states = [string(x) * "%" for x in [0:1:100;]]
 ```
 
- We then add the nodes. The chance and decision nodes are identified by their names. When declaring the nodes, they are also given information sets and states. Notice that nodes $R0$ and $H$ are root nodes, meaning that their information sets are empty. In Decision Programming, we add the chance and decision nodes in the follwoing way.
+ We then add the nodes. The chance and decision nodes are identified by their names. When declaring the nodes, they are also given information sets and states. In Decision Programming, we add the chance and decision nodes in the follwoing way. The node creation order must respect the information sets: all nodes in ($I_j$) must be added before node $j$. For example, $R_0$, $H$ and $T1$ must be created before $R_1$.
  ```julia
 add_node!(diagram, ChanceNode("R0", [], R_states))
-add_node!(diagram, ChanceNode("R1", ["R0", "H", "T1"], R_states))
-add_node!(diagram, ChanceNode("R2", ["R1", "H", "T2"], R_states))
 add_node!(diagram, ChanceNode("H", ["R0"], H_states))
-
 add_node!(diagram, DecisionNode("T1", ["R0"], T_states))
+add_node!(diagram, ChanceNode("R1", ["R0", "H", "T1"], R_states))
 add_node!(diagram, DecisionNode("T2", ["R1"], T_states))
+add_node!(diagram, ChanceNode("R2", ["R1", "H", "T2"], R_states))
 add_node!(diagram, DecisionNode("TD", ["R2"], TD_states))
+
+
 ```
 
 The value nodes are added in a similar fashion. However, value nodes do not have states because they map their information states to utility values instead.
@@ -202,14 +203,14 @@ optimize!(model)
 ## Analyzing results
 We extract the results in the following way.
 ```julia
-Z = DecisionStrategy(z)
+Z = DecisionStrategy(diagram, z)
 S_probabilities = StateProbabilities(diagram, Z)
 U_distribution = UtilityDistribution(diagram, Z)
 
 ```
 
 ### Decision strategy
-We inspect the decision strategy. From the printout, we can see that when the prior risk level is 12% the optimal decision strategy is to first perform TRS testing. At the second decision stage, GRS should be conducted if the updated risk estimate is between 16% and 28% and otherwise no further testing should be conducted. Treatment should be provided to those who have a final risk estimate greater than 18%. Notice that the incompatible states are not included in the printout. The incompatible states are those that have a state probability of zero, which means that given this data it is impossible for the patient to have their risk estimate updated to those risk levels.
+We inspect the decision strategy. From the printout, we can see that when the prior risk level is 12% the optimal decision strategy is to first perform TRS testing. At the second decision stage, GRS should be conducted if the updated risk estimate is 19% and otherwise no further testing should be conducted. Treatment should be provided to those who have a final risk estimate greater than 18%. Notice that the incompatible states are not included in the printout. The incompatible states are those that have a state probability of zero, which means that given this data it is impossible for the patient to have their risk estimate updated to those risk levels.
 
 ```julia
 julia> print_decision_strategy(diagram, Z, S_probabilities)
@@ -223,35 +224,29 @@ julia> print_decision_strategy(diagram, Z, S_probabilities)
 ├────────────────┼────────────────┤
 │ 0%             │ no test        │
 │ 1%             │ no test        │
-│ 3%             │ no test        │
-│ 6%             │ no test        │
-│ 7%             │ no test        │
-│ 10%            │ no test        │
-│ 11%            │ no test        │
+│ 4%             │ no test        │
+│ 9%             │ no test        │
+│ 12%            │ no test        │
 │ 13%            │ no test        │
-│ 14%            │ no test        │
-│ 16%            │ GRS            │
-│ 17%            │ GRS            │
-│ 18%            │ GRS            │
-│ 21%            │ GRS            │
-│ 22%            │ GRS            │
-│ 23%            │ GRS            │
-│ 28%            │ no test        │
-│ 29%            │ no test        │
-│ 31%            │ no test        │
-│ 34%            │ no test        │
-│  ⋮             │    ⋮            │
+│ 16%            │ no test        │
+│ 18%            │ no test        │
+│ 19%            │ GRS            │
+│ 21%            │ no test        │
+│ 22%            │ no test        │
+│ 24%            │ no test        │
+│ 25%            │ no test        │
+│ 26%            │ no test        │
+│ 27%            │ no test        │
+│       ⋮        │       ⋮        │
 └────────────────┴────────────────┘
-                                rows omitted
-
+                    18 rows omitted
 ┌────────────────┬────────────────┐
 │ State(s) of R2 │ Decision in TD │
 ├────────────────┼────────────────┤
 │ 0%             │ no treatment   │
 │ 1%             │ no treatment   │
-│ 2%             │ no treatment   │
-│ 3%             │ no treatment   │
-│ 6%             │ no treatment   │
+│ 4%             │ no treatment   │
+│ 5%             │ no treatment   │
 │ 7%             │ no treatment   │
 │ 8%             │ no treatment   │
 │ 9%             │ no treatment   │
@@ -263,9 +258,18 @@ julia> print_decision_strategy(diagram, Z, S_probabilities)
 │ 15%            │ no treatment   │
 │ 16%            │ no treatment   │
 │ 17%            │ no treatment   │
-│ 18%            │ treatment      │
+│ 18%            │ no treatment   │
 │ 19%            │ treatment      │
 │ 20%            │ treatment      │
+│ 21%            │ treatment      │
+│ 22%            │ treatment      │
+│ 23%            │ treatment      │
+│ 24%            │ treatment      │
+│ 25%            │ treatment      │
+│ 26%            │ treatment      │
+│ 27%            │ treatment      │
+│ 28%            │ treatment      │
+│ 29%            │ treatment      │
 │  ⋮             │    ⋮            │
 └────────────────┴────────────────┘
                                 rows omitted
@@ -282,14 +286,14 @@ julia> print_utility_distribution(U_distribution)
 │  Utility │ Probability │
 │  Float64 │     Float64 │
 ├──────────┼─────────────┤
-│ 6.646904 │    0.005318 │
-│ 6.650904 │    0.038707 │
-│ 6.889672 │    0.011602 │
-│ 6.893672 │    0.064374 │
-│ 7.637820 │    0.034188 │
-│ 7.641820 │    0.073974 │
-│ 7.693419 │    0.035266 │
-│ 7.697419 │    0.736573 │
+│ 6.646904 │    0.001429 │
+│ 6.650904 │    0.027389 │
+│ 6.889672 │    0.004191 │
+│ 6.893672 │    0.086992 │
+│ 7.637820 │    0.015056 │
+│ 7.641820 │    0.195888 │
+│ 7.693419 │    0.008898 │
+│ 7.697419 │    0.660158 │
 └──────────┴─────────────┘
 ```
 ```julia
@@ -298,10 +302,10 @@ julia> print_statistics(U_distribution)
 │     Name │ Statistics │
 │   String │    Float64 │
 ├──────────┼────────────┤
-│     Mean │   7.583923 │
-│      Std │   0.291350 │
-│ Skewness │  -2.414877 │
-│ Kurtosis │   4.059711 │
+│     Mean │   7.582127 │
+│      Std │   0.279054 │
+│ Skewness │  -2.392751 │
+│ Kurtosis │   3.978265 │
 └──────────┴────────────┘
 ```
 
